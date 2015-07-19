@@ -10,21 +10,21 @@ func TestDefaultBuilder(t *testing.T) {
 	table := []struct {
 		t    Type
 		v    interface{}
-		want *literal
+		want *Literal
 	}{
 		// Successful cases.
-		{Bool, true, &literal{Bool, interface{}(true)}},
-		{Bool, false, &literal{Bool, interface{}(false)}},
-		{Int64, int64(-1), &literal{Int64, interface{}(int64(-1))}},
-		{Int64, int64(0), &literal{Int64, interface{}(int64(0))}},
-		{Int64, int64(1), &literal{Int64, interface{}(int64(1))}},
-		{Float64, float64(-1), &literal{Float64, interface{}(float64(-1))}},
-		{Float64, float64(0), &literal{Float64, interface{}(float64(0))}},
-		{Float64, float64(1), &literal{Float64, interface{}(float64(1))}},
-		{Text, "", &literal{Text, interface{}("")}},
-		{Text, "some random string", &literal{Text, interface{}("some random string")}},
-		{Blob, []byte{}, &literal{Blob, []byte{}}},
-		{Blob, []byte("some random bytes"), &literal{Blob, interface{}([]byte("some random bytes"))}},
+		{Bool, true, &Literal{Bool, interface{}(true)}},
+		{Bool, false, &Literal{Bool, interface{}(false)}},
+		{Int64, int64(-1), &Literal{Int64, interface{}(int64(-1))}},
+		{Int64, int64(0), &Literal{Int64, interface{}(int64(0))}},
+		{Int64, int64(1), &Literal{Int64, interface{}(int64(1))}},
+		{Float64, float64(-1), &Literal{Float64, interface{}(float64(-1))}},
+		{Float64, float64(0), &Literal{Float64, interface{}(float64(0))}},
+		{Float64, float64(1), &Literal{Float64, interface{}(float64(1))}},
+		{Text, "", &Literal{Text, interface{}("")}},
+		{Text, "some random string", &Literal{Text, interface{}("some random string")}},
+		{Blob, []byte{}, &Literal{Blob, []byte{}}},
+		{Blob, []byte("some random bytes"), &Literal{Blob, interface{}([]byte("some random bytes"))}},
 		// Invalid cases.
 		{Bool, 1, nil},
 		{Int64, 2, nil},
@@ -47,11 +47,11 @@ func TestBoundedBuilder(t *testing.T) {
 	max, table := 10, []struct {
 		t    Type
 		v    interface{}
-		want *literal
+		want *Literal
 	}{
 		// Successful cases.
-		{Text, "0123456789", &literal{Text, interface{}("0123456789")}},
-		{Blob, []byte("0123456789"), &literal{Blob, interface{}([]byte("0123456789"))}},
+		{Text, "0123456789", &Literal{Text, interface{}("0123456789")}},
+		{Blob, []byte("0123456789"), &Literal{Blob, interface{}([]byte("0123456789"))}},
 		// Invalid cases.
 		{Text, "01234567890", nil},
 		{Blob, []byte("01234567890"), nil},

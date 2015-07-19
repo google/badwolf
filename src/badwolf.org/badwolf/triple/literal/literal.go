@@ -40,27 +40,72 @@ func (t Type) String() string {
 	}
 }
 
-// Value represents the value contained in the literal.
-type Value interface {
-	Bool() (bool, error)
-	Int64() (int64, error)
-	Float64() (float64, error)
-	Text() (string, error)
-	Blob() ([]byte, error)
-	Interface() interface{}
+// Literal represents the type and value boxed in the literal.
+type Literal struct {
+	t Type
+	v interface{}
 }
 
-// Literal is a data container for arbitrary immutable data.
-type Literal interface {
-	Value
-	Type() Type
+// Type returns the type of a literal.
+func (l *Literal) Type() Type {
+	return l.t
+}
+
+// String eturns a string representation of the literal.
+func (l *Literal) String() string {
+	return fmt.Sprintf("\"%v\"^^type:%v", l.Interface(), l.Type())
+}
+
+// Bool returns the value of a literal as a boolean.
+func (l *Literal) Bool() (bool, error) {
+	if l.t != Bool {
+		return false, fmt.Errorf("literal.Bool: literal is of type %v; cannot be converted to a bool", l.t)
+	}
+	return l.v.(bool), nil
+}
+
+// Int64 returns the value of a literal as an int64.
+func (l *Literal) Int64() (int64, error) {
+	if l.t != Int64 {
+		return 0, fmt.Errorf("literal.Int64: literal is of type %v; cannot be converted to a int64", l.t)
+	}
+	return l.v.(int64), nil
+}
+
+// Float64 returns the value of a literal as a float64.
+func (l *Literal) Float64() (float64, error) {
+	if l.t != Float64 {
+		return 0, fmt.Errorf("literal.Float64: literal is of type %v; cannot be converted to a flaot64", l.t)
+	}
+	return l.v.(float64), nil
+}
+
+// Text returns the value of a literal as a string.
+func (l *Literal) Text() (string, error) {
+	if l.t != Text {
+		return "", fmt.Errorf("literal.Text: literal is of type %v; cannot be converted to a string", l.t)
+	}
+	return l.v.(string), nil
+}
+
+// Blob returns the value of a literal as a []byte.
+func (l *Literal) Blob() ([]byte, error) {
+	if l.t != Blob {
+		return nil, fmt.Errorf("literal.Blob: literal is of type %v; cannot be converted to a []byte", l.t)
+	}
+	return l.v.([]byte), nil
+}
+
+// Interface returns the value as a simple interface{}.
+func (l *Literal) Interface() interface{} {
+	return l.v
 }
 
 // Builder interface provides a standar way to build literals given a type and
 // a given value.
 type Builder interface {
-	Build(t Type, v interface{}) (Literal, error)
-	Parse(s string) (Literal, error)
+	Build(t Type, v interface{}) (*Literal, error)
+	Parse(s string) (*Literal, error)
 }
 
 // A singleton used to build all literals.
@@ -74,69 +119,8 @@ func init() {
 // long.
 type unboundBuilder struct{}
 
-// The implementation of all literals.
-type literal struct {
-	t Type
-	v interface{}
-}
-
-// Type returns the type of a literal.
-func (l *literal) Type() Type {
-	return l.t
-}
-
-// String eturns a string representation of the literal.
-func (l *literal) String() string {
-	return fmt.Sprintf("\"%v\"^^type:%v", l.Interface(), l.Type())
-}
-
-// Bool returns the value of a literal as a boolean.
-func (l *literal) Bool() (bool, error) {
-	if l.t != Bool {
-		return false, fmt.Errorf("literal.Bool: literal is of type %v; cannot be converted to a bool", l.t)
-	}
-	return l.v.(bool), nil
-}
-
-// Int64 returns the value of a literal as an int64.
-func (l *literal) Int64() (int64, error) {
-	if l.t != Int64 {
-		return 0, fmt.Errorf("literal.Int64: literal is of type %v; cannot be converted to a int64", l.t)
-	}
-	return l.v.(int64), nil
-}
-
-// Float64 returns the value of a literal as a float64.
-func (l *literal) Float64() (float64, error) {
-	if l.t != Float64 {
-		return 0, fmt.Errorf("literal.Float64: literal is of type %v; cannot be converted to a flaot64", l.t)
-	}
-	return l.v.(float64), nil
-}
-
-// Text returns the value of a literal as a string.
-func (l *literal) Text() (string, error) {
-	if l.t != Text {
-		return "", fmt.Errorf("literal.Text: literal is of type %v; cannot be converted to a string", l.t)
-	}
-	return l.v.(string), nil
-}
-
-// Blob returns the value of a literal as a []byte.
-func (l *literal) Blob() ([]byte, error) {
-	if l.t != Blob {
-		return nil, fmt.Errorf("literal.Blob: literal is of type %v; cannot be converted to a []byte", l.t)
-	}
-	return l.v.([]byte), nil
-}
-
-// Interface returns the value as a simple interface{}.
-func (l *literal) Interface() interface{} {
-	return l.v
-}
-
 // Build creates a new unboud literal from a type and a value.
-func (b *unboundBuilder) Build(t Type, v interface{}) (Literal, error) {
+func (b *unboundBuilder) Build(t Type, v interface{}) (*Literal, error) {
 	switch v.(type) {
 	case bool:
 		if t != Bool {
@@ -161,14 +145,14 @@ func (b *unboundBuilder) Build(t Type, v interface{}) (Literal, error) {
 	default:
 		return nil, fmt.Errorf("literal.Build: type %s is not supported when building literals", t)
 	}
-	return &literal{
+	return &Literal{
 		t: t,
 		v: v,
 	}, nil
 }
 
 // Parse creates a string out of a prettyfied representation.
-func (b *unboundBuilder) Parse(s string) (Literal, error) {
+func (b *unboundBuilder) Parse(s string) (*Literal, error) {
 	raw := strings.TrimSpace(s)
 	if len(raw) == 0 {
 		return nil, fmt.Errorf("literal.Parse: cannot parse and empty string into a literal; provided string %q", s)
@@ -234,7 +218,7 @@ type boundedBuilder struct {
 }
 
 // Build creates a new literal of bounded size.
-func (b *boundedBuilder) Build(t Type, v interface{}) (Literal, error) {
+func (b *boundedBuilder) Build(t Type, v interface{}) (*Literal, error) {
 	switch v.(type) {
 	case string:
 		if l := len(v.(string)); l > b.max {
@@ -249,7 +233,7 @@ func (b *boundedBuilder) Build(t Type, v interface{}) (Literal, error) {
 }
 
 // Parse creates a string out of a prettyfied representation.
-func (b *boundedBuilder) Parse(s string) (Literal, error) {
+func (b *boundedBuilder) Parse(s string) (*Literal, error) {
 	l, err := defaultBuilder.Parse(s)
 	if err != nil {
 		return nil, err
