@@ -87,7 +87,7 @@ the type assertion ```type:``` with the corresponding type appended. This
 pretty printing convention loosely follows the
 [RDF specification for literals](http://www.w3.org/TR/rdf11-concepts/#section-Graph-Literal)
 also simplifying the parsing of such string formated literals. Some examples
-of pretty printed literals are shown below
+of pretty printed literals are shown below.
 
 ```
   "true"^^type:bool
@@ -103,6 +103,8 @@ of pretty printed literals are shown below
   "[]"^^type:blob
   "[115 111 109 101 32 114 97 110 100 111 109 32 98 121 116 101 115]"^^type:blob
 ```
+
+The above representation can also be used to create a literal.
 
 ## Predicates
 
