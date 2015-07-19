@@ -28,7 +28,8 @@ similar goals. However, there are benefits to keep explicit type information
 BadWolf does not provide type ontology. Types are left to the owner of the
 data to express.  Having that said, BadWolf requires type assertions to be
 expressed using hierarchies express as paths separated by forward slashes.
-Example of possible types
+Example of possible types are:
+
 ```
    /organization
    /organization/country
@@ -52,6 +53,17 @@ as UTF8 strings. No spaces, tabs, LF or CR are allowed as part of the ID to
 provide efficient node marshaling and unmarshaling. The only restriction for
 node IDs is that they cannot contain for efficient marshaling reasons neither
 '<' nor '>'.
+
+### Marshaled representation of a node
+
+Nodes can be marshaled and unmarshaled from a simple text representation. This
+representation follows this simple structure ```type<id>``` for efficient
+processing. Some example of marshaled into text nodes are listed below.
+
+```
+   /organization/country<United States of America>
+   /organization/company<Google>
+```
 
 ### Node equality
 
@@ -108,4 +120,46 @@ The above representation can also be used to create a literal.
 
 ## Predicates
 
-Predicates allow predicating properties of nodes.
+Predicates allow predicating properties of nodes. BadWolf provide two different
+kind of predicates:
+
+* _Immutable_ or predicates that are always valid regardless of when they were
+              created. For instance, they are useful to describe properties
+              that never change, for instance, the color of someone's eyes.
+* _Temporal_ predicates that are anchored at some point along the time
+             continuum. For instance, the predicate _met_ describing when
+             two nodes met is anchored at a particular time.
+
+It is important to note here that temporal predicates are descriptive of a
+property in relation to time. The granularity (or window) of validity of that
+predicate is left to the temporal reasoning module. This is important, since
+allow to reason against arbitrary time granularities. All time calculations
+and reasoning in BadWold assume a Gregorian calendar.
+
+### Predicate ID
+
+Similar to the node IDs, predicate IDs in BadWolf do not make any assumption
+about ID structure. IDs are represented as UTF8 strings. No spaces, tabs, LF or
+CR are allowed as part of the ID to provide efficient node marshaling and
+unmarshaling.
+
+### Time anchors
+
+When parsing or printing dates into time anchors for temporal predicates,
+Badwolf follows the [RFC3339](https://www.ietf.org/rfc/rfc3339.txt) variant
+[RFC3339Nano](http://golang.org/pkg/time/#pkg-constants) as specified in the
+GO programming language to provide reliable granularity to express anchors in
+nanoseconds. An example of time anchor express in RFC3339Nano format is shown
+below.
+
+```
+   2006-01-02T15:04:05.999999999Z07:00
+```
+
+So for instance the fully pretty printed predicate for an immutable and  
+a temporal triple are shown below.
+
+```
+   "colow_of_eyes"@[]
+   "met"@[2006-01-02T15:04:05.999999999Z07:00]
+```
