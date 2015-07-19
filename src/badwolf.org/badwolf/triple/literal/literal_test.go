@@ -98,3 +98,38 @@ func TestPrettyPrinting(t *testing.T) {
 		}
 	}
 }
+
+func TestParse(t *testing.T) {
+	table := []struct {
+		t Type
+		v interface{}
+		s string
+	}{
+		// Successful cases.
+		{Bool, true, `"true"^^type:bool`},
+		{Bool, false, `"false"^^type:bool`},
+		{Int64, int64(-1), `"-1"^^type:int64`},
+		{Int64, int64(0), `"0"^^type:int64`},
+		{Int64, int64(1), `"1"^^type:int64`},
+		{Float64, float64(-1), `"-1"^^type:float64`},
+		{Float64, float64(0), `"0"^^type:float64`},
+		{Float64, float64(1), `"1"^^type:float64`},
+		{Text, "", `""^^type:text`},
+		{Text, "some random string", `"some random string"^^type:text`},
+		{Blob, []byte{}, `"[]"^^type:blob`},
+		{Blob, []byte("some random bytes"), `"[115 111 109 101 32 114 97 110 100 111 109 32 98 121 116 101 115]"^^type:blob`},
+	}
+	for _, tc := range table {
+		want, err := DefaultBuilder().Build(tc.t, tc.v)
+		if err != nil {
+			t.Errorf("Failed to generate literal for case %v with error %v", tc, err)
+		}
+		got, err := DefaultBuilder().Parse(tc.s)
+		if err != nil {
+			t.Errorf("Failed to parse pretty printed literal %s with error %v", tc.s, err)
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("Failed to parse correctly %s; got %v, want %s", tc.s, got, want)
+		}
+	}
+}

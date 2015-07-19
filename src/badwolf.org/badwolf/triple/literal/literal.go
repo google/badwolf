@@ -1,6 +1,10 @@
 package literal
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 // Type represents the type contained in a literal.
 type Type uint8
@@ -56,6 +60,7 @@ type Literal interface {
 // a given value.
 type Builder interface {
 	Build(t Type, v interface{}) (Literal, error)
+	Parse(s string) (Literal, error)
 }
 
 // A singleton used to build all literals.
@@ -88,7 +93,7 @@ func (l *literal) String() string {
 // Bool returns the value of a literal as a boolean.
 func (l *literal) Bool() (bool, error) {
 	if l.t != Bool {
-		return false, fmt.Errorf("literal is of type %v; cannot be converted to a bool", l.t)
+		return false, fmt.Errorf("literal.Bool: literal is of type %v; cannot be converted to a bool", l.t)
 	}
 	return l.v.(bool), nil
 }
@@ -96,7 +101,7 @@ func (l *literal) Bool() (bool, error) {
 // Int64 returns the value of a literal as an int64.
 func (l *literal) Int64() (int64, error) {
 	if l.t != Int64 {
-		return 0, fmt.Errorf("literal is of type %v; cannot be converted to a int64", l.t)
+		return 0, fmt.Errorf("literal.Int64: literal is of type %v; cannot be converted to a int64", l.t)
 	}
 	return l.v.(int64), nil
 }
@@ -104,7 +109,7 @@ func (l *literal) Int64() (int64, error) {
 // Float64 returns the value of a literal as a float64.
 func (l *literal) Float64() (float64, error) {
 	if l.t != Float64 {
-		return 0, fmt.Errorf("literal is of type %v; cannot be converted to a flaot64", l.t)
+		return 0, fmt.Errorf("literal.Float64: literal is of type %v; cannot be converted to a flaot64", l.t)
 	}
 	return l.v.(float64), nil
 }
@@ -112,7 +117,7 @@ func (l *literal) Float64() (float64, error) {
 // Text returns the value of a literal as a string.
 func (l *literal) Text() (string, error) {
 	if l.t != Text {
-		return "", fmt.Errorf("literal is of type %v; cannot be converted to a string", l.t)
+		return "", fmt.Errorf("literal.Text: literal is of type %v; cannot be converted to a string", l.t)
 	}
 	return l.v.(string), nil
 }
@@ -120,7 +125,7 @@ func (l *literal) Text() (string, error) {
 // Blob returns the value of a literal as a []byte.
 func (l *literal) Blob() ([]byte, error) {
 	if l.t != Blob {
-		return nil, fmt.Errorf("literal is of type %v; cannot be converted to a []byte", l.t)
+		return nil, fmt.Errorf("literal.Blob: literal is of type %v; cannot be converted to a []byte", l.t)
 	}
 	return l.v.([]byte), nil
 }
@@ -135,31 +140,86 @@ func (b *unboundBuilder) Build(t Type, v interface{}) (Literal, error) {
 	switch v.(type) {
 	case bool:
 		if t != Bool {
-			return nil, fmt.Errorf("type %s does not match type of value %v", t, v)
+			return nil, fmt.Errorf("literal.Build: type %s does not match type of value %v", t, v)
 		}
 	case int64:
 		if t != Int64 {
-			return nil, fmt.Errorf("type %s does not match type of value %v", t, v)
+			return nil, fmt.Errorf("literal.Build: type %s does not match type of value %v", t, v)
 		}
 	case float64:
 		if t != Float64 {
-			return nil, fmt.Errorf("type %s does not match type of value %v", t, v)
+			return nil, fmt.Errorf("literal.Build: type %s does not match type of value %v", t, v)
 		}
 	case string:
 		if t != Text {
-			return nil, fmt.Errorf("type %s does not match type of value %v", t, v)
+			return nil, fmt.Errorf("literal.Build: type %s does not match type of value %v", t, v)
 		}
 	case []byte:
 		if t != Blob {
-			return nil, fmt.Errorf("type %s does not match type of value %v", t, v)
+			return nil, fmt.Errorf("literal.Build: type %s does not match type of value %v", t, v)
 		}
 	default:
-		return nil, fmt.Errorf("type %s is not supported when building literals", t)
+		return nil, fmt.Errorf("literal.Build: type %s is not supported when building literals", t)
 	}
 	return &literal{
 		t: t,
 		v: v,
 	}, nil
+}
+
+// Parse creates a string out of a prettyfied representation.
+func (b *unboundBuilder) Parse(s string) (Literal, error) {
+	raw := strings.TrimSpace(s)
+	if len(raw) == 0 {
+		return nil, fmt.Errorf("literal.Parse: cannot parse and empty string into a literal; provided string %q", s)
+	}
+	if raw[0] != '"' {
+		return nil, fmt.Errorf("literal.Parse: text encoded literals must start with \", missing in %s", raw)
+	}
+	idx := strings.Index(raw, "\"^^type:")
+	if idx < 0 {
+		return nil, fmt.Errorf("literal.Parse: text encoded literals must have a type; missing in %s", raw)
+	}
+	v := raw[1:idx]
+	t := raw[idx+len("\"^^type:"):]
+	switch t {
+	case "bool":
+		pv, err := strconv.ParseBool(v)
+		if err != nil {
+			return nil, fmt.Errorf("literal.Parse: could not convert value %q to bool", v)
+		}
+		return b.Build(Bool, pv)
+	case "int64":
+		pv, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("literal.Parse: could not convert value %q to int64", v)
+		}
+		return b.Build(Int64, int64(pv))
+	case "float64":
+		pv, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return nil, fmt.Errorf("literal.Parse: could not convert value %q to float64", v)
+		}
+		return b.Build(Float64, float64(pv))
+	case "text":
+		return b.Build(Text, v)
+	case "blob":
+		values := v[1 : len(v)-1]
+		if values == "" {
+			return b.Build(Blob, []byte{})
+		}
+		bs := []byte{}
+		for _, s := range strings.Split(values, " ") {
+			b, err := strconv.ParseUint(s, 10, 8)
+			if err != nil {
+				return nil, fmt.Errorf("literal.Parse: failed to decode byte array on %q with error %v", s, err)
+			}
+			bs = append(bs, byte(b))
+		}
+		return b.Build(Blob, bs)
+	default:
+		return nil, nil
+	}
 }
 
 // DefaultBuilder returns a builder with no constraints or checks.
@@ -178,14 +238,34 @@ func (b *boundedBuilder) Build(t Type, v interface{}) (Literal, error) {
 	switch v.(type) {
 	case string:
 		if l := len(v.(string)); l > b.max {
-			return nil, fmt.Errorf("cannot create literal due to size of %v (%d>%d)", v, l, b.max)
+			return nil, fmt.Errorf("literal.Build: cannot create literal due to size of %v (%d>%d)", v, l, b.max)
 		}
 	case []byte:
 		if l := len(v.([]byte)); l > b.max {
-			return nil, fmt.Errorf("cannot create literal due to size of %v (%d>%d)", v, l, b.max)
+			return nil, fmt.Errorf("literal.Build: cannot create literal due to size of %v (%d>%d)", v, l, b.max)
 		}
 	}
 	return defaultBuilder.Build(t, v)
+}
+
+// Parse creates a string out of a prettyfied representation.
+func (b *boundedBuilder) Parse(s string) (Literal, error) {
+	l, err := defaultBuilder.Parse(s)
+	if err != nil {
+		return nil, err
+	}
+	t := l.Type()
+	switch t {
+	case Text:
+		if text, err := l.Text(); err != nil || len(text) > b.max {
+			return nil, fmt.Errorf("literal.Parse: cannot create literal due to size of %v (%d>%d)", t, len(text), b.max)
+		}
+	case Blob:
+		if blob, err := l.Blob(); err != nil || len(blob) > b.max {
+			return nil, fmt.Errorf("literal.Parse: cannot create literal due to size of %v (%d>%d)", t, len(blob), b.max)
+		}
+	}
+	return l, nil
 }
 
 // NewBoundedBuilder creates a builder that that guarantess that no literal will
