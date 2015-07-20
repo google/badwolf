@@ -1,3 +1,4 @@
+// Package literal provides an abstraction to manipulate BadWolf literals.
 package literal
 
 import (

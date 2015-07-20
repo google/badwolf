@@ -1,4 +1,4 @@
-// Package node deines BadWolf nodes.
+// Package node provides the abstraction to build and use BadWolf nodes.
 package node
 
 import (

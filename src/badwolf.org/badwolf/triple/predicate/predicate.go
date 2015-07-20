@@ -1,3 +1,4 @@
+// Package predicate allows to build and manipulate BadWolf predicates.
 package predicate
 
 import (

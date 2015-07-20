@@ -1,3 +1,4 @@
+// Package triple implements and allows to manipulate Badwolf triples.
 package triple
 
 import (
