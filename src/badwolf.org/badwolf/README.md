@@ -163,3 +163,12 @@ a temporal triple are shown below.
    "colow_of_eyes"@[]
    "met"@[2006-01-02T15:04:05.999999999Z07:00]
 ```
+
+## triple
+
+The basic unit of storage on BadWolf is the triple. A triple is a three tuple
+*<s p o>* defined as follows:
+
+* _s_, or subject, is a BadWolf node.
+* _p_, or predicate, is a BadWolf predicate.
+* _o_, or object, is either a BadWolf node or a Badwolf literal.
