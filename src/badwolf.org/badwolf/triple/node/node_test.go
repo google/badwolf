@@ -1,6 +1,10 @@
 package node
 
-import "testing"
+import (
+	"fmt"
+	"strings"
+	"testing"
+)
 
 func TestNewID(t *testing.T) {
 	if wID, err := NewID("<"); err == nil {
@@ -93,6 +97,19 @@ func TestParse(t *testing.T) {
 		}
 		if !tc.v && err == nil {
 			t.Errorf("node.Parse: failed to reject invalid %q", tc.s)
+		}
+	}
+}
+
+func TestBlankNode(t *testing.T) {
+	for i := uint64(0); i < 10; i++ {
+		b := NewBlankNode()
+		ss := strings.Split(b.String(), ":")
+		if len(ss) != 4 {
+			t.Errorf("NewBlankNode returned an invalid ID in %s", b)
+		}
+		if got, want := ss[3], fmt.Sprintf("%x>", i); got != want {
+			t.Errorf("NewBlankNode failed to return increasing IDs in %s; got %s, want %s", b, got, want)
 		}
 	}
 }

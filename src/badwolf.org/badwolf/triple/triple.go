@@ -17,6 +17,8 @@ type ObjectType uint8
 const (
 	// Node type of the boxed element in the object.
 	Node ObjectType = iota
+	// Predicate type of the boxed element in the object.
+	Predicate
 	// Literal type of the boxed element in the object.
 	Literal
 )
@@ -26,6 +28,8 @@ func (o ObjectType) String() string {
 	switch o {
 	case Node:
 		return "node"
+	case Predicate:
+		return "predicate"
 	case Literal:
 		return "literal"
 	default:
@@ -36,6 +40,7 @@ func (o ObjectType) String() string {
 // Object is the box that either contains a literal or a node.
 type Object struct {
 	n *node.Node
+	p *predicate.Predicate
 	l *literal.Literal
 }
 
@@ -47,6 +52,9 @@ func (o *Object) String() string {
 	if o.l != nil {
 		return o.l.String()
 	}
+	if o.p != nil {
+		return o.p.String()
+	}
 	return "@@@INVALID_OBJECTS@@@"
 }
 
@@ -56,7 +64,11 @@ func ParseObject(s string, b literal.Builder) (*Object, error) {
 	if err != nil {
 		l, err := b.Parse(s)
 		if err != nil {
-			return nil, err
+			o, err := predicate.Parse(s)
+			if err != nil {
+				return nil, err
+			}
+			return NewPredicateObject(o), nil
 		}
 		return NewLiteralObject(l), nil
 	}
@@ -67,6 +79,13 @@ func ParseObject(s string, b literal.Builder) (*Object, error) {
 func NewNodeObject(n *node.Node) *Object {
 	return &Object{
 		n: n,
+	}
+}
+
+// NewPredicateObject returns a new object that boxes a predicate.
+func NewPredicateObject(p *predicate.Predicate) *Object {
+	return &Object{
+		p: p,
 	}
 }
 
@@ -108,7 +127,7 @@ var (
 
 func init() {
 	pSplit = regexp.MustCompile(">\\s+\"")
-	oSplit = regexp.MustCompile("]\\s+/")
+	oSplit = regexp.MustCompile("(]\\s+/)|(]\\s+\")")
 }
 
 // ParseTriple process the provided text and tries to create a triple. It asumes
@@ -134,4 +153,33 @@ func ParseTriple(line string, b literal.Builder) (*Triple, error) {
 		return nil, fmt.Errorf("triple.Parse failed to parse object %s with error %v", so, err)
 	}
 	return NewTriple(s, p, o)
+}
+
+// Reify given the current triple it returns the original triple and the newly
+// reified ones. It also returns the newly created blank node.
+func (t *Triple) Reify() ([]*Triple, *node.Node) {
+	// Function that create the proper reification predicates.
+	rp := func(id string, p *predicate.Predicate) *predicate.Predicate {
+		if p.Type() == predicate.Immutable {
+			ta, _ := p.TimeAnchor()
+			return predicate.NewTemporal(string(p.ID()), *ta)
+		}
+		return predicate.NewImmutable(id)
+	}
+
+	b := node.NewBlankNode()
+	ts, _ := NewTriple(b, rp("_subject", t.p), NewNodeObject(t.s))
+	tp, _ := NewTriple(b, rp("_predicate", t.p), NewPredicateObject(t.p))
+	var to *Triple
+	if t.o.l != nil {
+		to, _ = NewTriple(b, rp("_object", t.p), NewLiteralObject(t.o.l))
+	}
+	if t.o.n != nil {
+		to, _ = NewTriple(b, rp("_object", t.p), NewNodeObject(t.o.n))
+	}
+	if t.o.p != nil {
+		to, _ = NewTriple(b, rp("_object", t.p), NewPredicateObject(t.o.p))
+	}
+
+	return []*Triple{t, ts, tp, to}, b
 }

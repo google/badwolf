@@ -164,11 +164,63 @@ a temporal triple are shown below.
    "met"@[2006-01-02T15:04:05.999999999Z07:00]
 ```
 
-## triple
+## Triple
 
 The basic unit of storage on BadWolf is the triple. A triple is a three tuple
 *<s p o>* defined as follows:
 
 * _s_, or subject, is a BadWolf node.
 * _p_, or predicate, is a BadWolf predicate.
-* _o_, or object, is either a BadWolf node or a Badwolf literal.
+* _o_, or object, is either a BadWolf node, predicate, or literal.
+
+Triples can be marshaled and unmarshaled. The string representation of a triple
+it is just the string representation of each of its components separated by
+blank separator (tab is the prefered blank separator).
+
+## Blank nodes and triple reification
+
+A blank node is a node of type ```/_``` where the id is unique in BadWolf.
+Blank nodes can requested to be created by BadWolf. The main use of blank nodes
+is to allow triple reification, or predicate properies about facts. It is
+important to keep in mind that predication properties about a node can be
+achieved by a triple, however predicating properties about a fact (triple)
+require reification. This is better explained with an example.
+
+Let's assume we have the following fact:
+
+```
+  /user<John> "met"@[2006-01-02T15:04:05.999999999Z07:00] /user<Mary>
+```
+
+This represents the fact that John met Mary back in 2006. They both met in
+New York. This fact represents a property (location New York) of the original
+fact (John met Mary). To achieve this and maintain a uniform data representation
+you need a way to express such information into triples.
+
+Reification is the process of predicating properties by adding new triples.
+This is achieved by creating a new blank node and using three special internal
+predicates ```_subject```, ```_predicate```, ```_object```. Reifying the above
+triple would add the following triples.
+
+```
+  /user<John> "met"@[2006-01-02T15:04:05.999999999Z07:00] /user<Mary>
+  /_<BUID> "_subject"@[2006-01-02T15:04:05.999999999Z07:00] /user<John>
+  /_<BUID> "_predicate"@[2006-01-02T15:04:05.999999999Z07:00] "met"@[2006-01-02T15:04:05.999999999Z07:00]
+  /_<BUID> "_object"@[2006-01-02T15:04:05.999999999Z07:00] /user<Mary>
+```
+
+ Reifying temporal triples anchors all the derived temporal triples at the
+ same time anchor of the original triple. Now, you can predicate any property
+ about the fact by predicating against the blank node. Hence we can now
+ predicate about where John and Mery met as shown below.
+
+ ```
+   /user<John> "met"@[2006-01-02T15:04:05.999999999Z07:00] /user<Mary>
+   /_<BUID> "_subject"@[2006-01-02T15:04:05.999999999Z07:00] /user<John>
+   /_<BUID> "_predicate"@[2006-01-02T15:04:05.999999999Z07:00] "met"@[2006-01-02T15:04:05.999999999Z07:00]
+   /_<BUID> "_object"@[2006-01-02T15:04:05.999999999Z07:00] /user<Mary>
+   /_<BUID> "location"@[2006-01-02T15:04:05.999999999Z07:00] /city<New York>
+ ```
+Anchoring the time predicate on the same time ancor as the reified triples
+seem appropriate for this example, but there are no restrictions of what you
+predicate against blank nodes.

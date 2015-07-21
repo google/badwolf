@@ -55,8 +55,24 @@ func TestPrettyTriple(t *testing.T) {
 }
 
 func TestParsetriple(t *testing.T) {
-	s := "/some/type<some id>\t\"foo\"@[]\t/some/type<some id>"
-	if _, err := ParseTriple(s, literal.DefaultBuilder()); err != nil {
-		t.Errorf("triple.Parse failed to parse valid triple %s with error %v", s, err)
+	ss := []string{
+		"/some/type<some id>\t\"foo\"@[]\t/some/type<some id>",
+		"/some/type<some id>\t\"foo\"@[]\t\"bar\"@[]",
+	}
+	for _, s := range ss {
+		if _, err := ParseTriple(s, literal.DefaultBuilder()); err != nil {
+			t.Errorf("triple.Parse failed to parse valid triple %s with error %v", s, err)
+		}
+	}
+}
+
+func TestReify(t *testing.T) {
+	tr, err := ParseTriple("/some/type<some id>\t\"foo\"@[]\t\"bar\"@[]", literal.DefaultBuilder())
+	if err != nil {
+		t.Fatalf("triple.ParseTriple failed to parse valid triple with error %v", err)
+	}
+	rts, bn := tr.Reify()
+	if len(rts) != 4 || bn == nil {
+		t.Errorf("triple.Reify failed to create 4 valid triples and a valid blank node; returned %v, %s instead", rts, bn)
 	}
 }

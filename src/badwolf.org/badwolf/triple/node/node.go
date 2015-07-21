@@ -3,7 +3,11 @@ package node
 
 import (
 	"fmt"
+	"hash/crc64"
+	"os"
+	"os/user"
 	"strings"
+	"time"
 )
 
 // Type describes the type of the node.
@@ -116,4 +120,51 @@ func NewNodeFromStrings(sT, sID string) (*Node, error) {
 		return nil, err
 	}
 	return NewNode(t, n), nil
+}
+
+// The channel to recover the next unique value used to create a blank node.
+var (
+	nextVal chan string
+	tBlank  Type
+)
+
+func init() {
+	// Create the hashing function.
+	hasher := crc64.New(crc64.MakeTable(crc64.ECMA))
+	h := func(s string) uint64 {
+		hasher.Reset()
+		hasher.Write([]byte(s))
+		return hasher.Sum64()
+	}
+
+	// Get the current user name.
+	osU, err := user.Current()
+	u := "UNKNOW"
+	if err == nil {
+		u = osU.Username
+	}
+
+	// Create the constant to make build a unique ID.
+	start := uint64(time.Now().UnixNano())
+	user := h(u)
+	pid := uint64(os.Getpid())
+	// Initialize the channel and blank node type.
+	nextVal, tBlank = make(chan string), Type("/_")
+	go func() {
+		cnt := uint64(0)
+		for {
+			nextVal <- fmt.Sprintf("%x:%x:%x:%x", start, user, pid, cnt)
+			cnt++
+		}
+	}()
+}
+
+// NewBlankNode creates a new blank node. The blank node ID is guaranteed to
+// be uique in BadWolf.
+func NewBlankNode() *Node {
+	id := ID(<-nextVal)
+	return &Node{
+		t:  &tBlank,
+		id: &id,
+	}
 }
