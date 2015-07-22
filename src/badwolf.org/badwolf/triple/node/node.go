@@ -122,6 +122,8 @@ func NewNodeFromStrings(sT, sID string) (*Node, error) {
 	return NewNode(t, n), nil
 }
 
+const chanSize = 100
+
 // The channel to recover the next unique value used to create a blank node.
 var (
 	nextVal chan string
@@ -149,7 +151,7 @@ func init() {
 	user := h(u)
 	pid := uint64(os.Getpid())
 	// Initialize the channel and blank node type.
-	nextVal, tBlank = make(chan string), Type("/_")
+	nextVal, tBlank = make(chan string, chanSize), Type("/_")
 	go func() {
 		cnt := uint64(0)
 		for {

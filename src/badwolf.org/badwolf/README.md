@@ -38,6 +38,7 @@ Example of possible types are:
 
 Types follow a simple file path syntax. Only two operations are allowed on
 types.
+
 * _Equality_: Given two types A and B, A == B if and only if they have the exact
               same path representation. In other words, if strings(A)==string(B)
               wher == is the case sensitive equal.
@@ -221,6 +222,18 @@ triple would add the following triples.
    /_<BUID> "_object"@[2006-01-02T15:04:05.999999999Z07:00] /user<Mary>
    /_<BUID> "location"@[2006-01-02T15:04:05.999999999Z07:00] /city<New York>
  ```
+
 Anchoring the time predicate on the same time ancor as the reified triples
 seem appropriate for this example, but there are no restrictions of what you
 predicate against blank nodes.
+
+# Storage abstraction layer
+
+BadWolf does not provide any storage. Instead provide a low level API for
+data persistance. This allow to provide different storage implementations
+(also known sometimes as drivers) but still maintain the same data abstractions
+and data manipulation. This property allows you to use your favorite backend,
+for data storage, or just implement a new one for your next project.
+
+BadWolf release comes along ony with a simple volatile, RAM-based implementation
+of the storage abstraction layer to illustrate how the API can be implemented.
