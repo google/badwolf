@@ -2,6 +2,7 @@
 package node
 
 import (
+	"encoding/base64"
 	"fmt"
 	"hash/crc64"
 	"os"
@@ -152,10 +153,12 @@ func init() {
 	pid := uint64(os.Getpid())
 	// Initialize the channel and blank node type.
 	nextVal, tBlank = make(chan string, chanSize), Type("/_")
+	enc := base64.StdEncoding
 	go func() {
 		cnt := uint64(0)
 		for {
-			nextVal <- fmt.Sprintf("%x:%x:%x:%x", start, user, pid, cnt)
+			bs := []byte(fmt.Sprintf("%x:%x:%x:%x", start, user, pid, cnt))
+			nextVal <- enc.EncodeToString(bs)
 			cnt++
 		}
 	}()
