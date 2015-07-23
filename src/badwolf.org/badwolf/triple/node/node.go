@@ -123,7 +123,7 @@ func NewNodeFromStrings(sT, sID string) (*Node, error) {
 	return NewNode(t, n), nil
 }
 
-const chanSize = 100
+const chanSize = 256
 
 // The channel to recover the next unique value used to create a blank node.
 var (
