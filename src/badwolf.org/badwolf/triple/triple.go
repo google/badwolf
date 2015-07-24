@@ -106,6 +106,21 @@ func NewTriple(s *node.Node, p *predicate.Predicate, o *Object) (*Triple, error)
 	}, nil
 }
 
+// S returns the subject of the triple.
+func (t *Triple) S() *node.Node {
+	return t.s
+}
+
+// P returns the predicate of the triple.
+func (t *Triple) P() *predicate.Predicate {
+	return t.p
+}
+
+// O returns the object of the tirple.
+func (t *Triple) O() *Object {
+	return t.o
+}
+
 // String marshals the triple into pretty string.
 func (t *Triple) String() string {
 	return fmt.Sprintf("%s\t%s\t%s", t.s, t.p, t.o)
