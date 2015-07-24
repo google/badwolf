@@ -2,6 +2,7 @@
 package triple
 
 import (
+	"encoding/base64"
 	"fmt"
 	"regexp"
 	"strings"
@@ -10,32 +11,6 @@ import (
 	"badwolf.org/badwolf/triple/node"
 	"badwolf.org/badwolf/triple/predicate"
 )
-
-// ObjectType describes the type of data boxed in the object
-type ObjectType uint8
-
-const (
-	// Node type of the boxed element in the object.
-	Node ObjectType = iota
-	// Predicate type of the boxed element in the object.
-	Predicate
-	// Literal type of the boxed element in the object.
-	Literal
-)
-
-// String pretty prints the type of the boxed object.
-func (o ObjectType) String() string {
-	switch o {
-	case Node:
-		return "node"
-	case Predicate:
-		return "predicate"
-	case Literal:
-		return "literal"
-	default:
-		return "UNKNOWN"
-	}
-}
 
 // Object is the box that either contains a literal or a node.
 type Object struct {
@@ -55,7 +30,23 @@ func (o *Object) String() string {
 	if o.p != nil {
 		return o.p.String()
 	}
-	return "@@@INVALID_OBJECTS@@@"
+	return "@@@INVALID_OBJECT@@@"
+}
+
+// GUID returns a global unique identifier for the given object. It is
+// implemented as the base64 encoded stringified version of the node.
+func (o *Object) GUID() string {
+	fo := "@@@INVALID_OBJECT@@@"
+	if o.n != nil {
+		fo = "node"
+	}
+	if o.l != nil {
+		fo = "literal"
+	}
+	if o.p != nil {
+		fo = "predicate"
+	}
+	return base64.StdEncoding.EncodeToString([]byte(strings.Join([]string{fo, o.String()}, ":")))
 }
 
 // ParseObject attempts to parse and object.
@@ -160,13 +151,14 @@ func ParseTriple(line string, b literal.Builder) (*Triple, error) {
 func (t *Triple) Reify() ([]*Triple, *node.Node) {
 	// Function that create the proper reification predicates.
 	rp := func(id string, p *predicate.Predicate) *predicate.Predicate {
-		if p.Type() == predicate.Immutable {
+		if p.Type() == predicate.Temporal {
 			ta, _ := p.TimeAnchor()
 			return predicate.NewTemporal(string(p.ID()), *ta)
 		}
 		return predicate.NewImmutable(id)
 	}
 
+	fmt.Println(t.String())
 	b := node.NewBlankNode()
 	ts, _ := NewTriple(b, rp("_subject", t.p), NewNodeObject(t.s))
 	tp, _ := NewTriple(b, rp("_predicate", t.p), NewPredicateObject(t.p))
@@ -182,4 +174,10 @@ func (t *Triple) Reify() ([]*Triple, *node.Node) {
 	}
 
 	return []*Triple{t, ts, tp, to}, b
+}
+
+// GUID returns a global unique identifier for the given triple. It is
+// implemented as the base64 encoded stringified version of the triple.
+func (t *Triple) GUID() string {
+	return base64.StdEncoding.EncodeToString([]byte(t.String()))
 }

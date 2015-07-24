@@ -2,6 +2,7 @@
 package literal
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strconv"
 	"strings"
@@ -258,4 +259,10 @@ func (b *boundedBuilder) Parse(s string) (*Literal, error) {
 // maximum.
 func NewBoundedBuilder(max int) Builder {
 	return &boundedBuilder{max: max}
+}
+
+// GUID returns a global unique identifier for the given literal. It is
+// implemented as the base64 encoded stringified version of the literal.
+func (l *Literal) GUID() string {
+	return base64.StdEncoding.EncodeToString([]byte(l.String()))
 }

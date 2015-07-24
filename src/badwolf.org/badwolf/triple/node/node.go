@@ -173,3 +173,9 @@ func NewBlankNode() *Node {
 		id: &id,
 	}
 }
+
+// GUID returns a global unique identifier for the given node. It is
+// implemented as the base64 encoded stringified version of the node.
+func (n *Node) GUID() string {
+	return base64.StdEncoding.EncodeToString([]byte(n.String()))
+}

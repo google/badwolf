@@ -2,6 +2,7 @@
 package predicate
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
@@ -116,4 +117,10 @@ func NewTemporal(id string, t time.Time) *Predicate {
 		id:     ID(id),
 		anchor: &t,
 	}
+}
+
+// GUID returns a global unique identifier for the given predicate. It is
+// implemented as the base64 encoded stringified version of the preducate.
+func (p *Predicate) GUID() string {
+	return base64.StdEncoding.EncodeToString([]byte(p.String()))
 }
