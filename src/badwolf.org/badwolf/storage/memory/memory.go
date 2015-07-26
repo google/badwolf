@@ -2,6 +2,7 @@ package memory
 
 import (
 	"strings"
+	"sync"
 
 	"badwolf.org/badwolf/storage"
 	"badwolf.org/badwolf/triple"
@@ -10,7 +11,7 @@ import (
 )
 
 // DefaultMemoryStore provides a volatile in memory store.
-var DefaultMemoryStore storage.Store = &memoryStore{}
+var DefaultStore storage.Store = &memoryStore{}
 
 type memoryStore struct{}
 
@@ -42,6 +43,7 @@ func (s *memoryStore) NewGraph(id string) (storage.Graph, error) {
 // memory provides an imemory volatile implemention of the storage API.
 type memory struct {
 	id    string
+	rwmu  sync.RWMutex
 	idx   map[string]*triple.Triple
 	idxS  map[string]map[string]*triple.Triple
 	idxP  map[string]map[string]*triple.Triple
@@ -56,11 +58,6 @@ func (m *memory) ID() string {
 	return m.id
 }
 
-// addToIndex add a tirple ot an index without duplicates.
-func addToIndex(idx map[string]map[string]*triple.Triple, iGUID, tGUID string, t *triple.Triple) {
-	idx[iGUID][tGUID] = t
-}
-
 // AddTriples adds the triples to the storage.
 func (m *memory) AddTriples(ts []*triple.Triple) error {
 	for _, t := range ts {
@@ -69,13 +66,43 @@ func (m *memory) AddTriples(ts []*triple.Triple) error {
 		pGUID := t.P().GUID()
 		oGUID := t.O().GUID()
 		// Update master index
+		m.rwmu.Lock()
 		m.idx[guid] = t
+
+		if _, ok := m.idxS[sGUID]; !ok {
+			m.idxS[sGUID] = make(map[string]*triple.Triple)
+		}
 		m.idxS[sGUID][guid] = t
+
+		if _, ok := m.idxP[pGUID]; !ok {
+			m.idxP[pGUID] = make(map[string]*triple.Triple)
+		}
 		m.idxP[pGUID][guid] = t
+
+		if _, ok := m.idxO[oGUID]; !ok {
+			m.idxO[oGUID] = make(map[string]*triple.Triple)
+		}
 		m.idxO[oGUID][guid] = t
-		m.idxSP[strings.Join([]string{sGUID, pGUID}, ":")][guid] = t
-		m.idxPO[strings.Join([]string{pGUID, oGUID}, ":")][guid] = t
-		m.idxSO[strings.Join([]string{sGUID, oGUID}, ":")][guid] = t
+
+		key := strings.Join([]string{sGUID, pGUID}, ":")
+		if _, ok := m.idxSP[key]; !ok {
+			m.idxSP[key] = make(map[string]*triple.Triple)
+		}
+		m.idxSP[key][guid] = t
+
+		key = strings.Join([]string{pGUID, oGUID}, ":")
+		if _, ok := m.idxPO[key]; !ok {
+			m.idxPO[key] = make(map[string]*triple.Triple)
+		}
+		m.idxPO[key][guid] = t
+
+		key = strings.Join([]string{sGUID, oGUID}, ":")
+		if _, ok := m.idxSO[key]; !ok {
+			m.idxSO[key] = make(map[string]*triple.Triple)
+		}
+		m.idxSO[key][guid] = t
+
+		m.rwmu.Unlock()
 	}
 	return nil
 }
@@ -88,26 +115,93 @@ func (m *memory) RemoveTriples(ts []*triple.Triple) error {
 		pGUID := t.P().GUID()
 		oGUID := t.O().GUID()
 		// Update master index
+		m.rwmu.Lock()
 		delete(m.idx, guid)
 		delete(m.idxS[sGUID], guid)
 		delete(m.idxP[pGUID], guid)
 		delete(m.idxO[oGUID], guid)
-		delete(m.idxSP[strings.Join([]string{sGUID, pGUID}, ":")], guid)
-		delete(m.idxPO[strings.Join([]string{pGUID, oGUID}, ":")], guid)
-		delete(m.idxSO[strings.Join([]string{sGUID, oGUID}, ":")], guid)
+
+		key := strings.Join([]string{sGUID, pGUID}, ":")
+		delete(m.idxSP[key], guid)
+		if len(m.idxSP[key]) == 0 {
+			delete(m.idxSP, key)
+		}
+
+		key = strings.Join([]string{pGUID, oGUID}, ":")
+		delete(m.idxPO[key], guid)
+		if len(m.idxPO[key]) == 0 {
+			delete(m.idxPO, key)
+		}
+
+		key = strings.Join([]string{sGUID, oGUID}, ":")
+		delete(m.idxSO[key], guid)
+		if len(m.idxSO[key]) == 0 {
+			delete(m.idxSO, key)
+		}
+
+		m.rwmu.Unlock()
 	}
 	return nil
+}
+
+// checker provides the mechanics to check if a predicate/triple should be
+// considered on a cerain operation.
+type checker struct {
+	max bool
+	c   int
+	o   *storage.LookupOptions
+}
+
+// newChecer creates a new checker for a given LookupOptions configuration.
+func newChecker(o *storage.LookupOptions) *checker {
+	b := false
+	if o.MaxElements > 0 {
+		b = true
+	}
+	return &checker{
+		max: b,
+		c:   o.MaxElements,
+		o:   o,
+	}
+}
+
+// CheckAndUpdate checks if a predicate should be considered and it also updates
+// the internal state in case counts are needed.
+func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
+	if c.max {
+		if c.c <= 0 {
+			return false
+		}
+		c.c--
+	}
+	if p.Type() == predicate.Immutable {
+		return true
+	}
+	t, _ := p.TimeAnchor()
+	if c.o.LowerAnchor != nil && t.Before(*c.o.LowerAnchor) {
+		return false
+	}
+	if c.o.UpperAnchor != nil && t.After(*c.o.UpperAnchor) {
+		return false
+	}
+	return true
 }
 
 // Objects returns the objects for the give object and predicate.
 func (m *memory) Objects(s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions) (storage.Objects, error) {
 	sGUID := s.GUID()
 	pGUID := p.GUID()
-	objs := make(chan *triple.Object)
+	spIdx := strings.Join([]string{sGUID, pGUID}, ":")
+	m.rwmu.RLock()
+	objs := make(chan *triple.Object, len(m.idxSP[spIdx]))
 	go func() {
-		for _, t := range m.idxSP[strings.Join([]string{sGUID, pGUID}, ":")] {
-			objs <- t.O()
+		ckr := newChecker(lo)
+		for _, t := range m.idxSP[spIdx] {
+			if ckr.CheckAndUpdate(t.P()) {
+				objs <- t.O()
+			}
 		}
+		m.rwmu.RUnlock()
 		close(objs)
 	}()
 	return objs, nil
@@ -117,11 +211,17 @@ func (m *memory) Objects(s *node.Node, p *predicate.Predicate, lo *storage.Looku
 func (m *memory) Subjects(p *predicate.Predicate, o *triple.Object, lo *storage.LookupOptions) (storage.Nodes, error) {
 	pGUID := p.GUID()
 	oGUID := o.GUID()
-	subs := make(chan *node.Node)
+	poIdx := strings.Join([]string{pGUID, oGUID}, ":")
+	m.rwmu.RLock()
+	subs := make(chan *node.Node, len(m.idxPO[poIdx]))
 	go func() {
-		for _, t := range m.idxPO[strings.Join([]string{pGUID, oGUID}, ":")] {
-			subs <- t.S()
+		ckr := newChecker(lo)
+		for _, t := range m.idxPO[poIdx] {
+			if ckr.CheckAndUpdate(t.P()) {
+				subs <- t.S()
+			}
 		}
+		m.rwmu.RUnlock()
 		close(subs)
 	}()
 	return subs, nil
@@ -132,11 +232,17 @@ func (m *memory) Subjects(p *predicate.Predicate, o *triple.Object, lo *storage.
 func (m *memory) PredicatesForSubjectAndObject(s *node.Node, o *triple.Object, lo *storage.LookupOptions) (storage.Predicates, error) {
 	sGUID := s.GUID()
 	oGUID := o.GUID()
-	preds := make(chan *predicate.Predicate)
+	soIdx := strings.Join([]string{sGUID, oGUID}, ":")
+	m.rwmu.RLock()
+	preds := make(chan *predicate.Predicate, len(m.idxSO[soIdx]))
 	go func() {
-		for _, t := range m.idxSO[strings.Join([]string{sGUID, oGUID}, ":")] {
-			preds <- t.P()
+		ckr := newChecker(lo)
+		for _, t := range m.idxSO[soIdx] {
+			if ckr.CheckAndUpdate(t.P()) {
+				preds <- t.P()
+			}
 		}
+		m.rwmu.RUnlock()
 		close(preds)
 	}()
 	return preds, nil
@@ -146,11 +252,16 @@ func (m *memory) PredicatesForSubjectAndObject(s *node.Node, o *triple.Object, l
 // subject.
 func (m *memory) PredicatesForSubject(s *node.Node, lo *storage.LookupOptions) (storage.Predicates, error) {
 	sGUID := s.GUID()
-	preds := make(chan *predicate.Predicate)
+	m.rwmu.RLock()
+	preds := make(chan *predicate.Predicate, len(m.idxS[sGUID]))
 	go func() {
+		ckr := newChecker(lo)
 		for _, t := range m.idxS[sGUID] {
-			preds <- t.P()
+			if ckr.CheckAndUpdate(t.P()) {
+				preds <- t.P()
+			}
 		}
+		m.rwmu.RUnlock()
 		close(preds)
 	}()
 	return preds, nil
@@ -160,11 +271,16 @@ func (m *memory) PredicatesForSubject(s *node.Node, lo *storage.LookupOptions) (
 // object.
 func (m *memory) PredicatesForObject(o *triple.Object, lo *storage.LookupOptions) (storage.Predicates, error) {
 	oGUID := o.GUID()
-	preds := make(chan *predicate.Predicate)
+	m.rwmu.RLock()
+	preds := make(chan *predicate.Predicate, len(m.idxO[oGUID]))
 	go func() {
+		ckr := newChecker(lo)
 		for _, t := range m.idxO[oGUID] {
-			preds <- t.P()
+			if ckr.CheckAndUpdate(t.P()) {
+				preds <- t.P()
+			}
 		}
+		m.rwmu.RUnlock()
 		close(preds)
 	}()
 	return preds, nil
@@ -173,11 +289,16 @@ func (m *memory) PredicatesForObject(o *triple.Object, lo *storage.LookupOptions
 // TriplesForSubject returns all triples available for a given subect.
 func (m *memory) TriplesForSubject(s *node.Node, lo *storage.LookupOptions) (storage.Triples, error) {
 	sGUID := s.GUID()
-	triples := make(chan *triple.Triple)
+	m.rwmu.RLock()
+	triples := make(chan *triple.Triple, len(m.idxS[sGUID]))
 	go func() {
+		ckr := newChecker(lo)
 		for _, t := range m.idxS[sGUID] {
-			triples <- t
+			if ckr.CheckAndUpdate(t.P()) {
+				triples <- t
+			}
 		}
+		m.rwmu.RUnlock()
 		close(triples)
 	}()
 	return triples, nil
@@ -186,11 +307,16 @@ func (m *memory) TriplesForSubject(s *node.Node, lo *storage.LookupOptions) (sto
 // TriplesForObject returns all triples available for a given object.
 func (m *memory) TriplesForObject(o *triple.Object, lo *storage.LookupOptions) (storage.Triples, error) {
 	oGUID := o.GUID()
-	triples := make(chan *triple.Triple)
+	m.rwmu.RLock()
+	triples := make(chan *triple.Triple, len(m.idxO[oGUID]))
 	go func() {
+		ckr := newChecker(lo)
 		for _, t := range m.idxO[oGUID] {
-			triples <- t
+			if ckr.CheckAndUpdate(t.P()) {
+				triples <- t
+			}
 		}
+		m.rwmu.RUnlock()
 		close(triples)
 	}()
 	return triples, nil
@@ -201,11 +327,17 @@ func (m *memory) TriplesForObject(o *triple.Object, lo *storage.LookupOptions) (
 func (m *memory) TriplesForSubjectAndPredicate(s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions) (storage.Triples, error) {
 	sGUID := s.GUID()
 	pGUID := p.GUID()
-	triples := make(chan *triple.Triple)
+	spIdx := strings.Join([]string{sGUID, pGUID}, ":")
+	m.rwmu.RLock()
+	triples := make(chan *triple.Triple, len(m.idxSP[spIdx]))
 	go func() {
-		for _, t := range m.idxSP[strings.Join([]string{sGUID, pGUID}, ":")] {
-			triples <- t
+		ckr := newChecker(lo)
+		for _, t := range m.idxSP[spIdx] {
+			if ckr.CheckAndUpdate(t.P()) {
+				triples <- t
+			}
 		}
+		m.rwmu.RUnlock()
 		close(triples)
 	}()
 	return triples, nil
@@ -216,11 +348,17 @@ func (m *memory) TriplesForSubjectAndPredicate(s *node.Node, p *predicate.Predic
 func (m *memory) TriplesForPredicateAndObject(p *predicate.Predicate, o *triple.Object, lo *storage.LookupOptions) (storage.Triples, error) {
 	pGUID := p.GUID()
 	oGUID := o.GUID()
-	triples := make(chan *triple.Triple)
+	poIdx := strings.Join([]string{pGUID, oGUID}, ":")
+	m.rwmu.RLock()
+	triples := make(chan *triple.Triple, len(m.idxPO[poIdx]))
 	go func() {
-		for _, t := range m.idxPO[strings.Join([]string{pGUID, oGUID}, ":")] {
-			triples <- t
+		ckr := newChecker(lo)
+		for _, t := range m.idxPO[poIdx] {
+			if ckr.CheckAndUpdate(t.P()) {
+				triples <- t
+			}
 		}
+		m.rwmu.RUnlock()
 		close(triples)
 	}()
 	return triples, nil
@@ -229,6 +367,8 @@ func (m *memory) TriplesForPredicateAndObject(p *predicate.Predicate, o *triple.
 // Exists checks if the provided triple exist on the store.
 func (m *memory) Exist(t *triple.Triple) (bool, error) {
 	guid := t.GUID()
+	m.rwmu.RLock()
 	_, ok := m.idx[guid]
+	m.rwmu.RUnlock()
 	return ok, nil
 }
