@@ -49,6 +49,30 @@ func (o *Object) GUID() string {
 	return base64.StdEncoding.EncodeToString([]byte(strings.Join([]string{fo, o.String()}, ":")))
 }
 
+// Node attempts to the return the boxed node.
+func (o *Object) Node() (*node.Node, error) {
+	if o.n == nil {
+		return nil, fmt.Errorf("triple.Literal does not box a node in %s", o)
+	}
+	return o.n, nil
+}
+
+// Predicate attempts to the return the boxed predicate.
+func (o *Object) Predicate() (*predicate.Predicate, error) {
+	if o.p == nil {
+		return nil, fmt.Errorf("triple.Literal does not box a predicate in %s", o)
+	}
+	return o.p, nil
+}
+
+// Literal attempts to the return the boxed literal.
+func (o *Object) Literal() (*literal.Literal, error) {
+	if o.l == nil {
+		return nil, fmt.Errorf("triple.Literal does not box a literal in %s", o)
+	}
+	return o.l, nil
+}
+
 // ParseObject attempts to parse and object.
 func ParseObject(s string, b literal.Builder) (*Object, error) {
 	n, err := node.Parse(s)
