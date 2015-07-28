@@ -21,9 +21,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/gbadwolf/badwolf/triple/literal"
-	"github.com/gbadwolf/badwolf/triple/node"
-	"github.com/gbadwolf/badwolf/triple/predicate"
+	"github.com/google/badwolf/triple/literal"
+	"github.com/google/badwolf/triple/node"
+	"github.com/google/badwolf/triple/predicate"
 )
 
 // Object is the box that either contains a literal or a node.

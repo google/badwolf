@@ -17,9 +17,9 @@ package triple
 import (
 	"testing"
 
-	"github.com/gbadwolf/badwolf/triple/literal"
-	"github.com/gbadwolf/badwolf/triple/node"
-	"github.com/gbadwolf/badwolf/triple/predicate"
+	"github.com/google/badwolf/triple/literal"
+	"github.com/google/badwolf/triple/node"
+	"github.com/google/badwolf/triple/predicate"
 )
 
 func getTestData(t *testing.T) (*node.Node, *predicate.Predicate, *Object) {

@@ -18,9 +18,9 @@ package storage
 import (
 	"time"
 
-	"github.com/gbadwolf/badwolf/triple"
-	"github.com/gbadwolf/badwolf/triple/node"
-	"github.com/gbadwolf/badwolf/triple/predicate"
+	"github.com/google/badwolf/triple"
+	"github.com/google/badwolf/triple/node"
+	"github.com/google/badwolf/triple/predicate"
 )
 
 // Triples provides a read only channel of triples.

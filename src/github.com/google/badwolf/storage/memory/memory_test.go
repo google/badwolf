@@ -18,10 +18,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gbadwolf/badwolf/storage"
-	"github.com/gbadwolf/badwolf/triple"
-	"github.com/gbadwolf/badwolf/triple/literal"
-	"github.com/gbadwolf/badwolf/triple/predicate"
+	"github.com/google/badwolf/storage"
+	"github.com/google/badwolf/triple"
+	"github.com/google/badwolf/triple/literal"
+	"github.com/google/badwolf/triple/predicate"
 )
 
 func TestDefaultLookupChecker(t *testing.T) {
