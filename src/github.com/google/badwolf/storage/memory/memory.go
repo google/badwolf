@@ -388,3 +388,15 @@ func (m *memory) Exist(t *triple.Triple) (bool, error) {
 	m.rwmu.RUnlock()
 	return ok, nil
 }
+
+// Triples allows to iterate over all available triples.
+func (m *memory) Triples() storage.Triples {
+	triples := make(chan *triple.Triple, len(m.idx))
+	go func() {
+		for _, t := range m.idx {
+			triples <- t
+		}
+		close(triples)
+	}()
+	return triples
+}

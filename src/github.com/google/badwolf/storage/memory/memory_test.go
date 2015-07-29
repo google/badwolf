@@ -328,3 +328,19 @@ func TestExists(t *testing.T) {
 		}
 	}
 }
+
+func TestTriples(t *testing.T) {
+	ts := getTestTriples(t)
+	g, _ := DefaultStore.NewGraph("test")
+	if err := g.AddTriples(ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+	trpls := g.Triples()
+	cnt := 0
+	for _ = range trpls {
+		cnt++
+	}
+	if cnt != 6 {
+		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed to retrieve 1 predicates, got %d instead", ts[0].P(), ts[0].O(), cnt)
+	}
+}

@@ -174,4 +174,7 @@ type Graph interface {
 
 	// Exists checks if the provided triple exist on the store.
 	Exist(t *triple.Triple) (bool, error)
+
+	// Triples allows to iterate over all available triples.
+	Triples() Triples
 }
