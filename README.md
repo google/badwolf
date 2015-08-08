@@ -8,7 +8,7 @@ BadWolf temporal graph store. Most of the original RDF structs have been
 removed, however BadWolf targets to retain its simplicity and flexibility.
 
 In case you are curious about the name, BadWolf is named after the
-[BadWolf entity](http://tardis.wikia.com/wiki/Bad_Wolf_(entity) ) as appeared
+[BadWolf entity](http://tardis.wikia.com/wiki/Bad_Wolf_(entity) ) as it appeared
 in Dr. Who series after Rose Tyler looked into the Time Vortex itself. The
 BadWolf entity scattered events in time as self encode messages, creating a
 looped ontological paradox. Hence, naming a temporal graph store after the
