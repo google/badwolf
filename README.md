@@ -168,7 +168,7 @@ a temporal triple are shown below.
 ## Triple
 
 The basic unit of storage on BadWolf is the triple. A triple is a three tuple
-*<s p o>* defined as follows:
+```<s p o>``` defined as follows:
 
 * _s_, or subject, is a BadWolf node.
 * _p_, or predicate, is a BadWolf predicate.
