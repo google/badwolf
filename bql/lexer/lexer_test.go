@@ -14,24 +14,38 @@
 
 package lexer
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestEmpty(t *testing.T) {
 	table := []struct {
 		input  string
 		tokens []Token
 	}{
-		{"", []Token{{Type: ItemEOF}}},
+		{"", []Token{
+			{Type: ItemEOF}}},
+		{"{}()", []Token{
+			{Type: ItemLBracket, Text: "{"},
+			{Type: ItemRBracket, Text: "}"},
+			{Type: ItemLPar, Text: "("},
+			{Type: ItemRPar, Text: ")"},
+			{Type: ItemEOF}}},
 	}
 
 	for _, test := range table {
 		_, c := lex(test.input)
 		idx := 0
 		for got := range c {
+			fmt.Printf("%v\n", got)
 			if want := test.tokens[idx]; got != want {
-				t.Errorf("lex(%q) failes to provide %v, got % instead", test.input, got, want)
+				t.Errorf("lex(%q) failed to provide %v, got %v instead", test.input, want, got)
 			}
 			idx++
+			if idx > len(test.tokens) {
+				t.Fatalf("lex(%q) has not finished producing tokens when it should have.", test.input)
+			}
 		}
 	}
 }

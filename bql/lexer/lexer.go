@@ -31,10 +31,40 @@ const (
 	ItemError TokenType = iota
 	// ItemEOF indicates end of input to be scanned
 	ItemEOF
+
+	/*
+		ItemSelect
+		ItemFrom
+		ItemWhere
+	*/
+
+	// ItemBinding respresents a variable binding in BQL.
+	ItemBinding
+
+	/*
+		  ItemNode
+			ItemPredicate
+	*/
+
+	// ItemLBracket representes the left opening bracket token in BQL.
+	ItemLBracket
+	// ItemRBracket representes the right opening bracket token in BQL.
+	ItemRBracket
+	// ItemLPar representes the left opening parentesis token in BQL.
+	ItemLPar
+	// ItemRPar representes the right closing parentesis token in BQL.
+	ItemRPar
 )
 
-// eof represents the end of input rune for the string being processed.
-const eof = rune(-1)
+// Text constants that represent primitive types.
+const (
+	eof          = rune(-1)
+	binding      = "?"
+	leftBracket  = "{"
+	rightBracket = "}"
+	leftPar      = "("
+	rightPar     = ")"
+)
 
 // Token contains the type and text collected around the captured token.
 type Token struct {
@@ -65,9 +95,36 @@ func lex(input string) (*lexer, <-chan Token) {
 	return l, l.tokens
 }
 
+// lexToken represents the initial state for token identification.
 func lexToken(l *lexer) stateFn {
+	for {
+		if state := isSingleSymboToken(l, ItemLBracket, leftBracket); state != nil {
+			return state
+		}
+		if state := isSingleSymboToken(l, ItemRBracket, rightBracket); state != nil {
+			return state
+		}
+		if state := isSingleSymboToken(l, ItemLPar, leftPar); state != nil {
+			return state
+		}
+		if state := isSingleSymboToken(l, ItemRPar, rightPar); state != nil {
+			return state
+		}
+		if l.next() == eof {
+			break
+		}
+	}
 	l.emit(ItemEOF) // Useful to make EOF a token.
 	return nil      // Stop the run loop.
+}
+
+func isSingleSymboToken(l *lexer, tt TokenType, prefix string) stateFn {
+	if strings.HasPrefix(l.input[l.pos:], prefix) {
+		l.next()
+		l.emit(tt)
+		return lexToken // Next state.
+	}
+	return nil
 }
 
 // run lexes the input by executing state functions until the state is nil.
