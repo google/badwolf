@@ -53,10 +53,10 @@ const (
 
 	// ItemNode respresents a BadWolf node in BQL.
 	ItemNode
-
+	// ItemLiteral represent a BadWolf literal in BQL.
+	ItemLiteral
 	/*
-		  ItemPredicate
-			ItemLiteral
+	  ItemPredicate
 	*/
 
 	// ItemLBracket representes the left opening bracket token in BQL.
@@ -82,11 +82,15 @@ const (
 	leftPar      = rune('(')
 	rightPar     = rune(')')
 	dot          = rune('.')
+	colon        = rune(':')
 	semicolon    = rune(';')
 	slash        = rune('/')
 	backSlash    = rune('\\')
 	lt           = rune('<')
 	gt           = rune('>')
+	quote        = rune('"')
+	hat          = rune('^')
+	at           = rune('@')
 	query        = "select"
 	from         = "from"
 	where        = "where"
@@ -94,6 +98,13 @@ const (
 	before       = "before"
 	after        = "after"
 	between      = "between"
+	anchor       = "\"@["
+	literalType  = "\"^^type:"
+	literalBool  = "bool"
+	literalInt   = "int64"
+	literalFloat = "float64"
+	literalText  = "text"
+	literalBlob  = "blob"
 )
 
 // Token contains the type and text collected around the captured token.
@@ -131,15 +142,17 @@ func lexToken(l *lexer) stateFn {
 	for {
 		{
 			r := l.peek()
-			if r == binding {
+			switch r {
+			case binding:
 				l.next()
 				return lexBinding
+			case slash:
+				return lexNode
+			case quote:
+				return lexPredicateOrLiteral
 			}
 			if unicode.IsLetter(r) {
 				return lexKeyword
-			}
-			if r == slash {
-				return lexNode
 			}
 		}
 		if state := isSingleSymboToken(l, ItemLBracket, leftBracket); state != nil {
@@ -160,8 +173,15 @@ func lexToken(l *lexer) stateFn {
 		if state := isSingleSymboToken(l, ItemDot, dot); state != nil {
 			return state
 		}
-		if l.next() == eof {
-			break
+		{
+			r := l.next()
+			if unicode.IsSpace(r) {
+				l.ignore()
+				continue
+			}
+			if l.next() == eof {
+				break
+			}
 		}
 	}
 	l.emit(ItemEOF) // Useful to make EOF a token.
@@ -273,6 +293,66 @@ func lexNode(l *lexer) stateFn {
 	return lexToken
 }
 
+// lexPredicateOrLiteral tries to lex a predicate or a literal out of the input.
+func lexPredicateOrLiteral(l *lexer) stateFn {
+	text := l.input[l.pos:]
+	if strings.Contains(text, anchor) {
+		return lexPredicate
+	}
+	if strings.Contains(text, literalType) {
+		return lexLiteral
+	}
+	l.emitError("failed to parse predicate or literal for opening \" delimiter")
+	return nil
+}
+
+// lexPredicate lexes a predicicate of out of the input.
+func lexPredicate(l *lexer) stateFn {
+	return lexToken
+}
+
+// lexPredicate lexes a literal of out of the input.
+func lexLiteral(l *lexer) stateFn {
+	l.next()
+	for done := false; !done; {
+		switch r := l.next(); r {
+		case backSlash:
+			if nr := l.peek(); nr == quote {
+				l.next()
+				continue
+			}
+		case quote:
+			l.backup()
+			if !l.consume(literalType) {
+				l.emitError("literals require a type definintion; missing ^^type:")
+				return nil
+			}
+			literalT := ""
+			for {
+				r := l.next()
+				if unicode.IsSpace(r) || r == quote || r == eof {
+					break
+				}
+				literalT += string(r)
+			}
+			literalT = strings.ToLower(literalT)
+			switch literalT {
+			case literalBool, literalInt, literalFloat, literalText, literalBlob:
+				l.backup()
+				l.emit(ItemLiteral)
+				return lexToken
+			default:
+				l.emitError("invalid literal type " + literalT)
+				return nil
+			}
+		case eof:
+			l.emitError("literals needs to be properly terminated; missing \" and type")
+			return nil
+		}
+	}
+	return lexToken
+}
+
 // consumeKeyword consume and emits a valid token
 func consumeKeyword(l *lexer, t TokenType) {
 	for {
@@ -340,11 +420,20 @@ func (l *lexer) peek() rune {
 	return r
 }
 
-// accept consumes the next rune if it's from the valid set.
-func (l *lexer) accept(valid string) bool {
-	if strings.IndexRune(valid, l.next()) >= 0 {
+// accept consumes the next rune if it's equal to the one provided.
+func (l *lexer) accept(r rune) bool {
+	if unicode.ToLower(l.next()) == unicode.ToLower(r) {
 		return true
 	}
 	l.backup()
 	return false
+}
+
+func (l *lexer) consume(text string) bool {
+	for _, c := range text {
+		if !l.accept(c) {
+			return false
+		}
+	}
+	return true
 }

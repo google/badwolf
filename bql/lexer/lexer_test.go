@@ -64,6 +64,25 @@ func TestEmpty(t *testing.T) {
 			{Type: ItemError, Text: "/_<foo",
 				ErrorMessage: "node is not properly terminated; missing final > delimiter"},
 			{Type: ItemEOF}}},
+		{"\"true\"^^type:bool \"1\"^^type:int64\"2\"^^type:float64\"t\"^^type:text",
+			[]Token{
+				{Type: ItemLiteral, Text: "\"true\"^^type:bool"},
+				{Type: ItemLiteral, Text: "\"1\"^^type:int64"},
+				{Type: ItemLiteral, Text: "\"2\"^^type:float64"},
+				{Type: ItemLiteral, Text: "\"t\"^^type:text"},
+				{Type: ItemEOF}}},
+		{"\"[1 2 3 4]\"^^type:blob", []Token{
+			{Type: ItemLiteral, Text: "\"[1 2 3 4]\"^^type:blob"},
+			{Type: ItemEOF}}},
+		{"\"1\"^type:int64", []Token{
+			{Type: ItemError,
+				ErrorMessage: "failed to parse predicate or literal for opening \" delimiter"},
+			{Type: ItemEOF}}},
+		{"\"1\"^^type:int32", []Token{
+			{Type: ItemError,
+				Text:         "\"1\"^^type:int32",
+				ErrorMessage: "invalid literal type int32"},
+			{Type: ItemEOF}}},
 	}
 
 	for _, test := range table {
@@ -72,7 +91,7 @@ func TestEmpty(t *testing.T) {
 		for got := range c {
 			fmt.Printf("%v\n", got)
 			if want := test.tokens[idx]; got != want {
-				t.Errorf("lex(%q) failed to provide %v, got %v instead", test.input, want, got)
+				t.Errorf("lex(%q) failed to provide %+v, got %+v instead", test.input, want, got)
 			}
 			idx++
 			if idx > len(test.tokens) {
