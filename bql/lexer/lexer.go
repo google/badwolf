@@ -53,11 +53,10 @@ const (
 
 	// ItemNode respresents a BadWolf node in BQL.
 	ItemNode
-	// ItemLiteral represent a BadWolf literal in BQL.
+	// ItemLiteral represents a BadWolf literal in BQL.
 	ItemLiteral
-	/*
-	  ItemPredicate
-	*/
+	// ItemPredicate represents a BadWolf presicates in BQL.
+	ItemPredicate
 
 	// ItemLBracket representes the left opening bracket token in BQL.
 	ItemLBracket
@@ -75,36 +74,37 @@ const (
 
 // Text constants that represent primitive types.
 const (
-	eof          = rune(-1)
-	binding      = rune('?')
-	leftBracket  = rune('{')
-	rightBracket = rune('}')
-	leftPar      = rune('(')
-	rightPar     = rune(')')
-	dot          = rune('.')
-	colon        = rune(':')
-	semicolon    = rune(';')
-	slash        = rune('/')
-	backSlash    = rune('\\')
-	lt           = rune('<')
-	gt           = rune('>')
-	quote        = rune('"')
-	hat          = rune('^')
-	at           = rune('@')
-	query        = "select"
-	from         = "from"
-	where        = "where"
-	as           = "as"
-	before       = "before"
-	after        = "after"
-	between      = "between"
-	anchor       = "\"@["
-	literalType  = "\"^^type:"
-	literalBool  = "bool"
-	literalInt   = "int64"
-	literalFloat = "float64"
-	literalText  = "text"
-	literalBlob  = "blob"
+	eof            = rune(-1)
+	binding        = rune('?')
+	leftBracket    = rune('{')
+	rightBracket   = rune('}')
+	leftPar        = rune('(')
+	rightPar       = rune(')')
+	rightSquarePar = rune(']')
+	dot            = rune('.')
+	colon          = rune(':')
+	semicolon      = rune(';')
+	slash          = rune('/')
+	backSlash      = rune('\\')
+	lt             = rune('<')
+	gt             = rune('>')
+	quote          = rune('"')
+	hat            = rune('^')
+	at             = rune('@')
+	query          = "select"
+	from           = "from"
+	where          = "where"
+	as             = "as"
+	before         = "before"
+	after          = "after"
+	between        = "between"
+	anchor         = "\"@["
+	literalType    = "\"^^type:"
+	literalBool    = "bool"
+	literalInt     = "int64"
+	literalFloat   = "float64"
+	literalText    = "text"
+	literalBlob    = "blob"
 )
 
 // Token contains the type and text collected around the captured token.
@@ -193,7 +193,7 @@ func isSingleSymboToken(l *lexer, tt TokenType, symbol rune) stateFn {
 	if r := l.peek(); r == symbol {
 		l.next()
 		l.emit(tt)
-		return lexToken // Next state.
+		return lexSpace // Next state.
 	}
 	return nil
 }
@@ -290,7 +290,7 @@ func lexNode(l *lexer) stateFn {
 		return nil
 	}
 	l.emit(ItemNode)
-	return lexToken
+	return lexSpace
 }
 
 // lexPredicateOrLiteral tries to lex a predicate or a literal out of the input.
@@ -308,7 +308,38 @@ func lexPredicateOrLiteral(l *lexer) stateFn {
 
 // lexPredicate lexes a predicicate of out of the input.
 func lexPredicate(l *lexer) stateFn {
-	return lexToken
+	l.next()
+	for done := false; !done; {
+		switch r := l.next(); r {
+		case backSlash:
+			if nr := l.peek(); nr == quote {
+				l.next()
+				continue
+			}
+		case quote:
+			l.backup()
+			if !l.consume(anchor) {
+				l.emitError("predicates require time anchor information; missing \"@[")
+				return nil
+			}
+			var nr rune
+			for {
+				if nr = l.next(); nr == rightSquarePar || nr == eof {
+					break
+				}
+			}
+			if nr != rightSquarePar {
+				l.emitError("predicate's time anchors should end with ] delimiter")
+				return nil
+			}
+			l.emit(ItemPredicate)
+			done = true
+		case eof:
+			l.emitError("literals needs to be properly terminated; missing \" and type")
+			return nil
+		}
+	}
+	return lexSpace
 }
 
 // lexPredicate lexes a literal of out of the input.
@@ -340,7 +371,7 @@ func lexLiteral(l *lexer) stateFn {
 			case literalBool, literalInt, literalFloat, literalText, literalBlob:
 				l.backup()
 				l.emit(ItemLiteral)
-				return lexToken
+				done = true
 			default:
 				l.emitError("invalid literal type " + literalT)
 				return nil
@@ -350,7 +381,7 @@ func lexLiteral(l *lexer) stateFn {
 			return nil
 		}
 	}
-	return lexToken
+	return lexSpace
 }
 
 // consumeKeyword consume and emits a valid token

@@ -83,6 +83,16 @@ func TestEmpty(t *testing.T) {
 				Text:         "\"1\"^^type:int32",
 				ErrorMessage: "invalid literal type int32"},
 			{Type: ItemEOF}}},
+		{"\"p1\"@[] \"p2\"@[\"some data\"]\"p3\"@[\"some data\"]", []Token{
+			{Type: ItemPredicate, Text: "\"p1\"@[]"},
+			{Type: ItemPredicate, Text: "\"p2\"@[\"some data\"]"},
+			{Type: ItemPredicate, Text: "\"p3\"@[\"some data\"]"},
+			{Type: ItemEOF}}},
+		{"\"p1\"@]", []Token{
+			{Type: ItemError,
+				Text:         "",
+				ErrorMessage: "failed to parse predicate or literal for opening \" delimiter"},
+			{Type: ItemEOF}}},
 	}
 
 	for _, test := range table {
