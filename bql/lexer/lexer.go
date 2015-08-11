@@ -19,6 +19,7 @@
 package lexer
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -91,6 +92,7 @@ const (
 	quote          = rune('"')
 	hat            = rune('^')
 	at             = rune('@')
+	newLine        = rune('\n')
 	query          = "select"
 	from           = "from"
 	where          = "where"
@@ -120,11 +122,15 @@ type stateFn func(*lexer) stateFn
 
 // lexer holds the state of the scanner.
 type lexer struct {
-	input  string     // the string being scanned.
-	start  int        // start position of this item.
-	pos    int        // current position in the input.
-	width  int        // width of last rune read from input.
-	tokens chan Token // channel of scanned items.
+	input    string     // the string being scanned.
+	start    int        // start position of this item.
+	pos      int        // current position in the input.
+	width    int        // width of last rune read from input.
+	line     int        // current line number for error reporting.
+	lastLine int        // last line number for error reporting.
+	col      int        // current column number for error reporting.
+	lastCol  int        // last column number for error reporting.
+	tokens   chan Token // channel of scanned items.
 }
 
 // lex creates a new lexer for the givne input
@@ -417,7 +423,7 @@ func (l *lexer) emitError(msg string) {
 	l.tokens <- Token{
 		Type:         ItemError,
 		Text:         l.input[l.start:l.pos],
-		ErrorMessage: msg,
+		ErrorMessage: fmt.Sprintf("[lexer:%d:%d] %s", l.line, l.col, msg),
 	}
 	l.start = l.pos
 }
@@ -430,6 +436,7 @@ func (l *lexer) ignore() {
 // backup steps back one rune. Can be called only once per call of next.
 func (l *lexer) backup() {
 	l.pos -= l.width
+	l.col, l.line = l.lastCol, l.lastLine
 }
 
 // next returns the next rune in the input.
@@ -441,6 +448,12 @@ func (l *lexer) next() rune {
 	var r rune
 	r, l.width = utf8.DecodeRuneInString(l.input[l.pos:])
 	l.pos += l.width
+	l.lastCol, l.lastLine = l.col, l.line
+	l.col++
+	if r == newLine {
+		l.line++
+		l.col = 0
+	}
 	return r
 }
 

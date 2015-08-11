@@ -14,10 +14,7 @@
 
 package lexer
 
-import (
-	"fmt"
-	"testing"
-)
+import "testing"
 
 func TestEmpty(t *testing.T) {
 	table := []struct {
@@ -54,15 +51,15 @@ func TestEmpty(t *testing.T) {
 		{"/_<foo>/_\\<bar>", []Token{
 			{Type: ItemNode, Text: "/_<foo>"},
 			{Type: ItemError, Text: "/_\\<bar>",
-				ErrorMessage: "node should start ID section with a < delimiter"},
+				ErrorMessage: "[lexer:0:15] node should start ID section with a < delimiter"},
 			{Type: ItemEOF}}},
 		{"/_foo>", []Token{
 			{Type: ItemError, Text: "/_foo>",
-				ErrorMessage: "node should start ID section with a < delimiter"},
+				ErrorMessage: "[lexer:0:6] node should start ID section with a < delimiter"},
 			{Type: ItemEOF}}},
 		{"/_<foo", []Token{
 			{Type: ItemError, Text: "/_<foo",
-				ErrorMessage: "node is not properly terminated; missing final > delimiter"},
+				ErrorMessage: "[lexer:0:6] node is not properly terminated; missing final > delimiter"},
 			{Type: ItemEOF}}},
 		{"\"true\"^^type:bool \"1\"^^type:int64\"2\"^^type:float64\"t\"^^type:text",
 			[]Token{
@@ -76,12 +73,12 @@ func TestEmpty(t *testing.T) {
 			{Type: ItemEOF}}},
 		{"\"1\"^type:int64", []Token{
 			{Type: ItemError,
-				ErrorMessage: "failed to parse predicate or literal for opening \" delimiter"},
+				ErrorMessage: "[lexer:0:0] failed to parse predicate or literal for opening \" delimiter"},
 			{Type: ItemEOF}}},
 		{"\"1\"^^type:int32", []Token{
 			{Type: ItemError,
 				Text:         "\"1\"^^type:int32",
-				ErrorMessage: "invalid literal type int32"},
+				ErrorMessage: "[lexer:0:15] invalid literal type int32"},
 			{Type: ItemEOF}}},
 		{"\"p1\"@[] \"p2\"@[\"some data\"]\"p3\"@[\"some data\"]", []Token{
 			{Type: ItemPredicate, Text: "\"p1\"@[]"},
@@ -91,7 +88,7 @@ func TestEmpty(t *testing.T) {
 		{"\"p1\"@]", []Token{
 			{Type: ItemError,
 				Text:         "",
-				ErrorMessage: "failed to parse predicate or literal for opening \" delimiter"},
+				ErrorMessage: "[lexer:0:0] failed to parse predicate or literal for opening \" delimiter"},
 			{Type: ItemEOF}}},
 	}
 
@@ -99,7 +96,6 @@ func TestEmpty(t *testing.T) {
 		_, c := lex(test.input)
 		idx := 0
 		for got := range c {
-			fmt.Printf("%v\n", got)
 			if want := test.tokens[idx]; got != want {
 				t.Errorf("lex(%q) failed to provide %+v, got %+v instead", test.input, want, got)
 			}
