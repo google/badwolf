@@ -30,14 +30,23 @@ type TokenType int
 const (
 	// ItemError contains information about an error triggered while scanning.
 	ItemError TokenType = iota
-	// ItemEOF indicates end of input to be scanned
+	// ItemEOF indicates end of input to be scanned in BQL.
 	ItemEOF
 
-	/*
-		ItemSelect
-		ItemFrom
-		ItemWhere
-	*/
+	// ItemQuery represents the select keyword in BQL.
+	ItemQuery
+	// ItemFrom represents the from keyword in BQL.
+	ItemFrom
+	// ItemWhere represents the where keyword in BQL.
+	ItemWhere
+	// ItemAs represents the as keyword in BQL.
+	ItemAs
+	// ItemBefore represents the before keyword in BQL.
+	ItemBefore
+	// ItemAfter represents the after keyword in BQL.
+	ItemAfter
+	// ItemBetween represents the betwen keyword in BQL.
+	ItemBetween
 
 	// ItemBinding respresents a variable binding in BQL.
 	ItemBinding
@@ -55,7 +64,9 @@ const (
 	ItemLPar
 	// ItemRPar representes the right closing parentesis token in BQL.
 	ItemRPar
-	// ItemSemicolon represents the final statement semicolon in BQL
+	// ItemDot represents the graph clause separator . in BQL.
+	ItemDot
+	// ItemSemicolon represents the final statement semicolon in BQL.
 	ItemSemicolon
 )
 
@@ -67,13 +78,22 @@ const (
 	rightBracket = rune('}')
 	leftPar      = rune('(')
 	rightPar     = rune(')')
+	dot          = rune('.')
 	semicolon    = rune(';')
+	query        = "select"
+	from         = "from"
+	where        = "where"
+	as           = "as"
+	before       = "before"
+	after        = "after"
+	between      = "between"
 )
 
 // Token contains the type and text collected around the captured token.
 type Token struct {
-	Type TokenType
-	Text string
+	Type         TokenType
+	Text         string
+	ErrorMessage string
 }
 
 // stateFn represents the state of the scanner  as a function that returns
@@ -102,9 +122,15 @@ func lex(input string) (*lexer, <-chan Token) {
 // lexToken represents the initial state for token identification.
 func lexToken(l *lexer) stateFn {
 	for {
-		if r := l.peek(); r == binding {
-			l.next()
-			return lexBinding
+		{
+			r := l.peek()
+			if r == binding {
+				l.next()
+				return lexBinding
+			}
+			if unicode.IsLetter(r) {
+				return lexKeyword
+			}
 		}
 		if state := isSingleSymboToken(l, ItemLBracket, leftBracket); state != nil {
 			return state
@@ -119,6 +145,9 @@ func lexToken(l *lexer) stateFn {
 			return state
 		}
 		if state := isSingleSymboToken(l, ItemSemicolon, semicolon); state != nil {
+			return state
+		}
+		if state := isSingleSymboToken(l, ItemDot, dot); state != nil {
 			return state
 		}
 		if l.next() == eof {
@@ -163,6 +192,62 @@ func lexSpace(l *lexer) stateFn {
 	return lexToken
 }
 
+// lexKeywork lexes the BQL keywords.
+func lexKeyword(l *lexer) stateFn {
+	input := l.input[l.pos:]
+	if idx := strings.IndexFunc(input, unicode.IsSpace); idx >= 0 {
+		input = input[:idx]
+	}
+	if strings.EqualFold(input, query) {
+		consumeKeyword(l, ItemQuery)
+		return lexSpace
+	}
+	if strings.EqualFold(input, from) {
+		consumeKeyword(l, ItemFrom)
+		return lexSpace
+	}
+	if strings.EqualFold(input, where) {
+		consumeKeyword(l, ItemWhere)
+		return lexSpace
+	}
+	if strings.EqualFold(input, as) {
+		consumeKeyword(l, ItemAs)
+		return lexSpace
+	}
+	if strings.EqualFold(input, before) {
+		consumeKeyword(l, ItemBefore)
+		return lexSpace
+	}
+	if strings.EqualFold(input, after) {
+		consumeKeyword(l, ItemAfter)
+		return lexSpace
+	}
+	if strings.EqualFold(input, between) {
+		consumeKeyword(l, ItemBetween)
+		return lexSpace
+	}
+	for {
+		r := l.next()
+		if unicode.IsSpace(r) || r == eof {
+			l.backup()
+			break
+		}
+	}
+	l.emitError("Found unknown keyword")
+	return lexSpace
+}
+
+// consumeKeyword consume and emits a valid token
+func consumeKeyword(l *lexer, t TokenType) {
+	for {
+		if r := l.next(); unicode.IsSpace(r) || r == eof {
+			l.backup()
+			l.emit(t)
+			break
+		}
+	}
+}
+
 // run lexes the input by executing state functions until the state is nil.
 func (l *lexer) run() {
 	for state := lexToken(l); state != nil; {
@@ -173,7 +258,20 @@ func (l *lexer) run() {
 
 // emit passes an item back to the client.
 func (l *lexer) emit(t TokenType) {
-	l.tokens <- Token{t, l.input[l.start:l.pos]}
+	l.tokens <- Token{
+		Type: t,
+		Text: l.input[l.start:l.pos],
+	}
+	l.start = l.pos
+}
+
+// emitError passes and error to the client with proper error messaging.
+func (l *lexer) emitError(msg string) {
+	l.tokens <- Token{
+		Type:         ItemError,
+		Text:         l.input[l.start:l.pos],
+		ErrorMessage: msg,
+	}
 	l.start = l.pos
 }
 

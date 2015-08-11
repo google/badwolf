@@ -26,16 +26,26 @@ func TestEmpty(t *testing.T) {
 	}{
 		{"", []Token{
 			{Type: ItemEOF}}},
-		{"{}();", []Token{
+		{"{}().;", []Token{
 			{Type: ItemLBracket, Text: "{"},
 			{Type: ItemRBracket, Text: "}"},
 			{Type: ItemLPar, Text: "("},
 			{Type: ItemRPar, Text: ")"},
+			{Type: ItemDot, Text: "."},
 			{Type: ItemSemicolon, Text: ";"},
 			{Type: ItemEOF}}},
 		{"?foo ?bar", []Token{
 			{Type: ItemBinding, Text: "?foo"},
 			{Type: ItemBinding, Text: "?bar"},
+			{Type: ItemEOF}}},
+		{"SeLeCt FrOm WhErE As BeFoRe AfTeR BeTwEeN", []Token{
+			{Type: ItemQuery, Text: "SeLeCt"},
+			{Type: ItemFrom, Text: "FrOm"},
+			{Type: ItemWhere, Text: "WhErE"},
+			{Type: ItemAs, Text: "As"},
+			{Type: ItemBefore, Text: "BeFoRe"},
+			{Type: ItemAfter, Text: "AfTeR"},
+			{Type: ItemBetween, Text: "BeTwEeN"},
 			{Type: ItemEOF}}},
 	}
 
