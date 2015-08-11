@@ -20,6 +20,7 @@ package lexer
 
 import (
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -54,16 +55,19 @@ const (
 	ItemLPar
 	// ItemRPar representes the right closing parentesis token in BQL.
 	ItemRPar
+	// ItemSemicolon represents the final statement semicolon in BQL
+	ItemSemicolon
 )
 
 // Text constants that represent primitive types.
 const (
 	eof          = rune(-1)
-	binding      = "?"
-	leftBracket  = "{"
-	rightBracket = "}"
-	leftPar      = "("
-	rightPar     = ")"
+	binding      = rune('?')
+	leftBracket  = rune('{')
+	rightBracket = rune('}')
+	leftPar      = rune('(')
+	rightPar     = rune(')')
+	semicolon    = rune(';')
 )
 
 // Token contains the type and text collected around the captured token.
@@ -98,6 +102,10 @@ func lex(input string) (*lexer, <-chan Token) {
 // lexToken represents the initial state for token identification.
 func lexToken(l *lexer) stateFn {
 	for {
+		if r := l.peek(); r == binding {
+			l.next()
+			return lexBinding
+		}
 		if state := isSingleSymboToken(l, ItemLBracket, leftBracket); state != nil {
 			return state
 		}
@@ -110,6 +118,9 @@ func lexToken(l *lexer) stateFn {
 		if state := isSingleSymboToken(l, ItemRPar, rightPar); state != nil {
 			return state
 		}
+		if state := isSingleSymboToken(l, ItemSemicolon, semicolon); state != nil {
+			return state
+		}
 		if l.next() == eof {
 			break
 		}
@@ -118,13 +129,38 @@ func lexToken(l *lexer) stateFn {
 	return nil      // Stop the run loop.
 }
 
-func isSingleSymboToken(l *lexer, tt TokenType, prefix string) stateFn {
-	if strings.HasPrefix(l.input[l.pos:], prefix) {
+// isSingleSymboToken check if a single char should be lexed.
+func isSingleSymboToken(l *lexer, tt TokenType, symbol rune) stateFn {
+	if r := l.peek(); r == symbol {
 		l.next()
 		l.emit(tt)
 		return lexToken // Next state.
 	}
 	return nil
+}
+
+// lexBinding lexes a binding variable.
+func lexBinding(l *lexer) stateFn {
+	for {
+		if r := l.next(); unicode.IsSpace(r) || r == eof {
+			l.backup()
+			l.emit(ItemBinding)
+			break
+		}
+	}
+	return lexSpace
+}
+
+// lexSpace consumes spaces without emiting any token.
+func lexSpace(l *lexer) stateFn {
+	for {
+		if r := l.next(); !unicode.IsSpace(r) || r == eof {
+			break
+		}
+	}
+	l.backup()
+	l.ignore()
+	return lexToken
 }
 
 // run lexes the input by executing state functions until the state is nil.

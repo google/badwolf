@@ -26,11 +26,16 @@ func TestEmpty(t *testing.T) {
 	}{
 		{"", []Token{
 			{Type: ItemEOF}}},
-		{"{}()", []Token{
+		{"{}();", []Token{
 			{Type: ItemLBracket, Text: "{"},
 			{Type: ItemRBracket, Text: "}"},
 			{Type: ItemLPar, Text: "("},
 			{Type: ItemRPar, Text: ")"},
+			{Type: ItemSemicolon, Text: ";"},
+			{Type: ItemEOF}}},
+		{"?foo ?bar", []Token{
+			{Type: ItemBinding, Text: "?foo"},
+			{Type: ItemBinding, Text: "?bar"},
 			{Type: ItemEOF}}},
 	}
 
