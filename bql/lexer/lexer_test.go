@@ -47,6 +47,23 @@ func TestEmpty(t *testing.T) {
 			{Type: ItemAfter, Text: "AfTeR"},
 			{Type: ItemBetween, Text: "BeTwEeN"},
 			{Type: ItemEOF}}},
+		{"/_<foo>/_<bar>", []Token{
+			{Type: ItemNode, Text: "/_<foo>"},
+			{Type: ItemNode, Text: "/_<bar>"},
+			{Type: ItemEOF}}},
+		{"/_<foo>/_\\<bar>", []Token{
+			{Type: ItemNode, Text: "/_<foo>"},
+			{Type: ItemError, Text: "/_\\<bar>",
+				ErrorMessage: "node should start ID section with a < delimiter"},
+			{Type: ItemEOF}}},
+		{"/_foo>", []Token{
+			{Type: ItemError, Text: "/_foo>",
+				ErrorMessage: "node should start ID section with a < delimiter"},
+			{Type: ItemEOF}}},
+		{"/_<foo", []Token{
+			{Type: ItemError, Text: "/_<foo",
+				ErrorMessage: "node is not properly terminated; missing final > delimiter"},
+			{Type: ItemEOF}}},
 	}
 
 	for _, test := range table {

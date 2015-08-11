@@ -51,9 +51,12 @@ const (
 	// ItemBinding respresents a variable binding in BQL.
 	ItemBinding
 
+	// ItemNode respresents a BadWolf node in BQL.
+	ItemNode
+
 	/*
-		  ItemNode
-			ItemPredicate
+		  ItemPredicate
+			ItemLiteral
 	*/
 
 	// ItemLBracket representes the left opening bracket token in BQL.
@@ -80,6 +83,10 @@ const (
 	rightPar     = rune(')')
 	dot          = rune('.')
 	semicolon    = rune(';')
+	slash        = rune('/')
+	backSlash    = rune('\\')
+	lt           = rune('<')
+	gt           = rune('>')
 	query        = "select"
 	from         = "from"
 	where        = "where"
@@ -130,6 +137,9 @@ func lexToken(l *lexer) stateFn {
 			}
 			if unicode.IsLetter(r) {
 				return lexKeyword
+			}
+			if r == slash {
+				return lexNode
 			}
 		}
 		if state := isSingleSymboToken(l, ItemLBracket, leftBracket); state != nil {
@@ -233,8 +243,34 @@ func lexKeyword(l *lexer) stateFn {
 			break
 		}
 	}
-	l.emitError("Found unknown keyword")
-	return lexSpace
+	l.emitError("found unknown keyword")
+	return nil
+}
+
+func lexNode(l *lexer) stateFn {
+	ltID := false
+	for done := false; !done; {
+		switch r := l.next(); r {
+		case backSlash:
+			if nr := l.peek(); nr == lt {
+				l.next()
+				continue
+			}
+		case eof:
+			l.emitError("node is not properly terminated; missing final > delimiter")
+			return nil
+		case lt:
+			ltID = true
+		case gt:
+			done = true
+		}
+	}
+	if !ltID {
+		l.emitError("node should start ID section with a < delimiter")
+		return nil
+	}
+	l.emit(ItemNode)
+	return lexToken
 }
 
 // consumeKeyword consume and emits a valid token

@@ -119,7 +119,7 @@ of pretty printed literals are shown below.
   "0"^^type:float64
   "1"^^type:float64
   ""^^type:text
-  "some random string"^^type:text`
+  "some random string"^^type:text
   "[]"^^type:blob
   "[115 111 109 101 32 114 97 110 100 111 109 32 98 121 116 101 115]"^^type:blob
 ```
