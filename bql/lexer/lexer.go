@@ -73,6 +73,51 @@ const (
 	ItemSemicolon
 )
 
+func (tt TokenType) String() string {
+	switch tt {
+	case ItemError:
+		return "ERROR"
+	case ItemEOF:
+		return "EOF"
+	case ItemQuery:
+		return "QUERY"
+	case ItemFrom:
+		return "FROM"
+	case ItemWhere:
+		return "WHERE"
+	case ItemAs:
+		return "AS"
+	case ItemBefore:
+		return "BEFORE"
+	case ItemAfter:
+		return "AFTER"
+	case ItemBetween:
+		return "BETWEEN"
+	case ItemBinding:
+		return "BINDING"
+	case ItemNode:
+		return "NODE"
+	case ItemLiteral:
+		return "LITERAL"
+	case ItemPredicate:
+		return "PREDICATE"
+	case ItemLBracket:
+		return "LEFT_BRACKET"
+	case ItemRBracket:
+		return "RIGHT_BRACKET"
+	case ItemLPar:
+		return "LEFT_PARENT"
+	case ItemRPar:
+		return "RIGHT_PARENT"
+	case ItemDot:
+		return "DOT"
+	case ItemSemicolon:
+		return "SEMICOLON"
+	default:
+		return "UNKNOWN"
+	}
+}
+
 // Text constants that represent primitive types.
 const (
 	eof            = rune(-1)
@@ -207,7 +252,7 @@ func isSingleSymboToken(l *lexer, tt TokenType, symbol rune) stateFn {
 // lexBinding lexes a binding variable.
 func lexBinding(l *lexer) stateFn {
 	for {
-		if r := l.next(); unicode.IsSpace(r) || r == eof {
+		if r := l.next(); unicode.IsSpace(r) || r == rightBracket || r == binding || r == eof {
 			l.backup()
 			l.emit(ItemBinding)
 			break

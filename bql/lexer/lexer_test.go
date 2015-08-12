@@ -16,7 +16,7 @@ package lexer
 
 import "testing"
 
-func TestEmpty(t *testing.T) {
+func TestIndividualTokens(t *testing.T) {
 	table := []struct {
 		input  string
 		tokens []Token
@@ -96,13 +96,48 @@ func TestEmpty(t *testing.T) {
 		_, c := lex(test.input)
 		idx := 0
 		for got := range c {
+			if idx >= len(test.tokens) {
+				t.Fatalf("lex(%q) has not finished producing tokens when it should have.", test.input)
+			}
 			if want := test.tokens[idx]; got != want {
 				t.Errorf("lex(%q) failed to provide %+v, got %+v instead", test.input, want, got)
 			}
 			idx++
-			if idx > len(test.tokens) {
-				t.Fatalf("lex(%q) has not finished producing tokens when it should have.", test.input)
-			}
 		}
 	}
+}
+
+func TestValidTokenQuery(t *testing.T) {
+	table := []struct {
+		input  string
+		tokens []TokenType
+	}{
+		{"select ?s?p?o from ?foo where {?s?p?o};", []TokenType{
+			ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
+			ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding,
+			ItemRBracket, ItemSemicolon, ItemEOF}},
+		{`select ?s
+		    from ?foo
+		    where {
+				  ?s "bar"@["123"] /_<foo> .
+					?s "foo"@[] "1"^^type:int64
+				};`, []TokenType{
+			ItemQuery, ItemBinding, ItemFrom, ItemBinding, ItemWhere, ItemLBracket,
+			ItemBinding, ItemPredicate, ItemNode, ItemDot, ItemBinding, ItemPredicate,
+			ItemLiteral, ItemRBracket, ItemSemicolon, ItemEOF}},
+	}
+	for _, test := range table {
+		_, c := lex(test.input)
+		idx := 0
+		for got := range c {
+			if idx >= len(test.tokens) {
+				t.Fatalf("lex(%q) has not finished producing tokens when it should have.", test.input)
+			}
+			if want := test.tokens[idx]; got.Type != want {
+				t.Errorf("lex(%q) failed to provide token %s; got %s instead", test.input, got, want)
+			}
+			idx++
+		}
+	}
+
 }
