@@ -48,6 +48,24 @@ const (
 	ItemAfter
 	// ItemBetween represents the betwen keyword in BQL.
 	ItemBetween
+	// ItemCount represents the count funtion in BQL.
+	ItemCount
+	// ItemSum represents the sum function in BQL.
+	ItemSum
+	// ItemGroup represents the group keyword in group by clause in BQL.
+	ItemGroup
+	// ItemBy represents the by keyword in group by clause in BQL.
+	ItemBy
+	// ItemOrder represent the order keyword in group by clause in BQL.
+	ItemOrder
+	// ItemHaving represents the having clause keyword clause in BQL.
+	ItemHaving
+	// ItemAsc represents asc keywork on order by clause in BQL.
+	ItemAsc
+	// ItemDesc represents desc keywork on order by clause in BQL
+	ItemDesc
+	// ItemLimit represetnts the limit clause in BQL.
+	ItemLimit
 
 	// ItemBinding respresents a variable binding in BQL.
 	ItemBinding
@@ -71,6 +89,20 @@ const (
 	ItemDot
 	// ItemSemicolon represents the final statement semicolon in BQL.
 	ItemSemicolon
+	// ItemComma respresnts the graph join operator in BQL.
+	ItemComma
+	// ItemLT represents < in BQL.
+	ItemLT
+	// ItemGT represents > in BQL.
+	ItemGT
+	// ItemEQ represents = in BQL.
+	ItemEQ
+	// ItemNot represents not in BQL.
+	ItemNot
+	// ItemAnd represents and in BQL.
+	ItemAnd
+	// ItemOr represents or in BQL.
+	ItemOr
 )
 
 func (tt TokenType) String() string {
@@ -85,6 +117,24 @@ func (tt TokenType) String() string {
 		return "FROM"
 	case ItemWhere:
 		return "WHERE"
+	case ItemCount:
+		return "COUNT"
+	case ItemSum:
+		return "SUM"
+	case ItemGroup:
+		return "GROUP"
+	case ItemBy:
+		return "BY"
+	case ItemHaving:
+		return "HAVING"
+	case ItemOrder:
+		return "ORDER"
+	case ItemAsc:
+		return "ASC"
+	case ItemDesc:
+		return "DESC"
+	case ItemLimit:
+		return "LIMIT"
 	case ItemAs:
 		return "AS"
 	case ItemBefore:
@@ -113,6 +163,20 @@ func (tt TokenType) String() string {
 		return "DOT"
 	case ItemSemicolon:
 		return "SEMICOLON"
+	case ItemComma:
+		return "COMMA"
+	case ItemLT:
+		return "LT"
+	case ItemGT:
+		return "GT"
+	case ItemEQ:
+		return "EQ"
+	case ItemNot:
+		return "NOT"
+	case ItemAnd:
+		return "AND"
+	case ItemOr:
+		return "OR"
 	default:
 		return "UNKNOWN"
 	}
@@ -130,10 +194,12 @@ const (
 	dot            = rune('.')
 	colon          = rune(':')
 	semicolon      = rune(';')
+	comma          = rune(',')
 	slash          = rune('/')
 	backSlash      = rune('\\')
 	lt             = rune('<')
 	gt             = rune('>')
+	eq             = rune('=')
 	quote          = rune('"')
 	hat            = rune('^')
 	at             = rune('@')
@@ -145,6 +211,18 @@ const (
 	before         = "before"
 	after          = "after"
 	between        = "between"
+	count          = "count"
+	sum            = "sum"
+	group          = "group"
+	having         = "having"
+	by             = "by"
+	order          = "order"
+	asc            = "asc"
+	desc           = "desc"
+	limit          = "limit"
+	not            = "not"
+	and            = "and"
+	or             = "or"
 	anchor         = "\"@["
 	literalType    = "\"^^type:"
 	literalBool    = "bool"
@@ -224,6 +302,18 @@ func lexToken(l *lexer) stateFn {
 		if state := isSingleSymboToken(l, ItemDot, dot); state != nil {
 			return state
 		}
+		if state := isSingleSymboToken(l, ItemComma, comma); state != nil {
+			return state
+		}
+		if state := isSingleSymboToken(l, ItemLT, lt); state != nil {
+			return state
+		}
+		if state := isSingleSymboToken(l, ItemGT, gt); state != nil {
+			return state
+		}
+		if state := isSingleSymboToken(l, ItemEQ, eq); state != nil {
+			return state
+		}
 		{
 			r := l.next()
 			if unicode.IsSpace(r) {
@@ -252,7 +342,7 @@ func isSingleSymboToken(l *lexer, tt TokenType, symbol rune) stateFn {
 // lexBinding lexes a binding variable.
 func lexBinding(l *lexer) stateFn {
 	for {
-		if r := l.next(); unicode.IsSpace(r) || r == rightBracket || r == binding || r == eof {
+		if r := l.next(); !unicode.IsLetter(r) || r == eof {
 			l.backup()
 			l.emit(ItemBinding)
 			break
@@ -276,7 +366,10 @@ func lexSpace(l *lexer) stateFn {
 // lexKeywork lexes the BQL keywords.
 func lexKeyword(l *lexer) stateFn {
 	input := l.input[l.pos:]
-	if idx := strings.IndexFunc(input, unicode.IsSpace); idx >= 0 {
+	f := func(r rune) bool {
+		return !unicode.IsLetter(r)
+	}
+	if idx := strings.IndexFunc(input, f); idx >= 0 {
 		input = input[:idx]
 	}
 	if strings.EqualFold(input, query) {
@@ -305,6 +398,54 @@ func lexKeyword(l *lexer) stateFn {
 	}
 	if strings.EqualFold(input, between) {
 		consumeKeyword(l, ItemBetween)
+		return lexSpace
+	}
+	if strings.EqualFold(input, count) {
+		consumeKeyword(l, ItemCount)
+		return lexSpace
+	}
+	if strings.EqualFold(input, sum) {
+		consumeKeyword(l, ItemSum)
+		return lexSpace
+	}
+	if strings.EqualFold(input, group) {
+		consumeKeyword(l, ItemGroup)
+		return lexSpace
+	}
+	if strings.EqualFold(input, by) {
+		consumeKeyword(l, ItemBy)
+		return lexSpace
+	}
+	if strings.EqualFold(input, order) {
+		consumeKeyword(l, ItemOrder)
+		return lexSpace
+	}
+	if strings.EqualFold(input, asc) {
+		consumeKeyword(l, ItemAsc)
+		return lexSpace
+	}
+	if strings.EqualFold(input, desc) {
+		consumeKeyword(l, ItemDesc)
+		return lexSpace
+	}
+	if strings.EqualFold(input, having) {
+		consumeKeyword(l, ItemHaving)
+		return lexSpace
+	}
+	if strings.EqualFold(input, limit) {
+		consumeKeyword(l, ItemLimit)
+		return lexSpace
+	}
+	if strings.EqualFold(input, not) {
+		consumeKeyword(l, ItemNot)
+		return lexSpace
+	}
+	if strings.EqualFold(input, and) {
+		consumeKeyword(l, ItemAnd)
+		return lexSpace
+	}
+	if strings.EqualFold(input, or) {
+		consumeKeyword(l, ItemOr)
 		return lexSpace
 	}
 	for {
@@ -412,7 +553,7 @@ func lexLiteral(l *lexer) stateFn {
 			literalT := ""
 			for {
 				r := l.next()
-				if unicode.IsSpace(r) || r == quote || r == eof {
+				if !(unicode.IsLetter(r) || unicode.IsDigit(r)) || r == eof {
 					break
 				}
 				literalT += string(r)
@@ -438,7 +579,7 @@ func lexLiteral(l *lexer) stateFn {
 // consumeKeyword consume and emits a valid token
 func consumeKeyword(l *lexer, t TokenType) {
 	for {
-		if r := l.next(); unicode.IsSpace(r) || r == eof {
+		if r := l.next(); !unicode.IsLetter(r) || r == eof {
 			l.backup()
 			l.emit(t)
 			break

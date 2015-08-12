@@ -23,27 +23,45 @@ func TestIndividualTokens(t *testing.T) {
 	}{
 		{"", []Token{
 			{Type: ItemEOF}}},
-		{"{}().;", []Token{
+		{"{}().;,<>=", []Token{
 			{Type: ItemLBracket, Text: "{"},
 			{Type: ItemRBracket, Text: "}"},
 			{Type: ItemLPar, Text: "("},
 			{Type: ItemRPar, Text: ")"},
 			{Type: ItemDot, Text: "."},
 			{Type: ItemSemicolon, Text: ";"},
+			{Type: ItemComma, Text: ","},
+			{Type: ItemLT, Text: "<"},
+			{Type: ItemGT, Text: ">"},
+			{Type: ItemEQ, Text: "="},
 			{Type: ItemEOF}}},
 		{"?foo ?bar", []Token{
 			{Type: ItemBinding, Text: "?foo"},
 			{Type: ItemBinding, Text: "?bar"},
 			{Type: ItemEOF}}},
-		{"SeLeCt FrOm WhErE As BeFoRe AfTeR BeTwEeN", []Token{
-			{Type: ItemQuery, Text: "SeLeCt"},
-			{Type: ItemFrom, Text: "FrOm"},
-			{Type: ItemWhere, Text: "WhErE"},
-			{Type: ItemAs, Text: "As"},
-			{Type: ItemBefore, Text: "BeFoRe"},
-			{Type: ItemAfter, Text: "AfTeR"},
-			{Type: ItemBetween, Text: "BeTwEeN"},
-			{Type: ItemEOF}}},
+		{`SeLeCt FrOm WhErE As BeFoRe AfTeR BeTwEeN CoUnT SuM GrOuP bY HaViNg LiMiT
+		  OrDeR AsC DeSc NoT AnD Or`,
+			[]Token{
+				{Type: ItemQuery, Text: "SeLeCt"},
+				{Type: ItemFrom, Text: "FrOm"},
+				{Type: ItemWhere, Text: "WhErE"},
+				{Type: ItemAs, Text: "As"},
+				{Type: ItemBefore, Text: "BeFoRe"},
+				{Type: ItemAfter, Text: "AfTeR"},
+				{Type: ItemBetween, Text: "BeTwEeN"},
+				{Type: ItemCount, Text: "CoUnT"},
+				{Type: ItemSum, Text: "SuM"},
+				{Type: ItemGroup, Text: "GrOuP"},
+				{Type: ItemBy, Text: "bY"},
+				{Type: ItemHaving, Text: "HaViNg"},
+				{Type: ItemLimit, Text: "LiMiT"},
+				{Type: ItemOrder, Text: "OrDeR"},
+				{Type: ItemAsc, Text: "AsC"},
+				{Type: ItemDesc, Text: "DeSc"},
+				{Type: ItemNot, Text: "NoT"},
+				{Type: ItemAnd, Text: "AnD"},
+				{Type: ItemOr, Text: "Or"},
+				{Type: ItemEOF}}},
 		{"/_<foo>/_<bar>", []Token{
 			{Type: ItemNode, Text: "/_<foo>"},
 			{Type: ItemNode, Text: "/_<bar>"},
@@ -125,6 +143,24 @@ func TestValidTokenQuery(t *testing.T) {
 			ItemQuery, ItemBinding, ItemFrom, ItemBinding, ItemWhere, ItemLBracket,
 			ItemBinding, ItemPredicate, ItemNode, ItemDot, ItemBinding, ItemPredicate,
 			ItemLiteral, ItemRBracket, ItemSemicolon, ItemEOF}},
+		{`select count(?foo) as ?foo
+		    from ?foo
+		    where {
+				  ?s "bar"@["123"] /_<foo> .
+					?s "foo"@[] "1"^^type:int64
+				}
+				group by ?foo, ?foo
+				order by ?foo asc desc
+				having ?foo < ?foo and not ?foo or ?foo = ?foo
+				limit "1"^^type:int64;`, []TokenType{
+			ItemQuery, ItemCount, ItemLPar, ItemBinding, ItemRPar, ItemAs,
+			ItemBinding, ItemFrom, ItemBinding, ItemWhere, ItemLBracket, ItemBinding,
+			ItemPredicate, ItemNode, ItemDot, ItemBinding, ItemPredicate, ItemLiteral,
+			ItemRBracket, ItemGroup, ItemBy, ItemBinding, ItemComma, ItemBinding,
+			ItemOrder, ItemBy, ItemBinding, ItemAsc, ItemDesc, ItemHaving,
+			ItemBinding, ItemLT, ItemBinding, ItemAnd, ItemNot, ItemBinding, ItemOr,
+			ItemBinding, ItemEQ, ItemBinding, ItemLimit, ItemLiteral, ItemSemicolon,
+			ItemEOF}},
 	}
 	for _, test := range table {
 		_, c := lex(test.input)
