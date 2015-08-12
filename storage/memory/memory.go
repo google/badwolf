@@ -17,6 +17,7 @@
 package memory
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 
@@ -27,9 +28,23 @@ import (
 )
 
 // DefaultMemoryStore provides a volatile in memory store.
-var DefaultStore storage.Store = &memoryStore{}
+var DefaultStore storage.Store
 
-type memoryStore struct{}
+func init() {
+	DefaultStore = NewStore()
+}
+
+type memoryStore struct {
+	graphs map[string]storage.Graph
+	rwmu   sync.RWMutex
+}
+
+// NewStore creates a new memory store.
+func NewStore() storage.Store {
+	return &memoryStore{
+		graphs: make(map[string]storage.Graph),
+	}
+}
 
 // Name returns the ID of the backend being used.
 func (s *memoryStore) Name() string {
@@ -43,8 +58,7 @@ func (s *memoryStore) Version() string {
 
 // NewGraph creates a new graph.
 func (s *memoryStore) NewGraph(id string) (storage.Graph, error) {
-	// TODO(xllora): Implement graph creation.
-	return &memory{
+	g := &memory{
 		id:    id,
 		idx:   make(map[string]*triple.Triple),
 		idxS:  make(map[string]map[string]*triple.Triple),
@@ -53,7 +67,38 @@ func (s *memoryStore) NewGraph(id string) (storage.Graph, error) {
 		idxSP: make(map[string]map[string]*triple.Triple),
 		idxPO: make(map[string]map[string]*triple.Triple),
 		idxSO: make(map[string]map[string]*triple.Triple),
-	}, nil
+	}
+
+	s.rwmu.Lock()
+	defer s.rwmu.Unlock()
+	if _, ok := s.graphs[id]; ok {
+		return nil, fmt.Errorf("memory.NewGraph(%q): graph alredy exists", id)
+	}
+	s.graphs[id] = g
+	return g, nil
+}
+
+// GetGraph return an existing graph if available. Getting a non existing
+// graph should return and error.
+func (s *memoryStore) GetGraph(id string) (storage.Graph, error) {
+	s.rwmu.RLock()
+	defer s.rwmu.RUnlock()
+	if g, ok := s.graphs[id]; ok {
+		return g, nil
+	}
+	return nil, fmt.Errorf("memory.GetGraph(%q): graph does not exist", id)
+}
+
+// DeleteGraph with delete an existing graph. Deleting a non existing graph
+// should return and error.
+func (s *memoryStore) DeleteGraph(id string) error {
+	s.rwmu.Lock()
+	defer s.rwmu.Unlock()
+	if _, ok := s.graphs[id]; ok {
+		delete(s.graphs, id)
+		return nil
+	}
+	return fmt.Errorf("memory.DeleteGraph(%q): graph does not exist", id)
 }
 
 // memory provides an imemory volatile implemention of the storage API.

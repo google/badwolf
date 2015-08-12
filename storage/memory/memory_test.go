@@ -24,6 +24,30 @@ import (
 	"github.com/google/badwolf/triple/predicate"
 )
 
+func TestMemoryStore(t *testing.T) {
+	s := NewStore()
+	// Create a new graph.
+	if _, err := s.NewGraph("test"); err != nil {
+		t.Errorf("memoryStore.NewGraph: should never fail to crate a graph; %s", err)
+	}
+	// Get an existing graph.
+	if _, err := s.GetGraph("test"); err != nil {
+		t.Errorf("memoryStore.GetGraph: should never fail to get an existing graph; %s", err)
+	}
+	// Delete an existing graph.
+	if err := s.DeleteGraph("test"); err != nil {
+		t.Errorf("memoryStore.DeleteGraph: should never fail to delete an existing graph; %s", err)
+	}
+	// Get a non existing graph.
+	if _, err := s.GetGraph("test"); err == nil {
+		t.Errorf("memoryStore.GetGraph: should never succeed to get a non existing graph; %s", err)
+	}
+	// Delete an existing graph.
+	if err := s.DeleteGraph("test"); err == nil {
+		t.Errorf("memoryStore.DeleteGraph: should never succed to delete a non existing graph; %s", err)
+	}
+}
+
 func TestDefaultLookupChecker(t *testing.T) {
 	dlu := storage.DefaultLookup
 	c := newChecker(dlu)
@@ -114,7 +138,7 @@ func getTestTriples(t *testing.T) []*triple.Triple {
 
 func TestAddRemoveTriples(t *testing.T) {
 	ts := getTestTriples(t)
-	g, _ := DefaultStore.NewGraph("test")
+	g, _ := NewStore().NewGraph("test")
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
@@ -125,7 +149,7 @@ func TestAddRemoveTriples(t *testing.T) {
 
 func TestObjects(t *testing.T) {
 	ts := getTestTriples(t)
-	g, _ := DefaultStore.NewGraph("test")
+	g, _ := NewStore().NewGraph("test")
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
@@ -149,7 +173,7 @@ func TestObjects(t *testing.T) {
 
 func TestSubjects(t *testing.T) {
 	ts := getTestTriples(t)
-	g, _ := DefaultStore.NewGraph("test")
+	g, _ := NewStore().NewGraph("test")
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
@@ -172,7 +196,7 @@ func TestSubjects(t *testing.T) {
 
 func TestPredicatesForSubjectAndObject(t *testing.T) {
 	ts := getTestTriples(t)
-	g, _ := DefaultStore.NewGraph("test")
+	g, _ := NewStore().NewGraph("test")
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
@@ -194,7 +218,7 @@ func TestPredicatesForSubjectAndObject(t *testing.T) {
 
 func TestPredicatesForSubject(t *testing.T) {
 	ts := getTestTriples(t)
-	g, _ := DefaultStore.NewGraph("test")
+	g, _ := NewStore().NewGraph("test")
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
@@ -216,7 +240,7 @@ func TestPredicatesForSubject(t *testing.T) {
 
 func TestPredicatesForObject(t *testing.T) {
 	ts := getTestTriples(t)
-	g, _ := DefaultStore.NewGraph("test")
+	g, _ := NewStore().NewGraph("test")
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
@@ -238,7 +262,7 @@ func TestPredicatesForObject(t *testing.T) {
 
 func TestTriplesForSubject(t *testing.T) {
 	ts := getTestTriples(t)
-	g, _ := DefaultStore.NewGraph("test")
+	g, _ := NewStore().NewGraph("test")
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
@@ -257,7 +281,7 @@ func TestTriplesForSubject(t *testing.T) {
 
 func TestTriplesForObject(t *testing.T) {
 	ts := getTestTriples(t)
-	g, _ := DefaultStore.NewGraph("test")
+	g, _ := NewStore().NewGraph("test")
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
@@ -276,7 +300,7 @@ func TestTriplesForObject(t *testing.T) {
 
 func TestTriplesForSubjectAndPredicate(t *testing.T) {
 	ts := getTestTriples(t)
-	g, _ := DefaultStore.NewGraph("test")
+	g, _ := NewStore().NewGraph("test")
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
@@ -295,7 +319,7 @@ func TestTriplesForSubjectAndPredicate(t *testing.T) {
 
 func TestTriplesForPredicateAndObject(t *testing.T) {
 	ts := getTestTriples(t)
-	g, _ := DefaultStore.NewGraph("test")
+	g, _ := NewStore().NewGraph("test")
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
@@ -314,7 +338,7 @@ func TestTriplesForPredicateAndObject(t *testing.T) {
 
 func TestExists(t *testing.T) {
 	ts := getTestTriples(t)
-	g, _ := DefaultStore.NewGraph("test")
+	g, _ := NewStore().NewGraph("test")
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
@@ -331,7 +355,7 @@ func TestExists(t *testing.T) {
 
 func TestTriples(t *testing.T) {
 	ts := getTestTriples(t)
-	g, _ := DefaultStore.NewGraph("test")
+	g, _ := NewStore().NewGraph("test")
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
