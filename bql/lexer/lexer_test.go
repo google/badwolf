@@ -111,7 +111,7 @@ func TestIndividualTokens(t *testing.T) {
 	}
 
 	for _, test := range table {
-		_, c := lex(test.input)
+		_, c := lex(test.input, 0)
 		idx := 0
 		for got := range c {
 			if idx >= len(test.tokens) {
@@ -163,7 +163,7 @@ func TestValidTokenQuery(t *testing.T) {
 			ItemEOF}},
 	}
 	for _, test := range table {
-		_, c := lex(test.input)
+		_, c := lex(test.input, 0)
 		idx := 0
 		for got := range c {
 			if idx >= len(test.tokens) {

@@ -257,13 +257,23 @@ type lexer struct {
 }
 
 // lex creates a new lexer for the givne input
-func lex(input string) (*lexer, <-chan Token) {
+func lex(input string, capacity int) (*lexer, <-chan Token) {
 	l := &lexer{
 		input:  input,
-		tokens: make(chan Token),
+		tokens: make(chan Token, capacity),
 	}
 	go l.run() // Concurrently run state machine.
 	return l, l.tokens
+}
+
+// New return a new read only channel with the tokens found in the provided
+// input string.
+func New(input string, capacity int) <-chan Token {
+	if capacity < 0 {
+		capacity = 0
+	}
+	_, c := lex(input, capacity)
+	return c
 }
 
 // lexToken represents the initial state for token identification.
