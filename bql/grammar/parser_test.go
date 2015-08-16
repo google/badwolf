@@ -26,6 +26,9 @@ func TestEmptyGrammarFailed(t *testing.T) {
 			{
 				Elements: []Element{},
 			},
+			{
+				Elements: []Element{},
+			},
 		},
 	})
 	if err == nil {

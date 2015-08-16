@@ -19,3 +19,56 @@
 // mechanics to improve maintainablity and flexibility of grammar changes
 // by keeping those the code separation clearly delineated.
 package grammar
+
+import "github.com/google/badwolf/bql/lexer"
+
+// BQL LL1 grammar.
+var BQL = Grammar{
+	"START": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemQuery),
+				NewSymbol("VARS"),
+				NewToken(lexer.ItemFrom),
+				NewSymbol("GRAPHS"),
+				NewToken(lexer.ItemSemicolon),
+			},
+		},
+	},
+	"VARS": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemBinding),
+				NewSymbol("MORE_VARS"),
+			},
+		},
+	},
+	"MORE_VARS": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemComma),
+				NewToken(lexer.ItemBinding),
+				NewSymbol("MORE_VARS"),
+			},
+		},
+		{},
+	},
+	"GRAPHS": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemBinding),
+				NewSymbol("MORE_GRAPHS"),
+			},
+		},
+	},
+	"MORE_GRAPHS": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemComma),
+				NewToken(lexer.ItemBinding),
+				NewSymbol("MORE_GRAPHS"),
+			},
+		},
+		{},
+	},
+}

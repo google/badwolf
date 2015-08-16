@@ -92,9 +92,14 @@ type Parser struct {
 func NewParser(grammar *Grammar) (*Parser, error) {
 	// Check that the grammar is left factorized.
 	for _, clauses := range *grammar {
+		idx := 0
 		for _, cls := range clauses {
 			if len(cls.Elements) == 0 {
-				return nil, fmt.Errorf("grammar.NewParser: invalid empty clause derivation %v", clauses)
+				if idx == 0 {
+					idx++
+					continue
+				}
+				return nil, fmt.Errorf("grammar.NewParser: invalid extra empty clause derivation %v", clauses)
 			}
 			if cls.Elements[0].isSymbol {
 				return nil, fmt.Errorf("grammar.NewParser: not left factored grammar in %v", clauses)
@@ -122,6 +127,9 @@ func (p *Parser) Parse(llk *LLk) error {
 // the parser grammar.
 func (p *Parser) consume(llk *LLk, s Symbol) (bool, error) {
 	for _, clause := range (*p.grammar)[s] {
+		if len(clause.Elements) == 0 {
+			return true, nil
+		}
 		elem := clause.Elements[0]
 		if elem.isSymbol {
 			return false, fmt.Errorf("Parser.consume: not left factored grammar in %v", clause)
@@ -145,7 +153,7 @@ func (p *Parser) expect(llk *LLk, s Symbol, cls Clause) (bool, error) {
 			}
 		} else {
 			if !llk.Consume(elem.Token()) {
-				return false, fmt.Errorf("Parser.parse: Failed to consume %s, got %s instead", llk.Current().Type, elem.Token())
+				return false, fmt.Errorf("Parser.parse: Failed to consume %s, got %s instead", elem.Token(), llk.Current().Type)
 			}
 		}
 		if cls.ProcessedElement != nil {

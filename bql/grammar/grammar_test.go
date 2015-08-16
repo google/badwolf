@@ -16,4 +16,44 @@ package grammar
 
 import "testing"
 
-func TestEmpty(t *testing.T) {}
+func TestAcceptByParse(t *testing.T) {
+	table := []string{
+		// Test multiple var bindings are accepted.
+		"select ?a from ?b;",
+		"select ?a, ?b from ?c;",
+		"select ?a, ?b, ?c from ?d;",
+		// Test multiple graphs are accepted.
+		"select ?a from ?b;",
+		"select ?a from ?b, ?c;",
+		"select ?a from ?b, ?c, ?d;",
+	}
+	p, err := NewParser(&BQL)
+	if err != nil {
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
+	}
+	for _, input := range table {
+		if err := p.Parse(NewLLk(input, 1)); err != nil {
+			t.Errorf("Parser.consume: failed to accept input %q with error %v", input, err)
+		}
+	}
+}
+
+func TestRejectByParse(t *testing.T) {
+	table := []string{
+		// Reject missing comas on var bindings or missing bindings.
+		"select ?a ?wrong from ?b;",
+		"select ?a , from ?b;",
+		// Reject missing comas on var bindings or missing graphs.
+		"select ?a from ?b ?c;",
+		"select ?a from ?b,;",
+	}
+	p, err := NewParser(&BQL)
+	if err != nil {
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
+	}
+	for _, input := range table {
+		if err := p.Parse(NewLLk(input, 1)); err == nil {
+			t.Errorf("Parser.consume: failed to reject input %q with error %v", input, err)
+		}
+	}
+}
