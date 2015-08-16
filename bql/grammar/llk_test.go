@@ -37,10 +37,10 @@ func TestEmptyImputLLk(t *testing.T) {
 			t.Errorf("LLk.Peek: should always succed to lookahed for %d < %d", i, k)
 		}
 	}
-	if !l.CanAccept(&lexer.Token{Type: lexer.ItemEOF}) {
+	if !l.CanAccept(lexer.ItemEOF) {
 		t.Errorf("LLk.CanAccept: should accept ItemEOF token at the end of the imput")
 	}
-	if !l.Consume(&lexer.Token{Type: lexer.ItemEOF}) {
+	if !l.Consume(lexer.ItemEOF) {
 		t.Errorf("LLk.Consume: should consume ItemEOF token at the end of the imput")
 	}
 }
@@ -53,10 +53,10 @@ func TestNonEmptyInputLLk(t *testing.T) {
 	if tkn, err := l.Peek(1); err != nil || tkn.Type != lexer.ItemSemicolon {
 		t.Errorf("LLk.Peek(1): should return ItemSemicolon as the current token instead of %s", tkn.Type)
 	}
-	if !l.CanAccept(&lexer.Token{Type: lexer.ItemQuery}) {
+	if !l.CanAccept(lexer.ItemQuery) {
 		t.Errorf("LLk.CanAccept: should accept ItemQuery token")
 	}
-	if !l.Consume(&lexer.Token{Type: lexer.ItemQuery}) {
+	if !l.Consume(lexer.ItemQuery) {
 		t.Errorf("LLk.Consume: should consume ItemQuery token")
 	}
 	if l.Current().Type != lexer.ItemSemicolon {

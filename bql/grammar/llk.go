@@ -78,14 +78,14 @@ func (l *LLk) Peek(k int) (*lexer.Token, error) {
 
 // CanAccept returns true if the provided token matches the current on being
 // processed, false otherwise.
-func (l *LLk) CanAccept(t *lexer.Token) bool {
-	return l.tkns[0].Type == t.Type
+func (l *LLk) CanAccept(tt lexer.TokenType) bool {
+	return l.tkns[0].Type == tt
 }
 
 // Consume will consue the current token and move to the next one if it matches
 // the provided token, false otherwise.
-func (l *LLk) Consume(t *lexer.Token) bool {
-	if l.tkns[0].Type != t.Type {
+func (l *LLk) Consume(tt lexer.TokenType) bool {
+	if l.tkns[0].Type != tt {
 		return false
 	}
 	l.tkns = l.tkns[1:]
