@@ -22,6 +22,11 @@ func TestAcceptByParse(t *testing.T) {
 		"select ?a from ?b;",
 		"select ?a, ?b from ?c;",
 		"select ?a, ?b, ?c from ?d;",
+		// Test aliases and functions.
+		"select ?a as ?b from ?c;",
+		"select ?a as ?b, ?c as ?d from ?e;",
+		"select count(?a) as ?b, sum(?c) as ?d, ?e as ?f from ?g;",
+		"select count(distinct ?a) as ?b from ?c;",
 		// Test multiple graphs are accepted.
 		"select ?a from ?b;",
 		"select ?a from ?b, ?c;",
@@ -43,6 +48,10 @@ func TestRejectByParse(t *testing.T) {
 		// Reject missing comas on var bindings or missing bindings.
 		"select ?a ?wrong from ?b;",
 		"select ?a , from ?b;",
+		"select ?a as from ?b;",
+		"select ?a as ?b, from ?b;",
+		"select count(?a as ?b, from ?b;",
+		"select count(distinct) as ?a, from ?c;",
 		// Reject missing comas on var bindings or missing graphs.
 		"select ?a from ?b ?c;",
 		"select ?a from ?b,;",

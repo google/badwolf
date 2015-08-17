@@ -39,16 +39,56 @@ var BQL = Grammar{
 		{
 			Elements: []Element{
 				NewToken(lexer.ItemBinding),
+				NewSymbol("VARS_AS"),
 				NewSymbol("MORE_VARS"),
 			},
 		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemCount),
+				NewToken(lexer.ItemLPar),
+				NewSymbol("COUNT_DISTINCT"),
+				NewToken(lexer.ItemBinding),
+				NewToken(lexer.ItemRPar),
+				NewToken(lexer.ItemAs),
+				NewToken(lexer.ItemBinding),
+				NewSymbol("MORE_VARS"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemSum),
+				NewToken(lexer.ItemLPar),
+				NewToken(lexer.ItemBinding),
+				NewToken(lexer.ItemRPar),
+				NewToken(lexer.ItemAs),
+				NewToken(lexer.ItemBinding),
+				NewSymbol("MORE_VARS"),
+			},
+		},
+	},
+	"COUNT_DISTINCT": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemDistinct),
+			},
+		},
+		{},
+	},
+	"VARS_AS": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemAs),
+				NewToken(lexer.ItemBinding),
+			},
+		},
+		{},
 	},
 	"MORE_VARS": []Clause{
 		{
 			Elements: []Element{
 				NewToken(lexer.ItemComma),
-				NewToken(lexer.ItemBinding),
-				NewSymbol("MORE_VARS"),
+				NewSymbol("VARS"),
 			},
 		},
 		{},
