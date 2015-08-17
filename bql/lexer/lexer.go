@@ -97,12 +97,18 @@ const (
 	ItemGT
 	// ItemEQ represents = in BQL.
 	ItemEQ
-	// ItemNot represents not in BQL.
+	// ItemNot represents keyword not in BQL.
 	ItemNot
-	// ItemAnd represents and in BQL.
+	// ItemAnd represents keyword and in BQL.
 	ItemAnd
-	// ItemOr represents or in BQL.
+	// ItemOr represents keyword or in BQL.
 	ItemOr
+	// ItemType represents keyword type in BQL.
+	ItemType
+	// ItemID represents id keyword in BQL.
+	ItemID
+	// ItemAt represents at keyword in BQL.
+	ItemAt
 )
 
 func (tt TokenType) String() string {
@@ -177,6 +183,12 @@ func (tt TokenType) String() string {
 		return "AND"
 	case ItemOr:
 		return "OR"
+	case ItemID:
+		return "ID"
+	case ItemType:
+		return "TYPE"
+	case ItemAt:
+		return "AT"
 	default:
 		return "UNKNOWN"
 	}
@@ -223,6 +235,9 @@ const (
 	not            = "not"
 	and            = "and"
 	or             = "or"
+	id             = "id"
+	typeKeyword    = "type"
+	atKeyword      = "at"
 	anchor         = "\"@["
 	literalType    = "\"^^type:"
 	literalBool    = "bool"
@@ -456,6 +471,18 @@ func lexKeyword(l *lexer) stateFn {
 	}
 	if strings.EqualFold(input, or) {
 		consumeKeyword(l, ItemOr)
+		return lexSpace
+	}
+	if strings.EqualFold(input, id) {
+		consumeKeyword(l, ItemID)
+		return lexSpace
+	}
+	if strings.EqualFold(input, typeKeyword) {
+		consumeKeyword(l, ItemType)
+		return lexSpace
+	}
+	if strings.EqualFold(input, atKeyword) {
+		consumeKeyword(l, ItemAt)
 		return lexSpace
 	}
 	for {
