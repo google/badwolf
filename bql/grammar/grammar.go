@@ -31,6 +31,11 @@ var BQL = Grammar{
 				NewSymbol("VARS"),
 				NewToken(lexer.ItemFrom),
 				NewSymbol("GRAPHS"),
+				NewSymbol("WHERE"),
+				NewSymbol("GROUP_BY"),
+				NewSymbol("ORDER_BY"),
+				NewSymbol("HAVING"),
+				NewSymbol("GLOBAL_TIME_BOUND"),
 				NewToken(lexer.ItemSemicolon),
 			},
 		},
@@ -107,6 +112,316 @@ var BQL = Grammar{
 				NewToken(lexer.ItemComma),
 				NewToken(lexer.ItemBinding),
 				NewSymbol("MORE_GRAPHS"),
+			},
+		},
+		{},
+	},
+	"WHERE": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemWhere),
+				NewToken(lexer.ItemLBracket),
+				NewSymbol("CLAUSES"),
+				NewToken(lexer.ItemRBracket),
+			},
+		},
+	},
+	"CLAUSES": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemNode),
+				NewSymbol("SUBJECT_EXTRACT"),
+				NewSymbol("PREDICATES"),
+				NewSymbol("OBJECTS"),
+				NewSymbol("NORE_CLAUSES"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemBinding),
+				NewSymbol("SUBJECT_EXTRACT"),
+				NewSymbol("PREDICATE"),
+				NewSymbol("OBJECT"),
+				NewSymbol("NORE_CLAUSES"),
+			},
+		},
+	},
+	"SUBJECT_EXTRACT": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemAs),
+				NewToken(lexer.ItemBinding),
+				NewSymbol("SUBJECT_TYPE"),
+				NewSymbol("SUBJECT_ID"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemType),
+				NewToken(lexer.ItemBinding),
+				NewSymbol("SUBJECT_ID"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemID),
+				NewToken(lexer.ItemBinding),
+			},
+		},
+		{},
+	},
+	"SUBJECT_TYPE": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemType),
+				NewToken(lexer.ItemBinding),
+			},
+		},
+		{},
+	},
+	"SUBJECT_ID": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemID),
+				NewToken(lexer.ItemBinding),
+			},
+		},
+		{},
+	},
+	"PREDICATE": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemPredicate),
+				NewSymbol("PREDICATE_AS"),
+				NewSymbol("PREDICATE_ID"),
+				NewSymbol("PREDICATE_AT"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemBinding),
+				NewSymbol("PREDICATE_AS"),
+				NewSymbol("PREDICATE_ID"),
+				NewSymbol("PREDICATE_AT"),
+			},
+		},
+	},
+	"PREDICATE_AS": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemAs),
+				NewToken(lexer.ItemBinding),
+			},
+		},
+		{},
+	},
+	"PREDICATE_ID": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemID),
+				NewToken(lexer.ItemBinding),
+			},
+		},
+		{},
+	},
+	"PREDICATE_AT": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemAt),
+				NewToken(lexer.ItemBinding),
+			},
+		},
+		{},
+	},
+	"OBJECT": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemNode),
+				NewSymbol("SUBJECT_EXTRACT"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemPredicate),
+				NewSymbol("PREDICATE_AS"),
+				NewSymbol("PREDICATE_ID"),
+				NewSymbol("PREDICATE_AT"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemLiteral),
+				NewSymbol("LITERAL_AS"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemBinding),
+				NewSymbol("LITERAL_BINDING_AS"),
+				NewSymbol("LITERAL_BINDING_TYPE"),
+				NewSymbol("LITERAL_BINDING_ID"),
+				NewSymbol("LITERAL_BINDING_AT"),
+			},
+		},
+	},
+	"LITERAL_AS": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemAs),
+				NewToken(lexer.ItemBinding),
+			},
+		},
+		{},
+	},
+	"LITERAL_BINDING_AS": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemAs),
+				NewToken(lexer.ItemBinding),
+			},
+		},
+		{},
+	},
+	"LITERAL_BINDING_TYPE": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemType),
+				NewToken(lexer.ItemBinding),
+			},
+		},
+		{},
+	},
+	"LITERAL_BINDING_ID": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemID),
+				NewToken(lexer.ItemBinding),
+			},
+		},
+		{},
+	},
+	"LITERAL_BINDING_AT": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemAt),
+				NewToken(lexer.ItemBinding),
+			},
+		},
+		{},
+	},
+	"NORE_CLAUSES": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemDot),
+				NewSymbol("CLAUSES"),
+			},
+		},
+		{},
+	},
+	"GROUP_BY": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemGroup),
+				NewToken(lexer.ItemBy),
+				NewToken(lexer.ItemBinding),
+				NewSymbol("GROUP_BY_BINDINGS"),
+			},
+		},
+		{},
+	},
+	"GROUP_BY_BINDINGS": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemComma),
+				NewToken(lexer.ItemBinding),
+				NewSymbol("GROUP_BY_BINDINGS"),
+			},
+		},
+		{},
+	},
+	"ORDER_BY": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemOrder),
+				NewToken(lexer.ItemBy),
+				NewToken(lexer.ItemBinding),
+				NewSymbol("ORDER_BY_DIRECTION"),
+				NewSymbol("ORDER_BY_BINDINGS"),
+			},
+		},
+		{},
+	},
+	"ORDER_BY_DIRECTION": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemAsc),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemDesc),
+			},
+		},
+		{},
+	},
+	"ORDER_BY_BINDINGS": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemComma),
+				NewToken(lexer.ItemBinding),
+				NewSymbol("ORDER_BY_DIRECTION"),
+				NewSymbol("ORDER_BY_BINDINGS"),
+			},
+		},
+		{},
+	},
+	"HAVING": []Clause{
+		{},
+	},
+	"GLOBAL_TIME_BOUND": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemBefore),
+				NewToken(lexer.ItemPredicate),
+				NewSymbol("GLOBAL_TIME_BOUND_COMPOSITE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemAfter),
+				NewToken(lexer.ItemPredicate),
+				NewSymbol("GLOBAL_TIME_BOUND_COMPOSITE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemBetween),
+				NewToken(lexer.ItemPredicate),
+				NewToken(lexer.ItemComma),
+				NewToken(lexer.ItemPredicate),
+				NewSymbol("GLOBAL_TIME_BOUND_COMPOSITE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemLPar),
+				NewSymbol("GLOBAL_TIME_BOUND"),
+				NewToken(lexer.ItemRPar),
+			},
+		},
+		{},
+	},
+	"GLOBAL_TIME_BOUND_COMPOSITE": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemAnd),
+				NewSymbol("GLOBAL_TIME_BOUND"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemOr),
+				NewSymbol("GLOBAL_TIME_BOUND"),
 			},
 		},
 		{},
