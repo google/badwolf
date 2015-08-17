@@ -42,6 +42,12 @@ const (
 	ItemWhere
 	// ItemAs represents the as keyword in BQL.
 	ItemAs
+	// ItemType represents keyword type in BQL.
+	ItemType
+	// ItemID represents id keyword in BQL.
+	ItemID
+	// ItemAt represents at keyword in BQL.
+	ItemAt
 	// ItemBefore represents the before keyword in BQL.
 	ItemBefore
 	// ItemAfter represents the after keyword in BQL.
@@ -50,6 +56,8 @@ const (
 	ItemBetween
 	// ItemCount represents the count funtion in BQL.
 	ItemCount
+	// ItemDistinct represents the distinct modifier in BQL.
+	ItemDistinct
 	// ItemSum represents the sum function in BQL.
 	ItemSum
 	// ItemGroup represents the group keyword in group by clause in BQL.
@@ -103,12 +111,6 @@ const (
 	ItemAnd
 	// ItemOr represents keyword or in BQL.
 	ItemOr
-	// ItemType represents keyword type in BQL.
-	ItemType
-	// ItemID represents id keyword in BQL.
-	ItemID
-	// ItemAt represents at keyword in BQL.
-	ItemAt
 )
 
 func (tt TokenType) String() string {
@@ -189,6 +191,8 @@ func (tt TokenType) String() string {
 		return "TYPE"
 	case ItemAt:
 		return "AT"
+	case ItemDistinct:
+		return "DISTINCT"
 	default:
 		return "UNKNOWN"
 	}
@@ -224,6 +228,7 @@ const (
 	after          = "after"
 	between        = "between"
 	count          = "count"
+	distinct       = "distinct"
 	sum            = "sum"
 	group          = "group"
 	having         = "having"
@@ -427,6 +432,10 @@ func lexKeyword(l *lexer) stateFn {
 	}
 	if strings.EqualFold(input, count) {
 		consumeKeyword(l, ItemCount)
+		return lexSpace
+	}
+	if strings.EqualFold(input, distinct) {
+		consumeKeyword(l, ItemDistinct)
 		return lexSpace
 	}
 	if strings.EqualFold(input, sum) {
