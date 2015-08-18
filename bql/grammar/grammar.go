@@ -36,6 +36,7 @@ var BQL = Grammar{
 				NewSymbol("ORDER_BY"),
 				NewSymbol("HAVING"),
 				NewSymbol("GLOBAL_TIME_BOUND"),
+				NewSymbol("LIMIT"),
 				NewToken(lexer.ItemSemicolon),
 			},
 		},
@@ -376,6 +377,67 @@ var BQL = Grammar{
 		{},
 	},
 	"HAVING": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemHaving),
+				NewSymbol("HAVING_CLAUSE"),
+			},
+		},
+		{},
+	},
+	"HAVING_CLAUSE": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemBinding),
+				NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemNot),
+				NewSymbol("HAVING_CLAUSE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemLPar),
+				NewSymbol("HAVING_CLAUSE"),
+				NewToken(lexer.ItemRPar),
+				NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
+			},
+		},
+	},
+	"HAVING_CLAUSE_BINARY_COMPOSITE": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemAnd),
+				NewSymbol("HAVING_CLAUSE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemOr),
+				NewSymbol("HAVING_CLAUSE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemEQ),
+				NewSymbol("HAVING_CLAUSE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemLT),
+				NewSymbol("HAVING_CLAUSE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemGT),
+				NewSymbol("HAVING_CLAUSE"),
+			},
+		},
 		{},
 	},
 	"GLOBAL_TIME_BOUND": []Clause{
@@ -422,6 +484,15 @@ var BQL = Grammar{
 			Elements: []Element{
 				NewToken(lexer.ItemOr),
 				NewSymbol("GLOBAL_TIME_BOUND"),
+			},
+		},
+		{},
+	},
+	"LIMIT": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemLimit),
+				NewToken(lexer.ItemLiteral),
 			},
 		},
 		{},

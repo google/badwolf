@@ -57,6 +57,16 @@ func TestAcceptByParse(t *testing.T) {
 		"select ?a from ?b where{?s ?p ?o} order by ?a desc;",
 		"select ?a from ?b where{?s ?p ?o} order by ?a asc, ?b desc;",
 		"select ?a from ?b where{?s ?p ?o} order by ?a desc, ?b desc, ?c asc;",
+		// Test having clause.
+		"select ?a from ?b where {?a ?p ?o} having not ?b;",
+		"select ?a from ?b where {?a ?p ?o} having (not ?b);",
+		"select ?a from ?b where {?a ?p ?o} having ?b and ?b;",
+		"select ?a from ?b where {?a ?p ?o} having ?b or ?b;",
+		"select ?a from ?b where {?a ?p ?o} having ?b < ?b;",
+		"select ?a from ?b where {?a ?p ?o} having ?b > ?b;",
+		"select ?a from ?b where {?a ?p ?o} having ?b = ?b;",
+		"select ?a from ?b where {?a ?p ?o} having (?b and ?b) or not (?b = ?b);",
+		"select ?a from ?b where {?a ?p ?o} having ((?b and ?b) or not (?b = ?b));",
 		// Test global time bounds.
 		"select ?a from ?b where {?s ?p ?o} before \"foo\"@[\"123\"];",
 		"select ?a from ?b where {?s ?p ?o} after \"foo\"@[\"123\"];",
@@ -65,6 +75,8 @@ func TestAcceptByParse(t *testing.T) {
 		"select ?a from ?b where {?s ?p ?o} before \"foo\"@[\"123\"] and before \"foo\"@[\"123\"];",
 		"select ?a from ?b where {?s ?p ?o} before \"foo\"@[\"123\"] or before \"foo\"@[\"123\"];",
 		"select ?a from ?b where {?s ?p ?o} before \"foo\"@[\"123\"] or (before \"foo\"@[\"123\"] and before \"foo\"@[\"123\"]);",
+		// Test limit clause.
+		"select ?a from ?b where {?s ?p ?o} limit \"10\"^^type:int64;",
 	}
 	p, err := NewParser(&BQL)
 	if err != nil {
@@ -111,6 +123,17 @@ func TestRejectByParse(t *testing.T) {
 		"select ?a from ?b where{?s ?p ?o} by ?a;",
 		"select ?a from ?b where{?s ?p ?o} order by ?a, a;",
 		"select ?a from ?b where{?s ?p ?o} order by ?a, ?b, desc;",
+		// Reject invalid having clauses.
+		"select ?a from ?b where {?a ?p ?o} having not ;",
+		"select ?a from ?b where {?a ?p ?o} having not ?b ?b;",
+		"select ?a from ?b where {?a ?p ?o} having (not );",
+		"select ?a from ?b where {?a ?p ?o} having and ?b;",
+		"select ?a from ?b where {?a ?p ?o} having ?b or ;",
+		"select ?a from ?b where {?a ?p ?o} having ?b  ?b;",
+		"select ?a from ?b where {?a ?p ?o} having > ?b;",
+		"select ?a from ?b where {?a ?p ?o} having ?b = ;",
+		"select ?a from ?b where {?a ?p ?o} having () or not (?b = ?b);",
+		"select ?a from ?b where {?a ?p ?o} having ((?b and ?b) (?b = ?b));",
 		// Reject invalid global time bounds.
 		"select ?a from ?b where {?s ?p ?o} before ;",
 		"select ?a from ?b where {?s ?p ?o} after ;",
@@ -119,6 +142,9 @@ func TestRejectByParse(t *testing.T) {
 		"select ?a from ?b where {?s ?p ?o} before \"foo\"@[\"123\"]  before \"foo\"@[\"123\"];",
 		"select ?a from ?b where {?s ?p ?o} before \"foo\"@[\"123\"] or before \"foo\"@[\"123\"] ,;",
 		"select ?a from ?b where {?s ?p ?o} before \"foo\"@[\"123\"] or before \"foo\"@[\"123\"] and before \"foo\"@[\"123\"]);",
+		// Test limit clause.
+		"select ?a from ?b where {?s ?p ?o} limit ?b;",
+		"select ?a from ?b where {?s ?p ?o} limit ;",
 	}
 	p, err := NewParser(&BQL)
 	if err != nil {
