@@ -40,7 +40,7 @@ func TestIndividualTokens(t *testing.T) {
 			{Type: ItemBinding, Text: "?bar"},
 			{Type: ItemEOF}}},
 		{`SeLeCt FrOm WhErE As BeFoRe AfTeR BeTwEeN CoUnT SuM GrOuP bY HaViNg LiMiT
-		  OrDeR AsC DeSc NoT AnD Or Id TyPe At DiStInCt`,
+		  OrDeR AsC DeSc NoT AnD Or Id TyPe At DiStInCt InSeRt DeLeTe DaTa InTo`,
 			[]Token{
 				{Type: ItemQuery, Text: "SeLeCt"},
 				{Type: ItemFrom, Text: "FrOm"},
@@ -65,6 +65,10 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemType, Text: "TyPe"},
 				{Type: ItemAt, Text: "At"},
 				{Type: ItemDistinct, Text: "DiStInCt"},
+				{Type: ItemInsert, Text: "InSeRt"},
+				{Type: ItemDelete, Text: "DeLeTe"},
+				{Type: ItemData, Text: "DaTa"},
+				{Type: ItemInto, Text: "InTo"},
 				{Type: ItemEOF}}},
 		{"/_<foo>/_<bar>", []Token{
 			{Type: ItemNode, Text: "/_<foo>"},

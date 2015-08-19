@@ -36,6 +36,14 @@ const (
 
 	// ItemQuery represents the select keyword in BQL.
 	ItemQuery
+	// ItemInsert represents insert keyword in BQL.
+	ItemInsert
+	// ItemDelete represents insert keyword in BQL.
+	ItemDelete
+	// ItemData represents the data keyword in BQL.
+	ItemData
+	// ItemInto represents the into keyword in BQL.
+	ItemInto
 	// ItemFrom represents the from keyword in BQL.
 	ItemFrom
 	// ItemWhere represents the where keyword in BQL.
@@ -121,6 +129,14 @@ func (tt TokenType) String() string {
 		return "EOF"
 	case ItemQuery:
 		return "QUERY"
+	case ItemInsert:
+		return "INSERT"
+	case ItemDelete:
+		return "DELETE"
+	case ItemData:
+		return "DATA"
+	case ItemInto:
+		return "INTO"
 	case ItemFrom:
 		return "FROM"
 	case ItemWhere:
@@ -221,6 +237,10 @@ const (
 	at             = rune('@')
 	newLine        = rune('\n')
 	query          = "select"
+	insert         = "insert"
+	delete         = "delete"
+	data           = "data"
+	into           = "into"
 	from           = "from"
 	where          = "where"
 	as             = "as"
@@ -404,6 +424,22 @@ func lexKeyword(l *lexer) stateFn {
 	}
 	if strings.EqualFold(input, query) {
 		consumeKeyword(l, ItemQuery)
+		return lexSpace
+	}
+	if strings.EqualFold(input, insert) {
+		consumeKeyword(l, ItemInsert)
+		return lexSpace
+	}
+	if strings.EqualFold(input, delete) {
+		consumeKeyword(l, ItemDelete)
+		return lexSpace
+	}
+	if strings.EqualFold(input, data) {
+		consumeKeyword(l, ItemData)
+		return lexSpace
+	}
+	if strings.EqualFold(input, into) {
+		consumeKeyword(l, ItemInto)
 		return lexSpace
 	}
 	if strings.EqualFold(input, from) {
