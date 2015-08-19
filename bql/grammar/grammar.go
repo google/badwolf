@@ -40,6 +40,36 @@ var BQL = Grammar{
 				NewToken(lexer.ItemSemicolon),
 			},
 		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemInsert),
+				NewToken(lexer.ItemData),
+				NewToken(lexer.ItemInto),
+				NewSymbol("GRAPHS"),
+				NewToken(lexer.ItemLBracket),
+				NewToken(lexer.ItemNode),
+				NewToken(lexer.ItemPredicate),
+				NewSymbol("INSERT_OBJECT"),
+				NewSymbol("INSERT_DATA"),
+				NewToken(lexer.ItemRBracket),
+				NewToken(lexer.ItemSemicolon),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemDelete),
+				NewToken(lexer.ItemData),
+				NewToken(lexer.ItemFrom),
+				NewSymbol("GRAPHS"),
+				NewToken(lexer.ItemLBracket),
+				NewToken(lexer.ItemNode),
+				NewToken(lexer.ItemPredicate),
+				NewSymbol("DELETE_OBJECT"),
+				NewSymbol("DELETE_DATA"),
+				NewToken(lexer.ItemRBracket),
+				NewToken(lexer.ItemSemicolon),
+			},
+		},
 	},
 	"VARS": []Clause{
 		{
@@ -493,6 +523,64 @@ var BQL = Grammar{
 			Elements: []Element{
 				NewToken(lexer.ItemLimit),
 				NewToken(lexer.ItemLiteral),
+			},
+		},
+		{},
+	},
+	"INSERT_OBJECT": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemNode),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemPredicate),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemLiteral),
+			},
+		},
+	},
+	"INSERT_DATA": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemDot),
+				NewToken(lexer.ItemNode),
+				NewToken(lexer.ItemPredicate),
+				NewSymbol("INSERT_OBJECT"),
+				NewSymbol("INSERT_DATA"),
+			},
+		},
+		{},
+	},
+	"DELETE_OBJECT": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemNode),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemPredicate),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemLiteral),
+			},
+		},
+	},
+	"DELETE_DATA": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemDot),
+				NewToken(lexer.ItemNode),
+				NewToken(lexer.ItemPredicate),
+				NewSymbol("DELETE_OBJECT"),
+				NewSymbol("DELETE_DATA"),
 			},
 		},
 		{},
