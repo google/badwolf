@@ -21,6 +21,7 @@ The goal of these interfaces is to allow writing specialized drivers for
 different storage backends. For instance, BadWolf provides a simple memory
 based implementation of this interfaces in the ```storage/memory``` package.
 All relevand interface definintions can be found in the the
-[storage.go](../storage/storrge.go) file of the ```storage``` package. Also
-```storage/memory``` package provides a volatile memory-only implementation
-of both ```storage.Store``` and ```storage.Graph``` interfaces.
+[storage.go](https://github.com/google/badwolf/storage/storrge.go)
+file of the ```storage``` package. Also ```storage/memory``` package provides
+a volatile memory-only implementation of both ```storage.Store``` and
+```storage.Graph``` interfaces.

@@ -9,6 +9,9 @@ BadWolf graph data.
 
 The BQL grammar is expressed as a LL1 and implemented using a recursively
 descent parser. The grammar can be found in the
-[grammar file](./bql/grammar/grammar.go). The initial version of the grammar
-is available, as well as the lexical and syntactical parser. Semantic,
-planner, optimizer, and executer for BQL are currently work in progress.
+[grammar file](https://github.com/google/badwolf/bql/grammar/grammar.go).
+The initial version of the grammar is available, as well as the lexical and 
+syntactical parser.
+
+Semantic, planner, optimizer, and executer for BQL are currently work in
+progress.
