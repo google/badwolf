@@ -230,6 +230,14 @@ var BQL = Grammar{
 		},
 		{
 			Elements: []Element{
+				NewToken(lexer.ItemPredicateBound),
+				NewSymbol("PREDICATE_AS"),
+				NewSymbol("PREDICATE_ID"),
+				NewSymbol("PREDICATE_BOUND_AT"),
+			},
+		},
+		{
+			Elements: []Element{
 				NewToken(lexer.ItemBinding),
 				NewSymbol("PREDICATE_AS"),
 				NewSymbol("PREDICATE_ID"),
@@ -264,6 +272,33 @@ var BQL = Grammar{
 		},
 		{},
 	},
+	"PREDICATE_BOUND_AT": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemAt),
+				NewSymbol("PREDICATE_BOUND_AT_BINDINGS"),
+			},
+		},
+		{},
+	},
+	"PREDICATE_BOUND_AT_BINDINGS": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemBinding),
+				NewSymbol("PREDICATE_BOUND_AT_BINDINGS_END"),
+			},
+		},
+		{},
+	},
+	"PREDICATE_BOUND_AT_BINDINGS_END": []Clause{
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemComma),
+				NewToken(lexer.ItemBinding),
+			},
+		},
+		{},
+	},
 	"OBJECT": []Clause{
 		{
 			Elements: []Element{
@@ -277,6 +312,14 @@ var BQL = Grammar{
 				NewSymbol("PREDICATE_AS"),
 				NewSymbol("PREDICATE_ID"),
 				NewSymbol("PREDICATE_AT"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewToken(lexer.ItemPredicateBound),
+				NewSymbol("PREDICATE_AS"),
+				NewSymbol("PREDICATE_ID"),
+				NewSymbol("PREDICATE_BOUND_AT"),
 			},
 		},
 		{

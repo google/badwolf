@@ -90,8 +90,10 @@ const (
 	ItemNode
 	// ItemLiteral represents a BadWolf literal in BQL.
 	ItemLiteral
-	// ItemPredicate represents a BadWolf presicates in BQL.
+	// ItemPredicate represents a BadWolf predicates in BQL.
 	ItemPredicate
+	// ItemPredicateBound represents a BadWolf predicate bound in BQL.
+	ItemPredicateBound
 
 	// ItemLBracket representes the left opening bracket token in BQL.
 	ItemLBracket
@@ -175,6 +177,8 @@ func (tt TokenType) String() string {
 		return "LITERAL"
 	case ItemPredicate:
 		return "PREDICATE"
+	case ItemPredicateBound:
+		return "PREDICATE_BOUND"
 	case ItemLBracket:
 		return "LEFT_BRACKET"
 	case ItemRBracket:
@@ -596,9 +600,16 @@ func lexPredicate(l *lexer) stateFn {
 				l.emitError("predicates require time anchor information; missing \"@[")
 				return nil
 			}
-			var nr rune
+			var (
+				nr     rune
+				commas = 0
+			)
 			for {
-				if nr = l.next(); nr == rightSquarePar || nr == eof {
+				nr = l.next()
+				if nr == comma {
+					commas++
+				}
+				if nr == rightSquarePar || nr == eof {
 					break
 				}
 			}
@@ -606,7 +617,15 @@ func lexPredicate(l *lexer) stateFn {
 				l.emitError("predicate's time anchors should end with ] delimiter")
 				return nil
 			}
-			l.emit(ItemPredicate)
+			if commas > 1 {
+				l.emitError("predicate bounds should only have one , to separate bounds")
+				return nil
+			}
+			if commas == 0 {
+				l.emit(ItemPredicate)
+			} else {
+				l.emit(ItemPredicateBound)
+			}
 			done = true
 		case eof:
 			l.emitError("literals needs to be properly terminated; missing \" and type")

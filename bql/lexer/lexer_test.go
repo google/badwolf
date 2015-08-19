@@ -21,24 +21,27 @@ func TestIndividualTokens(t *testing.T) {
 		input  string
 		tokens []Token
 	}{
-		{"", []Token{
-			{Type: ItemEOF}}},
-		{"{}().;,<>=", []Token{
-			{Type: ItemLBracket, Text: "{"},
-			{Type: ItemRBracket, Text: "}"},
-			{Type: ItemLPar, Text: "("},
-			{Type: ItemRPar, Text: ")"},
-			{Type: ItemDot, Text: "."},
-			{Type: ItemSemicolon, Text: ";"},
-			{Type: ItemComma, Text: ","},
-			{Type: ItemLT, Text: "<"},
-			{Type: ItemGT, Text: ">"},
-			{Type: ItemEQ, Text: "="},
-			{Type: ItemEOF}}},
-		{"?foo ?bar", []Token{
-			{Type: ItemBinding, Text: "?foo"},
-			{Type: ItemBinding, Text: "?bar"},
-			{Type: ItemEOF}}},
+		{"",
+			[]Token{
+				{Type: ItemEOF}}},
+		{"{}().;,<>=",
+			[]Token{
+				{Type: ItemLBracket, Text: "{"},
+				{Type: ItemRBracket, Text: "}"},
+				{Type: ItemLPar, Text: "("},
+				{Type: ItemRPar, Text: ")"},
+				{Type: ItemDot, Text: "."},
+				{Type: ItemSemicolon, Text: ";"},
+				{Type: ItemComma, Text: ","},
+				{Type: ItemLT, Text: "<"},
+				{Type: ItemGT, Text: ">"},
+				{Type: ItemEQ, Text: "="},
+				{Type: ItemEOF}}},
+		{"?foo ?bar",
+			[]Token{
+				{Type: ItemBinding, Text: "?foo"},
+				{Type: ItemBinding, Text: "?bar"},
+				{Type: ItemEOF}}},
 		{`SeLeCt FrOm WhErE As BeFoRe AfTeR BeTwEeN CoUnT SuM GrOuP bY HaViNg LiMiT
 		  OrDeR AsC DeSc NoT AnD Or Id TyPe At DiStInCt InSeRt DeLeTe DaTa InTo`,
 			[]Token{
@@ -70,52 +73,71 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemData, Text: "DaTa"},
 				{Type: ItemInto, Text: "InTo"},
 				{Type: ItemEOF}}},
-		{"/_<foo>/_<bar>", []Token{
-			{Type: ItemNode, Text: "/_<foo>"},
-			{Type: ItemNode, Text: "/_<bar>"},
-			{Type: ItemEOF}}},
-		{"/_<foo>/_\\<bar>", []Token{
-			{Type: ItemNode, Text: "/_<foo>"},
-			{Type: ItemError, Text: "/_\\<bar>",
-				ErrorMessage: "[lexer:0:15] node should start ID section with a < delimiter"},
-			{Type: ItemEOF}}},
-		{"/_foo>", []Token{
-			{Type: ItemError, Text: "/_foo>",
-				ErrorMessage: "[lexer:0:6] node should start ID section with a < delimiter"},
-			{Type: ItemEOF}}},
-		{"/_<foo", []Token{
-			{Type: ItemError, Text: "/_<foo",
-				ErrorMessage: "[lexer:0:6] node is not properly terminated; missing final > delimiter"},
-			{Type: ItemEOF}}},
-		{"\"true\"^^type:bool \"1\"^^type:int64\"2\"^^type:float64\"t\"^^type:text",
+		{"/_<foo>/_<bar>",
 			[]Token{
-				{Type: ItemLiteral, Text: "\"true\"^^type:bool"},
-				{Type: ItemLiteral, Text: "\"1\"^^type:int64"},
-				{Type: ItemLiteral, Text: "\"2\"^^type:float64"},
-				{Type: ItemLiteral, Text: "\"t\"^^type:text"},
+				{Type: ItemNode, Text: "/_<foo>"},
+				{Type: ItemNode, Text: "/_<bar>"},
 				{Type: ItemEOF}}},
-		{"\"[1 2 3 4]\"^^type:blob", []Token{
-			{Type: ItemLiteral, Text: "\"[1 2 3 4]\"^^type:blob"},
-			{Type: ItemEOF}}},
-		{"\"1\"^type:int64", []Token{
-			{Type: ItemError,
-				ErrorMessage: "[lexer:0:0] failed to parse predicate or literal for opening \" delimiter"},
-			{Type: ItemEOF}}},
-		{"\"1\"^^type:int32", []Token{
-			{Type: ItemError,
-				Text:         "\"1\"^^type:int32",
-				ErrorMessage: "[lexer:0:15] invalid literal type int32"},
-			{Type: ItemEOF}}},
-		{"\"p1\"@[] \"p2\"@[\"some data\"]\"p3\"@[\"some data\"]", []Token{
-			{Type: ItemPredicate, Text: "\"p1\"@[]"},
-			{Type: ItemPredicate, Text: "\"p2\"@[\"some data\"]"},
-			{Type: ItemPredicate, Text: "\"p3\"@[\"some data\"]"},
-			{Type: ItemEOF}}},
-		{"\"p1\"@]", []Token{
-			{Type: ItemError,
-				Text:         "",
-				ErrorMessage: "[lexer:0:0] failed to parse predicate or literal for opening \" delimiter"},
-			{Type: ItemEOF}}},
+		{"/_<foo>/_\\<bar>",
+			[]Token{
+				{Type: ItemNode, Text: "/_<foo>"},
+				{Type: ItemError, Text: "/_\\<bar>",
+					ErrorMessage: "[lexer:0:15] node should start ID section with a < delimiter"},
+				{Type: ItemEOF}}},
+		{"/_foo>",
+			[]Token{
+				{Type: ItemError, Text: "/_foo>",
+					ErrorMessage: "[lexer:0:6] node should start ID section with a < delimiter"},
+				{Type: ItemEOF}}},
+		{"/_<foo",
+			[]Token{
+				{Type: ItemError, Text: "/_<foo",
+					ErrorMessage: "[lexer:0:6] node is not properly terminated; missing final > delimiter"},
+				{Type: ItemEOF}}},
+		{`"true"^^type:bool "1"^^type:int64"2"^^type:float64"t"^^type:text`,
+			[]Token{
+				{Type: ItemLiteral, Text: `"true"^^type:bool`},
+				{Type: ItemLiteral, Text: `"1"^^type:int64`},
+				{Type: ItemLiteral, Text: `"2"^^type:float64`},
+				{Type: ItemLiteral, Text: `"t"^^type:text`},
+				{Type: ItemEOF}}},
+		{`"[1 2 3 4]"^^type:blob`,
+			[]Token{
+				{Type: ItemLiteral, Text: `"[1 2 3 4]"^^type:blob`},
+				{Type: ItemEOF}}},
+		{"\"1\"^type:int64",
+			[]Token{
+				{Type: ItemError,
+					ErrorMessage: "[lexer:0:0] failed to parse predicate or literal for opening \" delimiter"},
+				{Type: ItemEOF}}},
+		{"\"1\"^^type:int32",
+			[]Token{
+				{Type: ItemError,
+					Text:         `"1"^^type:int32`,
+					ErrorMessage: "[lexer:0:15] invalid literal type int32"},
+				{Type: ItemEOF}}},
+		{`"p1"@[] "p2"@["some data"]"p3"@["some data"]"p4"@["a","b"]"p4"@["a",]"p4"@[,"b"]"p4"@[,]`,
+			[]Token{
+				{Type: ItemPredicate, Text: `"p1"@[]`},
+				{Type: ItemPredicate, Text: `"p2"@["some data"]`},
+				{Type: ItemPredicate, Text: `"p3"@["some data"]`},
+				{Type: ItemPredicateBound, Text: `"p4"@["a","b"]`},
+				{Type: ItemPredicateBound, Text: `"p4"@["a",]`},
+				{Type: ItemPredicateBound, Text: `"p4"@[,"b"]`},
+				{Type: ItemPredicateBound, Text: `"p4"@[,]`},
+				{Type: ItemEOF}}},
+		{`"p1"@]`,
+			[]Token{
+				{Type: ItemError,
+					Text:         "",
+					ErrorMessage: "[lexer:0:0] failed to parse predicate or literal for opening \" delimiter"},
+				{Type: ItemEOF}}},
+		{`"p1"@[,,]`,
+			[]Token{
+				{Type: ItemError,
+					Text:         `"p1"@[,,]`,
+					ErrorMessage: "[lexer:0:9] predicate bounds should only have one , to separate bounds"},
+				{Type: ItemEOF}}},
 	}
 
 	for _, test := range table {

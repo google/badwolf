@@ -43,6 +43,11 @@ func TestAcceptByParse(t *testing.T) {
 		`select ?a from ?b where{?s ?p ?o as ?x type ?y};`,
 		`select ?a from ?b where{?s ?p ?o as ?x type ?y id ?z};`,
 		`select ?a from ?b where{?s ?p ?o as ?x type ?y id ?z at ?t};`,
+		// Test clause with predicate bounds.
+		`select ?a from ?b where{?s "foo"@[,] ?o};`,
+		`select ?a from ?b where{?s "foo"@[,] as ?x id ?y at ?z ?o};`,
+		`select ?a from ?b where{?s "foo"@[,] as ?x id ?y at ?z, ?zz ?o};`,
+		`select ?a from ?b where{?s ?p "foo"@[,] as ?x id ?z at ?t, ?tt};`,
 		// Test multiple clauses.
 		`select ?a from ?b where{?s ?p ?o};`,
 		`select ?a from ?b where{?s ?p ?o . ?s ?p ?o};`,
