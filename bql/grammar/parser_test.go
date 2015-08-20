@@ -137,20 +137,28 @@ func TestComplexGrammarConsume(t *testing.T) {
 	}
 }
 
+var (
+	s int
+	p int
+	e int
+)
+
+func startFn(*semantic.Statement, semantic.Symbol) (semantic.ClauseHook, error) {
+	s++
+	return startFn, nil
+}
+
+func processFn(*semantic.Statement, semantic.ConsumedElement) (semantic.ElementHook, error) {
+	p++
+	return processFn, nil
+}
+
+func endFn(*semantic.Statement, semantic.Symbol) (semantic.ClauseHook, error) {
+	e++
+	return endFn, nil
+}
+
 func TestGrammarHooks(t *testing.T) {
-	s, p, e := 0, 0, 0
-	start := func(*semantic.Statement, semantic.Symbol) error {
-		s++
-		return nil
-	}
-	process := func(*semantic.Statement, semantic.ConsumedElement) error {
-		p++
-		return nil
-	}
-	end := func(*semantic.Statement, semantic.Symbol) error {
-		e++
-		return nil
-	}
 	g := Grammar{
 		"START": []Clause{
 			{
@@ -158,9 +166,9 @@ func TestGrammarHooks(t *testing.T) {
 					NewTokenType(lexer.ItemQuery),
 					NewSymbol("END"),
 				},
-				ProcessStart:     start,
-				ProcessedElement: process,
-				ProcessEnd:       end,
+				ProcessStart:     startFn,
+				ProcessedElement: processFn,
+				ProcessEnd:       endFn,
 			},
 		},
 		"END": []Clause{
@@ -168,9 +176,9 @@ func TestGrammarHooks(t *testing.T) {
 				Elements: []Element{
 					NewTokenType(lexer.ItemSemicolon),
 				},
-				ProcessStart:     start,
-				ProcessedElement: process,
-				ProcessEnd:       end,
+				ProcessStart:     startFn,
+				ProcessedElement: processFn,
+				ProcessEnd:       endFn,
 			},
 		},
 	}

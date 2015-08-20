@@ -129,9 +129,11 @@ func (p *Parser) consume(llk *LLk, st *semantic.Statement, s semantic.Symbol) (b
 // expect given the input, symbol, and clause attemps to satisfy all elements.
 func (p *Parser) expect(llk *LLk, st *semantic.Statement, s semantic.Symbol, cls Clause) (bool, error) {
 	if cls.ProcessStart != nil {
-		if err := cls.ProcessStart(st, s); err != nil {
+		stFun, err := cls.ProcessStart(st, s)
+		if err != nil {
 			return false, nil
 		}
+		cls.ProcessStart = stFun
 	}
 	for _, elem := range cls.Elements {
 		tkn := llk.Current()
@@ -151,15 +153,19 @@ func (p *Parser) expect(llk *LLk, st *semantic.Statement, s semantic.Symbol, cls
 			} else {
 				ce = semantic.NewConsumedToken(tkn)
 			}
-			if err := cls.ProcessedElement(st, ce); err != nil {
+			stFun, err := cls.ProcessedElement(st, ce)
+			if err != nil {
 				return false, err
 			}
+			cls.ProcessedElement = stFun
 		}
 	}
 	if cls.ProcessEnd != nil {
-		if err := cls.ProcessEnd(st, s); err != nil {
+		stFun, err := cls.ProcessEnd(st, s)
+		if err != nil {
 			return false, err
 		}
+		cls.ProcessEnd = stFun
 	}
 	return true, nil
 }

@@ -16,8 +16,8 @@ package semantic
 
 // ClauseHook is a function hook for the parser that gets called on clause wide
 // events.
-type ClauseHook func(*Statement, Symbol) error
+type ClauseHook func(*Statement, Symbol) (ClauseHook, error)
 
 // ElementHook is a function hook for the parser that gets called after an
 // Element is confused.
-type ElementHook func(*Statement, ConsumedElement) error
+type ElementHook func(*Statement, ConsumedElement) (ElementHook, error)
