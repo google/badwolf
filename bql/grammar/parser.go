@@ -43,8 +43,8 @@ func NewSymbol(s Symbol) Element {
 	}
 }
 
-// NewToken creates a new element from a token.
-func NewToken(t lexer.TokenType) Element {
+// NewTokenType creates a new element from a token.
+func NewTokenType(t lexer.TokenType) Element {
 	return Element{
 		isSymbol:  false,
 		tokenType: t,

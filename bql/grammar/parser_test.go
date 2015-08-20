@@ -56,7 +56,7 @@ func TestValidGrammarCreatesAParser(t *testing.T) {
 		"START": []Clause{
 			{
 				Elements: []Element{
-					NewToken(lexer.ItemQuery),
+					NewTokenType(lexer.ItemQuery),
 				},
 			},
 		},
@@ -71,8 +71,8 @@ func TestSimpleGrammarExpect(t *testing.T) {
 		"START": []Clause{
 			{
 				Elements: []Element{
-					NewToken(lexer.ItemQuery),
-					NewToken(lexer.ItemSemicolon),
+					NewTokenType(lexer.ItemQuery),
+					NewTokenType(lexer.ItemSemicolon),
 				},
 			},
 		},
@@ -92,8 +92,8 @@ func TestSimpleGrammarConsume(t *testing.T) {
 		"START": []Clause{
 			{
 				Elements: []Element{
-					NewToken(lexer.ItemQuery),
-					NewToken(lexer.ItemSemicolon),
+					NewTokenType(lexer.ItemQuery),
+					NewTokenType(lexer.ItemSemicolon),
 				},
 			},
 		},
@@ -113,7 +113,7 @@ func TestComplexGrammarConsume(t *testing.T) {
 		"START": []Clause{
 			{
 				Elements: []Element{
-					NewToken(lexer.ItemQuery),
+					NewTokenType(lexer.ItemQuery),
 					NewSymbol("END"),
 				},
 			},
@@ -121,7 +121,7 @@ func TestComplexGrammarConsume(t *testing.T) {
 		"END": []Clause{
 			{
 				Elements: []Element{
-					NewToken(lexer.ItemSemicolon),
+					NewTokenType(lexer.ItemSemicolon),
 				},
 			},
 		},
@@ -154,7 +154,7 @@ func TestGrammarHooks(t *testing.T) {
 		"START": []Clause{
 			{
 				Elements: []Element{
-					NewToken(lexer.ItemQuery),
+					NewTokenType(lexer.ItemQuery),
 					NewSymbol("END"),
 				},
 				ProcessStart:     start,
@@ -165,7 +165,7 @@ func TestGrammarHooks(t *testing.T) {
 		"END": []Clause{
 			{
 				Elements: []Element{
-					NewToken(lexer.ItemSemicolon),
+					NewTokenType(lexer.ItemSemicolon),
 				},
 				ProcessStart:     start,
 				ProcessedElement: process,
@@ -197,7 +197,7 @@ func TestComplexGrammarParse(t *testing.T) {
 		"START": []Clause{
 			{
 				Elements: []Element{
-					NewToken(lexer.ItemQuery),
+					NewTokenType(lexer.ItemQuery),
 					NewSymbol("END"),
 				},
 			},
@@ -205,7 +205,7 @@ func TestComplexGrammarParse(t *testing.T) {
 		"END": []Clause{
 			{
 				Elements: []Element{
-					NewToken(lexer.ItemSemicolon),
+					NewTokenType(lexer.ItemSemicolon),
 				},
 			},
 		},
