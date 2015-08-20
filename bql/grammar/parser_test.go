@@ -138,14 +138,17 @@ func TestComplexGrammarConsume(t *testing.T) {
 
 func TestGrammarHooks(t *testing.T) {
 	s, p, e := 0, 0, 0
-	start := func(Symbol) {
+	start := func(Symbol) error {
 		s++
+		return nil
 	}
-	process := func(Element) {
+	process := func(Element) error {
 		p++
+		return nil
 	}
-	end := func(Symbol) {
+	end := func(Symbol) error {
 		e++
+		return nil
 	}
 	g := Grammar{
 		"START": []Clause{

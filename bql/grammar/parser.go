@@ -63,11 +63,11 @@ func (e Element) Token() lexer.TokenType {
 
 // ClauseHook is a function hook for the parser that gets called on clause wide
 // events.
-type ClauseHook func(Symbol)
+type ClauseHook func(Symbol) error
 
 // ElementHook is a function hook for the parser that gets called after an
 // Element is confused.
-type ElementHook func(Element)
+type ElementHook func(Element) error
 
 // Clause contains on clause of the derivation rule.
 type Clause struct {
@@ -144,7 +144,9 @@ func (p *Parser) consume(llk *LLk, s Symbol) (bool, error) {
 // expect given the input, symbol, and clause attemps to satisfy all elements.
 func (p *Parser) expect(llk *LLk, s Symbol, cls Clause) (bool, error) {
 	if cls.ProcessStart != nil {
-		cls.ProcessStart(s)
+		if err := cls.ProcessStart(s); err != nil {
+			return false, nil
+		}
 	}
 	for _, elem := range cls.Elements {
 		if elem.isSymbol {
@@ -157,11 +159,15 @@ func (p *Parser) expect(llk *LLk, s Symbol, cls Clause) (bool, error) {
 			}
 		}
 		if cls.ProcessedElement != nil {
-			cls.ProcessedElement(elem)
+			if err := cls.ProcessedElement(elem); err != nil {
+				return false, err
+			}
 		}
 	}
 	if cls.ProcessEnd != nil {
-		cls.ProcessEnd(s)
+		if err := cls.ProcessEnd(s); err != nil {
+			return false, err
+		}
 	}
 	return true, nil
 }
