@@ -54,20 +54,12 @@ func (e Element) Token() lexer.TokenType {
 	return e.tokenType
 }
 
-// ClauseHook is a function hook for the parser that gets called on clause wide
-// events.
-type ClauseHook func(*semantic.Statement, semantic.Symbol) error
-
-// ElementHook is a function hook for the parser that gets called after an
-// Element is confused.
-type ElementHook func(*semantic.Statement, semantic.ConsumedElement) error
-
 // Clause contains on clause of the derivation rule.
 type Clause struct {
 	Elements         []Element
-	ProcessStart     ClauseHook
-	ProcessEnd       ClauseHook
-	ProcessedElement ElementHook
+	ProcessStart     semantic.ClauseHook
+	ProcessEnd       semantic.ClauseHook
+	ProcessedElement semantic.ElementHook
 }
 
 // Grammar contains the left factory LLk grammar to be parsed. All provided
