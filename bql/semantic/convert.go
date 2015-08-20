@@ -17,16 +17,61 @@ package semantic
 import (
 	"fmt"
 
-	"github.com/google/badwolf/bql/grammar"
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/triple/literal"
 	"github.com/google/badwolf/triple/node"
 	"github.com/google/badwolf/triple/predicate"
 )
 
+// Symbol of the LLk left factored grammar.
+type Symbol string
+
+// String returns a string representation of the symbol
+func (s Symbol) String() string {
+	return string(s)
+}
+
+// ConsumedElement groups the curernt element being processed by the parser.
+type ConsumedElement struct {
+	isSymbol bool
+	symbol   Symbol
+	token    *lexer.Token
+}
+
+// NewConsumedSymbol create a new consumed element that boxes a symbol.
+func NewConsumedSymbol(s Symbol) ConsumedElement {
+	return ConsumedElement{
+		isSymbol: true,
+		symbol:   s,
+	}
+}
+
+// NewConsumedToken create a new consumed element that boxes a roken.
+func NewConsumedToken(tkn *lexer.Token) ConsumedElement {
+	return ConsumedElement{
+		isSymbol: false,
+		token:    tkn,
+	}
+}
+
+// IsSymbol returns true if the boxed element is a symbol; false otherwise.
+func (c ConsumedElement) IsSymbol() bool {
+	return c.isSymbol
+}
+
+// Symbol returns the boxed symbol.
+func (c ConsumedElement) Symbol() Symbol {
+	return c.symbol
+}
+
+// Token returns the boxed token.
+func (c ConsumedElement) Token() *lexer.Token {
+	return c.token
+}
+
 // ToNode converts the node found by the lexer and converts it into a BadWolf
 // node.
-func ToNode(ce grammar.ConsumedElement) (*node.Node, error) {
+func ToNode(ce ConsumedElement) (*node.Node, error) {
 	if ce.IsSymbol() {
 		return nil, fmt.Errorf("semantic.ToNode cannot convert symbol %v to a node", ce)
 	}
@@ -39,7 +84,7 @@ func ToNode(ce grammar.ConsumedElement) (*node.Node, error) {
 
 // ToPredicate converts the node found by the lexer and converts it into a
 // BadWolf predicate.
-func ToPredicate(ce grammar.ConsumedElement) (*predicate.Predicate, error) {
+func ToPredicate(ce ConsumedElement) (*predicate.Predicate, error) {
 	if ce.IsSymbol() {
 		return nil, fmt.Errorf("semantic.ToPredicate cannot convert symbol %v to a predicate", ce)
 	}
@@ -52,7 +97,7 @@ func ToPredicate(ce grammar.ConsumedElement) (*predicate.Predicate, error) {
 
 // ToLiteral converts the node found by the lexer and converts it into a
 // BadWolf literal.
-func ToLiteral(ce grammar.ConsumedElement) (*literal.Literal, error) {
+func ToLiteral(ce ConsumedElement) (*literal.Literal, error) {
 	if ce.IsSymbol() {
 		return nil, fmt.Errorf("semantic.ToLiteral cannot convert symbol %v to a literal", ce)
 	}

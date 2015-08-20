@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/google/badwolf/bql/lexer"
+	"github.com/google/badwolf/bql/semantic"
 )
 
 func TestEmptyGrammarFailed(t *testing.T) {
@@ -81,7 +82,7 @@ func TestSimpleGrammarExpect(t *testing.T) {
 	if err != nil {
 		t.Errorf("grammar.NewParser: should have produced a valid parser")
 	}
-	b, err := p.expect(NewLLk("select;", 1), "START", g["START"][0])
+	b, err := p.expect(NewLLk("select;", 1), &semantic.Statement{}, "START", g["START"][0])
 	if !b || err != nil {
 		t.Errorf("Parser.expect: failed to accept derivation tokens; %v, %v", b, err)
 	}
@@ -102,7 +103,7 @@ func TestSimpleGrammarConsume(t *testing.T) {
 	if err != nil {
 		t.Errorf("grammar.NewParser: should have produced a valid parser")
 	}
-	b, err := p.consume(NewLLk("select;", 1), "START")
+	b, err := p.consume(NewLLk("select;", 1), &semantic.Statement{}, "START")
 	if !b || err != nil {
 		t.Errorf("Parser.consume: failed to accept derivation tokens; %v, %v", b, err)
 	}
@@ -130,7 +131,7 @@ func TestComplexGrammarConsume(t *testing.T) {
 	if err != nil {
 		t.Errorf("grammar.NewParser: should have produced a valid parser")
 	}
-	b, err := p.consume(NewLLk("select;", 1), "START")
+	b, err := p.consume(NewLLk("select;", 1), &semantic.Statement{}, "START")
 	if !b || err != nil {
 		t.Errorf("Parser.consume: failed to accept derivation tokens; %v, %v", b, err)
 	}
@@ -138,15 +139,15 @@ func TestComplexGrammarConsume(t *testing.T) {
 
 func TestGrammarHooks(t *testing.T) {
 	s, p, e := 0, 0, 0
-	start := func(Symbol) error {
+	start := func(*semantic.Statement, semantic.Symbol) error {
 		s++
 		return nil
 	}
-	process := func(ConsumedElement) error {
+	process := func(*semantic.Statement, semantic.ConsumedElement) error {
 		p++
 		return nil
 	}
-	end := func(Symbol) error {
+	end := func(*semantic.Statement, semantic.Symbol) error {
 		e++
 		return nil
 	}
@@ -177,7 +178,7 @@ func TestGrammarHooks(t *testing.T) {
 	if err != nil {
 		t.Errorf("grammar.NewParser: should have produced a valid parser")
 	}
-	b, err := prsr.consume(NewLLk("select;", 1), "START")
+	b, err := prsr.consume(NewLLk("select;", 1), &semantic.Statement{}, "START")
 	if !b || err != nil {
 		t.Errorf("Parser.consume: failed to accept derivation tokens; %v, %v", b, err)
 	}
@@ -214,7 +215,7 @@ func TestComplexGrammarParse(t *testing.T) {
 	if err != nil {
 		t.Errorf("grammar.NewParser: should have produced a valid parser")
 	}
-	if err := p.Parse(NewLLk("select;", 1)); err != nil {
+	if err := p.Parse(NewLLk("select;", 1), &semantic.Statement{}); err != nil {
 		t.Errorf("Parser.consume: failed to accept derivation tokens; %v", err)
 	}
 }

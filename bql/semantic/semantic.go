@@ -53,11 +53,9 @@ type Statement struct {
 	data   []*triple.Triple
 }
 
-// NewStatement returns a new empty statement.
-func NewStatement(st StatementType) *Statement {
-	return &Statement{
-		sType: st,
-	}
+// BindType set he type of a statement.
+func (s *Statement) BindType(st StatementType) {
+	s.sType = st
 }
 
 // Type returns the type of the statement.

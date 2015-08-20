@@ -18,25 +18,18 @@ import (
 	"fmt"
 
 	"github.com/google/badwolf/bql/lexer"
+	"github.com/google/badwolf/bql/semantic"
 )
-
-// Symbol of the LLk left factored grammar.
-type Symbol string
-
-// String returns a string representation of the symbol
-func (s Symbol) String() string {
-	return string(s)
-}
 
 // Element are the main components that define a derivation rule.
 type Element struct {
 	isSymbol  bool
-	symbol    Symbol
+	symbol    semantic.Symbol
 	tokenType lexer.TokenType
 }
 
 // NewSymbol creates a new element from a symbol.
-func NewSymbol(s Symbol) Element {
+func NewSymbol(s semantic.Symbol) Element {
 	return Element{
 		isSymbol: true,
 		symbol:   s,
@@ -52,46 +45,8 @@ func NewTokenType(t lexer.TokenType) Element {
 }
 
 // Symbol returns the symbol box for the given element.
-func (e Element) Symbol() Symbol {
+func (e Element) Symbol() semantic.Symbol {
 	return e.symbol
-}
-
-// ConsumedElement groups the curernt element being processed by the parser.
-type ConsumedElement struct {
-	isSymbol bool
-	symbol   Symbol
-	token    *lexer.Token
-}
-
-// NewConsumedSymbol create a new consumed element that boxes a symbol.
-func NewConsumedSymbol(s Symbol) ConsumedElement {
-	return ConsumedElement{
-		isSymbol: true,
-		symbol:   s,
-	}
-}
-
-// NewConsumedToken create a new consumed element that boxes a roken.
-func NewConsumedToken(tkn *lexer.Token) ConsumedElement {
-	return ConsumedElement{
-		isSymbol: false,
-		token:    tkn,
-	}
-}
-
-// IsSymbol returns true if the boxed element is a symbol; false otherwise.
-func (c ConsumedElement) IsSymbol() bool {
-	return c.isSymbol
-}
-
-// Symbol returns the boxed symbol.
-func (c ConsumedElement) Symbol() Symbol {
-	return c.symbol
-}
-
-// Token returns the boxed token.
-func (c ConsumedElement) Token() *lexer.Token {
-	return c.token
 }
 
 // Token returns the value of the token box for the given element.
@@ -101,11 +56,11 @@ func (e Element) Token() lexer.TokenType {
 
 // ClauseHook is a function hook for the parser that gets called on clause wide
 // events.
-type ClauseHook func(Symbol) error
+type ClauseHook func(*semantic.Statement, semantic.Symbol) error
 
 // ElementHook is a function hook for the parser that gets called after an
 // Element is confused.
-type ElementHook func(ConsumedElement) error
+type ElementHook func(*semantic.Statement, semantic.ConsumedElement) error
 
 // Clause contains on clause of the derivation rule.
 type Clause struct {
@@ -118,7 +73,7 @@ type Clause struct {
 // Grammar contains the left factory LLk grammar to be parsed. All provided
 // grammars *must* have the "START" symbol to initialte the parsing of input
 // text.
-type Grammar map[Symbol][]Clause
+type Grammar map[semantic.Symbol][]Clause
 
 // Parser implements a LLk recursive decend parser for left factorized grammars.
 type Parser struct {
@@ -150,8 +105,8 @@ func NewParser(grammar *Grammar) (*Parser, error) {
 }
 
 // Parse attempts to run the parser for the given input.
-func (p *Parser) Parse(llk *LLk) error {
-	b, err := p.consume(llk, "START")
+func (p *Parser) Parse(llk *LLk, st *semantic.Statement) error {
+	b, err := p.consume(llk, st, "START")
 	if err != nil {
 		return err
 	}
@@ -163,7 +118,7 @@ func (p *Parser) Parse(llk *LLk) error {
 
 // consume attempts to consume all input tokens for the provided symbols given
 // the parser grammar.
-func (p *Parser) consume(llk *LLk, s Symbol) (bool, error) {
+func (p *Parser) consume(llk *LLk, st *semantic.Statement, s semantic.Symbol) (bool, error) {
 	for _, clause := range (*p.grammar)[s] {
 		if len(clause.Elements) == 0 {
 			return true, nil
@@ -173,23 +128,23 @@ func (p *Parser) consume(llk *LLk, s Symbol) (bool, error) {
 			return false, fmt.Errorf("Parser.consume: not left factored grammar in %v", clause)
 		}
 		if llk.CanAccept(elem.Token()) {
-			return p.expect(llk, s, clause)
+			return p.expect(llk, st, s, clause)
 		}
 	}
 	return false, fmt.Errorf("Parser.consume: could not consume token %s in production %s", llk.Current(), s)
 }
 
 // expect given the input, symbol, and clause attemps to satisfy all elements.
-func (p *Parser) expect(llk *LLk, s Symbol, cls Clause) (bool, error) {
+func (p *Parser) expect(llk *LLk, st *semantic.Statement, s semantic.Symbol, cls Clause) (bool, error) {
 	if cls.ProcessStart != nil {
-		if err := cls.ProcessStart(s); err != nil {
+		if err := cls.ProcessStart(st, s); err != nil {
 			return false, nil
 		}
 	}
 	for _, elem := range cls.Elements {
 		tkn := llk.Current()
 		if elem.isSymbol {
-			if b, err := p.consume(llk, elem.Symbol()); !b {
+			if b, err := p.consume(llk, st, elem.Symbol()); !b {
 				return b, err
 			}
 		} else {
@@ -198,19 +153,19 @@ func (p *Parser) expect(llk *LLk, s Symbol, cls Clause) (bool, error) {
 			}
 		}
 		if cls.ProcessedElement != nil {
-			var ce ConsumedElement
+			var ce semantic.ConsumedElement
 			if elem.isSymbol {
-				ce = NewConsumedSymbol(ce.Symbol())
+				ce = semantic.NewConsumedSymbol(ce.Symbol())
 			} else {
-				ce = NewConsumedToken(tkn)
+				ce = semantic.NewConsumedToken(tkn)
 			}
-			if err := cls.ProcessedElement(ce); err != nil {
+			if err := cls.ProcessedElement(st, ce); err != nil {
 				return false, err
 			}
 		}
 	}
 	if cls.ProcessEnd != nil {
-		if err := cls.ProcessEnd(s); err != nil {
+		if err := cls.ProcessEnd(st, s); err != nil {
 			return false, err
 		}
 	}

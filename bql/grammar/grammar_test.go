@@ -14,7 +14,11 @@
 
 package grammar
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/google/badwolf/bql/semantic"
+)
 
 func TestAcceptByParse(t *testing.T) {
 	table := []string{
@@ -108,7 +112,7 @@ func TestAcceptByParse(t *testing.T) {
 		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
 	}
 	for _, input := range table {
-		if err := p.Parse(NewLLk(input, 1)); err != nil {
+		if err := p.Parse(NewLLk(input, 1), &semantic.Statement{}); err != nil {
 			t.Errorf("Parser.consume: failed to accept input %q with error %v", input, err)
 		}
 	}
@@ -196,7 +200,7 @@ func TestRejectByParse(t *testing.T) {
 		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
 	}
 	for _, input := range table {
-		if err := p.Parse(NewLLk(input, 1)); err == nil {
+		if err := p.Parse(NewLLk(input, 1), &semantic.Statement{}); err == nil {
 			t.Errorf("Parser.consume: failed to reject input %q with error %v", input, err)
 		}
 	}
