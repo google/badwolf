@@ -1,4 +1,4 @@
-# Querying the graph: BQL, or the BadWolf Query language
+# BQL: BadWolf Query language
 
 BadWolf provides a high level declarative query and update language. BQL
 (or BadWolf Query Language) is a declarative language losely modeled after
@@ -322,7 +322,7 @@ look like
   HAVING ?tm > ?tj;
 ```
 
-# Inserting data into graphs
+## Inserting data into graphs
 
 Triples can be inserted into one or more graphs. That can be achieve by just
 running the following insert statements.
@@ -334,7 +334,7 @@ running the following insert statements.
   };
 ```
 
-# Deleting data from graphs
+## Deleting data from graphs
 
 Triples can be deleted from one or more graphs. That can be achieve by just
 running the following delete statements.
