@@ -56,6 +56,44 @@ func (e Element) Symbol() Symbol {
 	return e.symbol
 }
 
+// ConsumedElement groups the curernt element being processed by the parser.
+type ConsumedElement struct {
+	isSymbol bool
+	symbol   Symbol
+	token    *lexer.Token
+}
+
+// NewConsumedSymbol create a new consumed element that boxes a symbol.
+func NewConsumedSymbol(s Symbol) ConsumedElement {
+	return ConsumedElement{
+		isSymbol: true,
+		symbol:   s,
+	}
+}
+
+// NewConsumedToken create a new consumed element that boxes a roken.
+func NewConsumedToken(tkn *lexer.Token) ConsumedElement {
+	return ConsumedElement{
+		isSymbol: false,
+		token:    tkn,
+	}
+}
+
+// IsSymbol returns true if the boxed element is a symbol; false otherwise.
+func (c ConsumedElement) IsSymbol() bool {
+	return c.isSymbol
+}
+
+// Symbol returns the boxed symbol.
+func (c ConsumedElement) Symbol() Symbol {
+	return c.symbol
+}
+
+// Token returns the boxed token.
+func (c ConsumedElement) Token() *lexer.Token {
+	return c.token
+}
+
 // Token returns the value of the token box for the given element.
 func (e Element) Token() lexer.TokenType {
 	return e.tokenType
@@ -67,7 +105,7 @@ type ClauseHook func(Symbol) error
 
 // ElementHook is a function hook for the parser that gets called after an
 // Element is confused.
-type ElementHook func(Element) error
+type ElementHook func(ConsumedElement) error
 
 // Clause contains on clause of the derivation rule.
 type Clause struct {
@@ -149,6 +187,7 @@ func (p *Parser) expect(llk *LLk, s Symbol, cls Clause) (bool, error) {
 		}
 	}
 	for _, elem := range cls.Elements {
+		tkn := llk.Current()
 		if elem.isSymbol {
 			if b, err := p.consume(llk, elem.Symbol()); !b {
 				return b, err
@@ -159,7 +198,13 @@ func (p *Parser) expect(llk *LLk, s Symbol, cls Clause) (bool, error) {
 			}
 		}
 		if cls.ProcessedElement != nil {
-			if err := cls.ProcessedElement(elem); err != nil {
+			var ce ConsumedElement
+			if elem.isSymbol {
+				ce = NewConsumedSymbol(ce.Symbol())
+			} else {
+				ce = NewConsumedToken(tkn)
+			}
+			if err := cls.ProcessedElement(ce); err != nil {
 				return false, err
 			}
 		}

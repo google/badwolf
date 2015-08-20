@@ -142,7 +142,7 @@ func TestGrammarHooks(t *testing.T) {
 		s++
 		return nil
 	}
-	process := func(Element) error {
+	process := func(ConsumedElement) error {
 		p++
 		return nil
 	}
