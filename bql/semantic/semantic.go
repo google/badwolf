@@ -17,3 +17,70 @@
 // turn tokens into valid BadWolf structures. It also provides the hooks
 // implementations required for buliding an actionable execution plan.
 package semantic
+
+import "github.com/google/badwolf/triple"
+
+// StatementType describes the type of statement being represented.
+type StatementType int8
+
+const (
+	// Query statement.
+	Query StatementType = iota
+	// Insert statemrnt.
+	Insert
+	// Delete statement.
+	Delete
+)
+
+// String provides a readable version of the StatementType.
+func (t StatementType) String() string {
+	switch t {
+	case Query:
+		return "QUERY"
+	case Insert:
+		return "INSERT"
+	case Delete:
+		return "DELETE"
+	default:
+		return "UNKNOWN"
+	}
+}
+
+// Statement contains all the semantic information extract from the parsing
+type Statement struct {
+	sType  StatementType
+	graphs []string
+	data   []*triple.Triple
+}
+
+// NewStatement returns a new empty statement.
+func NewStatement(st StatementType) *Statement {
+	return &Statement{
+		sType: st,
+	}
+}
+
+// Type returns the type of the statement.
+func (s *Statement) Type() StatementType {
+	return s.sType
+}
+
+// AddGraph adds a graph to a given statement.
+func (s *Statement) AddGraph(g string) {
+	s.graphs = append(s.graphs, g)
+}
+
+// Graphs returns the list of graphs listed on the statement.
+func (s *Statement) Graphs() []string {
+	return s.graphs
+}
+
+// AddData adds a triple to a given statement's data.
+func (s *Statement) AddData(d *triple.Triple) {
+	s.data = append(s.data, d)
+}
+
+// Data returns the data available for the given statement.
+func (s *Statement) Data() []*triple.Triple {
+	return s.data
+}
