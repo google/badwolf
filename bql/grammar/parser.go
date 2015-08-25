@@ -65,7 +65,7 @@ type Clause struct {
 // Grammar contains the left factory LLk grammar to be parsed. All provided
 // grammars *must* have the "START" symbol to initialte the parsing of input
 // text.
-type Grammar map[semantic.Symbol][]Clause
+type Grammar map[semantic.Symbol][]*Clause
 
 // Parser implements a LLk recursive decend parser for left factorized grammars.
 type Parser struct {
@@ -127,7 +127,7 @@ func (p *Parser) consume(llk *LLk, st *semantic.Statement, s semantic.Symbol) (b
 }
 
 // expect given the input, symbol, and clause attemps to satisfy all elements.
-func (p *Parser) expect(llk *LLk, st *semantic.Statement, s semantic.Symbol, cls Clause) (bool, error) {
+func (p *Parser) expect(llk *LLk, st *semantic.Statement, s semantic.Symbol, cls *Clause) (bool, error) {
 	if cls.ProcessStart != nil {
 		stFun, err := cls.ProcessStart(st, s)
 		if err != nil {

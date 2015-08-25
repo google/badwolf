@@ -23,7 +23,7 @@ import (
 
 func TestEmptyGrammarFailed(t *testing.T) {
 	_, err := NewParser(&Grammar{
-		"START": []Clause{
+		"START": []*Clause{
 			{
 				Elements: []Element{},
 			},
@@ -39,7 +39,7 @@ func TestEmptyGrammarFailed(t *testing.T) {
 
 func TestNonLeftFactorizedGrammarFailed(t *testing.T) {
 	_, err := NewParser(&Grammar{
-		"START": []Clause{
+		"START": []*Clause{
 			{
 				Elements: []Element{
 					NewSymbol("Foo"),
@@ -54,7 +54,7 @@ func TestNonLeftFactorizedGrammarFailed(t *testing.T) {
 
 func TestValidGrammarCreatesAParser(t *testing.T) {
 	_, err := NewParser(&Grammar{
-		"START": []Clause{
+		"START": []*Clause{
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemQuery),
@@ -69,7 +69,7 @@ func TestValidGrammarCreatesAParser(t *testing.T) {
 
 func TestSimpleGrammarExpect(t *testing.T) {
 	g := Grammar{
-		"START": []Clause{
+		"START": []*Clause{
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemQuery),
@@ -90,7 +90,7 @@ func TestSimpleGrammarExpect(t *testing.T) {
 
 func TestSimpleGrammarConsume(t *testing.T) {
 	g := Grammar{
-		"START": []Clause{
+		"START": []*Clause{
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemQuery),
@@ -111,7 +111,7 @@ func TestSimpleGrammarConsume(t *testing.T) {
 
 func TestComplexGrammarConsume(t *testing.T) {
 	g := Grammar{
-		"START": []Clause{
+		"START": []*Clause{
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemQuery),
@@ -119,7 +119,7 @@ func TestComplexGrammarConsume(t *testing.T) {
 				},
 			},
 		},
-		"END": []Clause{
+		"END": []*Clause{
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemSemicolon),
@@ -160,7 +160,7 @@ func endFn(*semantic.Statement, semantic.Symbol) (semantic.ClauseHook, error) {
 
 func TestGrammarHooks(t *testing.T) {
 	g := Grammar{
-		"START": []Clause{
+		"START": []*Clause{
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemQuery),
@@ -171,7 +171,7 @@ func TestGrammarHooks(t *testing.T) {
 				ProcessEnd:       endFn,
 			},
 		},
-		"END": []Clause{
+		"END": []*Clause{
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemSemicolon),
@@ -203,7 +203,7 @@ func TestGrammarHooks(t *testing.T) {
 
 func TestComplexGrammarParse(t *testing.T) {
 	g := Grammar{
-		"START": []Clause{
+		"START": []*Clause{
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemQuery),
@@ -211,7 +211,7 @@ func TestComplexGrammarParse(t *testing.T) {
 				},
 			},
 		},
-		"END": []Clause{
+		"END": []*Clause{
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemSemicolon),

@@ -63,7 +63,7 @@ func (s *Statement) Type() StatementType {
 	return s.sType
 }
 
-// AddGraph adds a graph to a given statement.
+// AddGraph adds a graph to a given https://critique.corp.google.com/#review/101398527statement.
 func (s *Statement) AddGraph(g string) {
 	s.graphs = append(s.graphs, g)
 }

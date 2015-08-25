@@ -86,6 +86,12 @@ func Parse(s string) (*Predicate, error) {
 			id: ID(id),
 		}, nil
 	}
+	if ta[0] == '"' {
+		ta = ta[1:]
+	}
+	if ta[len(ta)-1] == '"' {
+		ta = ta[:len(ta)-1]
+	}
 	pta, err := time.Parse(time.RFC3339Nano, ta)
 	if err != nil {
 		return nil, fmt.Errorf("predicate.Parse failed to parse time anchor %s in %s with error %v", ta, raw, err)
