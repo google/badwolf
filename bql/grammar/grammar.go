@@ -669,6 +669,12 @@ func initSemanticBQL() {
 			cls.ProcessedElement = semantic.DataAccumulatorHook()
 		}
 	}
+	for _, cls := range SemanticBQL["INSERT_OBJECT"] {
+		cls.ProcessEnd = semantic.TypeBindingClauseHook(semantic.Insert)
+	}
+	for _, cls := range SemanticBQL["DELETE_OBJECT"] {
+		cls.ProcessEnd = semantic.TypeBindingClauseHook(semantic.Delete)
+	}
 	for _, cls := range SemanticBQL["START"] {
 		if t := cls.Elements[0].Token(); t != lexer.ItemInsert && t != lexer.ItemDelete {
 			continue

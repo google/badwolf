@@ -62,9 +62,9 @@ type Store interface {
 	// NewGraph creates a new graph.
 	NewGraph(id string) (Graph, error)
 
-	// GetGraph return an existing graph if available. Getting a non existing
+	// Graph return an existing graph if available. Getting a non existing
 	// graph should return and error.
-	GetGraph(id string) (Graph, error)
+	Graph(id string) (Graph, error)
 
 	// DeleteGraph with delete an existing graph. Deleting a non existing graph
 	// should return and error.

@@ -31,16 +31,16 @@ func TestMemoryStore(t *testing.T) {
 		t.Errorf("memoryStore.NewGraph: should never fail to crate a graph; %s", err)
 	}
 	// Get an existing graph.
-	if _, err := s.GetGraph("test"); err != nil {
-		t.Errorf("memoryStore.GetGraph: should never fail to get an existing graph; %s", err)
+	if _, err := s.Graph("test"); err != nil {
+		t.Errorf("memoryStore.Graph: should never fail to get an existing graph; %s", err)
 	}
 	// Delete an existing graph.
 	if err := s.DeleteGraph("test"); err != nil {
 		t.Errorf("memoryStore.DeleteGraph: should never fail to delete an existing graph; %s", err)
 	}
 	// Get a non existing graph.
-	if _, err := s.GetGraph("test"); err == nil {
-		t.Errorf("memoryStore.GetGraph: should never succeed to get a non existing graph; %s", err)
+	if _, err := s.Graph("test"); err == nil {
+		t.Errorf("memoryStore.Graph: should never succeed to get a non existing graph; %s", err)
 	}
 	// Delete an existing graph.
 	if err := s.DeleteGraph("test"); err == nil {

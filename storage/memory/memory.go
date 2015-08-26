@@ -78,15 +78,15 @@ func (s *memoryStore) NewGraph(id string) (storage.Graph, error) {
 	return g, nil
 }
 
-// GetGraph return an existing graph if available. Getting a non existing
+// Graph return an existing graph if available. Getting a non existing
 // graph should return and error.
-func (s *memoryStore) GetGraph(id string) (storage.Graph, error) {
+func (s *memoryStore) Graph(id string) (storage.Graph, error) {
 	s.rwmu.RLock()
 	defer s.rwmu.RUnlock()
 	if g, ok := s.graphs[id]; ok {
 		return g, nil
 	}
-	return nil, fmt.Errorf("memory.GetGraph(%q): graph does not exist", id)
+	return nil, fmt.Errorf("memory.Graph(%q): graph does not exist", id)
 }
 
 // DeleteGraph with delete an existing graph. Deleting a non existing graph

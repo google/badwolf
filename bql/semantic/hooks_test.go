@@ -122,3 +122,13 @@ func TestSemanticAcceptInsertDelete(t *testing.T) {
 		}
 	}
 }
+
+func TestTypeBindingClauseHook(t *testing.T) {
+	var f ClauseHook
+	f = TypeBindingClauseHook(Insert)
+	st := &Statement{}
+	f(st, Symbol("FOO"))
+	if got, want := st.Type(), Insert; got != want {
+		t.Errorf("semantic.TypeBidingHook failed to set the right type; got %s, want %s", got, want)
+	}
+}

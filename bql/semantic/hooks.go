@@ -33,6 +33,16 @@ type ClauseHook func(*Statement, Symbol) (ClauseHook, error)
 // Element is confused.
 type ElementHook func(*Statement, ConsumedElement) (ElementHook, error)
 
+// TypeBindingClauseHook returns a ClauseHook that sets the binding type.
+func TypeBindingClauseHook(t StatementType) ClauseHook {
+	var f ClauseHook
+	f = func(stm *Statement, _ Symbol) (ClauseHook, error) {
+		stm.BindType(t)
+		return f, nil
+	}
+	return f
+}
+
 // dataAccumulator creates a element hook that tracks fully formed triples and
 // adds them to the Statement when fully formed.
 func dataAccumulator(b literal.Builder) ElementHook {
