@@ -30,6 +30,10 @@ const (
 	Insert
 	// Delete statement.
 	Delete
+	// Create statement.
+	Create
+	// Drop statement.
+	Drop
 )
 
 // String provides a readable version of the StatementType.
@@ -41,6 +45,10 @@ func (t StatementType) String() string {
 		return "INSERT"
 	case Delete:
 		return "DELETE"
+	case Create:
+		return "CREATE"
+	case Drop:
+		return "DROP"
 	default:
 		return "UNKNOWN"
 	}

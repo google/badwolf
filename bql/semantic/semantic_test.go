@@ -80,6 +80,10 @@ func TestAcceptByParseAndSemantic(t *testing.T) {
 		{`delete data from ?a {/_<foo> "bar"@[] /_<foo> .
 			                      /_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z] .
 			                      /_<foo> "bar"@[] "yeah"^^type:text};`, 1, 3},
+		// Create graphs.
+		{`create graph ?foo;`, 1, 0},
+		// Drop graphs.
+		{`drop graph ?foo, ?bar;`, 2, 0},
 	}
 	p, err := grammar.NewParser(&grammar.SemanticBQL)
 	if err != nil {
@@ -100,13 +104,11 @@ func TestAcceptByParseAndSemantic(t *testing.T) {
 }
 
 func TestRejectByParseAndSemantic(t *testing.T) {
-	table := []struct {
-		query   string
-		graphs  int
-		triples int
-	}{
-		// Insert data.
-		{`insert data into ?a {/_<foo> "bar"@["1234"] /_<foo>};`, 1, 1},
+	table := []string{
+		`insert data into ?a {/_<foo> "bar"@["1234"] /_<foo>};`,
+		`delete data from ?a {/_<foo> "bar"@[] "bar"@[123]};`,
+		`create graph foo;`,
+		`drop graph ?foo ?bar;`,
 	}
 	p, err := grammar.NewParser(&grammar.SemanticBQL)
 	if err != nil {
@@ -114,7 +116,7 @@ func TestRejectByParseAndSemantic(t *testing.T) {
 	}
 	for _, entry := range table {
 		st := &semantic.Statement{}
-		if err := p.Parse(grammar.NewLLk(entry.query, 1), st); err == nil {
+		if err := p.Parse(grammar.NewLLk(entry, 1), st); err == nil {
 			t.Errorf("Parser.consume: failed to reject invalid semantic entry %q", entry)
 		}
 	}

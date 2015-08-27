@@ -115,3 +115,61 @@ func TestInsertDeleteDoesNotFail(t *testing.T) {
 		t.Errorf("memory.DefaultStore.DeleteGraph(%q) should have not failed with error %v", "?a", err)
 	}
 }
+
+func TestCreateGraph(t *testing.T) {
+	memory.DefaultStore.DeleteGraph("?foo")
+	memory.DefaultStore.DeleteGraph("?bar")
+
+	bql := `create graph ?foo, ?bar;`
+	p, err := grammar.NewParser(&grammar.SemanticBQL)
+	if err != nil {
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
+	}
+	stm := &semantic.Statement{}
+	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
+		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
+	}
+	pln, err := New(memory.DefaultStore, stm)
+	if err != nil {
+		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v", stm)
+	}
+	if err := pln.Excecute(); err != nil {
+		t.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
+	}
+	if _, err := memory.DefaultStore.Graph("?foo"); err != nil {
+		t.Errorf("planner.Execute: failed to create graph %q with error %v", "?foo", err)
+	}
+	if _, err := memory.DefaultStore.Graph("?bar"); err != nil {
+		t.Errorf("planner.Execute: failed to create graph %q with error %v", "?bar", err)
+	}
+}
+
+func TestDropGraph(t *testing.T) {
+	memory.DefaultStore.DeleteGraph("?foo")
+	memory.DefaultStore.DeleteGraph("?bar")
+	memory.DefaultStore.NewGraph("?foo")
+	memory.DefaultStore.NewGraph("?bar")
+
+	bql := `drop graph ?foo, ?bar;`
+	p, err := grammar.NewParser(&grammar.SemanticBQL)
+	if err != nil {
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
+	}
+	stm := &semantic.Statement{}
+	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
+		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
+	}
+	pln, err := New(memory.DefaultStore, stm)
+	if err != nil {
+		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v", stm)
+	}
+	if err := pln.Excecute(); err != nil {
+		t.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
+	}
+	if g, err := memory.DefaultStore.Graph("?foo"); err == nil {
+		t.Errorf("planner.Execute: failed to drop graph %q; returned %v", "?foo", g)
+	}
+	if g, err := memory.DefaultStore.Graph("?bar"); err == nil {
+		t.Errorf("planner.Execute: failed to drop graph %q; returned %v", "?bar", g)
+	}
+}

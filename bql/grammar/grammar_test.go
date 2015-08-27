@@ -106,6 +106,12 @@ func TestAcceptByParse(t *testing.T) {
 		`delete data from ?a {/_<foo> "bar"@["1234"] /_<foo> .
 										      /_<foo> "bar"@["1234"] "bar"@["1234"] .
 													/_<foo> "bar"@["1234"] "yeah"^^type:text};`,
+		// Create graphs.
+		`create graph ?a;`,
+		`create graph ?a, ?b, ?c;`,
+		// Drop graphs.
+		`drop graph ?a;`,
+		`drop graph ?a, ?b, ?c;`,
 	}
 	p, err := NewParser(&BQL)
 	if err != nil {
@@ -194,6 +200,12 @@ func TestRejectByParse(t *testing.T) {
 		`delete data from ?a {/_<foo> "bar"@["1234"] /_<foo> .
 										      /_<foo> "bar"@["1234"] "bar"@["1234"] .
 													"bar"@["1234"] "yeah"^^type:text};`,
+		// Create graphs.
+		`create graph ;`,
+		`create graph ?a, ?b ?c;`,
+		// Drop graphs.
+		`drop graph ;`,
+		`drop graph ?a ?b, ?c;`,
 	}
 	p, err := NewParser(&BQL)
 	if err != nil {

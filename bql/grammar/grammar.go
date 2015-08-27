@@ -85,6 +85,36 @@ func initBQL() {
 					NewTokenType(lexer.ItemSemicolon),
 				},
 			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemCreate),
+					NewSymbol("CREATE_GRAPHS"),
+					NewTokenType(lexer.ItemSemicolon),
+				},
+			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemDrop),
+					NewSymbol("DROP_GRAPHS"),
+					NewTokenType(lexer.ItemSemicolon),
+				},
+			},
+		},
+		"CREATE_GRAPHS": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemGraph),
+					NewSymbol("GRAPHS"),
+				},
+			},
+		},
+		"DROP_GRAPHS": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemGraph),
+					NewSymbol("GRAPHS"),
+				},
+			},
 		},
 		"VARS": []*Clause{
 			{
@@ -662,7 +692,7 @@ func initSemanticBQL() {
 	SemanticBQL = Grammar{}
 	cloneGrammar(&SemanticBQL, &BQL)
 
-	// Insert and Delete semantic hook addition.
+	// Insert and Delete semantic hooks addition.
 	symbols := []semantic.Symbol{"INSERT_OBJECT", "INSERT_DATA", "DELETE_OBJECT", "DELETE_DATA"}
 	for _, sym := range symbols {
 		for _, cls := range SemanticBQL[sym] {
@@ -682,6 +712,13 @@ func initSemanticBQL() {
 		cls.ProcessedElement = semantic.DataAccumulatorHook()
 	}
 
+	// Create and Drop semantic hooks for type.
+	for _, cls := range SemanticBQL["CREATE_GRAPHS"] {
+		cls.ProcessEnd = semantic.TypeBindingClauseHook(semantic.Create)
+	}
+	for _, cls := range SemanticBQL["DROP_GRAPHS"] {
+		cls.ProcessEnd = semantic.TypeBindingClauseHook(semantic.Drop)
+	}
 	// Add graph binding collection to GRAPHS and MORE_GRAPHS clauses.
 	graphSymbols := []semantic.Symbol{"GRAPHS", "MORE_GRAPHS"}
 	for _, sym := range graphSymbols {

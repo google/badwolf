@@ -19,6 +19,7 @@ package planner
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/google/badwolf/bql/semantic"
@@ -30,6 +31,48 @@ import (
 type Excecutor interface {
 	// Execute runs the proposed plan for a given statement.
 	Excecute() error
+}
+
+// createPlan encapsulates the sequence of instructions that need to be
+// excecuted in order to satisfy the exceution of a valid create BQL statement.
+type createPlan struct {
+	stm   *semantic.Statement
+	store storage.Store
+}
+
+// Execute creates the indicated graphs.
+func (p *createPlan) Excecute() error {
+	errs := []string{}
+	for _, g := range p.stm.Graphs() {
+		if _, err := p.store.NewGraph(g); err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// dropPlan encapsulates the sequence of instructions that need to be
+// excecuted in order to satisfy the exceution of a valid drop BQL statement.
+type dropPlan struct {
+	stm   *semantic.Statement
+	store storage.Store
+}
+
+// Execute drops the indicated graphs.
+func (p *dropPlan) Excecute() error {
+	errs := []string{}
+	for _, g := range p.stm.Graphs() {
+		if err := p.store.DeleteGraph(g); err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, "; "))
+	}
+	return nil
 }
 
 // insertPlan encapsulates the sequence of instructions that need to be
@@ -45,12 +88,12 @@ func update(stm *semantic.Statement, store storage.Store, f updater) error {
 	var (
 		mu   sync.Mutex
 		wg   sync.WaitGroup
-		errs []error
+		errs []string
 	)
 	appendError := func(err error) {
 		mu.Lock()
 		defer mu.Unlock()
-		errs = append(errs, err)
+		errs = append(errs, err.Error())
 	}
 
 	for _, graphBinding := range stm.Graphs() {
@@ -70,7 +113,7 @@ func update(stm *semantic.Statement, store storage.Store, f updater) error {
 	}
 	wg.Wait()
 	if len(errs) > 0 {
-		return errs[0]
+		return errors.New(strings.Join(errs, "; "))
 	}
 	return nil
 }
@@ -111,6 +154,11 @@ func (p *queryPlan) Excecute() error {
 // New create a new executable plan given a semantic BQL statement.
 func New(store storage.Store, stm *semantic.Statement) (Excecutor, error) {
 	switch stm.Type() {
+	case semantic.Query:
+		return &queryPlan{
+			stm:   stm,
+			store: store,
+		}, nil
 	case semantic.Insert:
 		return &insertPlan{
 			stm:   stm,
@@ -121,8 +169,13 @@ func New(store storage.Store, stm *semantic.Statement) (Excecutor, error) {
 			stm:   stm,
 			store: store,
 		}, nil
-	case semantic.Query:
-		return &queryPlan{
+	case semantic.Create:
+		return &createPlan{
+			stm:   stm,
+			store: store,
+		}, nil
+	case semantic.Drop:
+		return &dropPlan{
 			stm:   stm,
 			store: store,
 		}, nil

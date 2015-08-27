@@ -40,6 +40,12 @@ const (
 	ItemInsert
 	// ItemDelete represents insert keyword in BQL.
 	ItemDelete
+	// ItemCreate represents the creation of a graph in BQL.
+	ItemCreate
+	// ItemDrop represent the destruction of a graph in BQL.
+	ItemDrop
+	// ItemGraph represent the graph to be created of destroyed in BQL.
+	ItemGraph
 	// ItemData represents the data keyword in BQL.
 	ItemData
 	// ItemInto represents the into keyword in BQL.
@@ -135,6 +141,12 @@ func (tt TokenType) String() string {
 		return "INSERT"
 	case ItemDelete:
 		return "DELETE"
+	case ItemCreate:
+		return "CREATE"
+	case ItemDrop:
+		return "DROP"
+	case ItemGraph:
+		return "Graph"
 	case ItemData:
 		return "DATA"
 	case ItemInto:
@@ -243,6 +255,9 @@ const (
 	query          = "select"
 	insert         = "insert"
 	delete         = "delete"
+	create         = "create"
+	drop           = "drop"
+	graph          = "graph"
 	data           = "data"
 	into           = "into"
 	from           = "from"
@@ -436,6 +451,18 @@ func lexKeyword(l *lexer) stateFn {
 	}
 	if strings.EqualFold(input, delete) {
 		consumeKeyword(l, ItemDelete)
+		return lexSpace
+	}
+	if strings.EqualFold(input, create) {
+		consumeKeyword(l, ItemCreate)
+		return lexSpace
+	}
+	if strings.EqualFold(input, drop) {
+		consumeKeyword(l, ItemDrop)
+		return lexSpace
+	}
+	if strings.EqualFold(input, graph) {
+		consumeKeyword(l, ItemGraph)
 		return lexSpace
 	}
 	if strings.EqualFold(input, data) {
