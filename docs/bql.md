@@ -18,6 +18,8 @@ syntactical parser.
 BQL currently supports three statements for data querying and manipulation in
 graphs:
 
+* _Create_: Creates a new graph in the store you are connected to.
+* _Drop_: Drops an existing graph in the store you are connected to.
 * _Select_: Allows querying data form one or more graphs.
 * _Insert_: Allows inserting data form one or more graphs.
 * _Delete_: Allows deleting data form one or more graphs.
@@ -26,6 +28,53 @@ Currently _insert_ and _delete_ operations require you to explicitly state
 the fully qualified triple. In its current form it is not intended to deal with
 large data manipulation. Also they do not allow  use queries as sources of
 the triples to insert or delete.
+
+## Creating a New Graph
+
+All data in BadWolf is stored in graphs. Graph need to be explicitly created.
+The ```CREATE``` graph statement allows you to create a graph as shown below.
+
+```
+CREATE GRAPH ?a;
+```
+
+The name of the graph is represented by a non interpreted binding (more on
+this will be discussed in the next section.) Hence, on the previous example
+the statement would create a graph named ```?a```. You can create multiple
+graphs in a single statement as shown in the example below.
+
+```
+CREATE GRAPH ?a, ?b, ?c;
+```
+
+If you try to create a graph that already exist, it will fail saying that
+the graph already exist. You should not expect that creating multiple graphs
+will be atomic. If one of the graphs fails, there is no guarantee that others
+will have been created, usually failing fast and not even attempting to create
+the rest.
+
+## Dropping an Existing Graph
+
+Existing graphs can be dropped via the ```DROP``` statement. Be *very*
+*careful* when dropping graphs. The operation is assume to be irreversible.
+Hence, all data contained in the graph with be lost. You can drop a graph via:
+
+```
+DROP GRAPH ?a;
+```
+
+Or you can drop multiple graphs at once.
+
+```
+DROP GRAPH ?a, ?b ?c;
+```
+
+The same consideration about failures on graph creation apply to dropping
+graphs. If you try to drop a graph that does not exist, it will fail saying that
+the graph does not exist. You should not expect dropping multiple graphs to be
+atomic. If one of the graphs fails, there is no guarantee that others will have
+been created, usually failing fast and not even attempting to create the rest.
+
 
 ## Bindings and Graph Patterns
 
@@ -334,6 +383,10 @@ running the following insert statements.
   };
 ```
 
+You should not assume that the insert operation will be atomic. Most of the
+driver implementations may provide such property, but you will have to check
+with the driver implementation.
+
 ## Deleting data from graphs
 
 Triples can be deleted from one or more graphs. That can be achieve by just
@@ -345,3 +398,7 @@ running the following delete statements.
     /user<Peter> "parent_of"@[] /user<Mary>
   };
 ```
+
+You should not assume that the insert operation will be atomic. Most of the 
+driver implementations may provide such property, but you will have to check
+with the driver implementation.
