@@ -124,11 +124,78 @@ func TestSemanticAcceptInsertDelete(t *testing.T) {
 }
 
 func TestTypeBindingClauseHook(t *testing.T) {
-	var f ClauseHook
-	f = TypeBindingClauseHook(Insert)
+	f := TypeBindingClauseHook(Insert)
 	st := &Statement{}
 	f(st, Symbol("FOO"))
 	if got, want := st.Type(), Insert; got != want {
 		t.Errorf("semantic.TypeBidingHook failed to set the right type; got %s, want %s", got, want)
+	}
+}
+
+func TestWhereInitClauseHook(t *testing.T) {
+	f := whereInitWorkingClause()
+	st := &Statement{}
+	f(st, Symbol("FOO"))
+	if st.WorkingClause() == nil {
+		t.Errorf("semantic.WhereInitWorkingClause should have returned a valid working clause for statement %v", st)
+	}
+}
+
+func TestWhereWorkingClauseHook(t *testing.T) {
+	f := whereNextWorkingClause()
+	st := &Statement{}
+	st.ResetWorkingGraphClause()
+	f(st, Symbol("FOO"))
+	f(st, Symbol("FOO"))
+	if len(st.GraphPatternClauses()) != 2 {
+		t.Errorf("semantic.whereNextWorkingClause should have returned two clauses for statement %v", st)
+	}
+}
+
+func TestWhereSubjectClauseHook(t *testing.T) {
+	f := whereSubjectClause()
+	st := &Statement{}
+	st.ResetWorkingGraphClause()
+	ces := []ConsumedElement{
+		NewConsumedSymbol("FOO"),
+		NewConsumedToken(&lexer.Token{
+			Type: lexer.ItemNode,
+			Text: "/_<a>",
+		}),
+		NewConsumedSymbol("FOO"),
+		NewConsumedToken(&lexer.Token{
+			Type: lexer.ItemAs,
+			Text: "as",
+		}),
+		NewConsumedSymbol("FOO"),
+		NewConsumedToken(&lexer.Token{
+			Type: lexer.ItemBinding,
+			Text: "?bar",
+		}),
+		NewConsumedToken(&lexer.Token{
+			Type: lexer.ItemType,
+			Text: "type",
+		}),
+		NewConsumedSymbol("FOO"),
+		NewConsumedToken(&lexer.Token{
+			Type: lexer.ItemBinding,
+			Text: "?bar",
+		}),
+		NewConsumedSymbol("FOO"),
+		NewConsumedToken(&lexer.Token{
+			Type: lexer.ItemID,
+			Text: "id",
+		}),
+		NewConsumedSymbol("FOO"),
+		NewConsumedToken(&lexer.Token{
+			Type: lexer.ItemBinding,
+			Text: "?bar",
+		}),
+		NewConsumedSymbol("FOO"),
+	}
+	for _, ce := range ces {
+		if _, err := f(st, ce); err != nil {
+			t.Errorf("semantic.whereSubjectClause should have never failed with error %v", err)
+		}
 	}
 }

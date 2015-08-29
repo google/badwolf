@@ -15,6 +15,7 @@
 package semantic
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -103,17 +104,37 @@ func dataAccumulator(b literal.Builder) ElementHook {
 }
 
 var (
-	// DataAccumulatorHook provides a unique data hook generator.
+	// dach provides a unique data hook generator.
 	dach ElementHook
 
-	// GraphAccumulatorHook provide a unique hook to collect all targetted Graphs
+	// gach provide a unique hook to collect all targetted Graphs
 	// for a given Statement.
 	gach ElementHook
+
+	// wnch contains the next clause hook for where clauses.
+	wnch ClauseHook
+
+	// wich contains the initial reset of the working clause hook for where clauses.
+	wich ClauseHook
+
+	// wsch contains the where clause subject hook.
+	wsch ElementHook
+
+	// wsch contains the where clause subject hook.
+	wpch ElementHook
+
+	// wsch contains the where clause subject hook.
+	woch ElementHook
 )
 
 func init() {
 	dach = dataAccumulator(literal.DefaultBuilder())
 	gach = graphAccumulator()
+	wnch = whereNextWorkingClause()
+	wich = whereInitWorkingClause()
+	wsch = whereSubjectClause()
+	wpch = wherePredicateClause()
+	woch = whereObjectClause()
 }
 
 // DataAccumulatorHook returns the singleton for data accumulation.
@@ -124,6 +145,16 @@ func DataAccumulatorHook() ElementHook {
 // GraphAccumulatorHook return the singleton for graph accumulation.
 func GraphAccumulatorHook() ElementHook {
 	return gach
+}
+
+// WhereInitWorkingClauseHook return the singleton for graph accumulation.
+func WhereInitWorkingClauseHook() ClauseHook {
+	return wnch
+}
+
+// WhereNextWorkingClauseHook return the singleton for graph accumulation.
+func WhereNextWorkingClauseHook() ClauseHook {
+	return wnch
 }
 
 func graphAccumulator() ElementHook {
@@ -144,4 +175,91 @@ func graphAccumulator() ElementHook {
 		}
 	}
 	return hook
+}
+
+func whereNextWorkingClause() ClauseHook {
+	var f ClauseHook
+	f = func(stm *Statement, _ Symbol) (ClauseHook, error) {
+		stm.AddWorkingGrpahClause()
+		return f, nil
+	}
+	return f
+}
+
+func whereInitWorkingClause() ClauseHook {
+	var f ClauseHook
+	f = func(stm *Statement, _ Symbol) (ClauseHook, error) {
+		stm.ResetWorkingGraphClause()
+		return f, nil
+	}
+	return f
+}
+
+func whereSubjectClause() ElementHook {
+	var (
+		f            ElementHook
+		lastNopToken *lexer.Token
+	)
+	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+		if ce.IsSymbol() {
+			return f, nil
+		}
+		tkn := ce.Token()
+		c := st.WorkingClause()
+		if tkn.Type == lexer.ItemNode {
+			if c.s != nil {
+				return nil, fmt.Errorf("invalid node in where clause that already has a subject; current %v, got %v", c.s, tkn.Type)
+			}
+			n, err := ToNode(ce)
+			if err != nil {
+				return nil, err
+			}
+			c.s = n
+			return f, nil
+		}
+		if tkn.Type == lexer.ItemBinding {
+			if lastNopToken.Type == lexer.ItemAs {
+				if c.sAlias != "" {
+					return nil, fmt.Errorf("AS alias binding for subject has already being assined on %v", st)
+				}
+				c.sAlias = tkn.Text
+				return f, nil
+			}
+			if lastNopToken.Type == lexer.ItemType {
+				if c.sTypeAlias != "" {
+					return nil, fmt.Errorf("TYPE alias binding for subject has already being assined on %v", st)
+				}
+				c.sTypeAlias = tkn.Text
+				return f, nil
+			}
+			if c.sIDAlias == "" && lastNopToken.Type == lexer.ItemID {
+				if c.sIDAlias != "" {
+					return nil, fmt.Errorf("ID alias binding for subject has already being assined on %v", st)
+				}
+				c.sIDAlias = tkn.Text
+				return f, nil
+			}
+		}
+		lastNopToken = tkn
+		return f, nil
+	}
+	return f
+}
+
+func wherePredicateClause() ElementHook {
+	var f ElementHook
+	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+		// TODO(xllora): Implement.
+		return nil, errors.New("not implemented")
+	}
+	return f
+}
+
+func whereObjectClause() ElementHook {
+	var f ElementHook
+	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+		// TODO(xllora): Implement.
+		return nil, errors.New("not implemented")
+	}
+	return f
 }

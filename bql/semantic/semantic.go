@@ -18,7 +18,12 @@
 // implementations required for buliding an actionable execution plan.
 package semantic
 
-import "github.com/google/badwolf/triple"
+import (
+	"github.com/google/badwolf/bql/lexer"
+	"github.com/google/badwolf/triple"
+	"github.com/google/badwolf/triple/node"
+	"github.com/google/badwolf/triple/predicate"
+)
 
 // StatementType describes the type of statement being represented.
 type StatementType int8
@@ -56,9 +61,43 @@ func (t StatementType) String() string {
 
 // Statement contains all the semantic information extract from the parsing
 type Statement struct {
-	sType  StatementType
-	graphs []string
-	data   []*triple.Triple
+	sType         StatementType
+	graphs        []string
+	data          []*triple.Triple
+	pattern       []*GraphClause
+	workingClause *GraphClause
+}
+
+// GraphClause represents a clause of a graph pattern in a where clause.
+type GraphClause struct {
+	s            *node.Node
+	sAlias       string
+	sTypeAlias   string
+	sIDAlias     string
+	p            *predicate.Predicate
+	pBound       *lexer.Token
+	pAlias       string
+	pAnchorAlias string
+	o            *triple.Object
+	oAlias       string
+	oTypeAlias   string
+	oIDAlias     string
+	oAnchorAlias string
+}
+
+// Specificity return
+func (c *GraphClause) Specificity() int {
+	s := 0
+	if c.s != nil {
+		s++
+	}
+	if c.p != nil {
+		s++
+	}
+	if c.o != nil {
+		s++
+	}
+	return s
 }
 
 // BindType set he type of a statement.
@@ -89,4 +128,26 @@ func (s *Statement) AddData(d *triple.Triple) {
 // Data returns the data available for the given statement.
 func (s *Statement) Data() []*triple.Triple {
 	return s.data
+}
+
+// GraphPatternClauses return the list of graph pattern clauses
+func (s *Statement) GraphPatternClauses() []*GraphClause {
+	return s.pattern
+}
+
+// ResetWorkingGraphClause resets the current working graph clause.
+func (s *Statement) ResetWorkingGraphClause() {
+	s.workingClause = &GraphClause{}
+}
+
+// WorkingClause returns the current working clause.
+func (s *Statement) WorkingClause() *GraphClause {
+	return s.workingClause
+}
+
+// AddWorkingGrpahClause add the current working graph clause to the set of
+// clauses that form the graph pattern.
+func (s *Statement) AddWorkingGrpahClause() {
+	s.pattern = append(s.pattern, s.workingClause)
+	s.ResetWorkingGraphClause()
 }

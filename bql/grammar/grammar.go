@@ -712,6 +712,14 @@ func initSemanticBQL() {
 		cls.ProcessedElement = semantic.DataAccumulatorHook()
 	}
 
+	// Query semantic hooks.
+	for _, cls := range SemanticBQL["WHERE"] {
+		cls.ProcessStart = semantic.WhereInitWorkingClauseHook()
+	}
+	for _, cls := range SemanticBQL["NORE_CLAUSES"] {
+		cls.ProcessEnd = semantic.WhereNextWorkingClauseHook()
+	}
+
 	// Create and Drop semantic hooks for type.
 	for _, cls := range SemanticBQL["CREATE_GRAPHS"] {
 		cls.ProcessEnd = semantic.TypeBindingClauseHook(semantic.Create)
