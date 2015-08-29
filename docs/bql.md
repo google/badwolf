@@ -399,6 +399,6 @@ running the following delete statements.
   };
 ```
 
-You should not assume that the insert operation will be atomic. Most of the 
+You should not assume that the delete operation will be atomic. Most of the 
 driver implementations may provide such property, but you will have to check
 with the driver implementation.
