@@ -17,10 +17,12 @@ package semantic
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/triple/literal"
 	"github.com/google/badwolf/triple/node"
+	"github.com/google/badwolf/triple/predicate"
 )
 
 func TestDataAccumulatorHook(t *testing.T) {
@@ -156,10 +158,11 @@ func TestWhereWorkingClauseHook(t *testing.T) {
 
 func TestWhereSubjectClauseHook(t *testing.T) {
 	st := &Statement{}
+	f := whereSubjectClause()
 	st.ResetWorkingGraphClause()
 	n, err := node.Parse("/_<foo>")
 	if err != nil {
-		t.Errorf("node.Parse failed with error %v", err)
+		t.Fatalf("node.Parse failed with error %v", err)
 	}
 	table := []struct {
 		ces  []ConsumedElement
@@ -257,14 +260,295 @@ func TestWhereSubjectClauseHook(t *testing.T) {
 		},
 	}
 	for _, entry := range table {
-		f := whereSubjectClause()
 		for _, ce := range entry.ces {
 			if _, err := f(st, ce); err != nil {
-				t.Errorf("semantic.whereSubjectClause should have never failed with error %v", err)
+				t.Errorf("semantic.whereSubjectClause should have never failed with error: %v", err)
 			}
 		}
 		if got, want := st.WorkingClause(), entry.want; !reflect.DeepEqual(got, want) {
 			t.Errorf("smeantic.whereSubjectClause should have populated all subject fields; got %+v, want %+v", got, want)
+		}
+		st.ResetWorkingGraphClause()
+	}
+}
+
+func TestWherePredicatClauseHook(t *testing.T) {
+	st := &Statement{}
+	f := wherePredicateClause()
+	st.ResetWorkingGraphClause()
+	p, err := predicate.Parse(`"foo"@[2015-07-19T13:12:04.669618843-07:00]`)
+	if err != nil {
+		t.Fatalf("predicate.Parse failed with error %v", err)
+	}
+	tlb, err := time.Parse(time.RFC3339Nano, `2015-07-19T13:12:04.669618843-07:00`)
+	if err != nil {
+		t.Fatalf("time.Parse failed to parse valid lower time bound with error %v", err)
+	}
+	tub, err := time.Parse(time.RFC3339Nano, `2016-07-19T13:12:04.669618843-07:00`)
+	if err != nil {
+		t.Fatalf("time.Parse failed to parse valid upper time bound with error %v", err)
+	}
+	table := []struct {
+		valid bool
+		id    string
+		ces   []ConsumedElement
+		want  *GraphClause
+	}{
+		{
+			valid: true,
+			id:    "valid predicate",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[2015-07-19T13:12:04.669618843-07:00]`,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAs,
+					Text: "as",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemID,
+					Text: "id",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar2",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAt,
+					Text: "at",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar3",
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: &GraphClause{
+				p:            p,
+				pAlias:       "?bar",
+				pIDAlias:     "?bar2",
+				pAnchorAlias: "?bar3",
+			},
+		},
+		{
+			valid: true,
+			id:    "valid predicate with binding",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[?foo]`,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAs,
+					Text: "as",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemID,
+					Text: "id",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar2",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAt,
+					Text: "at",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar3",
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: &GraphClause{
+				pID:            "foo",
+				pAnchorBinding: "?foo",
+				pAlias:         "?bar",
+				pIDAlias:       "?bar2",
+				pAnchorAlias:   "?bar3",
+			},
+		},
+		{
+			valid: true,
+			id:    "valid bound with bindings",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicateBound,
+					Text: `"foo"@[?fooLower,?fooUpper]`,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAs,
+					Text: "as",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemID,
+					Text: "id",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar2",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAt,
+					Text: "at",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar3",
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: &GraphClause{
+				pID:              "foo",
+				pLowerBoundAlias: "?fooLower",
+				pUpperBoundAlias: "?fooUpper",
+				pAlias:           "?bar",
+				pIDAlias:         "?bar2",
+				pAnchorAlias:     "?bar3",
+			},
+		},
+		{
+			valid: true,
+			id:    "valid bound with dates",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicateBound,
+					Text: `"foo"@[2015-07-19T13:12:04.669618843-07:00,2016-07-19T13:12:04.669618843-07:00]`,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAs,
+					Text: "as",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemID,
+					Text: "id",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar2",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAt,
+					Text: "at",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar3",
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: &GraphClause{
+				pID:          "foo",
+				pLowerBound:  &tlb,
+				pUpperBound:  &tub,
+				pAlias:       "?bar",
+				pIDAlias:     "?bar2",
+				pAnchorAlias: "?bar3",
+			},
+		},
+		{
+			valid: false,
+			id:    "invalid bound with dates",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicateBound,
+					Text: `"foo"@[2016-07-19T13:12:04.669618843-07:00,2015-07-19T13:12:04.669618843-07:00]`,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAs,
+					Text: "as",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemID,
+					Text: "id",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar2",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAt,
+					Text: "at",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar3",
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: &GraphClause{},
+		},
+	}
+	failed := false
+	for _, entry := range table {
+		for _, ce := range entry.ces {
+			if _, err := f(st, ce); err != nil {
+				if entry.valid {
+					t.Errorf("semantic.wherePredicateClause case %q should have never failed with error: %v", entry.id, err)
+				} else {
+					failed = true
+				}
+			}
+		}
+		if entry.valid {
+			if got, want := st.WorkingClause(), entry.want; !reflect.DeepEqual(got, want) {
+				t.Errorf("semantic.wherePredicateClause case %q should have populated all subject fields; got %+v, want %+v", entry.id, got, want)
+			}
+		} else {
+			if !failed {
+				t.Errorf("semantic.wherePredicateClause failed to reject invalid case %q", entry.id)
+			}
 		}
 		st.ResetWorkingGraphClause()
 	}

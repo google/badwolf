@@ -244,6 +244,7 @@ func whereSubjectClause() ElementHook {
 				return nil, err
 			}
 			c.s = n
+			lastNopToken = nil
 			return f, nil
 		}
 		if tkn.Type == lexer.ItemBinding {
@@ -252,6 +253,7 @@ func whereSubjectClause() ElementHook {
 					return nil, fmt.Errorf("subject binding %q is already set to %q", tkn.Text, c.sBinding)
 				}
 				c.sBinding = tkn.Text
+				lastNopToken = nil
 				return f, nil
 			}
 			if lastNopToken.Type == lexer.ItemAs {
@@ -259,6 +261,7 @@ func whereSubjectClause() ElementHook {
 					return nil, fmt.Errorf("AS alias binding for subject has already being assined on %v", st)
 				}
 				c.sAlias = tkn.Text
+				lastNopToken = nil
 				return f, nil
 			}
 			if lastNopToken.Type == lexer.ItemType {
@@ -266,6 +269,7 @@ func whereSubjectClause() ElementHook {
 					return nil, fmt.Errorf("TYPE alias binding for subject has already being assined on %v", st)
 				}
 				c.sTypeAlias = tkn.Text
+				lastNopToken = nil
 				return f, nil
 			}
 			if c.sIDAlias == "" && lastNopToken.Type == lexer.ItemID {
@@ -273,6 +277,7 @@ func whereSubjectClause() ElementHook {
 					return nil, fmt.Errorf("ID alias binding for subject has already being assined on %v", st)
 				}
 				c.sIDAlias = tkn.Text
+				lastNopToken = nil
 				return f, nil
 			}
 		}
@@ -282,7 +287,7 @@ func whereSubjectClause() ElementHook {
 	return f
 }
 
-func processPredicate(c *GraphClause, ce ConsumedElement) error {
+func processPredicate(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.Token) error {
 	raw := ce.Token().Text
 	p, err := predicate.Parse(raw)
 	if err == nil {
@@ -293,7 +298,7 @@ func processPredicate(c *GraphClause, ce ConsumedElement) error {
 	// The predicate may have a binding on the anchor.
 	cmps := predicateRegexp.FindAllStringSubmatch(raw, 2)
 	if len(cmps) != 1 || (len(cmps) == 1 && len(cmps[0]) != 3) {
-		return fmt.Errorf("failed to extract partialy defined predicate %s, got %v instead", raw, cmps)
+		return fmt.Errorf("failed to extract partialy defined predicate %q, got %v instead", raw, cmps)
 	}
 	id, ta := cmps[0][1], cmps[0][2]
 	c.pID = id
@@ -303,11 +308,11 @@ func processPredicate(c *GraphClause, ce ConsumedElement) error {
 	return nil
 }
 
-func processPredicateBinding(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.Token) error {
+func processPredicateBound(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.Token) error {
 	raw := ce.Token().Text
 	cmps := boundRegexp.FindAllStringSubmatch(raw, 2)
 	if len(cmps) != 1 || (len(cmps) == 1 && len(cmps[0]) != 4) {
-		return fmt.Errorf("failed to extract partialy defined predicate bound %s, got %v instead", raw, cmps)
+		return fmt.Errorf("failed to extract partialy defined predicate bound %q, got %v instead", raw, cmps)
 	}
 	id, tl, tu := cmps[0][1], cmps[0][2], cmps[0][3]
 	c.pID = id
@@ -323,13 +328,19 @@ func processPredicateBinding(c *GraphClause, ce ConsumedElement, lastNopToken *l
 	}
 	// Lower bound procssing.
 	if tu[0] == '?' {
-		c.pLowerBoundAlias = tu
+		c.pUpperBoundAlias = tu
 	} else {
 		ptu, err := time.Parse(time.RFC3339Nano, tu)
 		if err != nil {
 			return fmt.Errorf("predicate.Parse failed to parse time anchor %s in %s with error %v", tu, raw, err)
 		}
 		c.pUpperBound = &ptu
+	}
+	if c.pLowerBound != nil && c.pUpperBound != nil {
+		if c.pLowerBound.After(*c.pUpperBound) {
+			lb, up := c.pLowerBound.Format(time.RFC3339Nano), c.pUpperBound.Format(time.RFC3339Nano)
+			return fmt.Errorf("invalid time bound; lower bound %s after upper bound %s", lb, up)
+		}
 	}
 	return nil
 }
@@ -345,34 +356,40 @@ func wherePredicateClause() ElementHook {
 		}
 		tkn := ce.Token()
 		c := st.WorkingClause()
-		if tkn.Type == lexer.ItemBinding {
-			if lastNopToken == nil {
-				c.pBinding = tkn.Text
-			} else {
-				switch lastNopToken.Type {
-				case lexer.ItemAs:
-					c.pAlias = tkn.Text
-				case lexer.ItemID:
-					c.pIDAlias = tkn.Text
-				case lexer.ItemAt:
-					c.pAnchorAlias = tkn.Text
-				default:
-					return nil, fmt.Errorf("binding %q found after invalid token %s", tkn.Text, lastNopToken.Type)
-				}
-			}
-		}
 		if tkn.Type == lexer.ItemPredicate {
 			if c.p != nil {
 				return nil, fmt.Errorf("invalid predicate %s on graph clause since already set to %s", tkn.Text, c.p)
 			}
-			if err := processPredicate(c, ce); err != nil {
+			if err := processPredicate(c, ce, lastNopToken); err != nil {
 				return nil, err
 			}
+			lastNopToken = nil
+		}
+		if tkn.Type == lexer.ItemPredicateBound {
+			if c.pLowerBound != nil || c.pUpperBound != nil || c.pLowerBoundAlias != "" || c.pUpperBoundAlias != "" {
+				return nil, fmt.Errorf("invalid predicate %s on graph clause since already set to %s", tkn.Text, c.p)
+			}
+			if err := processPredicateBound(c, ce, lastNopToken); err != nil {
+				return nil, err
+			}
+			lastNopToken = nil
 		}
 		if tkn.Type == lexer.ItemBinding {
-			if err := processPredicateBinding(c, ce, lastNopToken); err != nil {
-				return nil, err
+			if lastNopToken == nil {
+				return nil, fmt.Errorf("invalid binding %q loose after no valid modifier", tkn.Text)
 			}
+			switch lastNopToken.Type {
+			case lexer.ItemAs:
+				c.pAlias = tkn.Text
+			case lexer.ItemID:
+				c.pIDAlias = tkn.Text
+			case lexer.ItemAt:
+				c.pAnchorAlias = tkn.Text
+			default:
+				return nil, fmt.Errorf("binding %q found after invalid token %s", tkn.Text, lastNopToken)
+
+			}
+			lastNopToken = nil
 		}
 		lastNopToken = tkn
 		return f, nil
