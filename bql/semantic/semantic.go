@@ -19,7 +19,8 @@
 package semantic
 
 import (
-	"github.com/google/badwolf/bql/lexer"
+	"time"
+
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/node"
 	"github.com/google/badwolf/triple/predicate"
@@ -70,19 +71,28 @@ type Statement struct {
 
 // GraphClause represents a clause of a graph pattern in a where clause.
 type GraphClause struct {
-	s            *node.Node
-	sAlias       string
-	sTypeAlias   string
-	sIDAlias     string
-	p            *predicate.Predicate
-	pBound       *lexer.Token
-	pAlias       string
-	pAnchorAlias string
-	o            *triple.Object
-	oAlias       string
-	oTypeAlias   string
-	oIDAlias     string
-	oAnchorAlias string
+	s                *node.Node
+	sBinding         string
+	sAlias           string
+	sTypeAlias       string
+	sIDAlias         string
+	p                *predicate.Predicate
+	pID              string
+	pAnchorBinding   string
+	pBinding         string
+	pLowerBound      *time.Time
+	pUpperBound      *time.Time
+	pLowerBoundAlias string
+	pUpperBoundAlias string
+	pAlias           string
+	pIDAlias         string
+	pAnchorAlias     string
+	o                *triple.Object
+	oBinding         string
+	oAlias           string
+	oTypeAlias       string
+	oIDAlias         string
+	oAnchorAlias     string
 }
 
 // Specificity return

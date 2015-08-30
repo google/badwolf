@@ -17,7 +17,9 @@ package semantic
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
+	"time"
 
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/triple"
@@ -104,6 +106,12 @@ func dataAccumulator(b literal.Builder) ElementHook {
 }
 
 var (
+	// predicateRegexp contains the regular expression for not fullly defined predicates.
+	predicateRegexp *regexp.Regexp
+
+	// boundRegexp contains the regular expression for not fullly defined predicate bounds.
+	boundRegexp *regexp.Regexp
+
 	// dach provides a unique data hook generator.
 	dach ElementHook
 
@@ -135,6 +143,9 @@ func init() {
 	wsch = whereSubjectClause()
 	wpch = wherePredicateClause()
 	woch = whereObjectClause()
+
+	predicateRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?\]$`)
+	boundRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?,"?([^\]"]*)"?\]$`)
 }
 
 // DataAccumulatorHook returns the singleton for data accumulation.
@@ -155,6 +166,24 @@ func WhereInitWorkingClauseHook() ClauseHook {
 // WhereNextWorkingClauseHook return the singleton for graph accumulation.
 func WhereNextWorkingClauseHook() ClauseHook {
 	return wnch
+}
+
+// WhereSubjectClauseHook returnce the singleton for working clause hooks that
+// populates the subject.
+func WhereSubjectClauseHook() ElementHook {
+	return wsch
+}
+
+// WherePredicateClauseHook returnce the singleton for working clause hooks that
+// populates the predicate.
+func WherePredicateClauseHook() ElementHook {
+	return wpch
+}
+
+// WhereObjectClauseHook returnce the singleton for working clause hooks that
+// populates the object.
+func WhereObjectClauseHook() ElementHook {
+	return woch
 }
 
 func graphAccumulator() ElementHook {
@@ -218,6 +247,13 @@ func whereSubjectClause() ElementHook {
 			return f, nil
 		}
 		if tkn.Type == lexer.ItemBinding {
+			if lastNopToken == nil {
+				if c.sBinding != "" {
+					return nil, fmt.Errorf("subject binding %q is already set to %q", tkn.Text, c.sBinding)
+				}
+				c.sBinding = tkn.Text
+				return f, nil
+			}
 			if lastNopToken.Type == lexer.ItemAs {
 				if c.sAlias != "" {
 					return nil, fmt.Errorf("AS alias binding for subject has already being assined on %v", st)
@@ -246,11 +282,100 @@ func whereSubjectClause() ElementHook {
 	return f
 }
 
+func processPredicate(c *GraphClause, ce ConsumedElement) error {
+	raw := ce.Token().Text
+	p, err := predicate.Parse(raw)
+	if err == nil {
+		// A fully specified predicate was provided.
+		c.p = p
+		return nil
+	}
+	// The predicate may have a binding on the anchor.
+	cmps := predicateRegexp.FindAllStringSubmatch(raw, 2)
+	if len(cmps) != 1 || (len(cmps) == 1 && len(cmps[0]) != 3) {
+		return fmt.Errorf("failed to extract partialy defined predicate %s, got %v instead", raw, cmps)
+	}
+	id, ta := cmps[0][1], cmps[0][2]
+	c.pID = id
+	if ta != "" {
+		c.pAnchorBinding = ta
+	}
+	return nil
+}
+
+func processPredicateBinding(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.Token) error {
+	raw := ce.Token().Text
+	cmps := boundRegexp.FindAllStringSubmatch(raw, 2)
+	if len(cmps) != 1 || (len(cmps) == 1 && len(cmps[0]) != 4) {
+		return fmt.Errorf("failed to extract partialy defined predicate bound %s, got %v instead", raw, cmps)
+	}
+	id, tl, tu := cmps[0][1], cmps[0][2], cmps[0][3]
+	c.pID = id
+	// Lower bound procssing.
+	if tl[0] == '?' {
+		c.pLowerBoundAlias = tl
+	} else {
+		ptl, err := time.Parse(time.RFC3339Nano, tl)
+		if err != nil {
+			return fmt.Errorf("predicate.Parse failed to parse time anchor %s in %s with error %v", tl, raw, err)
+		}
+		c.pLowerBound = &ptl
+	}
+	// Lower bound procssing.
+	if tu[0] == '?' {
+		c.pLowerBoundAlias = tu
+	} else {
+		ptu, err := time.Parse(time.RFC3339Nano, tu)
+		if err != nil {
+			return fmt.Errorf("predicate.Parse failed to parse time anchor %s in %s with error %v", tu, raw, err)
+		}
+		c.pUpperBound = &ptu
+	}
+	return nil
+}
+
 func wherePredicateClause() ElementHook {
-	var f ElementHook
+	var (
+		f            ElementHook
+		lastNopToken *lexer.Token
+	)
 	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
-		// TODO(xllora): Implement.
-		return nil, errors.New("not implemented")
+		if ce.IsSymbol() {
+			return f, nil
+		}
+		tkn := ce.Token()
+		c := st.WorkingClause()
+		if tkn.Type == lexer.ItemBinding {
+			if lastNopToken == nil {
+				c.pBinding = tkn.Text
+			} else {
+				switch lastNopToken.Type {
+				case lexer.ItemAs:
+					c.pAlias = tkn.Text
+				case lexer.ItemID:
+					c.pIDAlias = tkn.Text
+				case lexer.ItemAt:
+					c.pAnchorAlias = tkn.Text
+				default:
+					return nil, fmt.Errorf("binding %q found after invalid token %s", tkn.Text, lastNopToken.Type)
+				}
+			}
+		}
+		if tkn.Type == lexer.ItemPredicate {
+			if c.p != nil {
+				return nil, fmt.Errorf("invalid predicate %s on graph clause since already set to %s", tkn.Text, c.p)
+			}
+			if err := processPredicate(c, ce); err != nil {
+				return nil, err
+			}
+		}
+		if tkn.Type == lexer.ItemBinding {
+			if err := processPredicateBinding(c, ce, lastNopToken); err != nil {
+				return nil, err
+			}
+		}
+		lastNopToken = tkn
+		return f, nil
 	}
 	return f
 }

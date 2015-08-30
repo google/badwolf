@@ -15,10 +15,12 @@
 package semantic
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/triple/literal"
+	"github.com/google/badwolf/triple/node"
 )
 
 func TestDataAccumulatorHook(t *testing.T) {
@@ -153,49 +155,117 @@ func TestWhereWorkingClauseHook(t *testing.T) {
 }
 
 func TestWhereSubjectClauseHook(t *testing.T) {
-	f := whereSubjectClause()
 	st := &Statement{}
 	st.ResetWorkingGraphClause()
-	ces := []ConsumedElement{
-		NewConsumedSymbol("FOO"),
-		NewConsumedToken(&lexer.Token{
-			Type: lexer.ItemNode,
-			Text: "/_<a>",
-		}),
-		NewConsumedSymbol("FOO"),
-		NewConsumedToken(&lexer.Token{
-			Type: lexer.ItemAs,
-			Text: "as",
-		}),
-		NewConsumedSymbol("FOO"),
-		NewConsumedToken(&lexer.Token{
-			Type: lexer.ItemBinding,
-			Text: "?bar",
-		}),
-		NewConsumedToken(&lexer.Token{
-			Type: lexer.ItemType,
-			Text: "type",
-		}),
-		NewConsumedSymbol("FOO"),
-		NewConsumedToken(&lexer.Token{
-			Type: lexer.ItemBinding,
-			Text: "?bar",
-		}),
-		NewConsumedSymbol("FOO"),
-		NewConsumedToken(&lexer.Token{
-			Type: lexer.ItemID,
-			Text: "id",
-		}),
-		NewConsumedSymbol("FOO"),
-		NewConsumedToken(&lexer.Token{
-			Type: lexer.ItemBinding,
-			Text: "?bar",
-		}),
-		NewConsumedSymbol("FOO"),
+	n, err := node.Parse("/_<foo>")
+	if err != nil {
+		t.Errorf("node.Parse failed with error %v", err)
 	}
-	for _, ce := range ces {
-		if _, err := f(st, ce); err != nil {
-			t.Errorf("semantic.whereSubjectClause should have never failed with error %v", err)
+	table := []struct {
+		ces  []ConsumedElement
+		want *GraphClause
+	}{
+		{
+			ces: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemNode,
+					Text: "/_<foo>",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAs,
+					Text: "as",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemType,
+					Text: "type",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar2",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemID,
+					Text: "id",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar3",
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: &GraphClause{
+				s:          n,
+				sAlias:     "?bar",
+				sTypeAlias: "?bar2",
+				sIDAlias:   "?bar3",
+			},
+		},
+		{
+			ces: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAs,
+					Text: "as",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemType,
+					Text: "type",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar2",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemID,
+					Text: "id",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar3",
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: &GraphClause{
+				sBinding:   "?foo",
+				sAlias:     "?bar",
+				sTypeAlias: "?bar2",
+				sIDAlias:   "?bar3",
+			},
+		},
+	}
+	for _, entry := range table {
+		f := whereSubjectClause()
+		for _, ce := range entry.ces {
+			if _, err := f(st, ce); err != nil {
+				t.Errorf("semantic.whereSubjectClause should have never failed with error %v", err)
+			}
 		}
+		if got, want := st.WorkingClause(), entry.want; !reflect.DeepEqual(got, want) {
+			t.Errorf("smeantic.whereSubjectClause should have populated all subject fields; got %+v, want %+v", got, want)
+		}
+		st.ResetWorkingGraphClause()
 	}
 }
