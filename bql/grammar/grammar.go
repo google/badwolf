@@ -347,70 +347,58 @@ func initBQL() {
 		"OBJECT": []*Clause{
 			{
 				Elements: []Element{
+					NewTokenType(lexer.ItemLiteral),
+					NewSymbol("OBJECT_LITERAL_AS"),
+				},
+			},
+			{
+				Elements: []Element{
 					NewTokenType(lexer.ItemNode),
-					NewSymbol("SUBJECT_EXTRACT"),
+					NewSymbol("OBJECT_SUBJECT_EXTRACT"),
 				},
 			},
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemPredicate),
-					NewSymbol("PREDICATE_AS"),
-					NewSymbol("PREDICATE_ID"),
-					NewSymbol("PREDICATE_AT"),
+					NewSymbol("OBJECT_PREDICATE_AS"),
+					NewSymbol("OBJECT_PREDICATE_ID"),
+					NewSymbol("OBJECT_PREDICATE_AT"),
 				},
 			},
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemPredicateBound),
-					NewSymbol("PREDICATE_AS"),
-					NewSymbol("PREDICATE_ID"),
-					NewSymbol("PREDICATE_BOUND_AT"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemLiteral),
-					NewSymbol("LITERAL_AS"),
+					NewSymbol("OBJECT_PREDICATE_AS"),
+					NewSymbol("OBJECT_PREDICATE_ID"),
+					NewSymbol("OBJECT_PREDICATE_BOUND_AT"),
 				},
 			},
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemBinding),
-					NewSymbol("LITERAL_BINDING_AS"),
-					NewSymbol("LITERAL_BINDING_TYPE"),
-					NewSymbol("LITERAL_BINDING_ID"),
-					NewSymbol("LITERAL_BINDING_AT"),
+					NewSymbol("OBJECT_LITERAL_BINDING_AS"),
+					NewSymbol("OBJECT_LITERAL_BINDING_TYPE"),
+					NewSymbol("OBJECT_LITERAL_BINDING_ID"),
+					NewSymbol("OBJECT_LITERAL_BINDING_AT"),
 				},
 			},
 		},
-		"LITERAL_AS": []*Clause{
+		"OBJECT_SUBJECT_EXTRACT": []*Clause{
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemAs),
 					NewTokenType(lexer.ItemBinding),
+					NewSymbol("OBJECT_SUBJECT_TYPE"),
+					NewSymbol("OBJECT_SUBJECT_ID"),
 				},
 			},
-			{},
-		},
-		"LITERAL_BINDING_AS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemAs),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"LITERAL_BINDING_TYPE": []*Clause{
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemType),
 					NewTokenType(lexer.ItemBinding),
+					NewSymbol("OBJECT_SUBJECT_ID"),
 				},
 			},
-			{},
-		},
-		"LITERAL_BINDING_ID": []*Clause{
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemID),
@@ -419,7 +407,115 @@ func initBQL() {
 			},
 			{},
 		},
-		"LITERAL_BINDING_AT": []*Clause{
+		"OBJECT_SUBJECT_TYPE": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemType),
+					NewTokenType(lexer.ItemBinding),
+				},
+			},
+			{},
+		},
+		"OBJECT_SUBJECT_ID": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemID),
+					NewTokenType(lexer.ItemBinding),
+				},
+			},
+			{},
+		},
+		"OBJECT_PREDICATE_AS": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemAs),
+					NewTokenType(lexer.ItemBinding),
+				},
+			},
+			{},
+		},
+		"OBJECT_PREDICATE_ID": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemID),
+					NewTokenType(lexer.ItemBinding),
+				},
+			},
+			{},
+		},
+		"OBJECT_PREDICATE_AT": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemAt),
+					NewTokenType(lexer.ItemBinding),
+				},
+			},
+			{},
+		},
+		"OBJECT_PREDICATE_BOUND_AT": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemAt),
+					NewSymbol("OBJECT_PREDICATE_BOUND_AT_BINDINGS"),
+				},
+			},
+			{},
+		},
+		"OBJECT_PREDICATE_BOUND_AT_BINDINGS": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemBinding),
+					NewSymbol("OBJECT_PREDICATE_BOUND_AT_BINDINGS_END"),
+				},
+			},
+			{},
+		},
+		"OBJECT_PREDICATE_BOUND_AT_BINDINGS_END": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemComma),
+					NewTokenType(lexer.ItemBinding),
+				},
+			},
+			{},
+		},
+		"OBJECT_LITERAL_AS": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemAs),
+					NewTokenType(lexer.ItemBinding),
+				},
+			},
+			{},
+		},
+		"OBJECT_LITERAL_BINDING_AS": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemAs),
+					NewTokenType(lexer.ItemBinding),
+				},
+			},
+			{},
+		},
+		"OBJECT_LITERAL_BINDING_TYPE": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemType),
+					NewTokenType(lexer.ItemBinding),
+				},
+			},
+			{},
+		},
+		"OBJECT_LITERAL_BINDING_ID": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemID),
+					NewTokenType(lexer.ItemBinding),
+				},
+			},
+			{},
+		},
+		"OBJECT_LITERAL_BINDING_AT": []*Clause{
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemAt),

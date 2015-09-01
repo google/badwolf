@@ -77,6 +77,7 @@ type GraphClause struct {
 	sTypeAlias       string
 	sIDAlias         string
 	p                *predicate.Predicate
+	pAlias           string
 	pID              string
 	pAnchorBinding   string
 	pBinding         string
@@ -84,7 +85,6 @@ type GraphClause struct {
 	pUpperBound      *time.Time
 	pLowerBoundAlias string
 	pUpperBoundAlias string
-	pAlias           string
 	pIDAlias         string
 	pAnchorAlias     string
 	o                *triple.Object
@@ -93,6 +93,11 @@ type GraphClause struct {
 	oTypeAlias       string
 	oIDAlias         string
 	oAnchorAlias     string
+	oAnchorBinding   string
+	oLowerBound      *time.Time
+	oUpperBound      *time.Time
+	oLowerBoundAlias string
+	oUpperBoundAlias string
 }
 
 // Specificity return
