@@ -1,11 +1,13 @@
 # BadWolf
 
-BadWolf was born as a loosely modeled graph store after RDF. However, triples
-were expanded to quads to allow simpler temporal reasoning. Most of the web
-related parts of RDF were never used. Instead time reasoning become the main
-reason for its existence. This project represents the evolution of the original
-BadWolf temporal graph store. Most of the original RDF structs have been
-removed, however BadWolf targets to retain its simplicity and flexibility.
+BadWolf is a graph store modeled after a [Resource Description Framework (RDF)](https://en.wikipedia.org/wiki/Resource_Description_Framework). It presents
+a flexible storage and data-interchange model for representing a directed graph that 
+accommodates the storage and linking of arbitrary objects without the need for a rigid schema. 
+
+BadWold began as a [triplestore](https://en.wikipedia.org/wiki/Triplestore), but triples have
+been expanded to quads to allow simpler temporal reasoning. Because BadWolf is designed
+for generalized relationship storage, most of the web-related parts of RDF are not used. 
+Instead time reasoning became the main reason for its existence. 
 
 In case you are curious about the name, BadWolf is named after the
 [BadWolf entity](http://tardis.wikia.com/wiki/Bad_Wolf_(entity) ) as it appeared
