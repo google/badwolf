@@ -17,6 +17,7 @@ package semantic
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -236,47 +237,47 @@ func whereSubjectClause() ElementHook {
 		tkn := ce.Token()
 		c := st.WorkingClause()
 		if tkn.Type == lexer.ItemNode {
-			if c.s != nil {
-				return nil, fmt.Errorf("invalid node in where clause that already has a subject; current %v, got %v", c.s, tkn.Type)
+			if c.S != nil {
+				return nil, fmt.Errorf("invalid node in where clause that already has a subject; current %v, got %v", c.S, tkn.Type)
 			}
 			n, err := ToNode(ce)
 			if err != nil {
 				return nil, err
 			}
-			c.s = n
+			c.S = n
 			lastNopToken = nil
 			return f, nil
 		}
 		if tkn.Type == lexer.ItemBinding {
 			if lastNopToken == nil {
-				if c.sBinding != "" {
-					return nil, fmt.Errorf("subject binding %q is already set to %q", tkn.Text, c.sBinding)
+				if c.SBinding != "" {
+					return nil, fmt.Errorf("subject binding %q is already set to %q", tkn.Text, c.SBinding)
 				}
-				c.sBinding = tkn.Text
+				c.SBinding = tkn.Text
 				lastNopToken = nil
 				return f, nil
 			}
 			if lastNopToken.Type == lexer.ItemAs {
-				if c.sAlias != "" {
+				if c.SAlias != "" {
 					return nil, fmt.Errorf("AS alias binding for subject has already being assined on %v", st)
 				}
-				c.sAlias = tkn.Text
+				c.SAlias = tkn.Text
 				lastNopToken = nil
 				return f, nil
 			}
 			if lastNopToken.Type == lexer.ItemType {
-				if c.sTypeAlias != "" {
+				if c.STypeAlias != "" {
 					return nil, fmt.Errorf("TYPE alias binding for subject has already being assined on %v", st)
 				}
-				c.sTypeAlias = tkn.Text
+				c.STypeAlias = tkn.Text
 				lastNopToken = nil
 				return f, nil
 			}
-			if c.sIDAlias == "" && lastNopToken.Type == lexer.ItemID {
-				if c.sIDAlias != "" {
+			if c.SIDAlias == "" && lastNopToken.Type == lexer.ItemID {
+				if c.SIDAlias != "" {
 					return nil, fmt.Errorf("ID alias binding for subject has already being assined on %v", st)
 				}
-				c.sIDAlias = tkn.Text
+				c.SIDAlias = tkn.Text
 				lastNopToken = nil
 				return f, nil
 			}
@@ -292,7 +293,7 @@ func processPredicate(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.To
 	p, err := predicate.Parse(raw)
 	if err == nil {
 		// A fully specified predicate was provided.
-		c.p = p
+		c.P = p
 		return nil
 	}
 	// The predicate may have a binding on the anchor.
@@ -301,9 +302,9 @@ func processPredicate(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.To
 		return fmt.Errorf("failed to extract partialy defined predicate %q, got %v instead", raw, cmps)
 	}
 	id, ta := cmps[0][1], cmps[0][2]
-	c.pID = id
+	c.PID = id
 	if ta != "" {
-		c.pAnchorBinding = ta
+		c.PAnchorBinding = ta
 	}
 	return nil
 }
@@ -315,30 +316,30 @@ func processPredicateBound(c *GraphClause, ce ConsumedElement, lastNopToken *lex
 		return fmt.Errorf("failed to extract partialy defined predicate bound %q, got %v instead", raw, cmps)
 	}
 	id, tl, tu := cmps[0][1], cmps[0][2], cmps[0][3]
-	c.pID = id
+	c.PID = id
 	// Lower bound procssing.
 	if tl[0] == '?' {
-		c.pLowerBoundAlias = tl
+		c.PLowerBoundAlias = tl
 	} else {
 		ptl, err := time.Parse(time.RFC3339Nano, tl)
 		if err != nil {
 			return fmt.Errorf("predicate.Parse failed to parse time anchor %s in %s with error %v", tl, raw, err)
 		}
-		c.pLowerBound = &ptl
+		c.PLowerBound = &ptl
 	}
 	// Lower bound procssing.
 	if tu[0] == '?' {
-		c.pUpperBoundAlias = tu
+		c.PUpperBoundAlias = tu
 	} else {
 		ptu, err := time.Parse(time.RFC3339Nano, tu)
 		if err != nil {
 			return fmt.Errorf("predicate.Parse failed to parse time anchor %s in %s with error %v", tu, raw, err)
 		}
-		c.pUpperBound = &ptu
+		c.PUpperBound = &ptu
 	}
-	if c.pLowerBound != nil && c.pUpperBound != nil {
-		if c.pLowerBound.After(*c.pUpperBound) {
-			lb, up := c.pLowerBound.Format(time.RFC3339Nano), c.pUpperBound.Format(time.RFC3339Nano)
+	if c.PLowerBound != nil && c.PUpperBound != nil {
+		if c.PLowerBound.After(*c.PUpperBound) {
+			lb, up := c.PLowerBound.Format(time.RFC3339Nano), c.PUpperBound.Format(time.RFC3339Nano)
 			return fmt.Errorf("invalid time bound; lower bound %s after upper bound %s", lb, up)
 		}
 	}
@@ -357,8 +358,8 @@ func wherePredicateClause() ElementHook {
 		tkn := ce.Token()
 		c := st.WorkingClause()
 		if tkn.Type == lexer.ItemPredicate {
-			if c.p != nil {
-				return nil, fmt.Errorf("invalid predicate %s on graph clause since already set to %s", tkn.Text, c.p)
+			if c.P != nil {
+				return nil, fmt.Errorf("invalid predicate %s on graph clause since already set to %s", tkn.Text, c.P)
 			}
 			if err := processPredicate(c, ce, lastNopToken); err != nil {
 				return nil, err
@@ -366,8 +367,8 @@ func wherePredicateClause() ElementHook {
 			lastNopToken = nil
 		}
 		if tkn.Type == lexer.ItemPredicateBound {
-			if c.pLowerBound != nil || c.pUpperBound != nil || c.pLowerBoundAlias != "" || c.pUpperBoundAlias != "" {
-				return nil, fmt.Errorf("invalid predicate %s on graph clause since already set to %s", tkn.Text, c.p)
+			if c.PLowerBound != nil || c.PUpperBound != nil || c.PLowerBoundAlias != "" || c.PUpperBoundAlias != "" {
+				return nil, fmt.Errorf("invalid predicate %s on graph clause since already set to %s", tkn.Text, c.P)
 			}
 			if err := processPredicateBound(c, ce, lastNopToken); err != nil {
 				return nil, err
@@ -380,11 +381,11 @@ func wherePredicateClause() ElementHook {
 			}
 			switch lastNopToken.Type {
 			case lexer.ItemAs:
-				c.pAlias = tkn.Text
+				c.PAlias = tkn.Text
 			case lexer.ItemID:
-				c.pIDAlias = tkn.Text
+				c.PIDAlias = tkn.Text
 			case lexer.ItemAt:
-				c.pAnchorAlias = tkn.Text
+				c.PAnchorAlias = tkn.Text
 			default:
 				return nil, fmt.Errorf("binding %q found after invalid token %s", tkn.Text, lastNopToken)
 
@@ -404,4 +405,8 @@ func whereObjectClause() ElementHook {
 		return nil, errors.New("not implemented")
 	}
 	return f
+}
+
+func setClauseStringField(c *GraphClause, f, v string) {
+	reflect.ValueOf(c).Elem().FieldByName(f).SetString(v)
 }

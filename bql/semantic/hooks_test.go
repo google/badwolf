@@ -207,10 +207,10 @@ func TestWhereSubjectClauseHook(t *testing.T) {
 				NewConsumedSymbol("FOO"),
 			},
 			want: &GraphClause{
-				s:          n,
-				sAlias:     "?bar",
-				sTypeAlias: "?bar2",
-				sIDAlias:   "?bar3",
+				S:          n,
+				SAlias:     "?bar",
+				STypeAlias: "?bar2",
+				SIDAlias:   "?bar3",
 			},
 		},
 		{
@@ -252,10 +252,10 @@ func TestWhereSubjectClauseHook(t *testing.T) {
 				NewConsumedSymbol("FOO"),
 			},
 			want: &GraphClause{
-				sBinding:   "?foo",
-				sAlias:     "?bar",
-				sTypeAlias: "?bar2",
-				sIDAlias:   "?bar3",
+				SBinding:   "?foo",
+				SAlias:     "?bar",
+				STypeAlias: "?bar2",
+				SIDAlias:   "?bar3",
 			},
 		},
 	}
@@ -335,10 +335,10 @@ func TestWherePredicatClauseHook(t *testing.T) {
 				NewConsumedSymbol("FOO"),
 			},
 			want: &GraphClause{
-				p:            p,
-				pAlias:       "?bar",
-				pIDAlias:     "?bar2",
-				pAnchorAlias: "?bar3",
+				P:            p,
+				PAlias:       "?bar",
+				PIDAlias:     "?bar2",
+				PAnchorAlias: "?bar3",
 			},
 		},
 		{
@@ -382,11 +382,11 @@ func TestWherePredicatClauseHook(t *testing.T) {
 				NewConsumedSymbol("FOO"),
 			},
 			want: &GraphClause{
-				pID:            "foo",
-				pAnchorBinding: "?foo",
-				pAlias:         "?bar",
-				pIDAlias:       "?bar2",
-				pAnchorAlias:   "?bar3",
+				PID:            "foo",
+				PAnchorBinding: "?foo",
+				PAlias:         "?bar",
+				PIDAlias:       "?bar2",
+				PAnchorAlias:   "?bar3",
 			},
 		},
 		{
@@ -430,12 +430,12 @@ func TestWherePredicatClauseHook(t *testing.T) {
 				NewConsumedSymbol("FOO"),
 			},
 			want: &GraphClause{
-				pID:              "foo",
-				pLowerBoundAlias: "?fooLower",
-				pUpperBoundAlias: "?fooUpper",
-				pAlias:           "?bar",
-				pIDAlias:         "?bar2",
-				pAnchorAlias:     "?bar3",
+				PID:              "foo",
+				PLowerBoundAlias: "?fooLower",
+				PUpperBoundAlias: "?fooUpper",
+				PAlias:           "?bar",
+				PIDAlias:         "?bar2",
+				PAnchorAlias:     "?bar3",
 			},
 		},
 		{
@@ -479,12 +479,12 @@ func TestWherePredicatClauseHook(t *testing.T) {
 				NewConsumedSymbol("FOO"),
 			},
 			want: &GraphClause{
-				pID:          "foo",
-				pLowerBound:  &tlb,
-				pUpperBound:  &tub,
-				pAlias:       "?bar",
-				pIDAlias:     "?bar2",
-				pAnchorAlias: "?bar3",
+				PID:          "foo",
+				PLowerBound:  &tlb,
+				PUpperBound:  &tub,
+				PAlias:       "?bar",
+				PIDAlias:     "?bar2",
+				PAnchorAlias: "?bar3",
 			},
 		},
 		{
@@ -551,5 +551,13 @@ func TestWherePredicatClauseHook(t *testing.T) {
 			}
 		}
 		st.ResetWorkingGraphClause()
+	}
+}
+
+func TestSetClauseStringField(t *testing.T) {
+	c := &GraphClause{}
+	setClauseStringField(c, "SBinding", "string value")
+	if got, want := c.SBinding, "string value"; got != want {
+		t.Errorf("setClauseStringField failed to set SBinding field in %+v; got %s, want %s", c, got, want)
 	}
 }

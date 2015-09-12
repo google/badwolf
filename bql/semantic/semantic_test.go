@@ -62,9 +62,9 @@ func TestGraphClauseSpecificity(t *testing.T) {
 		want int
 	}{
 		{&GraphClause{}, 0},
-		{&GraphClause{s: &node.Node{}}, 1},
-		{&GraphClause{s: &node.Node{}, p: &predicate.Predicate{}}, 2},
-		{&GraphClause{s: &node.Node{}, p: &predicate.Predicate{}, o: &triple.Object{}}, 3},
+		{&GraphClause{S: &node.Node{}}, 1},
+		{&GraphClause{S: &node.Node{}, P: &predicate.Predicate{}}, 2},
+		{&GraphClause{S: &node.Node{}, P: &predicate.Predicate{}, O: &triple.Object{}}, 3},
 	}
 	for _, entry := range table {
 		if got, want := entry.gc.Specificity(), entry.want; got != want {

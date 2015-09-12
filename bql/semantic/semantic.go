@@ -71,45 +71,45 @@ type Statement struct {
 
 // GraphClause represents a clause of a graph pattern in a where clause.
 type GraphClause struct {
-	s                *node.Node
-	sBinding         string
-	sAlias           string
-	sTypeAlias       string
-	sIDAlias         string
-	p                *predicate.Predicate
-	pAlias           string
-	pID              string
-	pAnchorBinding   string
-	pBinding         string
-	pLowerBound      *time.Time
-	pUpperBound      *time.Time
-	pLowerBoundAlias string
-	pUpperBoundAlias string
-	pIDAlias         string
-	pAnchorAlias     string
-	o                *triple.Object
-	oBinding         string
-	oAlias           string
-	oTypeAlias       string
-	oIDAlias         string
-	oAnchorAlias     string
-	oAnchorBinding   string
-	oLowerBound      *time.Time
-	oUpperBound      *time.Time
-	oLowerBoundAlias string
-	oUpperBoundAlias string
+	S                *node.Node
+	SBinding         string
+	SAlias           string
+	STypeAlias       string
+	SIDAlias         string
+	P                *predicate.Predicate
+	PAlias           string
+	PID              string
+	PAnchorBinding   string
+	PBinding         string
+	PLowerBound      *time.Time
+	PUpperBound      *time.Time
+	PLowerBoundAlias string
+	PUpperBoundAlias string
+	PIDAlias         string
+	PAnchorAlias     string
+	O                *triple.Object
+	OBinding         string
+	OAlias           string
+	OTypeAlias       string
+	OIDAlias         string
+	OAnchorAlias     string
+	OAnchorBinding   string
+	OLowerBound      *time.Time
+	OUpperBound      *time.Time
+	OLowerBoundAlias string
+	OUpperBoundAlias string
 }
 
 // Specificity return
 func (c *GraphClause) Specificity() int {
 	s := 0
-	if c.s != nil {
+	if c.S != nil {
 		s++
 	}
-	if c.p != nil {
+	if c.P != nil {
 		s++
 	}
-	if c.o != nil {
+	if c.O != nil {
 		s++
 	}
 	return s
