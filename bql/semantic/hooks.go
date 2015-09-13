@@ -410,12 +410,14 @@ func whereObjectClause() ElementHook {
 	return f
 }
 
+// setClauseStringField sets the given field in the graph clause to the given
+// strng value.
 func setClauseStringField(c *GraphClause, f, v string) {
-	// fmt.Printf("***%v\n***%v\n***%v\n\n", c, f, v)
 	reflect.ValueOf(c).Elem().FieldByName(f).SetString(v)
 }
 
+// setClausePointerField sets the given field in the graph clause to the given
+// value.
 func setClausePointerField(c *GraphClause, f string, v interface{}) {
-	// fmt.Printf("***%v\n***%v\n***%v\n\n", c, f, v)
 	reflect.ValueOf(c).Elem().FieldByName(f).Set(reflect.ValueOf(v))
 }
