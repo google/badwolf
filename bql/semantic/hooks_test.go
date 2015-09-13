@@ -158,7 +158,7 @@ func TestWhereWorkingClauseHook(t *testing.T) {
 
 func TestWhereSubjectClauseHook(t *testing.T) {
 	st := &Statement{}
-	f := whereSubjectClause("S", "SBinding", "SAlias", "STypeAlias", "SIDAlias")
+	f := whereSubjectClause()
 	st.ResetWorkingGraphClause()
 	n, err := node.Parse("/_<foo>")
 	if err != nil {
@@ -274,9 +274,7 @@ func TestWhereSubjectClauseHook(t *testing.T) {
 
 func TestWherePredicatClauseHook(t *testing.T) {
 	st := &Statement{}
-	f := wherePredicateClause(
-		"P", "PAlias", "PID", "PAnchorBinding", "PBinding", "PLowerBound", "PUpperBound",
-		"PLowerBoundAlias", "PUpperBoundAlias", "PIDAlias", "PAnchorAlias")
+	f := wherePredicateClause()
 	st.ResetWorkingGraphClause()
 	p, err := predicate.Parse(`"foo"@[2015-07-19T13:12:04.669618843-07:00]`)
 	if err != nil {
@@ -553,25 +551,5 @@ func TestWherePredicatClauseHook(t *testing.T) {
 			}
 		}
 		st.ResetWorkingGraphClause()
-	}
-}
-
-func TestSetClauseStringField(t *testing.T) {
-	c := &GraphClause{}
-	setClauseStringField(c, "SBinding", "string value")
-	if got, want := c.SBinding, "string value"; got != want {
-		t.Errorf("setClauseStringField failed to set SBinding field in %+v; got %s, want %s", c, got, want)
-	}
-}
-
-func TestSetClausePointerField(t *testing.T) {
-	c := &GraphClause{}
-	n, err := node.Parse("/foo<bar>")
-	if err != nil {
-		t.Fatalf("node.Parse failed to pars /foo<bar>")
-	}
-	setClausePointerField(c, "S", n)
-	if got, want := c.S, n; !reflect.DeepEqual(got, want) {
-		t.Errorf("setClausePointerField failed to set SBinding field in %+v; got %v, want %v", c, got, want)
 	}
 }

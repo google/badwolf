@@ -89,6 +89,7 @@ type GraphClause struct {
 	PAnchorAlias     string
 	O                *triple.Object
 	OBinding         string
+	OID              string
 	OAlias           string
 	OTypeAlias       string
 	OIDAlias         string
