@@ -189,6 +189,8 @@ func WhereObjectClauseHook() ElementHook {
 	return woch
 }
 
+// graphAccumulator returns an element hook that keeps track of the graphs
+// listed in a statement.
 func graphAccumulator() ElementHook {
 	var hook ElementHook
 	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
@@ -209,6 +211,8 @@ func graphAccumulator() ElementHook {
 	return hook
 }
 
+// whereNextWorkingClause returns a clause hook to close the current graphs
+// clause and starts a new working one.
 func whereNextWorkingClause() ClauseHook {
 	var f ClauseHook
 	f = func(stm *Statement, _ Symbol) (ClauseHook, error) {
@@ -218,6 +222,7 @@ func whereNextWorkingClause() ClauseHook {
 	return f
 }
 
+// whereInitWorkingClause initialize a new working graph clause.
 func whereInitWorkingClause() ClauseHook {
 	var f ClauseHook
 	f = func(stm *Statement, _ Symbol) (ClauseHook, error) {
@@ -227,6 +232,8 @@ func whereInitWorkingClause() ClauseHook {
 	return f
 }
 
+// whereSubjectClause returns an element hook that updates the subject
+// modifiers on the working graph clause.
 func whereSubjectClause(s, sBinding, sAlias, sTypeAlias, sIDAlias string) ElementHook {
 	var (
 		f            ElementHook
@@ -290,6 +297,8 @@ func whereSubjectClause(s, sBinding, sAlias, sTypeAlias, sIDAlias string) Elemen
 	return f
 }
 
+// processPredicate updates the working graph clause if threre is an available
+// predcicate.
 func processPredicate(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.Token, P, pID, pAnchorBinding string) error {
 	raw := ce.Token().Text
 	p, err := predicate.Parse(raw)
@@ -312,6 +321,8 @@ func processPredicate(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.To
 	return nil
 }
 
+// processPredicateBound updates the working graph clause if threre is an
+// available predcicate bound.
 func processPredicateBound(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.Token, pID, pLowerBoundAlias, pLowerBound, pUpperBoundAlias, pUpperBound string) error {
 	raw := ce.Token().Text
 	cmps := boundRegexp.FindAllStringSubmatch(raw, 2)
@@ -349,6 +360,8 @@ func processPredicateBound(c *GraphClause, ce ConsumedElement, lastNopToken *lex
 	return nil
 }
 
+// wherePredicateClause returns an element hook that updates the predicate
+// modifiers on the working graph clause.
 func wherePredicateClause(p, pAlias, pID, pAnchorBinding, pBinding, pLowerBound, pUpperBound, pLowerBoundAlias, pUpperBoundAlias, pIDAlias, pAnchorAlias string) ElementHook {
 	var (
 		f            ElementHook
@@ -401,6 +414,8 @@ func wherePredicateClause(p, pAlias, pID, pAnchorBinding, pBinding, pLowerBound,
 	return f
 }
 
+// whereObjectClause returns an element hook that updates the object
+// modifiers on the working graph clause.
 func whereObjectClause() ElementHook {
 	var f ElementHook
 	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
