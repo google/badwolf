@@ -241,7 +241,8 @@ func whereSubjectClause() ElementHook {
 		}
 		tkn := ce.Token()
 		c := st.WorkingClause()
-		if tkn.Type == lexer.ItemNode {
+		switch tkn.Type {
+		case lexer.ItemNode:
 			if c.S != nil {
 				return nil, fmt.Errorf("invalid node in where clause that already has a subject; current %v, got %v", c.S, tkn.Type)
 			}
@@ -252,8 +253,7 @@ func whereSubjectClause() ElementHook {
 			c.S = n
 			lastNopToken = nil
 			return f, nil
-		}
-		if tkn.Type == lexer.ItemBinding {
+		case lexer.ItemBinding:
 			if lastNopToken == nil {
 				if c.SBinding != "" {
 					return nil, fmt.Errorf("subject binding %q is already set to %q", tkn.Text, c.SBinding)
@@ -318,7 +318,7 @@ func processPredicate(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.To
 	if ta != "" {
 		pAnchorBinding = ta
 	}
-	return nP, pID, pAnchorBinding, nil
+	return nil, pID, pAnchorBinding, nil
 }
 
 // processPredicateBound updates the working graph clause if threre is an
@@ -380,7 +380,8 @@ func wherePredicateClause() ElementHook {
 		}
 		tkn := ce.Token()
 		c := st.WorkingClause()
-		if tkn.Type == lexer.ItemPredicate {
+		switch tkn.Type {
+		case lexer.ItemPredicate:
 			if c.P != nil {
 				return nil, fmt.Errorf("invalid predicate %s on graph clause since already set to %s", tkn.Text, c.P)
 			}
@@ -390,10 +391,9 @@ func wherePredicateClause() ElementHook {
 				return nil, err
 			}
 			lastNopToken = nil
-		}
-		if tkn.Type == lexer.ItemPredicateBound {
+		case lexer.ItemPredicateBound:
 			if c.PLowerBound != nil || c.PUpperBound != nil || c.PLowerBoundAlias != "" || c.PUpperBoundAlias != "" {
-				return nil, fmt.Errorf("invalid predicate %s on graph clause since already set to %s", tkn.Text, c.P)
+				return nil, fmt.Errorf("invalid predicate bound %s on graph clause since already set to %s", tkn.Text, c.P)
 			}
 			var err error
 			c.PID, c.PLowerBoundAlias, c.PUpperBoundAlias, c.PLowerBound, c.PUpperBound, err = processPredicateBound(c, ce, lastNopToken)
@@ -401,21 +401,28 @@ func wherePredicateClause() ElementHook {
 				return nil, err
 			}
 			lastNopToken = nil
-		}
-		if tkn.Type == lexer.ItemBinding {
+		case lexer.ItemBinding:
 			if lastNopToken == nil {
 				return nil, fmt.Errorf("invalid binding %q loose after no valid modifier", tkn.Text)
 			}
 			switch lastNopToken.Type {
 			case lexer.ItemAs:
+				if c.PAlias != "" {
+					return nil, fmt.Errorf("AS alias binding for predicate has already being assined on %v", st)
+				}
 				c.PAlias = tkn.Text
 			case lexer.ItemID:
+				if c.PIDAlias != "" {
+					return nil, fmt.Errorf("ID alias binding for predicate has already being assined on %v", st)
+				}
 				c.PIDAlias = tkn.Text
 			case lexer.ItemAt:
+				if c.PAnchorAlias != "" {
+					return nil, fmt.Errorf("AT alias binding for predicate has already being assined on %v", st)
+				}
 				c.PAnchorAlias = tkn.Text
 			default:
 				return nil, fmt.Errorf("binding %q found after invalid token %s", tkn.Text, lastNopToken)
-
 			}
 			lastNopToken = nil
 		}
@@ -440,19 +447,76 @@ func whereObjectClause() ElementHook {
 		c := st.WorkingClause()
 		switch tkn.Type {
 		case lexer.ItemNode, lexer.ItemLiteral:
+			if c.O != nil {
+				return nil, fmt.Errorf("invalid object %s for object on graph clause since already set to %s", tkn.Text, c.O)
+			}
 			obj, err := triple.ParseObject(tkn.Text, literal.DefaultBuilder())
 			if err != nil {
 				return nil, err
 			}
 			c.O = obj
-
-			/*
-				case lexer.ItemPredicate, lexer.ItemPredicateBound:
-					lastHook, err = wosch(st, ce)
-					return f, err
-				default:
-					lastNopToken = nil
-			*/
+			lastNopToken = nil
+		case lexer.ItemPredicate:
+			if c.O != nil {
+				return nil, fmt.Errorf("invalid predicate %s for object on graph clause since already set to %s", tkn.Text, c.O)
+			}
+			var (
+				pred *predicate.Predicate
+				err  error
+			)
+			pred, c.OID, c.OAnchorBinding, err = processPredicate(c, ce, lastNopToken)
+			if pred != nil {
+				c.O = triple.NewPredicateObject(pred)
+			}
+			if err != nil {
+				return nil, err
+			}
+			lastNopToken = nil
+		case lexer.ItemPredicateBound:
+			if c.OLowerBound != nil || c.OUpperBound != nil || c.OLowerBoundAlias != "" || c.OUpperBoundAlias != "" {
+				return nil, fmt.Errorf("invalid predicate bound %s on graph clause since already set to %s", tkn.Text, c.O)
+			}
+			var err error
+			c.OID, c.OLowerBoundAlias, c.OUpperBoundAlias, c.OLowerBound, c.OUpperBound, err = processPredicateBound(c, ce, lastNopToken)
+			if err != nil {
+				return nil, err
+			}
+			lastNopToken = nil
+		case lexer.ItemBinding:
+			if lastNopToken == nil {
+				if c.OBinding != "" {
+					return nil, fmt.Errorf("object binding %q is already set to %q", tkn.Text, c.SBinding)
+				}
+				c.OBinding = tkn.Text
+				lastNopToken = nil
+				return f, nil
+			}
+			switch lastNopToken.Type {
+			case lexer.ItemAs:
+				if c.OAlias != "" {
+					return nil, fmt.Errorf("AS alias binding for predicate has already being assined on %v", st)
+				}
+				c.OAlias = tkn.Text
+			case lexer.ItemType:
+				if c.OTypeAlias != "" {
+					return nil, fmt.Errorf("TYPE alias binding for predicate has already being assined on %v", st)
+				}
+				c.OTypeAlias = tkn.Text
+			case lexer.ItemID:
+				if c.OIDAlias != "" {
+					return nil, fmt.Errorf("ID alias binding for predicate has already being assined on %v", st)
+				}
+				c.OIDAlias = tkn.Text
+			case lexer.ItemAt:
+				if c.OAnchorAlias != "" {
+					return nil, fmt.Errorf("AT alias binding for predicate has already being assined on %v", st)
+				}
+				c.OAnchorAlias = tkn.Text
+			default:
+				return nil, fmt.Errorf("binding %q found after invalid token %s", tkn.Text, lastNopToken)
+			}
+			lastNopToken = nil
+			return f, nil
 		}
 		lastNopToken = tkn
 		return f, nil
