@@ -26,10 +26,10 @@ import (
 )
 
 var (
-	// BQL LL1 grammar.
-	BQL Grammar
-	// SemanticBQL contains the BQL grammar with hooks injected.
-	SemanticBQL Grammar
+	// bql LL1 grammar.
+	bql *Grammar
+	// semanticBQL contains the BQL grammar with hooks injected.
+	semanticBQL *Grammar
 )
 
 func init() {
@@ -37,8 +37,18 @@ func init() {
 	initSemanticBQL()
 }
 
+// BQL LL1 grammar.
+func BQL() *Grammar {
+	return bql
+}
+
+// SemanticBQL contains the BQL grammar with hooks injected.
+func SemanticBQL() *Grammar {
+	return semanticBQL
+}
+
 func initBQL() {
-	BQL = Grammar{
+	bql = &Grammar{
 		"START": []*Clause{
 			{
 				Elements: []Element{
@@ -207,8 +217,8 @@ func initBQL() {
 				Elements: []Element{
 					NewTokenType(lexer.ItemNode),
 					NewSymbol("SUBJECT_EXTRACT"),
-					NewSymbol("PREDICATES"),
-					NewSymbol("OBJECTS"),
+					NewSymbol("PREDICATE"),
+					NewSymbol("OBJECT"),
 					NewSymbol("NORE_CLAUSES"),
 				},
 			},
@@ -785,23 +795,40 @@ func cloneGrammar(dst, src *Grammar) {
 }
 
 func initSemanticBQL() {
-	SemanticBQL = Grammar{}
-	cloneGrammar(&SemanticBQL, &BQL)
+	semanticBQL = &Grammar{}
+	cloneGrammar(semanticBQL, bql)
+
+	// Create and Drop semantic hooks for type.
+	for _, cls := range (*semanticBQL)["CREATE_GRAPHS"] {
+		cls.ProcessEnd = semantic.TypeBindingClauseHook(semantic.Create)
+	}
+	for _, cls := range (*semanticBQL)["DROP_GRAPHS"] {
+		cls.ProcessEnd = semantic.TypeBindingClauseHook(semantic.Drop)
+	}
+	// Add graph binding collection to GRAPHS and MORE_GRAPHS clauses.
+	graphSymbols := []semantic.Symbol{"GRAPHS", "MORE_GRAPHS"}
+	for _, sym := range graphSymbols {
+		for _, cls := range (*semanticBQL)[sym] {
+			cls.ProcessedElement = semantic.GraphAccumulatorHook()
+		}
+	}
 
 	// Insert and Delete semantic hooks addition.
-	symbols := []semantic.Symbol{"INSERT_OBJECT", "INSERT_DATA", "DELETE_OBJECT", "DELETE_DATA"}
+	symbols := []semantic.Symbol{
+		"INSERT_OBJECT", "INSERT_DATA", "DELETE_OBJECT", "DELETE_DATA",
+	}
 	for _, sym := range symbols {
-		for _, cls := range SemanticBQL[sym] {
+		for _, cls := range (*semanticBQL)[sym] {
 			cls.ProcessedElement = semantic.DataAccumulatorHook()
 		}
 	}
-	for _, cls := range SemanticBQL["INSERT_OBJECT"] {
+	for _, cls := range (*semanticBQL)["INSERT_OBJECT"] {
 		cls.ProcessEnd = semantic.TypeBindingClauseHook(semantic.Insert)
 	}
-	for _, cls := range SemanticBQL["DELETE_OBJECT"] {
+	for _, cls := range (*semanticBQL)["DELETE_OBJECT"] {
 		cls.ProcessEnd = semantic.TypeBindingClauseHook(semantic.Delete)
 	}
-	for _, cls := range SemanticBQL["START"] {
+	for _, cls := range (*semanticBQL)["START"] {
 		if t := cls.Elements[0].Token(); t != lexer.ItemInsert && t != lexer.ItemDelete {
 			continue
 		}
@@ -809,25 +836,41 @@ func initSemanticBQL() {
 	}
 
 	// Query semantic hooks.
-	for _, cls := range SemanticBQL["WHERE"] {
+	for _, cls := range (*semanticBQL)["WHERE"] {
 		cls.ProcessStart = semantic.WhereInitWorkingClauseHook()
 	}
-	for _, cls := range SemanticBQL["NORE_CLAUSES"] {
+	for _, cls := range (*semanticBQL)["NORE_CLAUSES"] {
 		cls.ProcessEnd = semantic.WhereNextWorkingClauseHook()
 	}
 
-	// Create and Drop semantic hooks for type.
-	for _, cls := range SemanticBQL["CREATE_GRAPHS"] {
-		cls.ProcessEnd = semantic.TypeBindingClauseHook(semantic.Create)
+	subSymbols := []semantic.Symbol{"SUBJECT_EXTRACT", "SUBJECT_TYPE", "SUBJECT_ID"}
+	for _, sym := range subSymbols {
+		for _, cls := range (*semanticBQL)[sym] {
+			cls.ProcessedElement = semantic.WhereSubjectClauseHook()
+		}
 	}
-	for _, cls := range SemanticBQL["DROP_GRAPHS"] {
-		cls.ProcessEnd = semantic.TypeBindingClauseHook(semantic.Drop)
+
+	predSymbols := []semantic.Symbol{
+		"PREDICATE", "PREDICATE_AS", "PREDICATE_ID", "PREDICATE_AT", "PREDICATE_BOUND_AT",
+		"PREDICATE_BOUND_AT_BINDINGS", "PREDICATE_BOUND_AT_BINDINGS_END",
 	}
-	// Add graph binding collection to GRAPHS and MORE_GRAPHS clauses.
-	graphSymbols := []semantic.Symbol{"GRAPHS", "MORE_GRAPHS"}
-	for _, sym := range graphSymbols {
-		for _, cls := range SemanticBQL[sym] {
-			cls.ProcessedElement = semantic.GraphAccumulatorHook()
+	for _, sym := range predSymbols {
+		for _, cls := range (*semanticBQL)[sym] {
+			cls.ProcessedElement = semantic.WherePredicateClauseHook()
+		}
+	}
+
+	objSymbols := []semantic.Symbol{
+		"OBJECT", "OBJECT_SUBJECT_EXTRACT", "OBJECT_SUBJECT_TYPE", "OBJECT_SUBJECT_ID",
+		"OBJECT_PREDICATE_AS", "OBJECT_PREDICATE_ID", "OBJECT_PREDICATE_AT",
+		"OBJECT_PREDICATE_BOUND_AT", "OBJECT_PREDICATE_BOUND_AT_BINDINGS",
+		"OBJECT_PREDICATE_BOUND_AT_BINDINGS_END", "OBJECT_LITERAL_AS",
+		"OBJECT_LITERAL_BINDING_AS", "OBJECT_LITERAL_BINDING_TYPE",
+		"OBJECT_LITERAL_BINDING_ID", "OBJECT_LITERAL_BINDING_AT",
+	}
+	for _, sym := range objSymbols {
+		for _, cls := range (*semanticBQL)[sym] {
+			cls.ProcessedElement = semantic.WhereObjectClauseHook()
 		}
 	}
 }

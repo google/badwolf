@@ -113,7 +113,7 @@ func TestAcceptByParse(t *testing.T) {
 		`drop graph ?a;`,
 		`drop graph ?a, ?b, ?c;`,
 	}
-	p, err := NewParser(&BQL)
+	p, err := NewParser(BQL())
 	if err != nil {
 		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
 	}
@@ -207,13 +207,13 @@ func TestRejectByParse(t *testing.T) {
 		`drop graph ;`,
 		`drop graph ?a ?b, ?c;`,
 	}
-	p, err := NewParser(&BQL)
+	p, err := NewParser(BQL())
 	if err != nil {
 		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
 	}
 	for _, input := range table {
 		if err := p.Parse(NewLLk(input, 1), &semantic.Statement{}); err == nil {
-			t.Errorf("Parser.consume: failed to reject input %q with error %v", input, err)
+			t.Errorf("Parser.consume: failed to reject input %q with parsing error", input)
 		}
 	}
 }

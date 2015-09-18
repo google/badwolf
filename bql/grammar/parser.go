@@ -129,17 +129,15 @@ func (p *Parser) consume(llk *LLk, st *semantic.Statement, s semantic.Symbol) (b
 // expect given the input, symbol, and clause attemps to satisfy all elements.
 func (p *Parser) expect(llk *LLk, st *semantic.Statement, s semantic.Symbol, cls *Clause) (bool, error) {
 	if cls.ProcessStart != nil {
-		stFun, err := cls.ProcessStart(st, s)
-		if err != nil {
-			return false, nil
+		if _, err := cls.ProcessStart(st, s); err != nil {
+			return false, err
 		}
-		cls.ProcessStart = stFun
 	}
 	for _, elem := range cls.Elements {
 		tkn := llk.Current()
 		if elem.isSymbol {
-			if b, err := p.consume(llk, st, elem.Symbol()); !b {
-				return b, err
+			if b, err := p.consume(llk, st, elem.Symbol()); !b || err != nil {
+				return false, fmt.Errorf("Parser.parse: Failed to consume symbol %v, with error %v", elem.Symbol(), err)
 			}
 		} else {
 			if !llk.Consume(elem.Token()) {
@@ -153,19 +151,15 @@ func (p *Parser) expect(llk *LLk, st *semantic.Statement, s semantic.Symbol, cls
 			} else {
 				ce = semantic.NewConsumedToken(tkn)
 			}
-			stFun, err := cls.ProcessedElement(st, ce)
-			if err != nil {
+			if _, err := cls.ProcessedElement(st, ce); err != nil {
 				return false, err
 			}
-			cls.ProcessedElement = stFun
 		}
 	}
 	if cls.ProcessEnd != nil {
-		stFun, err := cls.ProcessEnd(st, s)
-		if err != nil {
+		if _, err := cls.ProcessEnd(st, s); err != nil {
 			return false, err
 		}
-		cls.ProcessEnd = stFun
 	}
 	return true, nil
 }

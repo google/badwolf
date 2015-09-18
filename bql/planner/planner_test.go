@@ -26,7 +26,7 @@ func insertTest(t *testing.T) {
 	bql := `insert data into ?a {/_<foo> "bar"@[] /_<foo> .
                                /_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z] .
                                /_<foo> "bar"@[] "yeah"^^type:text};`
-	p, err := grammar.NewParser(&grammar.SemanticBQL)
+	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
 	}
@@ -58,7 +58,7 @@ func deleteTest(t *testing.T) {
 	bql := `delete data from ?a {/_<foo> "bar"@[] /_<foo> .
                                /_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z] .
                                /_<foo> "bar"@[] "yeah"^^type:text};`
-	p, err := grammar.NewParser(&grammar.SemanticBQL)
+	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
 	}
@@ -121,7 +121,7 @@ func TestCreateGraph(t *testing.T) {
 	memory.DefaultStore.DeleteGraph("?bar")
 
 	bql := `create graph ?foo, ?bar;`
-	p, err := grammar.NewParser(&grammar.SemanticBQL)
+	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
 	}
@@ -151,7 +151,7 @@ func TestDropGraph(t *testing.T) {
 	memory.DefaultStore.NewGraph("?bar")
 
 	bql := `drop graph ?foo, ?bar;`
-	p, err := grammar.NewParser(&grammar.SemanticBQL)
+	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
 	}

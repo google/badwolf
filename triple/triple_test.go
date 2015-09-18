@@ -85,7 +85,10 @@ func TestReify(t *testing.T) {
 	if err != nil {
 		t.Fatalf("triple.ParseTriple failed to parse valid triple with error %v", err)
 	}
-	rts, bn := tr.Reify()
+	rts, bn, err := tr.Reify()
+	if err != nil {
+		t.Errorf("triple.Reify failed to reify %v with error %v", tr, err)
+	}
 	if len(rts) != 4 || bn == nil {
 		t.Errorf("triple.Reify failed to create 4 valid triples and a valid blank node; returned %v, %s instead", rts, bn)
 	}

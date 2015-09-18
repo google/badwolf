@@ -125,18 +125,24 @@ func (p *Predicate) TimeAnchor() (*time.Time, error) {
 }
 
 // NewImmutable creates a new immutable predicate.
-func NewImmutable(id string) *Predicate {
+func NewImmutable(id string) (*Predicate, error) {
+	if id == "" {
+		return nil, fmt.Errorf("predicate.NewImmutable(%q) cannot create a immutable predicate with empty ID", id)
+	}
 	return &Predicate{
 		id: ID(id),
-	}
+	}, nil
 }
 
 // NewTemporal creates a new temporal predicate.
-func NewTemporal(id string, t time.Time) *Predicate {
+func NewTemporal(id string, t time.Time) (*Predicate, error) {
+	if id == "" {
+		return nil, fmt.Errorf("predicate.NewTemporal(%q, %v) cannot create a temporal predicate  with empty ID", id, t)
+	}
 	return &Predicate{
 		id:     ID(id),
 		anchor: &t,
-	}
+	}, nil
 }
 
 // GUID returns a global unique identifier for the given predicate. It is

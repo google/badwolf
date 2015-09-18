@@ -21,6 +21,16 @@ import (
 	"time"
 )
 
+var (
+	immutFoo *Predicate
+	tempBar  *Predicate
+)
+
+func init() {
+	immutFoo, _ = NewImmutable("foo")
+	tempBar, _ = NewTemporal("bar", time.Now())
+}
+
 func TestIDsAndTypes(t *testing.T) {
 	table := []struct {
 		gotID    ID
@@ -28,8 +38,8 @@ func TestIDsAndTypes(t *testing.T) {
 		gotType  Type
 		wantType Type
 	}{
-		{NewImmutable("foo").ID(), ID("foo"), NewImmutable("foo").Type(), Immutable},
-		{NewTemporal("bar", time.Now()).ID(), ID("bar"), NewTemporal("bar", time.Now()).Type(), Temporal},
+		{immutFoo.ID(), ID("foo"), immutFoo.Type(), Immutable},
+		{tempBar.ID(), ID("bar"), tempBar.Type(), Temporal},
 	}
 	for _, tc := range table {
 		if tc.gotID != tc.wantID {
@@ -43,7 +53,11 @@ func TestIDsAndTypes(t *testing.T) {
 
 func TestTimeAnchor(t *testing.T) {
 	want := time.Now()
-	got, err := NewTemporal("foo", want).TimeAnchor()
+	temp, err := NewTemporal("bar", want)
+	if err != nil {
+		t.Error(err)
+	}
+	got, err := temp.TimeAnchor()
 	if err != nil {
 		t.Errorf("predicate.TimeAnchor failed to return time anchor in %v due to %v", got, err)
 	}
@@ -55,12 +69,16 @@ func TestTimeAnchor(t *testing.T) {
 func TestPrettyPrint(t *testing.T) {
 	now := time.Now()
 	format := now.Format(time.RFC3339Nano)
+	temp, err := NewTemporal("bar", now)
+	if err != nil {
+		t.Error(err)
+	}
 	table := []struct {
 		got  string
 		want string
 	}{
-		{NewImmutable("foo").String(), "\"foo\"@[]"},
-		{NewTemporal("bar", now).String(), fmt.Sprintf("\"bar\"@[%s]", format)},
+		{immutFoo.String(), "\"foo\"@[]"},
+		{temp.String(), fmt.Sprintf("\"bar\"@[%s]", format)},
 	}
 	for _, tc := range table {
 		if tc.got != tc.want {

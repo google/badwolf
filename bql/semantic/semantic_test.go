@@ -88,7 +88,7 @@ func TestGraphClauseManipulation(t *testing.T) {
 	}
 }
 
-func TestAcceptByParseAndSemantic(t *testing.T) {
+func TestAcceptOpsByParseAndSemantic(t *testing.T) {
 	table := []struct {
 		query   string
 		graphs  int
@@ -119,7 +119,7 @@ func TestAcceptByParseAndSemantic(t *testing.T) {
 		// Drop graphs.
 		{`drop graph ?foo, ?bar;`, 2, 0},
 	}
-	p, err := grammar.NewParser(&grammar.SemanticBQL)
+	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
 	}
@@ -137,14 +137,51 @@ func TestAcceptByParseAndSemantic(t *testing.T) {
 	}
 }
 
+func TestAcceptQueryBySemanticParse(t *testing.T) {
+	table := []string{
+		// Test well type litterals are accepted.
+		`select ?s from ?g where{?s ?p "1"^^type:int64};`,
+		// Test predicates are accepted.
+		// Test invalid predicate time anchor are rejected.
+		`select ?s from ?b where{/_<foo> as ?s "id"@[2015] ?o};`,
+		`select ?s from ?b where{/_<foo> as ?s "id"@[2015-07] ?o};`,
+		`select ?s from ?b where{/_<foo> as ?s "id"@[2015-07-19] ?o};`,
+		`select ?s from ?g where{/_<foo> as ?s "id"@[2015-07-19T13:12] ?o};`,
+		`select ?s from ?g where{/_<foo> as ?s "id"@[2015-07-19T13:12:04] ?o};`,
+		`select ?s from ?g where{/_<foo> as ?s "id"@[2015-07-19T13:12:04.669618843] ?o};`,
+		`select ?s from ?g where{/_<foo> as ?s "id"@[2015-07-19T13:12:04.669618843-07:00] ?o};`,
+		`select ?s from ?g where{/_<foo> as ?s "id"@[2015-07-19T13:12:04.669618843-07:00] as ?p ?o};`,
+		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[2015-07-19T13:12:04.669618843-07:00] as ?o};`,
+		// Test predicates with bindings are accepted.
+		`select ?s from ?g where{/_<foo> as ?s "id"@[?ta] ?o};`,
+		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[?ta] as ?o};`,
+		// Test predicate bounds are accepted.
+		`select ?s from ?g where{/_<foo> as ?s "id"@[2015-07-19T13:12:04.669618843-07:00, 2016-07-19T13:12:04.669618843-07:00] ?o};`,
+		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[2015-07-19T13:12:04.669618843-07:00, 2016-07-19T13:12:04.669618843-07:00] as ?o};`,
+		// Test predicate bounds with bounds are accepted.
+		`select ?s from ?g where{/_<foo> as ?s "id"@[?foo, 2016-07-19T13:12:04.669618843-07:00] ?o};`,
+		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[2015-07-19T13:12:04.669618843-07:00, ?bar] as ?o};`,
+		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[?foo, ?bar] as ?o};`}
+	p, err := grammar.NewParser(grammar.SemanticBQL())
+	if err != nil {
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
+	}
+	for _, input := range table {
+		if err := p.Parse(grammar.NewLLk(input, 1), &semantic.Statement{}); err != nil {
+			t.Errorf("Parser.consume: failed to accept input %q with error %v", input, err)
+		}
+	}
+}
+
 func TestRejectByParseAndSemantic(t *testing.T) {
 	table := []string{
-		`insert data into ?a {/_<foo> "bar"@["1234"] /_<foo>};`,
-		`delete data from ?a {/_<foo> "bar"@[] "bar"@[123]};`,
-		`create graph foo;`,
-		`drop graph ?foo ?bar;`,
+		// Test wront type litterals are rejected.
+		`select ?s from ?g where{?s ?p "true"^^type:int64};`,
+		// Test invalid predicate bounds are rejected.
+		`select ?s from ?b where{/_<foo> as ?s "id"@[2018-07-19T13:12:04.669618843-07:00, 2015-07-19T13:12:04.669618843-07:00] ?o};`,
+		`select ?s from ?b where{/_<foo> as ?s  ?p "id"@[2019-07-19T13:12:04.669618843-07:00, 2015-07-19T13:12:04.669618843-07:00] as ?o};`,
 	}
-	p, err := grammar.NewParser(&grammar.SemanticBQL)
+	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
 	}

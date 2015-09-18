@@ -102,6 +102,9 @@ func NewType(t string) (*Type, error) {
 	if !strings.HasPrefix(t, "/") || strings.HasSuffix(t, "/") {
 		return nil, fmt.Errorf("node.NewType(%q) should start with a '/' and do not end with '/'", t)
 	}
+	if t == "" {
+		return nil, fmt.Errorf("node.NewType(%q) cannot create empty types", t)
+	}
 	nt := Type(t)
 	return &nt, nil
 }
@@ -110,6 +113,9 @@ func NewType(t string) (*Type, error) {
 func NewID(id string) (*ID, error) {
 	if strings.ContainsAny(id, "<>") {
 		return nil, fmt.Errorf("node.NewID(%q) does not allow '<' or '>'", id)
+	}
+	if id == "" {
+		return nil, fmt.Errorf("node.NewID(%q) cannot create empty ID", id)
 	}
 	nID := ID(id)
 	return &nID, nil

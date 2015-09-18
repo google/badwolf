@@ -201,9 +201,9 @@ func ParseTriple(line string, b literal.Builder) (*Triple, error) {
 
 // Reify given the current triple it returns the original triple and the newly
 // reified ones. It also returns the newly created blank node.
-func (t *Triple) Reify() ([]*Triple, *node.Node) {
+func (t *Triple) Reify() ([]*Triple, *node.Node, error) {
 	// Function that create the proper reification predicates.
-	rp := func(id string, p *predicate.Predicate) *predicate.Predicate {
+	rp := func(id string, p *predicate.Predicate) (*predicate.Predicate, error) {
 		if p.Type() == predicate.Temporal {
 			ta, _ := p.TimeAnchor()
 			return predicate.NewTemporal(string(p.ID()), *ta)
@@ -213,20 +213,40 @@ func (t *Triple) Reify() ([]*Triple, *node.Node) {
 
 	fmt.Println(t.String())
 	b := node.NewBlankNode()
-	ts, _ := NewTriple(b, rp("_subject", t.p), NewNodeObject(t.s))
-	tp, _ := NewTriple(b, rp("_predicate", t.p), NewPredicateObject(t.p))
+	s, err := rp("_subject", t.p)
+	if err != nil {
+		return nil, nil, err
+	}
+	ts, _ := NewTriple(b, s, NewNodeObject(t.s))
+	p, err := rp("_predicate", t.p)
+	if err != nil {
+		return nil, nil, err
+	}
+	tp, _ := NewTriple(b, p, NewPredicateObject(t.p))
 	var to *Triple
 	if t.o.l != nil {
-		to, _ = NewTriple(b, rp("_object", t.p), NewLiteralObject(t.o.l))
+		o, err := rp("_object", t.p)
+		if err != nil {
+			return nil, nil, err
+		}
+		to, _ = NewTriple(b, o, NewLiteralObject(t.o.l))
 	}
 	if t.o.n != nil {
-		to, _ = NewTriple(b, rp("_object", t.p), NewNodeObject(t.o.n))
+		o, err := rp("_object", t.p)
+		if err != nil {
+			return nil, nil, err
+		}
+		to, _ = NewTriple(b, o, NewNodeObject(t.o.n))
 	}
 	if t.o.p != nil {
-		to, _ = NewTriple(b, rp("_object", t.p), NewPredicateObject(t.o.p))
+		o, err := rp("_object", t.p)
+		if err != nil {
+			return nil, nil, err
+		}
+		to, _ = NewTriple(b, o, NewPredicateObject(t.o.p))
 	}
 
-	return []*Triple{t, ts, tp, to}, b
+	return []*Triple{t, ts, tp, to}, b, nil
 }
 
 // GUID returns a global unique identifier for the given triple. It is
