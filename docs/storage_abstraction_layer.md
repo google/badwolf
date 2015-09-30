@@ -6,7 +6,7 @@ data persistance. This allow to provide different storage implementations
 and data manipulation. This property allows you to use your favorite backend,
 for data storage, or just implement a new one for your next project.
 
-BadWolf release comes along ony with a simple volatile, RAM-based implementation
+BadWolf release comes along only with a simple volatile, RAM-based implementation
 of the storage abstraction layer to illustrate how the API can be implemented.
 
 The storage abstraction layer is built around two simple interfaces:
@@ -20,7 +20,7 @@ The storage abstraction layer is built around two simple interfaces:
 The goal of these interfaces is to allow writing specialized drivers for
 different storage backends. For instance, BadWolf provides a simple memory
 based implementation of this interfaces in the ```storage/memory``` package.
-All relevand interface definintions can be found in the the
+All relevant interface definitions can be found in the
 [storage.go](../storage/storage.go) file of the ```storage``` package. Also
 ```storage/memory``` package provides a volatile memory-only implementation
 of both ```storage.Store``` and ```storage.Graph``` interfaces.

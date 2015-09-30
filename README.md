@@ -25,4 +25,5 @@ You can find more detail information on each of the components of BadWolf below:
 * [Data Abstractions for Temporal Graph Modeling](./docs/temporal_graph_modeling.md).
 * [Storage Abstraction Layer](./docs/storage_abstraction_layer.md).
 * [Graph Marshaling/Unmarshaling](./docs/graph_serialization.md).
-* [BadWolf Query Language](./docs/bql.md).
+* [BadWolf Query Language overview](./docs/bql.md).
+* [BadWolf Query Language planner](./docs/bql_query_planner.md).
