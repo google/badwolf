@@ -192,3 +192,46 @@ func TestRejectByParseAndSemantic(t *testing.T) {
 		}
 	}
 }
+
+func TestBindingListing(t *testing.T) {
+	stm := Statement{}
+	stm.ResetWorkingGraphClause()
+	for i := 0; i < 10; i++ {
+		wcls := stm.WorkingClause()
+		v := string(i)
+		cls := &GraphClause{
+			SBinding:         "?" + v,
+			SAlias:           "?" + v,
+			STypeAlias:       "?" + v,
+			SIDAlias:         "?" + v,
+			PAlias:           "?" + v,
+			PID:              "?" + v,
+			PAnchorBinding:   "?" + v,
+			PBinding:         "?" + v,
+			PLowerBoundAlias: "?" + v,
+			PUpperBoundAlias: "?" + v,
+			PIDAlias:         "?" + v,
+			PAnchorAlias:     "?" + v,
+			OBinding:         "?" + v,
+			OID:              "?" + v,
+			OAlias:           "?" + v,
+			OTypeAlias:       "?" + v,
+			OIDAlias:         "?" + v,
+			OAnchorAlias:     "?" + v,
+			OAnchorBinding:   "?" + v,
+			OLowerBoundAlias: "?" + v,
+			OUpperBoundAlias: "?" + v,
+		}
+		*wcls = *cls
+		stm.AddWorkingGrpahClause()
+	}
+	bds := stm.Bindings()
+	if len(bds) != 10 {
+		t.Errorf("Statement.Bindings failed to reteurn 10 bindings, instead returned %v", bds)
+	}
+	for b, cnt := range bds {
+		if cnt != 20 {
+			t.Errorf("Statement.Bindings failed to update binding %q to 20, got %d instead", b, cnt)
+		}
+	}
+}

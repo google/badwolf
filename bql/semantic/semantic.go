@@ -167,3 +167,39 @@ func (s *Statement) AddWorkingGrpahClause() {
 	s.pattern = append(s.pattern, s.workingClause)
 	s.ResetWorkingGraphClause()
 }
+
+// addtoBindings add the binding if not empty.
+func addToBindings(bs map[string]int, b string) {
+	if b != "" {
+		bs[b]++
+	}
+}
+
+// Bindings retuns the set of bindings available on the graph clauses for he
+// statement.
+func (s *Statement) Bindings() map[string]int {
+	bs := make(map[string]int)
+	for _, cls := range s.pattern {
+		addToBindings(bs, cls.SBinding)
+		addToBindings(bs, cls.SAlias)
+		addToBindings(bs, cls.STypeAlias)
+		addToBindings(bs, cls.SIDAlias)
+		addToBindings(bs, cls.PAlias)
+		addToBindings(bs, cls.PAnchorBinding)
+		addToBindings(bs, cls.PBinding)
+		addToBindings(bs, cls.PLowerBoundAlias)
+		addToBindings(bs, cls.PUpperBoundAlias)
+		addToBindings(bs, cls.PIDAlias)
+		addToBindings(bs, cls.PAnchorAlias)
+		addToBindings(bs, cls.OBinding)
+		addToBindings(bs, cls.OID)
+		addToBindings(bs, cls.OAlias)
+		addToBindings(bs, cls.OTypeAlias)
+		addToBindings(bs, cls.OIDAlias)
+		addToBindings(bs, cls.OAnchorAlias)
+		addToBindings(bs, cls.OAnchorBinding)
+		addToBindings(bs, cls.OLowerBoundAlias)
+		addToBindings(bs, cls.OUpperBoundAlias)
+	}
+	return bs
+}
