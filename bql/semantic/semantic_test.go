@@ -235,3 +235,21 @@ func TestBindingListing(t *testing.T) {
 		}
 	}
 }
+
+func TestSortedGraphPatternClauses(t *testing.T) {
+	s := &Statement{
+		pattern: []*GraphClause{
+			{},
+			{S: &node.Node{}},
+			{S: &node.Node{}, P: &predicate.Predicate{}},
+			{S: &node.Node{}, P: &predicate.Predicate{}, O: &triple.Object{}},
+		},
+	}
+	spc := 3
+	for _, cls := range s.SortedGraphPatternClauses() {
+		if want, got := spc, cls.Specificity(); got != want {
+			t.Errorf("statement.SortedGraphPatternClauses failed to sort properly; got specificity %d, want specificity %d", got, want)
+		}
+		spc--
+	}
+}

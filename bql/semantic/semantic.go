@@ -19,6 +19,7 @@
 package semantic
 
 import (
+	"sort"
 	"time"
 
 	"github.com/google/badwolf/triple"
@@ -202,4 +203,29 @@ func (s *Statement) Bindings() map[string]int {
 		addToBindings(bs, cls.OUpperBoundAlias)
 	}
 	return bs
+}
+
+// bySpecificity type helps sort clauses by Specificity.
+type bySpecificity []*GraphClause
+
+// Len returns the lenght of the clauses array.
+func (s bySpecificity) Len() int {
+	return len(s)
+}
+
+// Swap exchange the i and j elements in the clauses array.
+func (s bySpecificity) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+// Less returns true if the i element is less specific than j one.
+func (s bySpecificity) Less(i, j int) bool {
+	return s[i].Specificity() > s[j].Specificity()
+}
+
+// SortedGraphPatternClauses return the list of graph pattern clauses
+func (s *Statement) SortedGraphPatternClauses() []*GraphClause {
+	ptrns := s.pattern
+	sort.Sort(bySpecificity(ptrns))
+	return ptrns
 }
