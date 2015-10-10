@@ -23,6 +23,7 @@ import (
 	"sync"
 
 	"github.com/google/badwolf/bql/semantic"
+	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"
 )
@@ -30,7 +31,7 @@ import (
 // Excecutor interface unifies the execution of statements.
 type Excecutor interface {
 	// Execute runs the proposed plan for a given statement.
-	Excecute() error
+	Excecute() (*table.Table, error)
 }
 
 // createPlan encapsulates the sequence of instructions that need to be
@@ -41,7 +42,11 @@ type createPlan struct {
 }
 
 // Execute creates the indicated graphs.
-func (p *createPlan) Excecute() error {
+func (p *createPlan) Excecute() (*table.Table, error) {
+	t, err := table.New([]string{})
+	if err != nil {
+		return nil, err
+	}
 	errs := []string{}
 	for _, g := range p.stm.Graphs() {
 		if _, err := p.store.NewGraph(g); err != nil {
@@ -49,9 +54,9 @@ func (p *createPlan) Excecute() error {
 		}
 	}
 	if len(errs) > 0 {
-		return errors.New(strings.Join(errs, "; "))
+		return nil, errors.New(strings.Join(errs, "; "))
 	}
-	return nil
+	return t, nil
 }
 
 // dropPlan encapsulates the sequence of instructions that need to be
@@ -62,7 +67,11 @@ type dropPlan struct {
 }
 
 // Execute drops the indicated graphs.
-func (p *dropPlan) Excecute() error {
+func (p *dropPlan) Excecute() (*table.Table, error) {
+	t, err := table.New([]string{})
+	if err != nil {
+		return nil, err
+	}
 	errs := []string{}
 	for _, g := range p.stm.Graphs() {
 		if err := p.store.DeleteGraph(g); err != nil {
@@ -70,9 +79,9 @@ func (p *dropPlan) Excecute() error {
 		}
 	}
 	if len(errs) > 0 {
-		return errors.New(strings.Join(errs, "; "))
+		return nil, errors.New(strings.Join(errs, "; "))
 	}
-	return nil
+	return t, nil
 }
 
 // insertPlan encapsulates the sequence of instructions that need to be
@@ -119,8 +128,12 @@ func update(stm *semantic.Statement, store storage.Store, f updater) error {
 }
 
 // Execute inserts the provided data into the indicated graphs.
-func (p *insertPlan) Excecute() error {
-	return update(p.stm, p.store, func(g storage.Graph, d []*triple.Triple) error {
+func (p *insertPlan) Excecute() (*table.Table, error) {
+	t, err := table.New([]string{})
+	if err != nil {
+		return nil, err
+	}
+	return t, update(p.stm, p.store, func(g storage.Graph, d []*triple.Triple) error {
 		return g.AddTriples(d)
 	})
 }
@@ -133,8 +146,12 @@ type deletePlan struct {
 }
 
 // Execute deletes the provided data into the indicated graphs.
-func (p *deletePlan) Excecute() error {
-	return update(p.stm, p.store, func(g storage.Graph, d []*triple.Triple) error {
+func (p *deletePlan) Excecute() (*table.Table, error) {
+	t, err := table.New([]string{})
+	if err != nil {
+		return nil, err
+	}
+	return t, update(p.stm, p.store, func(g storage.Graph, d []*triple.Triple) error {
 		return g.RemoveTriples(d)
 	})
 }
@@ -147,8 +164,8 @@ type queryPlan struct {
 }
 
 // Execute queries the indicated graphs.
-func (p *queryPlan) Excecute() error {
-	return errors.New("planner.queryPlan: Excecute method not implemented")
+func (p *queryPlan) Excecute() (*table.Table, error) {
+	return nil, errors.New("planner.queryPlan: Excecute method not implemented")
 }
 
 // New create a new executable plan given a semantic BQL statement.
