@@ -25,7 +25,9 @@ import (
 	"github.com/google/badwolf/triple/predicate"
 )
 
-// Table contains the results of a BQL query.
+// Table contains the results of a BQL query. This table implementation is not
+// safe for concurrency. You should take appropiate precautions if you want to
+// access it concurrently and wrap to properly control concurrent operations.
 type Table struct {
 	bs   []string
 	mbs  map[string]bool
