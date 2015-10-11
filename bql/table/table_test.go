@@ -132,7 +132,7 @@ func TestTableToText(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		tbl.AddRow(newRow())
 	}
-	want := "foo, bar\nfoo, bar\nfoo, bar\n"
+	want := "?foo, ?bar\nfoo, bar\nfoo, bar\nfoo, bar\n"
 	if got, err := tbl.ToText(", "); err != nil || got.String() != want {
 		t.Errorf("tbl.ToText failed to rerialize the text;\nGot:\n%s\nWant:\n%s", got, want)
 	}

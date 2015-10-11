@@ -159,23 +159,73 @@ func (p *deletePlan) Excecute() (*table.Table, error) {
 // queryPlan encapsulates the sequence of instructions that need to be
 // excecuted in order to satisfy the exceution of a valid query BQL statement.
 type queryPlan struct {
+	// Plan input.
 	stm   *semantic.Statement
 	store storage.Store
+	// Prepared plan information.
+	bndgs []string
+	grfs  []string
+	cls   []*semantic.GraphClause
+	tbl   *table.Table
+}
+
+// newQueryPlan returns a new query plan ready to be excecuted.
+func newQueryPlan(store storage.Store, stm *semantic.Statement) (*queryPlan, error) {
+	bs := []string{}
+	for k := range stm.Bindings() {
+		bs = append(bs, k)
+	}
+	t, err := table.New(bs)
+	if err != nil {
+		return nil, err
+	}
+	return &queryPlan{
+		stm:   stm,
+		store: store,
+		bndgs: bs,
+		grfs:  stm.Graphs(),
+		cls:   stm.SortedGraphPatternClauses(),
+		tbl:   t,
+	}, nil
+}
+
+// processClause retrives the triples for the provided triple given the
+// information available.
+func (p *queryPlan) processClause(cls *semantic.GraphClause) error {
+	// This method decides how to process the clause based on the current
+	// list of bindings solved and data available.
+
+	// TODO(xllora): Implement.
+	return nil
+}
+
+// processGraphPattern proces the query graph pattern to retrieve the
+// data from the specified graphs.
+func (p *queryPlan) processGraphPattern() error {
+	for _, cls := range p.cls {
+		// The current planner is based on naively excecuting clauses by
+		// specificity.
+		if err := p.processClause(cls); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Execute queries the indicated graphs.
 func (p *queryPlan) Excecute() (*table.Table, error) {
-	return nil, errors.New("planner.queryPlan: Excecute method not implemented")
+	// Retrieve the data.
+	if err := p.processGraphPattern(); err != nil {
+		return nil, err
+	}
+	return p.tbl, nil
 }
 
 // New create a new executable plan given a semantic BQL statement.
 func New(store storage.Store, stm *semantic.Statement) (Excecutor, error) {
 	switch stm.Type() {
 	case semantic.Query:
-		return &queryPlan{
-			stm:   stm,
-			store: store,
-		}, nil
+		return newQueryPlan(store, stm)
 	case semantic.Insert:
 		return &insertPlan{
 			stm:   stm,

@@ -15,11 +15,15 @@
 package planner
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/google/badwolf/bql/grammar"
 	"github.com/google/badwolf/bql/semantic"
+	"github.com/google/badwolf/io"
+	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/storage/memory"
+	"github.com/google/badwolf/triple/literal"
 )
 
 func insertTest(t *testing.T) {
@@ -171,5 +175,72 @@ func TestDropGraph(t *testing.T) {
 	}
 	if g, err := memory.DefaultStore.Graph("?bar"); err == nil {
 		t.Errorf("planner.Execute: failed to drop graph %q; returned %v", "?bar", g)
+	}
+}
+
+const testTriples = `
+	/u<joe> "parent_of"@[] /u<mary>
+  /u<joe> "parent_of"@[] /u<peter>
+  /u<peter> "parent_of"@[] /u<john>
+  /u<peter> "parent_of"@[] /u<eve>
+	/u<peter> "bought"@[2016-01-01T00:00:00-08:00] /c<mini>
+	/u<peter> "bought"@[2016-03-01T00:00:00-08:00] /c<model s>
+	/u<peter> "bought"@[2016-03-01T00:00:00-08:00] /c<model x>
+	/u<peter> "bought"@[2016-03-01T00:00:00-08:00] /c<model y>
+	/c<mini> "is_a"@[] /t<car>
+	/c<model s> "is_a"@[] /t<car>
+	/c<model x> "is_a"@[] /t<car>
+	/c<model y> "is_a"@[] /t<car>
+`
+
+func populateTestStore(t *testing.T) storage.Store {
+	s := memory.NewStore()
+	g, err := s.NewGraph("?test_graph")
+	if err != nil {
+		t.Fatalf("memory.NewGraph failed to create \"?test_graph\" with error %v", err)
+	}
+	b := bytes.NewBufferString(testTriples)
+	if _, err := io.ReadIntoGraph(g, b, literal.DefaultBuilder()); err != nil {
+		t.Fatalf("io.ReadIntoGraph failed to read test graph with error %v", err)
+	}
+	return s
+}
+
+func TestQuery(t *testing.T) {
+	testTable := []struct {
+		q string
+		r string
+	}{
+		{
+			q: `select ?o from ?test_graph where {/u<joe> "parent_of"@[] ?o}`,
+			r: "\n",
+		},
+	}
+
+	s := populateTestStore(t)
+	p, err := grammar.NewParser(grammar.SemanticBQL())
+	if err != nil {
+		t.Fatalf("grammar.NewParser: should have produced a valid BQL parser with error %v", err)
+	}
+	for _, entry := range testTable {
+		st := &semantic.Statement{}
+		if err := p.Parse(grammar.NewLLk(entry.q, 1), st); err == nil {
+			t.Errorf("Parser.consume: failed to reject invalid semantic entry %q", entry)
+		}
+		plnr, err := New(s, st)
+		if err != nil {
+			t.Errorf("planner.New failed to create a valid query plan with error %v", err)
+		}
+		tbl, err := plnr.Excecute()
+		if err != nil {
+			t.Errorf("planner.Excecute failed for query %q with error %v", entry.q, err)
+		}
+		stbl, err := tbl.ToText(", ")
+		if err != nil {
+			t.Errorf("tbl.ToText failed to serialize table with error %v", err)
+		}
+		if got, want := stbl.String(), entry.r; got != want {
+			t.Errorf("planner.Excecute failed to reture the expected output for query %q; got\n%q\nwant\n%q", entry.q, got, want)
+		}
 	}
 }

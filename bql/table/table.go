@@ -18,6 +18,7 @@ package table
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/badwolf/triple/literal"
@@ -142,6 +143,8 @@ func (t *Table) Bindings() []string {
 // separator to be used between cells.
 func (t *Table) ToText(sep string) (*bytes.Buffer, error) {
 	res, row := &bytes.Buffer{}, &bytes.Buffer{}
+	res.WriteString(strings.Join(t.bs, sep))
+	res.WriteString("\n")
 	for _, r := range t.data {
 		err := r.ToTextLine(row, t.bs, sep)
 		if err != nil {
