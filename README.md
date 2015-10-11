@@ -7,7 +7,7 @@ It presents a flexible storage abstraction, efficient query language, and
 data-interchange model for representing a directed graph that accommodates the
 storage and linking of arbitrary objects without the need for a rigid schema.
 
-BadWold began as a [triplestore](https://en.wikipedia.org/wiki/Triplestore),
+BadWolf began as a [triplestore](https://en.wikipedia.org/wiki/Triplestore),
 but triples have been expanded to quads to allow simpler and flexible temporal
 reasoning. Because BadWolf is designed for generalized relationship storage,
 most of the web-related ideosyncrasies of RDF are not used and have been toned
