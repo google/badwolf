@@ -172,8 +172,8 @@ type queryPlan struct {
 // newQueryPlan returns a new query plan ready to be excecuted.
 func newQueryPlan(store storage.Store, stm *semantic.Statement) (*queryPlan, error) {
 	bs := []string{}
-	for k := range stm.Bindings() {
-		bs = append(bs, k)
+	for _, b := range stm.Bindings() {
+		bs = append(bs, b)
 	}
 	t, err := table.New(bs)
 	if err != nil {
@@ -194,9 +194,37 @@ func newQueryPlan(store storage.Store, stm *semantic.Statement) (*queryPlan, err
 func (p *queryPlan) processClause(cls *semantic.GraphClause) error {
 	// This method decides how to process the clause based on the current
 	// list of bindings solved and data available.
-
-	// TODO(xllora): Implement.
-	return nil
+	exist, total := 0, 0
+	for _, b := range cls.Bindings() {
+		total++
+		if p.tbl.HasBinding(b) {
+			exist++
+		}
+	}
+	if exist == 0 {
+		// Data is new.
+		// TODO(xllora): Fetch the data.
+		if len(p.tbl.Bindings()) > 0 {
+			// TODO(xllora): The data should be added using the dot product.
+			return nil
+		}
+		// TODO(xllora): Data should be added directly.
+		return nil
+	}
+	if exist > 0 && exist < total {
+		// TODO(xllora): Data is partially binded, retrieve data either extends
+		// the row with the new bindings or filters it out if now new bindings
+		// are available.
+		return nil
+	}
+	if exist > 0 && exist == total {
+		// TODO(xllora): Since all bindings in the clause are already solved,
+		// the clause becomes a fully specified triple. If the triple does not
+		// exist the row will be deleted.
+		return nil
+	}
+	// Somethign is wrong with the code.
+	return fmt.Errorf("queryPlan.processClause(%v) should have never failed to resolve the clause", cls)
 }
 
 // processGraphPattern proces the query graph pattern to retrieve the

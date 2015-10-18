@@ -225,7 +225,7 @@ func TestBindingListing(t *testing.T) {
 		*wcls = *cls
 		stm.AddWorkingGrpahClause()
 	}
-	bds := stm.Bindings()
+	bds := stm.BindingsMap()
 	if len(bds) != 10 {
 		t.Errorf("Statement.Bindings failed to reteurn 10 bindings, instead returned %v", bds)
 	}

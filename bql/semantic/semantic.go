@@ -117,6 +117,43 @@ func (c *GraphClause) Specificity() int {
 	return s
 }
 
+// BindingsMap returns the binding map fo he graph clause.
+func (c *GraphClause) BindingsMap() map[string]int {
+	bm := make(map[string]int)
+
+	addToBindings(bm, c.SBinding)
+	addToBindings(bm, c.SAlias)
+	addToBindings(bm, c.STypeAlias)
+	addToBindings(bm, c.SIDAlias)
+	addToBindings(bm, c.PAlias)
+	addToBindings(bm, c.PAnchorBinding)
+	addToBindings(bm, c.PBinding)
+	addToBindings(bm, c.PLowerBoundAlias)
+	addToBindings(bm, c.PUpperBoundAlias)
+	addToBindings(bm, c.PIDAlias)
+	addToBindings(bm, c.PAnchorAlias)
+	addToBindings(bm, c.OBinding)
+	addToBindings(bm, c.OID)
+	addToBindings(bm, c.OAlias)
+	addToBindings(bm, c.OTypeAlias)
+	addToBindings(bm, c.OIDAlias)
+	addToBindings(bm, c.OAnchorAlias)
+	addToBindings(bm, c.OAnchorBinding)
+	addToBindings(bm, c.OLowerBoundAlias)
+	addToBindings(bm, c.OUpperBoundAlias)
+
+	return bm
+}
+
+// Bindings returns the list of unique bindings listed int he graph clause.
+func (c *GraphClause) Bindings() []string {
+	var bs []string
+	for k := range c.BindingsMap() {
+		bs = append(bs, k)
+	}
+	return bs
+}
+
 // BindType set he type of a statement.
 func (s *Statement) BindType(st StatementType) {
 	s.sType = st
@@ -176,31 +213,43 @@ func addToBindings(bs map[string]int, b string) {
 	}
 }
 
-// Bindings retuns the set of bindings available on the graph clauses for he
+// BindingsMap retuns the set of bindings available on the graph clauses for he
 // statement.
-func (s *Statement) Bindings() map[string]int {
-	bs := make(map[string]int)
+func (s *Statement) BindingsMap() map[string]int {
+	bm := make(map[string]int)
+
 	for _, cls := range s.pattern {
-		addToBindings(bs, cls.SBinding)
-		addToBindings(bs, cls.SAlias)
-		addToBindings(bs, cls.STypeAlias)
-		addToBindings(bs, cls.SIDAlias)
-		addToBindings(bs, cls.PAlias)
-		addToBindings(bs, cls.PAnchorBinding)
-		addToBindings(bs, cls.PBinding)
-		addToBindings(bs, cls.PLowerBoundAlias)
-		addToBindings(bs, cls.PUpperBoundAlias)
-		addToBindings(bs, cls.PIDAlias)
-		addToBindings(bs, cls.PAnchorAlias)
-		addToBindings(bs, cls.OBinding)
-		addToBindings(bs, cls.OID)
-		addToBindings(bs, cls.OAlias)
-		addToBindings(bs, cls.OTypeAlias)
-		addToBindings(bs, cls.OIDAlias)
-		addToBindings(bs, cls.OAnchorAlias)
-		addToBindings(bs, cls.OAnchorBinding)
-		addToBindings(bs, cls.OLowerBoundAlias)
-		addToBindings(bs, cls.OUpperBoundAlias)
+		addToBindings(bm, cls.SBinding)
+		addToBindings(bm, cls.SAlias)
+		addToBindings(bm, cls.STypeAlias)
+		addToBindings(bm, cls.SIDAlias)
+		addToBindings(bm, cls.PAlias)
+		addToBindings(bm, cls.PAnchorBinding)
+		addToBindings(bm, cls.PBinding)
+		addToBindings(bm, cls.PLowerBoundAlias)
+		addToBindings(bm, cls.PUpperBoundAlias)
+		addToBindings(bm, cls.PIDAlias)
+		addToBindings(bm, cls.PAnchorAlias)
+		addToBindings(bm, cls.OBinding)
+		addToBindings(bm, cls.OID)
+		addToBindings(bm, cls.OAlias)
+		addToBindings(bm, cls.OTypeAlias)
+		addToBindings(bm, cls.OIDAlias)
+		addToBindings(bm, cls.OAnchorAlias)
+		addToBindings(bm, cls.OAnchorBinding)
+		addToBindings(bm, cls.OLowerBoundAlias)
+		addToBindings(bm, cls.OUpperBoundAlias)
+	}
+
+	return bm
+}
+
+// Bindings retuns the list of bindings available on the graph clauses for he
+// statement.
+func (s *Statement) Bindings() []string {
+	var bs []string
+	for k := range s.BindingsMap() {
+		bs = append(bs, k)
 	}
 	return bs
 }
