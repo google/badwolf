@@ -118,6 +118,36 @@ func TestTableManipulation(t *testing.T) {
 	}
 }
 
+func TestBindingExtensions(t *testing.T) {
+	testBindings := []string{"?foo", "?bar"}
+	tbl, err := New(testBindings)
+	if err != nil {
+		t.Fatal(errors.New("tbl.New failed to crate a new valid table"))
+	}
+	for _, b := range testBindings {
+		if !tbl.HasBinding(b) {
+			t.Errorf("tbl.HasBinding(%q) returned false for an existing binding", b)
+		}
+	}
+	newBindings := []string{"?new", "?biding"}
+	for _, b := range newBindings {
+		if tbl.HasBinding(b) {
+			t.Errorf("tbl.HasBinding(%q) returned true for a non existing binding", b)
+		}
+	}
+	mixedBindings := append(testBindings, testBindings...)
+	mixedBindings = append(mixedBindings, newBindings...)
+	tbl.AddBindings(mixedBindings)
+	for _, b := range tbl.Bindings() {
+		if !tbl.HasBinding(b) {
+			t.Errorf("tbl.HasBinding(%q) returned false for an existing binding", b)
+		}
+	}
+	if got, want := len(tbl.Bindings()), 4; got != want {
+		t.Errorf("tbl.Bindings() returned the wrong number of bindings; got %d, want %d", got, want)
+	}
+}
+
 func TestTableToText(t *testing.T) {
 	newRow := func() Row {
 		r := make(Row)

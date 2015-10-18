@@ -134,6 +134,21 @@ func (t *Table) Rows() []Row {
 	return t.data
 }
 
+// AddBindings add the new binings provided to the table.
+func (t *Table) AddBindings(bs []string) {
+	for _, b := range bs {
+		if _, ok := t.mbs[b]; !ok {
+			t.mbs[b] = true
+			t.bs = append(t.bs, b)
+		}
+	}
+}
+
+// HasBinding returns true if the binding currently exist on the teable.
+func (t *Table) HasBinding(b string) bool {
+	return t.mbs[b]
+}
+
 // Bindings returns the bindings contained on the tables.
 func (t *Table) Bindings() []string {
 	return t.bs
