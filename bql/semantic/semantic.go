@@ -72,24 +72,24 @@ type Statement struct {
 
 // GraphClause represents a clause of a graph pattern in a where clause.
 type GraphClause struct {
-	S                *node.Node
-	SBinding         string
-	SAlias           string
-	STypeAlias       string
-	SIDAlias         string
+	S          *node.Node
+	SBinding   string
+	SAlias     string
+	STypeAlias string
+	SIDAlias   string
 
 	P                *predicate.Predicate
+	PID              string
 	PBinding         string
 	PAlias           string
-	PID              string
+	PIDAlias         string
 	PAnchorBinding   string
+	PAnchorAlias     string
 	PLowerBound      *time.Time
 	PUpperBound      *time.Time
 	PLowerBoundAlias string
 	PUpperBoundAlias string
-	PIDAlias         string
-	PAnchorAlias     string
-	
+
 	O                *triple.Object
 	OBinding         string
 	OAlias           string

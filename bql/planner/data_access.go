@@ -21,6 +21,7 @@ import (
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"
+	"github.com/google/badwolf/triple/predicate"
 )
 
 // simpleFetch returns a table containing the data specified by the graph
@@ -138,6 +139,33 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 	if cls.PBinding != "" {
 		r[cls.PBinding] = &table.Cell{P: p}
 	}
+	if cls.PAlias != "" {
+		r[cls.PAlias] = &table.Cell{P: p}
+	}
+	if cls.PIDAlias != "" {
+		r[cls.PIDAlias] = &table.Cell{S: string(p.ID())}
+	}
+	if cls.PAnchorBinding != "" {
+		if p.Type() != predicate.Temporal {
+			return nil, fmt.Errorf("cannot retrieve the time anchor value for non temporal predicate %q in binding %q", p, cls.PAnchorBinding)
+		}
+		t, err := p.TimeAnchor()
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve the time anchor value for predicate %q in binding %q with error %v", p, cls.PAnchorBinding, err)
+		}
+		r[cls.PAnchorBinding] = &table.Cell{T: t}
+	}
+
+	if cls.PAnchorAlias != "" {
+		if p.Type() != predicate.Temporal {
+			return nil, fmt.Errorf("cannot retrieve the time anchor value for non temporal predicate %q in binding %q", p, cls.PAnchorAlias)
+		}
+		t, err := p.TimeAnchor()
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve the time anchor value for predicate %q in binding %q with error %v", p, cls.PAnchorAlias, err)
+		}
+		r[cls.PAnchorAlias] = &table.Cell{T: t}
+	}
 
 	// Object related bindings.
 	if cls.OBinding != "" {
@@ -148,5 +176,7 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 		}
 		r[cls.OBinding] = c
 	}
+  // TODO(xllora): Implement the rest.
+  
 	return r, nil
 }
