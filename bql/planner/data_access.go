@@ -122,6 +122,15 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 	if cls.SBinding != "" {
 		r[cls.SBinding] = &table.Cell{N: s}
 	}
+	if cls.SAlias != "" {
+		r[cls.SAlias] = &table.Cell{N: s}
+	}
+	if cls.STypeAlias != "" {
+		r[cls.STypeAlias] = &table.Cell{S: s.Type().String()}
+	}
+	if cls.SIDAlias != "" {
+		r[cls.SIDAlias] = &table.Cell{S: s.ID().String()}
+	}
 	if cls.PBinding != "" {
 		r[cls.PBinding] = &table.Cell{P: p}
 	}
