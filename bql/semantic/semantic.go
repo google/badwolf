@@ -77,21 +77,23 @@ type GraphClause struct {
 	SAlias           string
 	STypeAlias       string
 	SIDAlias         string
+
 	P                *predicate.Predicate
+	PBinding         string
 	PAlias           string
 	PID              string
 	PAnchorBinding   string
-	PBinding         string
 	PLowerBound      *time.Time
 	PUpperBound      *time.Time
 	PLowerBoundAlias string
 	PUpperBoundAlias string
 	PIDAlias         string
 	PAnchorAlias     string
+	
 	O                *triple.Object
 	OBinding         string
-	OID              string
 	OAlias           string
+	OID              string
 	OTypeAlias       string
 	OIDAlias         string
 	OAnchorAlias     string

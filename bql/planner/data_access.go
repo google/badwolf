@@ -119,6 +119,8 @@ func objectToCell(o *triple.Object) (*table.Cell, error) {
 // on the graph clause.
 func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error) {
 	r, s, p, o := make(table.Row), t.S(), t.P(), t.O()
+
+	// Subject related bindings.
 	if cls.SBinding != "" {
 		r[cls.SBinding] = &table.Cell{N: s}
 	}
@@ -131,24 +133,20 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 	if cls.SIDAlias != "" {
 		r[cls.SIDAlias] = &table.Cell{S: s.ID().String()}
 	}
+
+	// Predicate related bindings.
 	if cls.PBinding != "" {
 		r[cls.PBinding] = &table.Cell{P: p}
 	}
+
+	// Object related bindings.
 	if cls.OBinding != "" {
 		// Extract the object type.
-		if n, err := o.Node(); err == nil {
-			r[cls.OBinding] = &table.Cell{N: n}
-		} else {
-			if p, err := o.Predicate(); err == nil {
-				r[cls.OBinding] = &table.Cell{P: p}
-			} else {
-				if l, err := o.Literal(); err == nil {
-					r[cls.OBinding] = &table.Cell{L: l}
-				} else {
-					return nil, fmt.Errorf("unknown object type in triple %s", t)
-				}
-			}
+		c, err := objectToCell(o)
+		if err != nil {
+			return nil, err
 		}
+		r[cls.OBinding] = c
 	}
 	return r, nil
 }
