@@ -55,7 +55,11 @@ func ReadIntoGraph(g storage.Graph, r io.Reader, b literal.Builder) (int, error)
 // regardless if it succeded of it failed partialy.
 func WriteGraph(w io.Writer, g storage.Graph) (int, error) {
 	cnt := 0
-	for t := range g.Triples() {
+	ts, err := g.Triples()
+	if err != nil {
+		return 0, err
+	}
+	for t := range ts {
 		_, err := io.WriteString(w, fmt.Sprintf("%s\n", t.String()))
 		if err != nil {
 			return cnt, err

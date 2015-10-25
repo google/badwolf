@@ -184,5 +184,5 @@ type Graph interface {
 	Exist(t *triple.Triple) (bool, error)
 
 	// Triples allows to iterate over all available triples.
-	Triples() Triples
+	Triples() (Triples, error)
 }

@@ -435,7 +435,7 @@ func (m *memory) Exist(t *triple.Triple) (bool, error) {
 }
 
 // Triples allows to iterate over all available triples.
-func (m *memory) Triples() storage.Triples {
+func (m *memory) Triples() (storage.Triples, error) {
 	triples := make(chan *triple.Triple, len(m.idx))
 	go func() {
 		for _, t := range m.idx {
@@ -443,5 +443,5 @@ func (m *memory) Triples() storage.Triples {
 		}
 		close(triples)
 	}()
-	return triples
+	return triples, nil
 }

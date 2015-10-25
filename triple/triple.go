@@ -90,18 +90,19 @@ func (o *Object) Literal() (*literal.Literal, error) {
 // ParseObject attempts to parse and object.
 func ParseObject(s string, b literal.Builder) (*Object, error) {
 	n, err := node.Parse(s)
-	if err != nil {
-		l, err := b.Parse(s)
-		if err != nil {
-			o, err := predicate.Parse(s)
-			if err != nil {
-				return nil, err
-			}
-			return NewPredicateObject(o), nil
-		}
+	if err == nil {
+		return NewNodeObject(n), nil
+	}
+	l, err := b.Parse(s)
+	if err == nil {
 		return NewLiteralObject(l), nil
 	}
-	return NewNodeObject(n), nil
+	o, err := predicate.Parse(s)
+	if err == nil {
+
+		return NewPredicateObject(o), nil
+	}
+	return nil, err
 }
 
 // NewNodeObject returns a new object that boxes a node.

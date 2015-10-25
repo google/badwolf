@@ -50,7 +50,11 @@ func insertTest(t *testing.T) {
 		t.Errorf("memory.DefaultStore.Graph(%q) should have not fail with error %v", "?a", err)
 	}
 	i := 0
-	for _ = range g.Triples() {
+	ts, err := g.Triples()
+	if err != nil {
+		t.Error(err)
+	}
+	for _ = range ts {
 		i++
 	}
 	if i != 3 {
@@ -82,7 +86,11 @@ func deleteTest(t *testing.T) {
 		t.Errorf("memory.DefaultStore.Graph(%q) should have not fail with error %v", "?a", err)
 	}
 	i := 0
-	for _ = range g.Triples() {
+	ts, err := g.Triples()
+	if err != nil {
+		t.Error(err)
+	}
+	for _ = range ts {
 		i++
 	}
 	if i != 0 {
