@@ -10,7 +10,7 @@ storage and linking of arbitrary objects without the need for a rigid schema.
 BadWolf began as a [triplestore](https://en.wikipedia.org/wiki/Triplestore),
 but triples have been expanded to quads to allow simpler and flexible temporal
 reasoning. Because BadWolf is designed for generalized relationship storage,
-most of the web-related ideosyncrasies of RDF are not used and have been toned
+most of the web-related idiosyncrasies of RDF are not used and have been toned
 down or directly removed and focuses on its time reasoning aspects.
 
 In case you are curious about the name, BadWolf is named after the
