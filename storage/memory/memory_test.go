@@ -51,7 +51,14 @@ func TestMemoryStore(t *testing.T) {
 func TestDefaultLookupChecker(t *testing.T) {
 	dlu := storage.DefaultLookup
 	c := newChecker(dlu)
-	ip, tp := predicate.NewImmutable("foo"), predicate.NewTemporal("bar", time.Now())
+	ip, err := predicate.NewImmutable("foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tp, err := predicate.NewTemporal("bar", time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !c.CheckAndUpdate(ip) {
 		t.Errorf("Immutable predicates should always validate with default lookup %v", dlu)
 	}
@@ -63,7 +70,10 @@ func TestDefaultLookupChecker(t *testing.T) {
 func TestLimitedItemsLookupChecker(t *testing.T) {
 	blu := &storage.LookupOptions{MaxElements: 1}
 	c := newChecker(blu)
-	ip := predicate.NewImmutable("foo")
+	ip, err := predicate.NewImmutable("foo")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !c.CheckAndUpdate(ip) {
 		t.Errorf("The first predicate should always succeeed on bounded lookup %v", blu)
 	}
@@ -359,7 +369,10 @@ func TestTriples(t *testing.T) {
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls := g.Triples()
+	trpls, err := g.Triples()
+	if err != nil {
+		t.Fatal(err)
+	}
 	cnt := 0
 	for _ = range trpls {
 		cnt++

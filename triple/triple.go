@@ -211,8 +211,6 @@ func (t *Triple) Reify() ([]*Triple, *node.Node, error) {
 		}
 		return predicate.NewImmutable(id)
 	}
-
-	fmt.Println(t.String())
 	b := node.NewBlankNode()
 	s, err := rp("_subject", t.p)
 	if err != nil {

@@ -56,9 +56,9 @@ func TestReadIntoGraph(t *testing.T) {
 func TestWriteIntoGraph(t *testing.T) {
 	var buffer bytes.Buffer
 	ts := getTestTriples(t)
-	g, err := memory.DefaultStore.NewGraph("test")
+	g, err := memory.NewStore().NewGraph("test")
 	if err != nil {
-		t.Fatalf("memory.DefaultStore.NewGraph should have never failed to create a graph")
+		t.Fatalf("memory.NewStore().NewGraph should have never failed to create a graph")
 	}
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("storage.AddTriples should have not fail to add triples %v with error %v", ts, err)
@@ -76,9 +76,9 @@ func TestSerializationContents(t *testing.T) {
 	var buffer bytes.Buffer
 	ts := getTestTriples(t)
 
-	g, err := memory.DefaultStore.NewGraph("test")
+	g, err := memory.NewStore().NewGraph("test")
 	if err != nil {
-		t.Fatalf("memory.DefaultStore.NewGraph should have never failed to create a graph")
+		t.Fatalf("memory.NewStore().NewGraph should have never failed to create a graph")
 	}
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("storage.AddTriples should have not fail to add triples %v with error %v", ts, err)
@@ -106,12 +106,20 @@ func TestSerializationContents(t *testing.T) {
 	// Check the graphs are equal
 	m := make(map[string]bool)
 	gs := 0
-	for trpl := range g.Triples() {
+	gtpls, err := g.Triples()
+	if err != nil {
+		t.Errorf("g.Triples failed to retrieve triples with error %v", err)
+	}
+	for trpl := range gtpls {
 		m[trpl.GUID()] = true
 		gs++
 	}
 	gos := 0
-	for trpl := range g2.Triples() {
+	g2tpls, err := g2.Triples()
+	if err != nil {
+		t.Errorf("g2.Triples failed to retrieve triples with error %v", err)
+	}
+	for trpl := range g2tpls {
 		if _, ok := m[trpl.GUID()]; !ok {
 			t.Errorf("Failed to unmarshal marshaled triple; could not find triple %s", trpl.String())
 		}
