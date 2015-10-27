@@ -96,8 +96,8 @@ type GraphClause struct {
 	OID              string
 	OTypeAlias       string
 	OIDAlias         string
-	OAnchorAlias     string
 	OAnchorBinding   string
+	OAnchorAlias     string
 	OLowerBound      *time.Time
 	OUpperBound      *time.Time
 	OLowerBoundAlias string

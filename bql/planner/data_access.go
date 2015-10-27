@@ -176,7 +176,55 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 		}
 		r[cls.OBinding] = c
 	}
-  // TODO(xllora): Implement the rest.
-  
+	if cls.OAlias != "" {
+		// Extract the object type.
+		c, err := objectToCell(o)
+		if err != nil {
+			return nil, err
+		}
+		r[cls.OAlias] = c
+	}
+	if cls.OTypeAlias != "" {
+		n, err := o.Node()
+		if err != nil {
+			return nil, err
+		}
+		r[cls.OTypeAlias] = &table.Cell{S: n.Type().String()}
+	}
+	if cls.OIDAlias != "" {
+		n, err := o.Node()
+		if err == nil {
+			r[cls.OIDAlias] = &table.Cell{S: n.ID().String()}
+		} else {
+			p, err := o.Predicate()
+			if err != nil {
+				return nil, err
+			}
+			r[cls.OIDAlias] = &table.Cell{S: string(p.ID())}
+		}
+	}
+	if cls.OAnchorBinding != "" {
+		p, err := o.Predicate()
+		if err != nil {
+			return nil, err
+		}
+		ts, err := p.TimeAnchor()
+		if err != nil {
+			return nil, err
+		}
+		r[cls.OAnchorBinding] = &table.Cell{T: ts}
+	}
+	if cls.OAnchorAlias != "" {
+		p, err := o.Predicate()
+		if err != nil {
+			return nil, err
+		}
+		ts, err := p.TimeAnchor()
+		if err != nil {
+			return nil, err
+		}
+		r[cls.OAnchorAlias] = &table.Cell{T: ts}
+	}
+
 	return r, nil
 }
