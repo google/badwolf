@@ -179,10 +179,103 @@ func TestEqualBindings(t *testing.T) {
 			b2:   map[string]bool{},
 			want: true,
 		},
+		{
+			b1: map[string]bool{},
+			b2: map[string]bool{
+				"?foo": true,
+				"?bar": true,
+			},
+			want: false,
+		},
+		{
+			b1: map[string]bool{
+				"?foo": true,
+				"?bar": true,
+			},
+			b2:   map[string]bool{},
+			want: false,
+		},
+		{
+			b1: map[string]bool{
+				"?foo": true,
+				"?bar": true,
+			},
+			b2: map[string]bool{
+				"?foo":   true,
+				"?bar":   true,
+				"?other": true,
+			},
+			want: false,
+		},
 	}
 	for _, entry := range testTable {
 		if got, want := equalBindings(entry.b1, entry.b2), entry.want; got != want {
 			t.Errorf("equalBidings returned %v instead of %v for values %v, %v", got, want, entry.b1, entry.b2)
 		}
 	}
+}
+
+func testTable(t *testing.T) *Table {
+	newRow := func() Row {
+		r := make(Row)
+		r["?foo"] = &Cell{S: "foo"}
+		r["?bar"] = &Cell{S: "bar"}
+		return r
+	}
+	tbl, err := New([]string{"?foo", "?bar"})
+	if err != nil {
+		t.Fatal(errors.New("tbl.New failed to crate a new valid table"))
+	}
+	for i := 0; i < 3; i++ {
+		tbl.AddRow(newRow())
+	}
+	return tbl
+}
+
+func TestAppendTable(t *testing.T) {
+	newEmpty := func() *Table {
+		empty, err := New([]string{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return empty
+	}
+	newNonEmpty := func(twice bool) *Table {
+		tbl := testTable(t)
+		if twice {
+			tbl.data = append(tbl.data, tbl.data...)
+		}
+		return tbl
+	}
+	testTable := []struct {
+		t    *Table
+		t2   *Table
+		want *Table
+	}{
+		{
+			t:    newEmpty(),
+			t2:   newNonEmpty(false),
+			want: newNonEmpty(false),
+		},
+		{
+			t:    newNonEmpty(false),
+			t2:   newNonEmpty(false),
+			want: newNonEmpty(true),
+		},
+	}
+	for _, entry := range testTable {
+		if err := entry.t.AppendTable(entry.t2); err != nil {
+			t.Errorf("Failed to append %s to %s with error %v", entry.t2, entry.t, err)
+		}
+		if got, want := len(entry.t.Bindings()), len(entry.t2.Bindings()); got != want {
+			t.Errorf("Append returned the wrong number of bindings; got %d, want %d", got, want)
+		}
+		if got, want := len(entry.t.Rows()), len(entry.want.Rows()); got != want {
+			t.Errorf("Append returned the wrong number of rows; got %d, want %d", got, want)
+		}
+	}
+}
+
+func TestDotProduct(t *testing.T) {
+
 }

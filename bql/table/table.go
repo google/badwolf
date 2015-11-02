@@ -187,6 +187,9 @@ func (t *Table) String() string {
 
 // equalBindings returns true if the bindings are the same, false otherwise.
 func equalBindings(b1, b2 map[string]bool) bool {
+	if len(b1) != len(b2) {
+		return false
+	}
 	for k := range b1 {
 		if _, ok := b2[k]; !ok {
 			return false
