@@ -163,10 +163,11 @@ type queryPlan struct {
 	stm   *semantic.Statement
 	store storage.Store
 	// Prepared plan information.
-	bndgs []string
-	grfs  []string
-	cls   []*semantic.GraphClause
-	tbl   *table.Table
+	bndgs     []string
+	grfsNames []string
+	grfs      []storage.Graph
+	cls       []*semantic.GraphClause
+	tbl       *table.Table
 }
 
 // newQueryPlan returns a new query plan ready to be excecuted.
@@ -175,17 +176,26 @@ func newQueryPlan(store storage.Store, stm *semantic.Statement) (*queryPlan, err
 	for _, b := range stm.Bindings() {
 		bs = append(bs, b)
 	}
-	t, err := table.New(bs)
+	t, err := table.New([]string{})
 	if err != nil {
 		return nil, err
 	}
+	var gs []storage.Graph
+	for _, g := range stm.Graphs() {
+		ng, err := store.Graph(g)
+		if err != nil {
+			return nil, err
+		}
+		gs = append(gs, ng)
+	}
 	return &queryPlan{
-		stm:   stm,
-		store: store,
-		bndgs: bs,
-		grfs:  stm.Graphs(),
-		cls:   stm.SortedGraphPatternClauses(),
-		tbl:   t,
+		stm:       stm,
+		store:     store,
+		bndgs:     bs,
+		grfs:      gs,
+		grfsNames: stm.Graphs(),
+		cls:       stm.SortedGraphPatternClauses(),
+		tbl:       t,
 	}, nil
 }
 
@@ -203,12 +213,15 @@ func (p *queryPlan) processClause(cls *semantic.GraphClause) error {
 	}
 	if exist == 0 {
 		// Data is new.
-		// TODO(xllora): Fetch the data.
+		tbl, err := simpleFetch(p.grfs, cls)
+		if err != nil {
+			return err
+		}
 		if len(p.tbl.Bindings()) > 0 {
 			// TODO(xllora): The data should be added using the dot product.
 			return nil
 		}
-		// TODO(xllora): Data should be added directly.
+		p.tbl.AppendTable(tbl)
 		return nil
 	}
 	if exist > 0 && exist < total {

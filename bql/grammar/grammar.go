@@ -838,12 +838,15 @@ func initSemanticBQL() {
 	// Query semantic hooks.
 	for _, cls := range (*semanticBQL)["WHERE"] {
 		cls.ProcessStart = semantic.WhereInitWorkingClauseHook()
+		cls.ProcessEnd = semantic.WhereNextWorkingClauseHook()
 	}
 	for _, cls := range (*semanticBQL)["NORE_CLAUSES"] {
 		cls.ProcessEnd = semantic.WhereNextWorkingClauseHook()
 	}
 
-	subSymbols := []semantic.Symbol{"SUBJECT_EXTRACT", "SUBJECT_TYPE", "SUBJECT_ID"}
+	subSymbols := []semantic.Symbol{
+		"CLAUSES", "SUBJECT_EXTRACT", "SUBJECT_TYPE", "SUBJECT_ID",
+	}
 	for _, sym := range subSymbols {
 		for _, cls := range (*semanticBQL)[sym] {
 			cls.ProcessedElement = semantic.WhereSubjectClauseHook()

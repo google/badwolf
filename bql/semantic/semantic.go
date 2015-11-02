@@ -204,7 +204,9 @@ func (s *Statement) WorkingClause() *GraphClause {
 // AddWorkingGrpahClause add the current working graph clause to the set of
 // clauses that form the graph pattern.
 func (s *Statement) AddWorkingGrpahClause() {
-	s.pattern = append(s.pattern, s.workingClause)
+	if s.workingClause != nil {
+		s.pattern = append(s.pattern, s.workingClause)
+	}
 	s.ResetWorkingGraphClause()
 }
 

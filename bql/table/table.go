@@ -175,3 +175,35 @@ func (t *Table) ToText(sep string) (*bytes.Buffer, error) {
 	}
 	return res, nil
 }
+
+// String attempts to force serialize the table into a string.
+func (t *Table) String() string {
+	b, err := t.ToText("\t")
+	if err != nil {
+		return fmt.Sprintf("Failed to serialize to text! Error: %s", err)
+	}
+	return b.String()
+}
+
+// equalBindings returns true if the bindings are the same, false otherwise.
+func equalBindings(b1, b2 map[string]bool) bool {
+	for k := range b1 {
+		if _, ok := b2[k]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+// AppendTable appends the content of the provided table. It will fail it the
+// target table is not empty and the binidngs do not match.
+func (t *Table) AppendTable(t2 *Table) error {
+	if len(t.Bindings()) > 0 && !equalBindings(t.mbs, t2.mbs) {
+		return fmt.Errorf("AppendTable can only append to an empty table or equally binded table; intead got %v and %v", t.bs, t2.bs)
+	}
+	if len(t.Bindings()) == 0 {
+		t.bs, t.mbs = t2.bs, t2.mbs
+	}
+	t.data = append(t.data, t2.data...)
+	return nil
+}

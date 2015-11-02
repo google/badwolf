@@ -16,6 +16,7 @@ package planner
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/google/badwolf/bql/grammar"
@@ -203,25 +204,38 @@ const testTriples = `
 
 func populateTestStore(t *testing.T) storage.Store {
 	s := memory.NewStore()
-	g, err := s.NewGraph("?test_graph")
+	g, err := s.NewGraph("?test")
 	if err != nil {
-		t.Fatalf("memory.NewGraph failed to create \"?test_graph\" with error %v", err)
+		t.Fatalf("memory.NewGraph failed to create \"?test\" with error %v", err)
 	}
 	b := bytes.NewBufferString(testTriples)
 	if _, err := io.ReadIntoGraph(g, b, literal.DefaultBuilder()); err != nil {
 		t.Fatalf("io.ReadIntoGraph failed to read test graph with error %v", err)
+	}
+	tpls, err := g.Triples()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cnt := 0
+	for _ = range tpls {
+		cnt++
+	}
+	if got, want := cnt, len(strings.Split(testTriples, "\n"))-2; got != want {
+		t.Fatalf("Failed to import all test triples; got %v, want %v", got, want)
 	}
 	return s
 }
 
 func TestQuery(t *testing.T) {
 	testTable := []struct {
-		q string
-		r string
+		q    string
+		nbs  int
+		nrws int
 	}{
 		{
-			q: `select ?o from ?test_graph where {/u<joe> "parent_of"@[] ?o}`,
-			r: "\n",
+			q:    `select ?s, ?p, ?o from ?test where {?s ?p ?o}`,
+			nbs:  3,
+			nrws: len(strings.Split(testTriples, "\n")),
 		},
 	}
 
@@ -247,8 +261,11 @@ func TestQuery(t *testing.T) {
 		if err != nil {
 			t.Errorf("tbl.ToText failed to serialize table with error %v", err)
 		}
-		if got, want := stbl.String(), entry.r; got != want {
-			t.Errorf("planner.Excecute failed to reture the expected output for query %q; got\n%q\nwant\n%q", entry.q, got, want)
+		if got, want := len(tbl.Bindings()), entry.nbs; got != want {
+			t.Errorf("tbl.Bindings returned the wrong number of bindings; got %d, want %d", got, want)
+		}
+		if got, want := len(strings.Split(stbl.String(), "\n")), entry.nrws; got != want {
+			t.Errorf("planner.Excecute failed to return the expected number of rows for query %q; got %d want %d", entry.q, got, want)
 		}
 	}
 }

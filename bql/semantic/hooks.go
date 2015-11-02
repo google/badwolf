@@ -127,10 +127,10 @@ var (
 	// wsch contains the where clause subject hook.
 	wsch ElementHook
 
-	// wsch contains the where clause subject hook.
+	// wpch contains the where clause subject hook.
 	wpch ElementHook
 
-	// wsch contains the where clause subject hook.
+	// woch contains the where clause subject hook.
 	woch ElementHook
 )
 

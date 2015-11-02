@@ -167,3 +167,22 @@ func TestTableToText(t *testing.T) {
 		t.Errorf("tbl.ToText failed to rerialize the text;\nGot:\n%s\nWant:\n%s", got, want)
 	}
 }
+
+func TestEqualBindings(t *testing.T) {
+	testTable := []struct {
+		b1   map[string]bool
+		b2   map[string]bool
+		want bool
+	}{
+		{
+			b1:   map[string]bool{},
+			b2:   map[string]bool{},
+			want: true,
+		},
+	}
+	for _, entry := range testTable {
+		if got, want := equalBindings(entry.b1, entry.b2), entry.want; got != want {
+			t.Errorf("equalBidings returned %v instead of %v for values %v, %v", got, want, entry.b1, entry.b2)
+		}
+	}
+}
