@@ -210,3 +210,53 @@ func (t *Table) AppendTable(t2 *Table) error {
 	t.data = append(t.data, t2.data...)
 	return nil
 }
+
+// disjointBinding returns true if they are not overlapping bindings, false
+// otherwise.
+func disjointBinding(b1, b2 map[string]bool) bool {
+	m := make(map[string]int)
+	for k := range b1 {
+		m[k]++
+	}
+	for k := range b2 {
+		m[k]++
+	}
+	for _, cnt := range m {
+		if cnt != 1 {
+			return false
+		}
+	}
+	return true
+}
+
+// DotProduct does the doot product with the provided tatble
+func (t *Table) DotProduct(t2 *Table) error {
+	if !disjointBinding(t.mbs, t2.mbs) {
+		return fmt.Errorf("DotProduct operations requires disjoint bindingts; instead got %v and %v", t.mbs, t2.mbs)
+	}
+	// Update the table metadata.
+	m := make(map[string]bool)
+	for k := range t.mbs {
+		m[k] = true
+	}
+	for k := range t2.mbs {
+		m[k] = true
+	}
+	t.mbs = m
+	t.bs = []string{}
+	for k := range t.mbs {
+		t.bs = append(t.bs, k)
+	}
+	// Update the data.
+	td := t.data
+	t.data = []Row{}
+	for _, r1 := range td {
+		for _, r2 := range t2.data {
+			for k, v := range r2 {
+				r1[k] = v
+			}
+			t.data = append(t.data, r1)
+		}
+	}
+	return nil
+}

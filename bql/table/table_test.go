@@ -267,7 +267,7 @@ func TestAppendTable(t *testing.T) {
 		if err := entry.t.AppendTable(entry.t2); err != nil {
 			t.Errorf("Failed to append %s to %s with error %v", entry.t2, entry.t, err)
 		}
-		if got, want := len(entry.t.Bindings()), len(entry.t2.Bindings()); got != want {
+		if got, want := len(entry.t.Bindings()), len(entry.want.Bindings()); got != want {
 			t.Errorf("Append returned the wrong number of bindings; got %d, want %d", got, want)
 		}
 		if got, want := len(entry.t.Rows()), len(entry.want.Rows()); got != want {
@@ -276,6 +276,99 @@ func TestAppendTable(t *testing.T) {
 	}
 }
 
+func TestDisjoingBinding(t *testing.T) {
+	testTable := []struct {
+		b1   map[string]bool
+		b2   map[string]bool
+		want bool
+	}{
+		{
+			b1:   map[string]bool{},
+			b2:   map[string]bool{},
+			want: true,
+		},
+		{
+			b1: map[string]bool{},
+			b2: map[string]bool{
+				"?foo": true,
+				"?bar": true,
+			},
+			want: true,
+		},
+		{
+			b1: map[string]bool{
+				"?foo": true,
+				"?bar": true,
+			},
+			b2:   map[string]bool{},
+			want: true,
+		},
+		{
+			b1: map[string]bool{
+				"?foo": true,
+				"?bar": true,
+			},
+			b2: map[string]bool{
+				"?foo":   true,
+				"?bar":   true,
+				"?other": true,
+			},
+			want: false,
+		},
+	}
+	for _, entry := range testTable {
+		if got, want := disjointBinding(entry.b1, entry.b2), entry.want; got != want {
+			t.Errorf("equalBidings returned %v instead of %v for values %v, %v", got, want, entry.b1, entry.b2)
+		}
+	}
+}
+
+func testDotTable(t *testing.T, bindings []string, size int) *Table {
+	newRow := func() Row {
+		r := make(Row)
+		for _, b := range bindings {
+			r[b] = &Cell{S: b}
+			r[b] = &Cell{S: b}
+		}
+		return r
+	}
+	tbl, err := New(bindings)
+	if err != nil {
+		t.Fatal(errors.New("tbl.New failed to crate a new valid table"))
+	}
+	for i := 0; i < size; i++ {
+		tbl.AddRow(newRow())
+	}
+	return tbl
+}
+
 func TestDotProduct(t *testing.T) {
+	testTable := []struct {
+		t    *Table
+		t2   *Table
+		want *Table
+	}{
+		{
+			t:    testDotTable(t, []string{"?foo"}, 3),
+			t2:   testDotTable(t, []string{"?bar"}, 3),
+			want: testDotTable(t, []string{"?foo", "?bar"}, 9),
+		},
+		{
+			t:    testDotTable(t, []string{"?foo"}, 3),
+			t2:   testDotTable(t, []string{"?bar", "?other"}, 6),
+			want: testDotTable(t, []string{"?foo", "?bar", "?other"}, 18),
+		},
+	}
+	for _, entry := range testTable {
+		if err := entry.t.DotProduct(entry.t2); err != nil {
+			t.Errorf("Failed to dot product %s to %s with error %v", entry.t2, entry.t, err)
+		}
+		if got, want := len(entry.t.Bindings()), len(entry.want.Bindings()); got != want {
+			t.Errorf("Append returned the wrong number of bindings; got %d, want %d", got, want)
+		}
+		if got, want := len(entry.t.Rows()), len(entry.want.Rows()); got != want {
+			t.Errorf("Append returned the wrong number of rows; got %d, want %d", got, want)
+		}
+	}
 
 }
