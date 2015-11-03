@@ -22,6 +22,7 @@ import (
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"
+	"github.com/google/badwolf/triple/node"
 	"github.com/google/badwolf/triple/predicate"
 )
 
@@ -57,8 +58,29 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 	}
 	if cls.S != nil && cls.P != nil && cls.O == nil {
 		// SP request.
-		// TODO(xllora): Implement.
-		return nil, nil
+		for _, g := range gs {
+			os, err := g.Objects(cls.S, cls.P, lo)
+			if err != nil {
+				return nil, err
+			}
+			var ros []*triple.Object
+			for o := range os {
+				ros = append(ros, o)
+			}
+			ts := make(chan *triple.Triple, len(ros))
+			for _, o := range ros {
+				t, err := triple.New(cls.S, cls.P, o)
+				if err != nil {
+					return nil, err
+				}
+				ts <- t
+			}
+			close(ts)
+			if err := addTriples(ts, cls, tbl); err != nil {
+				return nil, err
+			}
+		}
+		return tbl, nil
 	}
 	if cls.S != nil && cls.P == nil && cls.O != nil {
 		// SO request.
@@ -67,8 +89,29 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 	}
 	if cls.S == nil && cls.P != nil && cls.O != nil {
 		// PO request.
-		// TODO(xllora): Implement.
-		return nil, nil
+		for _, g := range gs {
+			ss, err := g.Subjects(cls.P, cls.O, lo)
+			if err != nil {
+				return nil, err
+			}
+			var rss []*node.Node
+			for s := range ss {
+				rss = append(rss, s)
+			}
+			ts := make(chan *triple.Triple, len(rss))
+			for _, s := range rss {
+				t, err := triple.New(s, cls.P, cls.O)
+				if err != nil {
+					return nil, err
+				}
+				ts <- t
+			}
+			close(ts)
+			if err := addTriples(ts, cls, tbl); err != nil {
+				return nil, err
+			}
+		}
+		return tbl, nil
 	}
 	if cls.S != nil && cls.P == nil && cls.O == nil {
 		// S request.
