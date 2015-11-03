@@ -84,8 +84,29 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 	}
 	if cls.S != nil && cls.P == nil && cls.O != nil {
 		// SO request.
-		// TODO(xllora): Implement.
-		return nil, nil
+		for _, g := range gs {
+			ps, err := g.PredicatesForSubjectAndObject(cls.S, cls.O, lo)
+			if err != nil {
+				return nil, err
+			}
+			var rps []*predicate.Predicate
+			for p := range ps {
+				rps = append(rps, p)
+			}
+			ts := make(chan *triple.Triple, len(rps))
+			for _, p := range rps {
+				t, err := triple.New(cls.S, p, cls.O)
+				if err != nil {
+					return nil, err
+				}
+				ts <- t
+			}
+			close(ts)
+			if err := addTriples(ts, cls, tbl); err != nil {
+				return nil, err
+			}
+		}
+		return tbl, nil
 	}
 	if cls.S == nil && cls.P != nil && cls.O != nil {
 		// PO request.
