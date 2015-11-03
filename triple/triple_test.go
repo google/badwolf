@@ -51,17 +51,17 @@ func TestEmptyTripleFail(t *testing.T) {
 		{nil, p, o},
 	}
 	for _, tc := range table {
-		if tr, err := NewTriple(tc.s, tc.p, tc.o); err == nil {
-			t.Errorf("triple.NewTriple should have never created a partial triple as %s", tr)
+		if tr, err := New(tc.s, tc.p, tc.o); err == nil {
+			t.Errorf("triple.New should have never created a partial triple as %s", tr)
 		}
 	}
 }
 
 func TestPrettyTriple(t *testing.T) {
 	s, p, o := getTestData(t)
-	tr, err := NewTriple(s, p, o)
+	tr, err := New(s, p, o)
 	if err != nil {
-		t.Fatalf("triple.NewTriple shoulds not fail to create triple wih error %v", err)
+		t.Fatalf("triple.New shoulds not fail to create triple wih error %v", err)
 	}
 	if got, want := tr.String(), "/some/type<some id>\t\"foo\"@[]\t/some/type<some id>"; got != want {
 		t.Errorf("triple.String failed to return a valid prety printed string; got %s, want %s", got, err)

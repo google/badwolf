@@ -34,8 +34,25 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 	}
 	if cls.S != nil && cls.P != nil && cls.O != nil {
 		// Fully qualified triple.
-		// TODO(xllora): Implement.
-		return nil, nil
+		t, err := triple.New(cls.S, cls.P, cls.O)
+		if err != nil {
+			return nil, err
+		}
+		for _, g := range gs {
+			b, err := g.Exist(t)
+			if err != nil {
+				return nil, err
+			}
+			if b {
+				ts := make(chan *triple.Triple, 1)
+				ts <- t
+				close(ts)
+				if err := addTriples(ts, cls, tbl); err != nil {
+					return nil, err
+				}
+			}
+		}
+		return tbl, nil
 	}
 	if cls.S != nil && cls.P != nil && cls.O == nil {
 		// SP request.

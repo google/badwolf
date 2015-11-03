@@ -91,7 +91,7 @@ func dataAccumulator(b literal.Builder) ElementHook {
 				return nil, err
 			}
 			o = tmp
-			trpl, err := triple.NewTriple(s, p, o)
+			trpl, err := triple.New(s, p, o)
 			if err != nil {
 				return nil, err
 			}

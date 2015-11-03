@@ -253,6 +253,16 @@ func TestQuery(t *testing.T) {
 			nrws: 4,
 		},
 		{
+			q:    `select ?s, ?p, ?o from ?test where {/u<joe> as ?s "parent_of"@[] as ?p /u<mary> as ?o};`,
+			nbs:  3,
+			nrws: 1,
+		},
+		{
+			q:    `select ?s, ?p, ?o from ?test where {/u<unknown> as ?s "parent_of"@[] as ?p /u<mary> as ?o};`,
+			nbs:  3,
+			nrws: 0,
+		},
+		{
 			q:    `select ?s, ?p, ?o, ?k, ?l, ?m from ?test where {?s ?p ?o. ?k ?l ?m};`,
 			nbs:  6,
 			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
@@ -278,7 +288,7 @@ func TestQuery(t *testing.T) {
 			t.Errorf("planner.Excecute failed for query %q with error %v", entry.q, err)
 		}
 		if got, want := len(tbl.Bindings()), entry.nbs; got != want {
-			t.Errorf("tbl.Bindings returned the wrong number of bindings; got %d, want %d", got, want)
+			t.Errorf("tbl.Bindings returned the wrong number of bindings for %q; got %d, want %d", entry.q, got, want)
 		}
 		if got, want := len(tbl.Rows()), entry.nrws; got != want {
 			t.Errorf("planner.Excecute failed to return the expected number of rows for query %q; got %d want %d", entry.q, got, want)

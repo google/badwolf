@@ -133,10 +133,10 @@ type Triple struct {
 	o *Object
 }
 
-// NewTriple creates a new triple.
-func NewTriple(s *node.Node, p *predicate.Predicate, o *Object) (*Triple, error) {
+// New creates a new triple.
+func New(s *node.Node, p *predicate.Predicate, o *Object) (*Triple, error) {
 	if s == nil || p == nil || o == nil {
-		return nil, fmt.Errorf("triple.NewTriple cannot create triples from nil components in <%v %v %v>", s, p, o)
+		return nil, fmt.Errorf("triple.New cannot create triples from nil components in <%v %v %v>", s, p, o)
 	}
 	return &Triple{
 		s: s,
@@ -197,7 +197,7 @@ func ParseTriple(line string, b literal.Builder) (*Triple, error) {
 	if err != nil {
 		return nil, fmt.Errorf("triple.Parse failed to parse object %s with error %v", so, err)
 	}
-	return NewTriple(s, p, o)
+	return New(s, p, o)
 }
 
 // Reify given the current triple it returns the original triple and the newly
@@ -216,33 +216,33 @@ func (t *Triple) Reify() ([]*Triple, *node.Node, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	ts, _ := NewTriple(b, s, NewNodeObject(t.s))
+	ts, _ := New(b, s, NewNodeObject(t.s))
 	p, err := rp("_predicate", t.p)
 	if err != nil {
 		return nil, nil, err
 	}
-	tp, _ := NewTriple(b, p, NewPredicateObject(t.p))
+	tp, _ := New(b, p, NewPredicateObject(t.p))
 	var to *Triple
 	if t.o.l != nil {
 		o, err := rp("_object", t.p)
 		if err != nil {
 			return nil, nil, err
 		}
-		to, _ = NewTriple(b, o, NewLiteralObject(t.o.l))
+		to, _ = New(b, o, NewLiteralObject(t.o.l))
 	}
 	if t.o.n != nil {
 		o, err := rp("_object", t.p)
 		if err != nil {
 			return nil, nil, err
 		}
-		to, _ = NewTriple(b, o, NewNodeObject(t.o.n))
+		to, _ = New(b, o, NewNodeObject(t.o.n))
 	}
 	if t.o.p != nil {
 		o, err := rp("_object", t.p)
 		if err != nil {
 			return nil, nil, err
 		}
-		to, _ = NewTriple(b, o, NewPredicateObject(t.o.p))
+		to, _ = New(b, o, NewPredicateObject(t.o.p))
 	}
 
 	return []*Triple{t, ts, tp, to}, b, nil
