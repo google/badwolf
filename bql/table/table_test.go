@@ -396,3 +396,45 @@ func TestDotProductContent(t *testing.T) {
 		}
 	}
 }
+
+func TestDeleteRow(t *testing.T) {
+	testTable := []struct {
+		t   *Table
+		idx int
+		out bool
+	}{
+		{
+			t:   testDotTable(t, []string{"?foo"}, 3),
+			idx: -1,
+			out: false,
+		},
+		{
+			t:   testDotTable(t, []string{"?foo"}, 3),
+			idx: 0,
+			out: true,
+		},
+		{
+			t:   testDotTable(t, []string{"?foo"}, 3),
+			idx: 1,
+			out: true,
+		},
+		{
+			t:   testDotTable(t, []string{"?foo"}, 3),
+			idx: 2,
+			out: true,
+		},
+		{
+			t:   testDotTable(t, []string{"?foo"}, 3),
+			idx: 3,
+			out: false,
+		},
+	}
+	for _, entry := range testTable {
+		if err := entry.t.DeleteRow(entry.idx); (err != nil) == entry.out {
+			t.Errorf("Failed to delete row %d with error %v", entry.idx, err)
+		}
+		if entry.out && len(entry.t.Rows()) != 2 {
+			t.Errorf("Failed successfully delete row %d ending with %d rows", entry.idx, len(entry.t.Rows()))
+		}
+	}
+}
