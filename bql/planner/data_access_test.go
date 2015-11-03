@@ -78,7 +78,7 @@ func TestSimpleFetch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tbl, err := simpleFetch([]storage.Graph{g}, cls)
+	tbl, err := simpleFetch([]storage.Graph{g}, cls, &storage.LookupOptions{})
 	if err != nil {
 		t.Errorf("addTriple failed with errorf %v", err)
 	}

@@ -233,12 +233,27 @@ func TestQuery(t *testing.T) {
 		nrws int
 	}{
 		{
-			q:    "select ?s, ?p, ?o from ?test where {?s ?p ?o};",
+			q:    `select ?s, ?p, ?o from ?test where {?s ?p ?o};`,
 			nbs:  3,
 			nrws: len(strings.Split(testTriples, "\n")) - 2,
 		},
 		{
-			q:    "select ?s, ?p, ?o, ?k, ?l, ?m from ?test where {?s ?p ?o. ?k ?l ?m};",
+			q:    `select ?p, ?o from ?test where {/u<joe> ?p ?o};`,
+			nbs:  2,
+			nrws: 2,
+		},
+		{
+			q:    `select ?s, ?o from ?test where {?s ?p /t<car>};`,
+			nbs:  2,
+			nrws: 4,
+		},
+		{
+			q:    `select ?s, ?p from ?test where {?s "parent_of"@[] ?o};`,
+			nbs:  2,
+			nrws: 4,
+		},
+		{
+			q:    `select ?s, ?p, ?o, ?k, ?l, ?m from ?test where {?s ?p ?o. ?k ?l ?m};`,
 			nbs:  6,
 			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
 		},

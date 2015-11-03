@@ -156,6 +156,14 @@ type Graph interface {
 	// element is provided.
 	TriplesForSubject(s *node.Node, lo *LookupOptions) (Triples, error)
 
+	// TriplesForPredicate returns all triples available for a given predicate.
+	// If the lookup options provide a max number of elements the function will
+	// return a sample of the available triples. If time anchor bounds are
+	// provided in the lookup options, only predicates matching the the provided
+	// type window would be return. Same sampling consideration apply if max
+	// element is provided.
+	TriplesForPredicate(p *predicate.Predicate, lo *LookupOptions) (Triples, error)
+
 	// TriplesForObject returns all triples available for a given object.
 	// If the lookup options provide a max number of elements the function will
 	// return a sample of the available triples. If time anchor bounds are

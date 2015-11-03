@@ -289,6 +289,25 @@ func TestTriplesForSubject(t *testing.T) {
 	}
 }
 
+func TestTriplesForPredicate(t *testing.T) {
+	ts := getTestTriples(t)
+	g, _ := NewStore().NewGraph("test")
+	if err := g.AddTriples(ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+	trpls, err := g.TriplesForPredicate(ts[0].P(), storage.DefaultLookup)
+	if err != nil {
+		t.Errorf("g.TriplesForPredicate(%s) failed with error %v", ts[0].S(), err)
+	}
+	cnt := 0
+	for _ = range trpls {
+		cnt++
+	}
+	if cnt != 6 {
+		t.Errorf("g.triplesForPredicate(%s) failed to retrieve 3 predicates, got %d instead", ts[0].P(), cnt)
+	}
+}
+
 func TestTriplesForObject(t *testing.T) {
 	ts := getTestTriples(t)
 	g, _ := NewStore().NewGraph("test")

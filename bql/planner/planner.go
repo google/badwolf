@@ -201,7 +201,7 @@ func newQueryPlan(store storage.Store, stm *semantic.Statement) (*queryPlan, err
 
 // processClause retrives the triples for the provided triple given the
 // information available.
-func (p *queryPlan) processClause(cls *semantic.GraphClause) error {
+func (p *queryPlan) processClause(cls *semantic.GraphClause, lo *storage.LookupOptions) error {
 	// This method decides how to process the clause based on the current
 	// list of bindings solved and data available.
 	exist, total := 0, 0
@@ -213,7 +213,7 @@ func (p *queryPlan) processClause(cls *semantic.GraphClause) error {
 	}
 	if exist == 0 {
 		// Data is new.
-		tbl, err := simpleFetch(p.grfs, cls)
+		tbl, err := simpleFetch(p.grfs, cls, lo)
 		if err != nil {
 			return err
 		}
@@ -240,11 +240,11 @@ func (p *queryPlan) processClause(cls *semantic.GraphClause) error {
 
 // processGraphPattern proces the query graph pattern to retrieve the
 // data from the specified graphs.
-func (p *queryPlan) processGraphPattern() error {
+func (p *queryPlan) processGraphPattern(lo *storage.LookupOptions) error {
 	for _, cls := range p.cls {
 		// The current planner is based on naively excecuting clauses by
 		// specificity.
-		if err := p.processClause(cls); err != nil {
+		if err := p.processClause(cls, lo); err != nil {
 			return err
 		}
 	}
@@ -254,7 +254,8 @@ func (p *queryPlan) processGraphPattern() error {
 // Execute queries the indicated graphs.
 func (p *queryPlan) Excecute() (*table.Table, error) {
 	// Retrieve the data.
-	if err := p.processGraphPattern(); err != nil {
+	lo := &storage.LookupOptions{}
+	if err := p.processGraphPattern(lo); err != nil {
 		return nil, err
 	}
 	return p.tbl, nil

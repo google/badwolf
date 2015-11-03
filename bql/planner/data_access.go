@@ -27,7 +27,7 @@ import (
 // simpleFetch returns a table containing the data specified by the graph
 // clause by querying the provided stora. Will return an error if it had poblems
 // retrieveing the data.
-func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause) (*table.Table, error) {
+func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.LookupOptions) (*table.Table, error) {
 	tbl, err := table.New(cls.Bindings())
 	if err != nil {
 		return nil, err
@@ -54,18 +54,42 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause) (*table.Table, e
 	}
 	if cls.S != nil && cls.P == nil && cls.O == nil {
 		// S request.
-		// TODO(xllora): Implement.
-		return nil, nil
+		for _, g := range gs {
+			ts, err := g.TriplesForSubject(cls.S, lo)
+			if err != nil {
+				return nil, err
+			}
+			if err := addTriples(ts, cls, tbl); err != nil {
+				return nil, err
+			}
+		}
+		return tbl, nil
 	}
 	if cls.S == nil && cls.P != nil && cls.O == nil {
 		// P request.
-		// TODO(xllora): Implement.
-		return nil, nil
+		for _, g := range gs {
+			ts, err := g.TriplesForPredicate(cls.P, lo)
+			if err != nil {
+				return nil, err
+			}
+			if err := addTriples(ts, cls, tbl); err != nil {
+				return nil, err
+			}
+		}
+		return tbl, nil
 	}
 	if cls.S == nil && cls.P == nil && cls.O != nil {
 		// O request.
-		// TODO(xllora): Implement.
-		return nil, nil
+		for _, g := range gs {
+			ts, err := g.TriplesForObject(cls.O, lo)
+			if err != nil {
+				return nil, err
+			}
+			if err := addTriples(ts, cls, tbl); err != nil {
+				return nil, err
+			}
+		}
+		return tbl, nil
 	}
 	if cls.S == nil && cls.P == nil && cls.O == nil {
 		// Full data request.

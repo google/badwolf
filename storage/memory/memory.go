@@ -365,6 +365,24 @@ func (m *memory) TriplesForSubject(s *node.Node, lo *storage.LookupOptions) (sto
 	return triples, nil
 }
 
+// TriplesForPredicate returns all triples available for a given predicate.
+func (m *memory) TriplesForPredicate(p *predicate.Predicate, lo *storage.LookupOptions) (storage.Triples, error) {
+	pGUID := p.GUID()
+	m.rwmu.RLock()
+	triples := make(chan *triple.Triple, len(m.idxP[pGUID]))
+	go func() {
+		ckr := newChecker(lo)
+		for _, t := range m.idxP[pGUID] {
+			if ckr.CheckAndUpdate(t.P()) {
+				triples <- t
+			}
+		}
+		m.rwmu.RUnlock()
+		close(triples)
+	}()
+	return triples, nil
+}
+
 // TriplesForObject returns all triples available for a given object.
 func (m *memory) TriplesForObject(o *triple.Object, lo *storage.LookupOptions) (storage.Triples, error) {
 	oGUID := o.GUID()
