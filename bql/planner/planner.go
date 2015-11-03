@@ -26,6 +26,7 @@ import (
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"
+	"github.com/google/badwolf/triple/literal"
 )
 
 // Excecutor interface unifies the execution of statements.
@@ -229,13 +230,138 @@ func (p *queryPlan) processClause(cls *semantic.GraphClause, lo *storage.LookupO
 		return nil
 	}
 	if exist > 0 && exist == total {
-		// TODO(xllora): Since all bindings in the clause are already solved,
-		// the clause becomes a fully specified triple. If the triple does not
-		// exist the row will be deleted.
-		return nil
+		// Since all bindings in the clause are already solved, the clause becomes a
+		// fully specified triple. If the triple does not exist the row will be
+		// deleted.
+		return p.filterOnExistance(cls, lo)
 	}
 	// Somethign is wrong with the code.
 	return fmt.Errorf("queryPlan.processClause(%v) should have never failed to resolve the clause", cls)
+}
+
+// cellToObject returns an object for the given cell.
+func cellToObject(c *table.Cell) (*triple.Object, error) {
+	if c == nil {
+		return nil, errors.New("cannot create an object out of and empty cell")
+	}
+	if c.N != nil {
+		return triple.NewNodeObject(c.N), nil
+	}
+	if c.P != nil {
+		return triple.NewPredicateObject(c.P), nil
+	}
+	if c.L != nil {
+		return triple.NewLiteralObject(c.L), nil
+	}
+	if c.S != "" {
+		l, err := literal.DefaultBuilder().Parse(fmt.Sprintf(`"%s"^^type:string`, c.S))
+		if err != nil {
+			return nil, err
+		}
+		return triple.NewLiteralObject(l), nil
+	}
+	return nil, fmt.Errorf("invalid cell %v", c)
+}
+
+// filterOnExistance removes rows based on the existance of the fully qualified
+// triple after the biding of the clause.
+func (p *queryPlan) filterOnExistance(cls *semantic.GraphClause, lo *storage.LookupOptions) error {
+	for idx, r := range p.tbl.Rows() {
+		sbj, prd, obj := cls.S, cls.P, cls.O
+		// Attempt to rebind the subject.
+		if sbj == nil && p.tbl.HasBinding(cls.SBinding) {
+			v, ok := r[cls.SBinding]
+			if !ok {
+				return fmt.Errorf("row %+v misses binding %q", r, cls.SBinding)
+			}
+			if v.N == nil {
+				return fmt.Errorf("binding %q requires a node, got %+v instead", cls.SBinding, v)
+			}
+			sbj = v.N
+		}
+		if sbj == nil && p.tbl.HasBinding(cls.SAlias) {
+			v, ok := r[cls.SAlias]
+			if !ok {
+				return fmt.Errorf("row %+v misses binding %q", r, cls.SAlias)
+			}
+			if v.N == nil {
+				return fmt.Errorf("binding %q requires a node, got %+v instead", cls.SAlias, v)
+			}
+			sbj = v.N
+		}
+		// Attempt to rebind the predicate.
+		if prd == nil && p.tbl.HasBinding(cls.PBinding) {
+			v, ok := r[cls.PBinding]
+			if !ok {
+				return fmt.Errorf("row %+v misses binding %q", r, cls.PBinding)
+			}
+			if v.P == nil {
+				return fmt.Errorf("binding %q requires a predicate, got %+v instead", cls.PBinding, v)
+			}
+			prd = v.P
+		}
+		if prd == nil && p.tbl.HasBinding(cls.PAlias) {
+			v, ok := r[cls.PAlias]
+			if !ok {
+				return fmt.Errorf("row %+v misses binding %q", r, cls.SAlias)
+			}
+			if v.N == nil {
+				return fmt.Errorf("binding %q requires a predicate, got %+v instead", cls.SAlias, v)
+			}
+			prd = v.P
+		}
+		// Attempt to rebind the object.
+		if obj == nil && p.tbl.HasBinding(cls.PBinding) {
+			v, ok := r[cls.OBinding]
+			if !ok {
+				return fmt.Errorf("row %+v misses binding %q", r, cls.OBinding)
+			}
+			if v.P == nil {
+				return fmt.Errorf("binding %q requires a object, got %+v instead", cls.OBinding, v)
+			}
+			co, err := cellToObject(v)
+			if err != nil {
+				return err
+			}
+			obj = co
+		}
+		if obj == nil && p.tbl.HasBinding(cls.OAlias) {
+			v, ok := r[cls.OAlias]
+			if !ok {
+				return fmt.Errorf("row %+v misses binding %q", r, cls.OAlias)
+			}
+			if v.N == nil {
+				return fmt.Errorf("binding %q requires a object, got %+v instead", cls.OAlias, v)
+			}
+			co, err := cellToObject(v)
+			if err != nil {
+				return err
+			}
+			obj = co
+		}
+		// Attempt to filter.
+		if sbj == nil || prd == nil || obj == nil {
+			return fmt.Errorf("failed to fully specify clause %v for row %+v", cls, r)
+		}
+		for _, g := range p.stm.Graphs() {
+			t, err := triple.New(sbj, prd, obj)
+			if err != nil {
+				return err
+			}
+			gph, err := p.store.Graph(g)
+			if err != nil {
+				return err
+			}
+			b, err := gph.Exist(t)
+			if err != nil {
+				return err
+			}
+			if b {
+				p.tbl.DeleteRow(idx)
+			}
+		}
+	}
+	return nil
 }
 
 // processGraphPattern proces the query graph pattern to retrieve the

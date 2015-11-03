@@ -270,10 +270,15 @@ func TestQuery(t *testing.T) {
 		{
 			q:    `select ?p from ?test where {/u<joe> ?p /u<mary>};`,
 			nbs:  1,
-			nrws: 4,
+			nrws: 1,
 		},
 		{
 			q:    `select ?s from ?test where {?s "is_a"@[] /t<car>};`,
+			nbs:  1,
+			nrws: 4,
+		},
+		{
+			q:    `select ?s from ?test where {/u<joe> "parent_of"@[] ?o. ?o "parent_of"@[] /u<john>};`,
 			nbs:  1,
 			nrws: 1,
 		},
