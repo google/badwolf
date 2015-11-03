@@ -16,6 +16,7 @@ package planner
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/google/badwolf/bql/semantic"
 	"github.com/google/badwolf/bql/table"
@@ -134,7 +135,9 @@ func addTriples(ts storage.Triples, cls *semantic.GraphClause, tbl *table.Table)
 		if err != nil {
 			return err
 		}
-		tbl.AddRow(r)
+		if r != nil {
+			tbl.AddRow(r)
+		}
 	}
 	return nil
 }
@@ -162,29 +165,71 @@ func objectToCell(o *triple.Object) (*table.Cell, error) {
 func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error) {
 	r, s, p, o := make(table.Row), t.S(), t.P(), t.O()
 
+	// Enforce binding validity inside te clause.
+	bnd := make(map[string]*table.Cell)
+	validBinding := func(k string, v *table.Cell) bool {
+		c, ok := bnd[k]
+		bnd[k] = v
+		if !ok {
+			return true
+		}
+		if reflect.DeepEqual(c, v) {
+			return true
+		}
+		return false
+	}
+
 	// Subject related bindings.
 	if cls.SBinding != "" {
-		r[cls.SBinding] = &table.Cell{N: s}
+		c := &table.Cell{N: s}
+		r[cls.SBinding] = c
+		if !validBinding(cls.SBinding, c) {
+			return nil, nil
+		}
 	}
 	if cls.SAlias != "" {
-		r[cls.SAlias] = &table.Cell{N: s}
+		c := &table.Cell{N: s}
+		r[cls.SAlias] = c
+		if !validBinding(cls.SAlias, c) {
+			return nil, nil
+		}
 	}
 	if cls.STypeAlias != "" {
-		r[cls.STypeAlias] = &table.Cell{S: s.Type().String()}
+		c := &table.Cell{S: s.Type().String()}
+		r[cls.STypeAlias] = c
+		if !validBinding(cls.STypeAlias, c) {
+			return nil, nil
+		}
 	}
 	if cls.SIDAlias != "" {
-		r[cls.SIDAlias] = &table.Cell{S: s.ID().String()}
+		c := &table.Cell{S: s.ID().String()}
+		r[cls.SIDAlias] = c
+		if !validBinding(cls.SIDAlias, c) {
+			return nil, nil
+		}
 	}
 
 	// Predicate related bindings.
 	if cls.PBinding != "" {
-		r[cls.PBinding] = &table.Cell{P: p}
+		c := &table.Cell{P: p}
+		r[cls.PBinding] = c
+		if !validBinding(cls.PBinding, c) {
+			return nil, nil
+		}
 	}
 	if cls.PAlias != "" {
-		r[cls.PAlias] = &table.Cell{P: p}
+		c := &table.Cell{P: p}
+		r[cls.PAlias] = c
+		if !validBinding(cls.PAlias, c) {
+			return nil, nil
+		}
 	}
 	if cls.PIDAlias != "" {
-		r[cls.PIDAlias] = &table.Cell{S: string(p.ID())}
+		c := &table.Cell{S: string(p.ID())}
+		r[cls.PIDAlias] = c
+		if !validBinding(cls.PIDAlias, c) {
+			return nil, nil
+		}
 	}
 	if cls.PAnchorBinding != "" {
 		if p.Type() != predicate.Temporal {
@@ -194,7 +239,11 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrieve the time anchor value for predicate %q in binding %q with error %v", p, cls.PAnchorBinding, err)
 		}
-		r[cls.PAnchorBinding] = &table.Cell{T: t}
+		c := &table.Cell{T: t}
+		r[cls.PAnchorBinding] = c
+		if !validBinding(cls.PAnchorBinding, c) {
+			return nil, nil
+		}
 	}
 
 	if cls.PAnchorAlias != "" {
@@ -205,7 +254,11 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrieve the time anchor value for predicate %q in binding %q with error %v", p, cls.PAnchorAlias, err)
 		}
-		r[cls.PAnchorAlias] = &table.Cell{T: t}
+		c := &table.Cell{T: t}
+		r[cls.PAnchorAlias] = c
+		if !validBinding(cls.PAnchorAlias, c) {
+			return nil, nil
+		}
 	}
 
 	// Object related bindings.
@@ -216,6 +269,9 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 			return nil, err
 		}
 		r[cls.OBinding] = c
+		if !validBinding(cls.OBinding, c) {
+			return nil, nil
+		}
 	}
 	if cls.OAlias != "" {
 		// Extract the object type.
@@ -224,13 +280,20 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 			return nil, err
 		}
 		r[cls.OAlias] = c
+		if !validBinding(cls.OAlias, c) {
+			return nil, nil
+		}
 	}
 	if cls.OTypeAlias != "" {
 		n, err := o.Node()
 		if err != nil {
 			return nil, err
 		}
-		r[cls.OTypeAlias] = &table.Cell{S: n.Type().String()}
+		c := &table.Cell{S: n.Type().String()}
+		r[cls.OTypeAlias] = c
+		if !validBinding(cls.OTypeAlias, c) {
+			return nil, nil
+		}
 	}
 	if cls.OIDAlias != "" {
 		n, err := o.Node()
@@ -241,7 +304,11 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 			if err != nil {
 				return nil, err
 			}
-			r[cls.OIDAlias] = &table.Cell{S: string(p.ID())}
+			c := &table.Cell{S: string(p.ID())}
+			r[cls.OIDAlias] = c
+			if !validBinding(cls.OIDAlias, c) {
+				return nil, nil
+			}
 		}
 	}
 	if cls.OAnchorBinding != "" {
@@ -253,7 +320,11 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 		if err != nil {
 			return nil, err
 		}
-		r[cls.OAnchorBinding] = &table.Cell{T: ts}
+		c := &table.Cell{T: ts}
+		r[cls.OAnchorBinding] = c
+		if !validBinding(cls.OAnchorBinding, c) {
+			return nil, nil
+		}
 	}
 	if cls.OAnchorAlias != "" {
 		p, err := o.Predicate()
@@ -264,7 +335,11 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 		if err != nil {
 			return nil, err
 		}
-		r[cls.OAnchorAlias] = &table.Cell{T: ts}
+		c := &table.Cell{T: ts}
+		r[cls.OAnchorAlias] = c
+		if !validBinding(cls.OAnchorAlias, c) {
+			return nil, nil
+		}
 	}
 
 	return r, nil

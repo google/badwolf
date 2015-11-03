@@ -189,7 +189,7 @@ func TestObjeToCell(t *testing.T) {
 	}
 }
 
-func TestTripleToRowBasicBindings(t *testing.T) {
+func TestFBasicBindings(t *testing.T) {
 	n, p, l := testNodePredicateLiteral(t)
 	cls := &semantic.GraphClause{
 		SBinding: "?s",
@@ -419,6 +419,66 @@ func TestTripleToRowObjectBindings(t *testing.T) {
 		}
 		if got, want := r["?tsa"], entry.atc; entry.atc != nil && !reflect.DeepEqual(got, want) {
 			t.Errorf("tripleToRow failed to return right value for binding \"?tsa\"; got %q, want %q", got, want)
+		}
+	}
+}
+
+func TestTripleToRowObjectBindingsDroping(t *testing.T) {
+	n, p, _ := testNodeTemporalPredicateLiteral(t)
+	ts, err := p.TimeAnchor()
+	if err != nil {
+		t.Fatal(err)
+	}
+	testTable := []struct {
+		t   string
+		cls *semantic.GraphClause
+		bc  *table.Cell
+		ac  *table.Cell
+		tc  *table.Cell
+		ic  *table.Cell
+		tsc *table.Cell
+		atc *table.Cell
+	}{
+		{
+			t: n.String() + "\t" + p.String() + "\t" + n.String(),
+			cls: &semantic.GraphClause{
+				OBinding:   "?o",
+				OAlias:     "?alias",
+				OTypeAlias: "?o",
+				OIDAlias:   "?id",
+			},
+			bc: &table.Cell{N: n},
+			ac: &table.Cell{N: n},
+			tc: &table.Cell{S: n.Type().String()},
+			ic: &table.Cell{S: n.ID().String()},
+		},
+		{
+			t: n.String() + "\t" + p.String() + "\t" + p.String(),
+			cls: &semantic.GraphClause{
+				OBinding:       "?o",
+				OAlias:         "?alias",
+				OIDAlias:       "?id",
+				OAnchorBinding: "?ts",
+				OAnchorAlias:   "?o",
+			},
+			bc:  &table.Cell{P: p},
+			ac:  &table.Cell{P: p},
+			ic:  &table.Cell{S: string(p.ID())},
+			tsc: &table.Cell{T: ts},
+			atc: &table.Cell{T: ts},
+		},
+	}
+	for _, entry := range testTable {
+		tpl, err := triple.ParseTriple(entry.t, literal.DefaultBuilder())
+		if err != nil {
+			t.Errorf("triple.Parse failed to parse valid triple %q with error %v", entry.t, err)
+		}
+		r, err := tripleToRow(tpl, entry.cls)
+		if err != nil {
+			t.Errorf("tripleToRow for triple %q and clasuse %v, failed with error %v", tpl, entry.cls, err)
+		}
+		if r != nil {
+			t.Errorf("tripleToRow for triple %q and clasuse %v, failed to drop triple and returned %v", tpl, entry.cls, r)
 		}
 	}
 }
