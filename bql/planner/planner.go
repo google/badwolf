@@ -218,11 +218,9 @@ func (p *queryPlan) processClause(cls *semantic.GraphClause) error {
 			return err
 		}
 		if len(p.tbl.Bindings()) > 0 {
-			// TODO(xllora): The data should be added using the dot product.
-			return nil
+			return p.tbl.DotProduct(tbl)
 		}
-		p.tbl.AppendTable(tbl)
-		return nil
+		return p.tbl.AppendTable(tbl)
 	}
 	if exist > 0 && exist < total {
 		// TODO(xllora): Data is partially binded, retrieve data either extends

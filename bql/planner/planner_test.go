@@ -233,9 +233,14 @@ func TestQuery(t *testing.T) {
 		nrws int
 	}{
 		{
-			q:    `select ?s, ?p, ?o from ?test where {?s ?p ?o}`,
+			q:    "select ?s, ?p, ?o from ?test where {?s ?p ?o};",
 			nbs:  3,
-			nrws: len(strings.Split(testTriples, "\n")),
+			nrws: len(strings.Split(testTriples, "\n")) - 2,
+		},
+		{
+			q:    "select ?s, ?p, ?o, ?k, ?l, ?m from ?test where {?s ?p ?o. ?k ?l ?m};",
+			nbs:  6,
+			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
 		},
 	}
 
@@ -246,8 +251,8 @@ func TestQuery(t *testing.T) {
 	}
 	for _, entry := range testTable {
 		st := &semantic.Statement{}
-		if err := p.Parse(grammar.NewLLk(entry.q, 1), st); err == nil {
-			t.Errorf("Parser.consume: failed to reject invalid semantic entry %q", entry)
+		if err := p.Parse(grammar.NewLLk(entry.q, 1), st); err != nil {
+			t.Errorf("Parser.consume: failed to parse query %q with error %v", entry.q, err)
 		}
 		plnr, err := New(s, st)
 		if err != nil {
@@ -257,14 +262,10 @@ func TestQuery(t *testing.T) {
 		if err != nil {
 			t.Errorf("planner.Excecute failed for query %q with error %v", entry.q, err)
 		}
-		stbl, err := tbl.ToText(", ")
-		if err != nil {
-			t.Errorf("tbl.ToText failed to serialize table with error %v", err)
-		}
 		if got, want := len(tbl.Bindings()), entry.nbs; got != want {
 			t.Errorf("tbl.Bindings returned the wrong number of bindings; got %d, want %d", got, want)
 		}
-		if got, want := len(strings.Split(stbl.String(), "\n")), entry.nrws; got != want {
+		if got, want := len(tbl.Rows()), entry.nrws; got != want {
 			t.Errorf("planner.Excecute failed to return the expected number of rows for query %q; got %d want %d", entry.q, got, want)
 		}
 	}

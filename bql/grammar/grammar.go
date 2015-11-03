@@ -219,7 +219,7 @@ func initBQL() {
 					NewSymbol("SUBJECT_EXTRACT"),
 					NewSymbol("PREDICATE"),
 					NewSymbol("OBJECT"),
-					NewSymbol("NORE_CLAUSES"),
+					NewSymbol("MORE_CLAUSES"),
 				},
 			},
 			{
@@ -228,7 +228,7 @@ func initBQL() {
 					NewSymbol("SUBJECT_EXTRACT"),
 					NewSymbol("PREDICATE"),
 					NewSymbol("OBJECT"),
-					NewSymbol("NORE_CLAUSES"),
+					NewSymbol("MORE_CLAUSES"),
 				},
 			},
 		},
@@ -534,7 +534,7 @@ func initBQL() {
 			},
 			{},
 		},
-		"NORE_CLAUSES": []*Clause{
+		"MORE_CLAUSES": []*Clause{
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemDot),
@@ -840,8 +840,14 @@ func initSemanticBQL() {
 		cls.ProcessStart = semantic.WhereInitWorkingClauseHook()
 		cls.ProcessEnd = semantic.WhereNextWorkingClauseHook()
 	}
-	for _, cls := range (*semanticBQL)["NORE_CLAUSES"] {
-		cls.ProcessEnd = semantic.WhereNextWorkingClauseHook()
+	clauseSymbols := []semantic.Symbol{
+		"CLAUSES", "MORE_CLAUSES",
+	}
+	for _, sym := range clauseSymbols {
+		for _, cls := range (*semanticBQL)[sym] {
+			cls.ProcessStart = semantic.WhereNextWorkingClauseHook()
+			cls.ProcessEnd = semantic.WhereNextWorkingClauseHook()
+		}
 	}
 
 	subSymbols := []semantic.Symbol{

@@ -17,6 +17,7 @@ package table
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -324,11 +325,11 @@ func TestDisjoingBinding(t *testing.T) {
 }
 
 func testDotTable(t *testing.T, bindings []string, size int) *Table {
-	newRow := func() Row {
+	newRow := func(n int) Row {
 		r := make(Row)
 		for _, b := range bindings {
-			r[b] = &Cell{S: b}
-			r[b] = &Cell{S: b}
+			r[b] = &Cell{S: fmt.Sprintf("%s_%d", b, n)}
+			r[b] = &Cell{S: fmt.Sprintf("%s_%d", b, n)}
 		}
 		return r
 	}
@@ -337,7 +338,7 @@ func testDotTable(t *testing.T, bindings []string, size int) *Table {
 		t.Fatal(errors.New("tbl.New failed to crate a new valid table"))
 	}
 	for i := 0; i < size; i++ {
-		tbl.AddRow(newRow())
+		tbl.AddRow(newRow(i))
 	}
 	return tbl
 }
@@ -370,5 +371,28 @@ func TestDotProduct(t *testing.T) {
 			t.Errorf("Append returned the wrong number of rows; got %d, want %d", got, want)
 		}
 	}
+}
 
+func TestDotProductContent(t *testing.T) {
+	t1, t2 := testDotTable(t, []string{"?foo"}, 3), testDotTable(t, []string{"?bar"}, 3)
+	if err := t1.DotProduct(t2); err != nil {
+		t.Errorf("Failed to dot product %s to %s with error %v", t2, t1, err)
+	}
+	if len(t1.Rows()) != 9 {
+		t.Errorf("DotProduct returned the wrong number of rows (%d)", len(t1.Rows()))
+	}
+	if len(t1.Bindings()) != 2 {
+		t.Errorf("DotProduct returned the wrong number of bindings (%d)", len(t1.Bindings()))
+	}
+	fn := func(idx int) *Cell {
+		return &Cell{S: fmt.Sprintf("?foo_%d", idx/3)}
+	}
+	bn := func(idx int) *Cell {
+		return &Cell{S: fmt.Sprintf("?bar_%d", idx%3)}
+	}
+	for idx, r := range t1.Rows() {
+		if gf, wf, gb, wb := r["?foo"], fn(idx), r["?bar"], bn(idx); !reflect.DeepEqual(gf, wf) || !reflect.DeepEqual(gb, wb) {
+			t.Errorf("DotProduct returned the wrong row %v on position %d; %v %v %v %v", r, idx, gf, wf, gb, wb)
+		}
+	}
 }

@@ -229,6 +229,17 @@ func disjointBinding(b1, b2 map[string]bool) bool {
 	return true
 }
 
+// mergeMaps takes two maps and returns a new map containing both.
+func mergeMaps(ms []map[string]*Cell) map[string]*Cell {
+	res := make(map[string]*Cell)
+	for _, om := range ms {
+		for k, v := range om {
+			res[k] = v
+		}
+	}
+	return res
+}
+
 // DotProduct does the doot product with the provided tatble
 func (t *Table) DotProduct(t2 *Table) error {
 	if !disjointBinding(t.mbs, t2.mbs) {
@@ -252,10 +263,7 @@ func (t *Table) DotProduct(t2 *Table) error {
 	t.data = []Row{}
 	for _, r1 := range td {
 		for _, r2 := range t2.data {
-			for k, v := range r2 {
-				r1[k] = v
-			}
-			t.data = append(t.data, r1)
+			t.data = append(t.data, mergeMaps([]map[string]*Cell{r1, r2}))
 		}
 	}
 	return nil

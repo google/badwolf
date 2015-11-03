@@ -19,6 +19,7 @@
 package semantic
 
 import (
+	"reflect"
 	"sort"
 	"time"
 
@@ -156,6 +157,11 @@ func (c *GraphClause) Bindings() []string {
 	return bs
 }
 
+// IsEmpty will return true if the are no set values in the clause.
+func (c *GraphClause) IsEmpty() bool {
+	return reflect.DeepEqual(c, &GraphClause{})
+}
+
 // BindType set he type of a statement.
 func (s *Statement) BindType(st StatementType) {
 	s.sType = st
@@ -204,7 +210,7 @@ func (s *Statement) WorkingClause() *GraphClause {
 // AddWorkingGrpahClause add the current working graph clause to the set of
 // clauses that form the graph pattern.
 func (s *Statement) AddWorkingGrpahClause() {
-	if s.workingClause != nil {
+	if s.workingClause != nil || !s.workingClause.IsEmpty() {
 		s.pattern = append(s.pattern, s.workingClause)
 	}
 	s.ResetWorkingGraphClause()
@@ -223,28 +229,29 @@ func (s *Statement) BindingsMap() map[string]int {
 	bm := make(map[string]int)
 
 	for _, cls := range s.pattern {
-		addToBindings(bm, cls.SBinding)
-		addToBindings(bm, cls.SAlias)
-		addToBindings(bm, cls.STypeAlias)
-		addToBindings(bm, cls.SIDAlias)
-		addToBindings(bm, cls.PAlias)
-		addToBindings(bm, cls.PAnchorBinding)
-		addToBindings(bm, cls.PBinding)
-		addToBindings(bm, cls.PLowerBoundAlias)
-		addToBindings(bm, cls.PUpperBoundAlias)
-		addToBindings(bm, cls.PIDAlias)
-		addToBindings(bm, cls.PAnchorAlias)
-		addToBindings(bm, cls.OBinding)
-		addToBindings(bm, cls.OID)
-		addToBindings(bm, cls.OAlias)
-		addToBindings(bm, cls.OTypeAlias)
-		addToBindings(bm, cls.OIDAlias)
-		addToBindings(bm, cls.OAnchorAlias)
-		addToBindings(bm, cls.OAnchorBinding)
-		addToBindings(bm, cls.OLowerBoundAlias)
-		addToBindings(bm, cls.OUpperBoundAlias)
+		if cls != nil {
+			addToBindings(bm, cls.SBinding)
+			addToBindings(bm, cls.SAlias)
+			addToBindings(bm, cls.STypeAlias)
+			addToBindings(bm, cls.SIDAlias)
+			addToBindings(bm, cls.PAlias)
+			addToBindings(bm, cls.PAnchorBinding)
+			addToBindings(bm, cls.PBinding)
+			addToBindings(bm, cls.PLowerBoundAlias)
+			addToBindings(bm, cls.PUpperBoundAlias)
+			addToBindings(bm, cls.PIDAlias)
+			addToBindings(bm, cls.PAnchorAlias)
+			addToBindings(bm, cls.OBinding)
+			addToBindings(bm, cls.OID)
+			addToBindings(bm, cls.OAlias)
+			addToBindings(bm, cls.OTypeAlias)
+			addToBindings(bm, cls.OIDAlias)
+			addToBindings(bm, cls.OAnchorAlias)
+			addToBindings(bm, cls.OAnchorBinding)
+			addToBindings(bm, cls.OLowerBoundAlias)
+			addToBindings(bm, cls.OUpperBoundAlias)
+		}
 	}
-
 	return bm
 }
 
@@ -278,7 +285,13 @@ func (s bySpecificity) Less(i, j int) bool {
 
 // SortedGraphPatternClauses return the list of graph pattern clauses
 func (s *Statement) SortedGraphPatternClauses() []*GraphClause {
-	ptrns := s.pattern
+	var ptrns []*GraphClause
+	// Filter empty clauses.
+	for _, cls := range s.pattern {
+		if cls != nil && !cls.IsEmpty() {
+			ptrns = append(ptrns, cls)
+		}
+	}
 	sort.Sort(bySpecificity(ptrns))
 	return ptrns
 }

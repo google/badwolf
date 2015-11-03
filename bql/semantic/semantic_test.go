@@ -129,6 +129,28 @@ func TestBindingListing(t *testing.T) {
 	}
 }
 
+func TesIsEmptyClause(t *testing.T) {
+	testTable := []struct {
+		in  *GraphClause
+		out bool
+	}{
+		{
+			in:  &GraphClause{},
+			out: true,
+		},
+		{
+			in:  &GraphClause{SBinding: "?foo"},
+			out: true,
+		},
+	}
+	for _, entry := range testTable {
+		if got, want := entry.in.IsEmpty(), entry.out; got != want {
+			t.Errorf("IsEmpty for %v returned %v, but should have returned %v", entry.in, got, want)
+		}
+	}
+
+}
+
 func TestSortedGraphPatternClauses(t *testing.T) {
 	s := &Statement{
 		pattern: []*GraphClause{
