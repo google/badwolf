@@ -3,7 +3,7 @@
 This section describes the three basic data abstractions that BadWolf provides.
 It is important to keep in mind, that all data described using BadWolf
 abstractions is immutable. In other words, once you have created one of them,
-there is no way to mutated its value, however, you will always be able to create
+there is no way to mutate its value, however, you will always be able to create
 new entities as needed.
 
 ## Node
