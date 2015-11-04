@@ -283,6 +283,11 @@ func TestQuery(t *testing.T) {
 			nrws: 1,
 		},
 		{
+			q:    `select ?s, ?o from ?test where {/u<joe> "parent_of"@[] ?o. ?o "parent_of"@[] ?s};`,
+			nbs:  2,
+			nrws: 2,
+		},
+		{
 			q:    `select ?s, ?p, ?o, ?k, ?l, ?m from ?test where {?s ?p ?o. ?k ?l ?m};`,
 			nbs:  6,
 			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),

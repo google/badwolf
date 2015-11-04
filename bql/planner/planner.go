@@ -19,6 +19,7 @@ package planner
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"sync"
 
@@ -224,10 +225,9 @@ func (p *queryPlan) processClause(cls *semantic.GraphClause, lo *storage.LookupO
 		return p.tbl.AppendTable(tbl)
 	}
 	if exist > 0 && exist < total {
-		// TODO(xllora): Data is partially binded, retrieve data either extends
-		// the row with the new bindings or filters it out if now new bindings
-		// are available.
-		return nil
+		// Data is partially binded, retrieve data either extends the row with the
+		// new bindings or filters it out if now new bindings are available.
+		return p.specifyClauseWithTable(cls, lo)
 	}
 	if exist > 0 && exist == total {
 		// Since all bindings in the clause are already solved, the clause becomes a
@@ -237,6 +237,75 @@ func (p *queryPlan) processClause(cls *semantic.GraphClause, lo *storage.LookupO
 	}
 	// Somethign is wrong with the code.
 	return fmt.Errorf("queryPlan.processClause(%v) should have never failed to resolve the clause", cls)
+}
+
+// getBindedValueForComponent return the unique binded value if available on
+// the provided row.
+func getBindedValueForComponent(r table.Row, bs []string) *table.Cell {
+	var cs []*table.Cell
+	for _, b := range bs {
+		if v, ok := r[b]; ok {
+			cs = append(cs, v)
+		}
+	}
+	if len(cs) == 1 || len(cs) == 2 && reflect.DeepEqual(cs[0], cs[1]) {
+		return cs[0]
+	}
+	return nil
+}
+
+// addSpecifiedData specializes the clause given the row provided and attemp to
+// retrieve the correspoinding clause data.
+func (p *queryPlan) addSpecifiedData(r table.Row, cls *semantic.GraphClause, lo *storage.LookupOptions) error {
+	if cls.S == nil {
+		v := getBindedValueForComponent(r, []string{cls.SBinding, cls.SAlias})
+		if v != nil {
+			if v.N != nil {
+				cls.S = v.N
+			}
+		}
+	}
+	if cls.P == nil {
+		v := getBindedValueForComponent(r, []string{cls.PBinding, cls.PAlias})
+		if v != nil {
+			if v.N != nil {
+				cls.P = v.P
+			}
+		}
+	}
+	if cls.O == nil {
+		v := getBindedValueForComponent(r, []string{cls.PBinding, cls.PAlias})
+		if v != nil {
+			o, err := cellToObject(v)
+			if err == nil {
+				cls.O = o
+			}
+		}
+	}
+	tbl, err := simpleFetch(p.grfs, cls, lo)
+	if err != nil {
+		return err
+	}
+	p.tbl.AddBindings(tbl.Bindings())
+	for _, nr := range tbl.Rows() {
+		p.tbl.AddRow(table.MergeRows([]table.Row{r, nr}))
+	}
+	return nil
+}
+
+// specifyClauseWithTable runs the clause, but it specifies it further based on
+// the current row being processed.
+func (p *queryPlan) specifyClauseWithTable(cls *semantic.GraphClause, lo *storage.LookupOptions) error {
+	rws := p.tbl.Rows()
+	p.tbl.Truncate()
+	for _, r := range rws {
+		tmpCls := &semantic.GraphClause{}
+		*tmpCls = *cls
+		if err := p.addSpecifiedData(r, tmpCls, lo); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // cellToObject returns an object for the given cell.

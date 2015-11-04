@@ -229,8 +229,8 @@ func disjointBinding(b1, b2 map[string]bool) bool {
 	return true
 }
 
-// mergeMaps takes two maps and returns a new map containing both.
-func mergeMaps(ms []map[string]*Cell) map[string]*Cell {
+// MergeRows takes a list of rors and returns a new map containing both.
+func MergeRows(ms []Row) Row {
 	res := make(map[string]*Cell)
 	for _, om := range ms {
 		for k, v := range om {
@@ -263,7 +263,7 @@ func (t *Table) DotProduct(t2 *Table) error {
 	t.data = []Row{}
 	for _, r1 := range td {
 		for _, r2 := range t2.data {
-			t.data = append(t.data, mergeMaps([]map[string]*Cell{r1, r2}))
+			t.data = append(t.data, MergeRows([]Row{r1, r2}))
 		}
 	}
 	return nil
