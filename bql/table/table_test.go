@@ -438,3 +438,15 @@ func TestDeleteRow(t *testing.T) {
 		}
 	}
 }
+
+func TestTruncate(t *testing.T) {
+	tbl := testDotTable(t, []string{"?foo"}, 3)
+
+	if got, want := len(tbl.Rows()), 3; got != want {
+		t.Errorf("Failed to create a table with %d rows instead of %v", got, want)
+	}
+	tbl.Truncate()
+	if got, want := len(tbl.Rows()), 0; got != want {
+		t.Errorf("Failed to create a table with %d rows instead of %v", got, want)
+	}
+}

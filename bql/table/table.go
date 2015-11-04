@@ -277,3 +277,8 @@ func (t *Table) DeleteRow(i int) error {
 	t.data = append(t.data[:i], t.data[i+1:]...)
 	return nil
 }
+
+// Truncate flushes all the data away. It still retains all set bindings.
+func (t *Table) Truncate() {
+	t.data = []Row{}
+}
