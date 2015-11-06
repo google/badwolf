@@ -295,35 +295,37 @@ func whereSubjectClause() ElementHook {
 
 // processPredicate updates the working graph clause if threre is an available
 // predcicate.
-func processPredicate(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.Token) (*predicate.Predicate, string, string, error) {
+func processPredicate(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.Token) (*predicate.Predicate, string, string, bool, error) {
 	var (
 		nP             *predicate.Predicate
 		pID            string
 		pAnchorBinding string
+		temporal       bool
 	)
 	raw := ce.Token().Text
 	p, err := predicate.Parse(raw)
 	if err == nil {
 		// A fully specified predicate was provided.
 		nP = p
-		return nP, pID, pAnchorBinding, nil
+		return nP, pID, pAnchorBinding, nP.Type() == predicate.Temporal, nil
 	}
 	// The predicate may have a binding on the anchor.
 	cmps := predicateRegexp.FindAllStringSubmatch(raw, 2)
 	if len(cmps) != 1 || (len(cmps) == 1 && len(cmps[0]) != 3) {
-		return nil, "", "", fmt.Errorf("failed to extract partialy defined predicate %q, got %v instead", raw, cmps)
+		return nil, "", "", false, fmt.Errorf("failed to extract partialy defined predicate %q, got %v instead", raw, cmps)
 	}
 	id, ta := cmps[0][1], cmps[0][2]
 	pID = id
 	if ta != "" {
 		pAnchorBinding = ta
+		temporal = true
 	}
-	return nil, pID, pAnchorBinding, nil
+	return nil, pID, pAnchorBinding, temporal, nil
 }
 
 // processPredicateBound updates the working graph clause if threre is an
 // available predcicate bound.
-func processPredicateBound(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.Token) (string, string, string, *time.Time, *time.Time, error) {
+func processPredicateBound(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.Token) (string, string, string, *time.Time, *time.Time, bool, error) {
 	var (
 		pID              string
 		pLowerBoundAlias string
@@ -334,7 +336,7 @@ func processPredicateBound(c *GraphClause, ce ConsumedElement, lastNopToken *lex
 	raw := ce.Token().Text
 	cmps := boundRegexp.FindAllStringSubmatch(raw, 2)
 	if len(cmps) != 1 || (len(cmps) == 1 && len(cmps[0]) != 4) {
-		return "", "", "", nil, nil, fmt.Errorf("failed to extract partialy defined predicate bound %q, got %v instead", raw, cmps)
+		return "", "", "", nil, nil, false, fmt.Errorf("failed to extract partialy defined predicate bound %q, got %v instead", raw, cmps)
 	}
 	id, tl, tu := cmps[0][1], cmps[0][2], cmps[0][3]
 	pID = id
@@ -342,29 +344,35 @@ func processPredicateBound(c *GraphClause, ce ConsumedElement, lastNopToken *lex
 	if strings.Index(tl, "?") != -1 {
 		pLowerBoundAlias = tl
 	} else {
-		ptl, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(tl))
-		if err != nil {
-			return "", "", "", nil, nil, fmt.Errorf("predicate.Parse failed to parse time anchor %s in %s with error %v", tl, raw, err)
+		stl := strings.TrimSpace(tl)
+		if stl != "" {
+			ptl, err := time.Parse(time.RFC3339Nano, stl)
+			if err != nil {
+				return "", "", "", nil, nil, false, fmt.Errorf("predicate.Parse failed to parse time anchor %s in %s with error %v", tl, raw, err)
+			}
+			pLowerBound = &ptl
 		}
-		pLowerBound = &ptl
 	}
 	// Lower bound procssing.
 	if strings.Index(tu, "?") != -1 {
 		pUpperBoundAlias = tu
 	} else {
-		ptu, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(tu))
-		if err != nil {
-			return "", "", "", nil, nil, fmt.Errorf("predicate.Parse failed to parse time anchor %s in %s with error %v", tu, raw, err)
+		stu := strings.TrimSpace(tu)
+		if stu != "" {
+			ptu, err := time.Parse(time.RFC3339Nano, stu)
+			if err != nil {
+				return "", "", "", nil, nil, false, fmt.Errorf("predicate.Parse failed to parse time anchor %s in %s with error %v", tu, raw, err)
+			}
+			pUpperBound = &ptu
 		}
-		pUpperBound = &ptu
 	}
 	if pLowerBound != nil && pUpperBound != nil {
 		if pLowerBound.After(*pUpperBound) {
 			lb, up := pLowerBound.Format(time.RFC3339Nano), pUpperBound.Format(time.RFC3339Nano)
-			return "", "", "", nil, nil, fmt.Errorf("invalid time bound; lower bound %s after upper bound %s", lb, up)
+			return "", "", "", nil, nil, false, fmt.Errorf("invalid time bound; lower bound %s after upper bound %s", lb, up)
 		}
 	}
-	return pID, pLowerBoundAlias, pUpperBoundAlias, pLowerBound, pUpperBound, nil
+	return pID, pLowerBoundAlias, pUpperBoundAlias, pLowerBound, pUpperBound, true, nil
 }
 
 // wherePredicateClause returns an element hook that updates the predicate
@@ -386,22 +394,22 @@ func wherePredicateClause() ElementHook {
 			if c.P != nil {
 				return nil, fmt.Errorf("invalid predicate %s on graph clause since already set to %s", tkn.Text, c.P)
 			}
-			p, pID, pAnchorBinding, err := processPredicate(c, ce, lastNopToken)
+			p, pID, pAnchorBinding, pTemporal, err := processPredicate(c, ce, lastNopToken)
 			if err != nil {
 				return nil, err
 			}
-			c.P, c.PID, c.PAnchorBinding = p, pID, pAnchorBinding
+			c.P, c.PID, c.PAnchorBinding, c.PTemporal = p, pID, pAnchorBinding, pTemporal
 			return f, nil
 		case lexer.ItemPredicateBound:
 			lastNopToken = nil
 			if c.PLowerBound != nil || c.PUpperBound != nil || c.PLowerBoundAlias != "" || c.PUpperBoundAlias != "" {
 				return nil, fmt.Errorf("invalid predicate bound %s on graph clause since already set to %s", tkn.Text, c.P)
 			}
-			pID, pLowerBoundAlias, pUpperBoundAlias, pLowerBound, pUpperBound, err := processPredicateBound(c, ce, lastNopToken)
+			pID, pLowerBoundAlias, pUpperBoundAlias, pLowerBound, pUpperBound, pTemp, err := processPredicateBound(c, ce, lastNopToken)
 			if err != nil {
 				return nil, err
 			}
-			c.PID, c.PLowerBoundAlias, c.PUpperBoundAlias, c.PLowerBound, c.PUpperBound = pID, pLowerBoundAlias, pUpperBoundAlias, pLowerBound, pUpperBound
+			c.PID, c.PLowerBoundAlias, c.PUpperBoundAlias, c.PLowerBound, c.PUpperBound, c.PTemporal = pID, pLowerBoundAlias, pUpperBoundAlias, pLowerBound, pUpperBound, pTemp
 			return f, nil
 		case lexer.ItemBinding:
 			if lastNopToken == nil {
@@ -473,7 +481,7 @@ func whereObjectClause() ElementHook {
 				pred *predicate.Predicate
 				err  error
 			)
-			pred, c.OID, c.OAnchorBinding, err = processPredicate(c, ce, lastNopToken)
+			pred, c.OID, c.OAnchorBinding, c.OTemporal, err = processPredicate(c, ce, lastNopToken)
 			if err != nil {
 				return nil, err
 			}
@@ -486,11 +494,11 @@ func whereObjectClause() ElementHook {
 			if c.OLowerBound != nil || c.OUpperBound != nil || c.OLowerBoundAlias != "" || c.OUpperBoundAlias != "" {
 				return nil, fmt.Errorf("invalid predicate bound %s on graph clause since already set to %s", tkn.Text, c.O)
 			}
-			oID, oLowerBoundAlias, oUpperBoundAlias, oLowerBound, oUpperBound, err := processPredicateBound(c, ce, lastNopToken)
+			oID, oLowerBoundAlias, oUpperBoundAlias, oLowerBound, oUpperBound, oTemp, err := processPredicateBound(c, ce, lastNopToken)
 			if err != nil {
 				return nil, err
 			}
-			c.OID, c.OLowerBoundAlias, c.OUpperBoundAlias, c.OLowerBound, c.OUpperBound = oID, oLowerBoundAlias, oUpperBoundAlias, oLowerBound, oUpperBound
+			c.OID, c.OLowerBoundAlias, c.OUpperBoundAlias, c.OLowerBound, c.OUpperBound, c.OTemporal = oID, oLowerBoundAlias, oUpperBoundAlias, oLowerBound, oUpperBound, oTemp
 			return f, nil
 		case lexer.ItemBinding:
 			if lastNopToken == nil {

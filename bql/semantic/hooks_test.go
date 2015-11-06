@@ -359,6 +359,7 @@ func TestWherePredicatClauseHook(t *testing.T) {
 				PAlias:       "?bar",
 				PIDAlias:     "?bar2",
 				PAnchorAlias: "?bar3",
+				PTemporal:    true,
 			},
 		},
 		{
@@ -407,6 +408,7 @@ func TestWherePredicatClauseHook(t *testing.T) {
 				PAlias:         "?bar",
 				PIDAlias:       "?bar2",
 				PAnchorAlias:   "?bar3",
+				PTemporal:      true,
 			},
 		},
 		{
@@ -456,6 +458,7 @@ func TestWherePredicatClauseHook(t *testing.T) {
 				PAlias:           "?bar",
 				PIDAlias:         "?bar2",
 				PAnchorAlias:     "?bar3",
+				PTemporal:        true,
 			},
 		},
 		{
@@ -505,6 +508,7 @@ func TestWherePredicatClauseHook(t *testing.T) {
 				PAlias:       "?bar",
 				PIDAlias:     "?bar2",
 				PAnchorAlias: "?bar3",
+				PTemporal:    true,
 			},
 		},
 		{
@@ -719,6 +723,7 @@ func TestWhereObjectClauseHook(t *testing.T) {
 				OAlias:       "?bar",
 				OIDAlias:     "?bar2",
 				OAnchorAlias: "?bar3",
+				OTemporal:    true,
 			},
 		},
 		{
@@ -767,6 +772,7 @@ func TestWhereObjectClauseHook(t *testing.T) {
 				OAlias:         "?bar",
 				OIDAlias:       "?bar2",
 				OAnchorAlias:   "?bar3",
+				OTemporal:      true,
 			},
 		},
 		{
@@ -816,6 +822,7 @@ func TestWhereObjectClauseHook(t *testing.T) {
 				OAlias:           "?bar",
 				OIDAlias:         "?bar2",
 				OAnchorAlias:     "?bar3",
+				OTemporal:        true,
 			},
 		},
 		{
@@ -865,6 +872,7 @@ func TestWhereObjectClauseHook(t *testing.T) {
 				OAlias:       "?bar",
 				OIDAlias:     "?bar2",
 				OAnchorAlias: "?bar3",
+				OTemporal:    true,
 			},
 		},
 		{

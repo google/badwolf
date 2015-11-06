@@ -90,6 +90,7 @@ type GraphClause struct {
 	PUpperBound      *time.Time
 	PLowerBoundAlias string
 	PUpperBoundAlias string
+	PTemporal        bool
 
 	O                *triple.Object
 	OBinding         string
@@ -103,6 +104,7 @@ type GraphClause struct {
 	OUpperBound      *time.Time
 	OLowerBoundAlias string
 	OUpperBoundAlias string
+	OTemporal        bool
 }
 
 // Specificity return
