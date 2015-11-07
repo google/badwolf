@@ -16,7 +16,6 @@ package planner
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -361,8 +360,6 @@ func TestQuery(t *testing.T) {
 			t.Errorf("tbl.Bindings returned the wrong number of bindings for %q; got %d, want %d", entry.q, got, want)
 		}
 		if got, want := len(tbl.Rows()), entry.nrws; got != want {
-			fmt.Printf("%#v\n", st.SortedGraphPatternClauses()[0])
-			fmt.Println(tbl)
 			t.Errorf("planner.Excecute failed to return the expected number of rows for query %q; got %d want %d", entry.q, got, want)
 		}
 	}
