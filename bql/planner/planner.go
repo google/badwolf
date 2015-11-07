@@ -272,6 +272,11 @@ func (p *queryPlan) addSpecifiedData(r table.Row, cls *semantic.GraphClause, lo 
 				cls.P = v.P
 			}
 		}
+		nlo, err := updateTimeBoundsForRow(lo, cls, r)
+		if err != nil {
+			return err
+		}
+		lo = nlo
 	}
 	if cls.O == nil {
 		v := getBindedValueForComponent(r, []string{cls.PBinding, cls.PAlias})
@@ -281,6 +286,11 @@ func (p *queryPlan) addSpecifiedData(r table.Row, cls *semantic.GraphClause, lo 
 				cls.O = o
 			}
 		}
+		nlo, err := updateTimeBoundsForRow(lo, cls, r)
+		if err != nil {
+			return err
+		}
+		lo = nlo
 	}
 	tbl, err := simpleFetch(p.grfs, cls, lo)
 	if err != nil {

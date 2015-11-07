@@ -16,6 +16,7 @@ package planner
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -193,13 +194,17 @@ const testTriples = `
   /u<peter> "parent_of"@[] /u<john>
   /u<peter> "parent_of"@[] /u<eve>
 	/u<peter> "bought"@[2016-01-01T00:00:00-08:00] /c<mini>
-	/u<peter> "bought"@[2016-03-01T00:00:00-08:00] /c<model s>
+	/u<peter> "bought"@[2016-02-01T00:00:00-08:00] /c<model s>
 	/u<peter> "bought"@[2016-03-01T00:00:00-08:00] /c<model x>
-	/u<peter> "bought"@[2016-03-01T00:00:00-08:00] /c<model y>
+	/u<peter> "bought"@[2016-04-01T00:00:00-08:00] /c<model y>
 	/c<mini> "is_a"@[] /t<car>
 	/c<model s> "is_a"@[] /t<car>
 	/c<model x> "is_a"@[] /t<car>
 	/c<model y> "is_a"@[] /t<car>
+	/l<barcelona> "predicate"@[] "turned"@[2016-01-01T00:00:00-08:00]
+	/l<barcelona> "predicate"@[] "turned"@[2016-02-01T00:00:00-08:00]
+	/l<barcelona> "predicate"@[] "turned"@[2016-03-01T00:00:00-08:00]
+	/l<barcelona> "predicate"@[] "turned"@[2016-04-01T00:00:00-08:00]
 `
 
 func populateTestStore(t *testing.T) storage.Store {
@@ -292,6 +297,46 @@ func TestQuery(t *testing.T) {
 			nbs:  6,
 			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
 		},
+		{
+			q:    `select ?o from ?test where {/u<peter> "bought"@[,] ?o};`,
+			nbs:  1,
+			nrws: 4,
+		},
+		{
+			q:    `select ?o from ?test where {/u<peter> "bought"@[,2015-01-01T00:00:00-08:00] ?o};`,
+			nbs:  1,
+			nrws: 0,
+		},
+		{
+			q:    `select ?o from ?test where {/u<peter> "bought"@[2017-01-01T00:00:00-08:00,] ?o};`,
+			nbs:  1,
+			nrws: 0,
+		},
+		{
+			q:    `select ?o from ?test where {/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o};`,
+			nbs:  1,
+			nrws: 4,
+		},
+		{
+			q:    `select ?o from ?test where {/l<barcelona> "predicate"@[] "turned"@[,] as ?o};`,
+			nbs:  1,
+			nrws: 4,
+		},
+		{
+			q:    `select ?o from ?test where {/l<barcelona> "predicate"@[] "turned"@[,2015-01-01T00:00:00-08:00] as ?o};`,
+			nbs:  1,
+			nrws: 0,
+		},
+		{
+			q:    `select ?o from ?test where {/l<barcelona> "predicate"@[] "turned"@[2017-01-01T00:00:00-08:00,] as ?o};`,
+			nbs:  1,
+			nrws: 0,
+		},
+		{
+			q:    `select ?o from ?test where {/l<barcelona> "predicate"@[] "turned"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] as ?o};`,
+			nbs:  1,
+			nrws: 4,
+		},
 	}
 
 	s := populateTestStore(t)
@@ -316,6 +361,8 @@ func TestQuery(t *testing.T) {
 			t.Errorf("tbl.Bindings returned the wrong number of bindings for %q; got %d, want %d", entry.q, got, want)
 		}
 		if got, want := len(tbl.Rows()), entry.nrws; got != want {
+			fmt.Printf("%#v\n", st.SortedGraphPatternClauses()[0])
+			fmt.Println(tbl)
 			t.Errorf("planner.Excecute failed to return the expected number of rows for query %q; got %d want %d", entry.q, got, want)
 		}
 	}

@@ -26,17 +26,62 @@ import (
 	"github.com/google/badwolf/triple/predicate"
 )
 
+// updateTimeBounds updates the time bounds use for the lookup based on the
+// provided graph clause.
+func updateTimeBounds(lo *storage.LookupOptions, cls *semantic.GraphClause) *storage.LookupOptions {
+	nlo := &storage.LookupOptions{}
+	if cls.PLowerBound != nil {
+		if lo.LowerAnchor == nil || (lo.LowerAnchor != nil && cls.PLowerBound.After(*lo.LowerAnchor)) {
+			lo.LowerAnchor = cls.PLowerBound
+		}
+	}
+	if cls.PUpperBound != nil {
+		if lo.UpperAnchor == nil || (lo.UpperAnchor != nil && cls.PUpperBound.Before(*lo.UpperAnchor)) {
+			lo.UpperAnchor = cls.PUpperBound
+		}
+	}
+	return nlo
+}
+
+// updateTimeBoundsForRow updates the time bounds use for the lookup based on
+// the provided graph clause.
+func updateTimeBoundsForRow(lo *storage.LookupOptions, cls *semantic.GraphClause, r table.Row) (*storage.LookupOptions, error) {
+	lo = updateTimeBounds(lo, cls)
+	if cls.PLowerBoundAlias != "" {
+		v, ok := r[cls.PLowerBoundAlias]
+		if ok && v.T == nil {
+			return nil, fmt.Errorf("invalid time anchor value %v for bound %s", v, cls.PLowerBoundAlias)
+		}
+		if lo.LowerAnchor == nil || (lo.LowerAnchor != nil && v.T.After(*lo.LowerAnchor)) {
+			lo.LowerAnchor = v.T
+		}
+	}
+	if cls.PUpperBoundAlias != "" {
+		v, ok := r[cls.PUpperBoundAlias]
+		if ok && v.T == nil {
+			return nil, fmt.Errorf("invalid time anchor value %v for bound %s", v, cls.PUpperBoundAlias)
+		}
+		if lo.UpperAnchor == nil || (lo.UpperAnchor != nil && v.T.After(*lo.UpperAnchor)) {
+			lo.UpperAnchor = v.T
+		}
+	}
+	nlo := updateTimeBounds(lo, cls)
+	return nlo, nil
+}
+
 // simpleFetch returns a table containing the data specified by the graph
 // clause by querying the provided stora. Will return an error if it had poblems
 // retrieveing the data.
 func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.LookupOptions) (*table.Table, error) {
+	s, p, o := cls.S, cls.P, cls.O
+	lo = updateTimeBounds(lo, cls)
 	tbl, err := table.New(cls.Bindings())
 	if err != nil {
 		return nil, err
 	}
-	if cls.S != nil && cls.P != nil && cls.O != nil {
+	if s != nil && p != nil && o != nil {
 		// Fully qualified triple.
-		t, err := triple.New(cls.S, cls.P, cls.O)
+		t, err := triple.New(s, p, o)
 		if err != nil {
 			return nil, err
 		}
@@ -56,10 +101,10 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 		}
 		return tbl, nil
 	}
-	if cls.S != nil && cls.P != nil && cls.O == nil {
+	if s != nil && p != nil && o == nil {
 		// SP request.
 		for _, g := range gs {
-			os, err := g.Objects(cls.S, cls.P, lo)
+			os, err := g.Objects(s, p, lo)
 			if err != nil {
 				return nil, err
 			}
@@ -69,7 +114,7 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 			}
 			ts := make(chan *triple.Triple, len(ros))
 			for _, o := range ros {
-				t, err := triple.New(cls.S, cls.P, o)
+				t, err := triple.New(s, p, o)
 				if err != nil {
 					return nil, err
 				}
@@ -82,10 +127,10 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 		}
 		return tbl, nil
 	}
-	if cls.S != nil && cls.P == nil && cls.O != nil {
+	if s != nil && p == nil && o != nil {
 		// SO request.
 		for _, g := range gs {
-			ps, err := g.PredicatesForSubjectAndObject(cls.S, cls.O, lo)
+			ps, err := g.PredicatesForSubjectAndObject(s, o, lo)
 			if err != nil {
 				return nil, err
 			}
@@ -95,7 +140,7 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 			}
 			ts := make(chan *triple.Triple, len(rps))
 			for _, p := range rps {
-				t, err := triple.New(cls.S, p, cls.O)
+				t, err := triple.New(s, p, o)
 				if err != nil {
 					return nil, err
 				}
@@ -108,10 +153,10 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 		}
 		return tbl, nil
 	}
-	if cls.S == nil && cls.P != nil && cls.O != nil {
+	if s == nil && p != nil && o != nil {
 		// PO request.
 		for _, g := range gs {
-			ss, err := g.Subjects(cls.P, cls.O, lo)
+			ss, err := g.Subjects(p, o, lo)
 			if err != nil {
 				return nil, err
 			}
@@ -121,7 +166,7 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 			}
 			ts := make(chan *triple.Triple, len(rss))
 			for _, s := range rss {
-				t, err := triple.New(s, cls.P, cls.O)
+				t, err := triple.New(s, p, o)
 				if err != nil {
 					return nil, err
 				}
@@ -134,10 +179,10 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 		}
 		return tbl, nil
 	}
-	if cls.S != nil && cls.P == nil && cls.O == nil {
+	if s != nil && p == nil && o == nil {
 		// S request.
 		for _, g := range gs {
-			ts, err := g.TriplesForSubject(cls.S, lo)
+			ts, err := g.TriplesForSubject(s, lo)
 			if err != nil {
 				return nil, err
 			}
@@ -147,10 +192,10 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 		}
 		return tbl, nil
 	}
-	if cls.S == nil && cls.P != nil && cls.O == nil {
+	if s == nil && p != nil && o == nil {
 		// P request.
 		for _, g := range gs {
-			ts, err := g.TriplesForPredicate(cls.P, lo)
+			ts, err := g.TriplesForPredicate(p, lo)
 			if err != nil {
 				return nil, err
 			}
@@ -160,10 +205,10 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 		}
 		return tbl, nil
 	}
-	if cls.S == nil && cls.P == nil && cls.O != nil {
+	if s == nil && p == nil && o != nil {
 		// O request.
 		for _, g := range gs {
-			ts, err := g.TriplesForObject(cls.O, lo)
+			ts, err := g.TriplesForObject(o, lo)
 			if err != nil {
 				return nil, err
 			}
@@ -173,7 +218,7 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 		}
 		return tbl, nil
 	}
-	if cls.S == nil && cls.P == nil && cls.O == nil {
+	if s == nil && p == nil && o == nil {
 		// Full data request.
 		for _, g := range gs {
 			ts, err := g.Triples()
@@ -198,6 +243,46 @@ func addTriples(ts storage.Triples, cls *semantic.GraphClause, tbl *table.Table)
 		r, err := tripleToRow(t, cls)
 		if err != nil {
 			return err
+		}
+		if cls.PID != "" {
+			// The triples need to be filtered.
+			if t.P().ID() != predicate.ID(cls.PID) {
+				continue
+			}
+			if cls.PTemporal && t.P().Type() == predicate.Temporal {
+				ta, err := t.P().TimeAnchor()
+				if err != nil {
+					return fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
+				}
+				// Need to check teh bounds of the triple.
+				if cls.PLowerBound != nil && cls.PLowerBound.After(*ta) {
+					continue
+				}
+				if cls.PUpperBound != nil && cls.PUpperBound.Before(*ta) {
+					continue
+				}
+			}
+		}
+		if cls.OID != "" {
+			if p, err := t.O().Predicate(); err == nil {
+				// The triples need to be filtered.
+				if p.ID() != predicate.ID(cls.OID) {
+					continue
+				}
+				if cls.OTemporal && p.Type() == predicate.Temporal {
+					ta, err := p.TimeAnchor()
+					if err != nil {
+						return fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
+					}
+					// Need to check teh bounds of the triple.
+					if cls.OLowerBound != nil && cls.OLowerBound.After(*ta) {
+						continue
+					}
+					if cls.OUpperBound != nil && cls.OUpperBound.Before(*ta) {
+						continue
+					}
+				}
+			}
 		}
 		if r != nil {
 			tbl.AddRow(r)

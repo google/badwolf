@@ -123,7 +123,7 @@ func TestBindingListing(t *testing.T) {
 		t.Errorf("Statement.Bindings failed to reteurn 10 bindings, instead returned %v", bds)
 	}
 	for b, cnt := range bds {
-		if cnt != 20 {
+		if cnt != 19 {
 			t.Errorf("Statement.Bindings failed to update binding %q to 20, got %d instead", b, cnt)
 		}
 	}
