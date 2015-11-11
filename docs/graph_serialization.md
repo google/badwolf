@@ -1,4 +1,4 @@
-# Graph Marshalin/Unmarshaling
+# Graph Marshaling/Unmarshaling
 
 Graph can be marshaled to text or unmarshaled back from text into a graph
 using the ```io``` package. The package provides two simple functions in
