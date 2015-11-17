@@ -23,6 +23,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/node"
 	"github.com/google/badwolf/triple/predicate"
@@ -69,6 +70,16 @@ type Statement struct {
 	data          []*triple.Triple
 	pattern       []*GraphClause
 	workingClause *GraphClause
+	projection    []Projection
+}
+
+// Projection contails the information required to project the outcome of
+// querying with GraphClauses. It also contains the information of what
+// aggregation function should be used.
+type Projection struct {
+	binding  string
+	op       lexer.TokenType // The information about what function to use.
+	modifier lexer.ToknType
 }
 
 // GraphClause represents a clause of a graph pattern in a where clause.

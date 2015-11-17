@@ -132,6 +132,9 @@ var (
 
 	// woch contains the where clause subject hook.
 	woch ElementHook
+
+	//vach contains the variable accumulator hook.
+	vach ElementHook
 )
 
 func init() {
@@ -142,6 +145,7 @@ func init() {
 	wsch = whereSubjectClause()
 	wpch = wherePredicateClause()
 	woch = whereObjectClause()
+	vach = varAccumulator()
 
 	predicateRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?\]$`)
 	boundRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?,"?([^\]"]*)"?\]$`)
@@ -183,6 +187,12 @@ func WherePredicateClauseHook() ElementHook {
 // populates the object.
 func WhereObjectClauseHook() ElementHook {
 	return woch
+}
+
+// varAccumulatorHook returnce the singleton for working clause hooks that
+// populates the object.
+func varAccumulatorHook() ElementHook {
+	return vach
 }
 
 // graphAccumulator returns an element hook that keeps track of the graphs
@@ -541,4 +551,12 @@ func whereObjectClause() ElementHook {
 		return f, nil
 	}
 	return f
+}
+
+// whereObjectClause returns an element hook that updates the object
+// modifiers on the working graph clause.
+func varAccumulator() ElementHook {
+	return func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+		return nil, nil
+	}
 }
