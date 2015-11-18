@@ -79,7 +79,7 @@ type Statement struct {
 type Projection struct {
 	binding  string
 	op       lexer.TokenType // The information about what function to use.
-	modifier lexer.ToknType
+	modifier lexer.TokenType // The modifier for the selected op.
 }
 
 // GraphClause represents a clause of a graph pattern in a where clause.
