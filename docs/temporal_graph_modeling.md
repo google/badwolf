@@ -152,7 +152,7 @@ So for instance the fully pretty printed predicate for an immutable and
 a temporal triple are shown below.
 
 ```
-   "colow_of_eyes"@[]
+   "color_of_eyes"@[]
    "met"@[2006-01-02T15:04:05.999999999Z07:00]
 ```
 
