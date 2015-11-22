@@ -19,6 +19,7 @@
 package semantic
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 	"time"
@@ -65,21 +66,13 @@ func (t StatementType) String() string {
 
 // Statement contains all the semantic information extract from the parsing
 type Statement struct {
-	sType         StatementType
-	graphs        []string
-	data          []*triple.Triple
-	pattern       []*GraphClause
-	workingClause *GraphClause
-	projection    []Projection
-}
-
-// Projection contails the information required to project the outcome of
-// querying with GraphClauses. It also contains the information of what
-// aggregation function should be used.
-type Projection struct {
-	binding  string
-	op       lexer.TokenType // The information about what function to use.
-	modifier lexer.TokenType // The modifier for the selected op.
+	sType             StatementType
+	graphs            []string
+	data              []*triple.Triple
+	pattern           []*GraphClause
+	workingClause     *GraphClause
+	projection        []*Projection
+	workingProjection *Projection
 }
 
 // GraphClause represents a clause of a graph pattern in a where clause.
@@ -305,4 +298,48 @@ func (s *Statement) SortedGraphPatternClauses() []*GraphClause {
 	}
 	sort.Sort(bySpecificity(ptrns))
 	return ptrns
+}
+
+// Projection contails the information required to project the outcome of
+// querying with GraphClauses. It also contains the information of what
+// aggregation function should be used.
+type Projection struct {
+	Binding  string
+	Alias    string
+	OP       lexer.TokenType // The information about what function to use.
+	Modifier lexer.TokenType // The modifier for the selected op.
+}
+
+// String returns a readable form of the projection.
+func (p *Projection) String() string {
+	return fmt.Sprintf("%s as %s (%s, %s)", p.Binding, p.Alias, p.OP, p.Modifier)
+}
+
+// IsEmpty check if the given projection is empty.
+func (p *Projection) IsEmpty() bool {
+	return p.Binding == "" && p.Alias == "" && p.OP == lexer.ItemError && p.Modifier == lexer.ItemError
+}
+
+// ResetProjection resets the current working variable projection.
+func (s *Statement) ResetProjection() {
+	s.workingProjection = &Projection{}
+}
+
+// WorkingProjection returns the current working variable projection.
+func (s *Statement) WorkingProjection() *Projection {
+	return s.workingProjection
+}
+
+// AddWorkingProjection add the current projection variableto the set of
+// projects that this statement.
+func (s *Statement) AddWorkingProjection() {
+	if s.workingProjection != nil && !s.workingProjection.IsEmpty() {
+		s.projection = append(s.projection, s.workingProjection)
+	}
+	s.ResetProjection()
+}
+
+// Projections returns all the available projections.
+func (s *Statement) Projections() []*Projection {
+	return s.projection
 }

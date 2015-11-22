@@ -157,14 +157,14 @@ func TestWhereWorkingClauseHook(t *testing.T) {
 	}
 }
 
-type testTable struct {
+type testClauseTable struct {
 	valid bool
 	id    string
 	ces   []ConsumedElement
 	want  *GraphClause
 }
 
-func runTabulatedClauseHookTest(t *testing.T, testName string, f ElementHook, table []testTable) {
+func runTabulatedClauseHookTest(t *testing.T, testName string, f ElementHook, table []testClauseTable) {
 	st := &Statement{}
 	st.ResetWorkingGraphClause()
 	failed := false
@@ -199,7 +199,7 @@ func TestWhereSubjectClauseHook(t *testing.T) {
 	if err != nil {
 		t.Fatalf("node.Parse failed with error %v", err)
 	}
-	runTabulatedClauseHookTest(t, "semantic.whereSubjectClause", f, []testTable{
+	runTabulatedClauseHookTest(t, "semantic.whereSubjectClause", f, []testClauseTable{
 		{
 			valid: true,
 			id:    "node_example",
@@ -313,7 +313,7 @@ func TestWherePredicatClauseHook(t *testing.T) {
 	if err != nil {
 		t.Fatalf("time.Parse failed to parse valid upper time bound with error %v", err)
 	}
-	runTabulatedClauseHookTest(t, "semantic.wherePredicateClause", f, []testTable{
+	runTabulatedClauseHookTest(t, "semantic.wherePredicateClause", f, []testClauseTable{
 		{
 			valid: true,
 			id:    "valid predicate",
@@ -583,7 +583,7 @@ func TestWhereObjectClauseHook(t *testing.T) {
 		t.Fatalf("literal.Parse should have never fail to pars %s with error %v", `"1"^^type:int64`, err)
 	}
 
-	runTabulatedClauseHookTest(t, "semantic.whereObjectClause", f, []testTable{
+	runTabulatedClauseHookTest(t, "semantic.whereObjectClause", f, []testClauseTable{
 		{
 			valid: true,
 			id:    "node_example",
@@ -941,6 +941,216 @@ func TestWhereObjectClauseHook(t *testing.T) {
 			want: &GraphClause{
 				O:      l,
 				OAlias: "?bar"},
+		},
+	})
+}
+
+type testProjectionTable struct {
+	valid bool
+	id    string
+	ces   []ConsumedElement
+	want  *Projection
+}
+
+func runTabulatedProjectionHookTest(t *testing.T, testName string, f ElementHook, table []testProjectionTable) {
+	st := &Statement{}
+	st.ResetProjection()
+	failed := false
+	for _, entry := range table {
+		for _, ce := range entry.ces {
+			if _, err := f(st, ce); err != nil {
+				if entry.valid {
+					t.Errorf("%s case %q should have never failed with error: %v", testName, entry.id, err)
+				} else {
+					failed = true
+				}
+			}
+		}
+		if entry.valid {
+			if got, want := st.WorkingProjection(), entry.want; !reflect.DeepEqual(got, want) {
+				t.Errorf("%s case %q should have populated all subject fields; got %+v, want %+v", testName, entry.id, got, want)
+			}
+		} else {
+			if !failed {
+				t.Errorf("%s failed to reject invalid case %q", testName, entry.id)
+			}
+		}
+		st.ResetProjection()
+	}
+}
+
+func TestVarAccumulatorHook(t *testing.T) {
+	st := &Statement{}
+	f := varAccumulatorHook()
+	st.ResetProjection()
+
+	runTabulatedProjectionHookTest(t, "semantic.varAccumulator", f, []testProjectionTable{
+		{
+			valid: true,
+			id:    "simple var",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: &Projection{
+				Binding: "?foo",
+			},
+		},
+		{
+			valid: true,
+			id:    "simple var with alias",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAs,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: &Projection{
+				Binding: "?foo",
+				Alias:   "?bar",
+			},
+		},
+		{
+			valid: true,
+			id:    "sum var with alias",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemSum,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAs,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: &Projection{
+				Binding: "?foo",
+				Alias:   "?bar",
+				OP:      lexer.ItemSum,
+			},
+		},
+		{
+			valid: true,
+			id:    "sum var with alias",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemCount,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAs,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: &Projection{
+				Binding: "?foo",
+				Alias:   "?bar",
+				OP:      lexer.ItemCount,
+			},
+		},
+		{
+			valid: true,
+			id:    "sum var with alias",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemCount,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemDistinct,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAs,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: &Projection{
+				Binding:  "?foo",
+				Alias:    "?bar",
+				OP:       lexer.ItemCount,
+				Modifier: lexer.ItemDistinct,
+			},
 		},
 	})
 }

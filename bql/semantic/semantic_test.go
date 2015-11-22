@@ -168,3 +168,27 @@ func TestSortedGraphPatternClauses(t *testing.T) {
 		spc--
 	}
 }
+
+func TestProjectionIsEmpty(t *testing.T) {
+	s := &Statement{}
+	if s.WorkingProjection() != nil {
+		t.Fatalf("s.WorkingProjection() should have never returned a valid working clause")
+	}
+	s.ResetProjection()
+	if !s.WorkingProjection().IsEmpty() {
+		t.Errorf("s.WorkingProjections().IsEmpty() should be empty after reset, instead got %s", s.WorkingProjection())
+	}
+	if len(s.Projections()) != 0 {
+		t.Errorf("s.Projections should be empty, instead got %s", s.Projections())
+	}
+	s.AddWorkingProjection()
+	if len(s.Projections()) != 0 {
+		t.Errorf("s.Projections should be empty after adding an empty projection, instead got %s", s.Projections())
+	}
+	p := s.WorkingProjection()
+	p.Binding = "?foo"
+	s.AddWorkingProjection()
+	if len(s.Projections()) != 1 {
+		t.Errorf("s.Projections should constina one projection, instead got %s", s.Projections())
+	}
+}

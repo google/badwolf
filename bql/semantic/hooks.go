@@ -556,7 +556,38 @@ func whereObjectClause() ElementHook {
 // whereObjectClause returns an element hook that updates the object
 // modifiers on the working graph clause.
 func varAccumulator() ElementHook {
-	return func(st *Statement, ce ConsumedElement) (ElementHook, error) {
-		return nil, nil
+	var (
+		lastNopToken *lexer.Token
+		f            func(st *Statement, ce ConsumedElement) (ElementHook, error)
+	)
+	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+		if ce.IsSymbol() {
+			return f, nil
+		}
+		tkn := ce.Token()
+		p := st.WorkingProjection()
+		switch tkn.Type {
+		case lexer.ItemBinding:
+			if p.Binding == "" {
+				p.Binding = tkn.Text
+			} else {
+				if lastNopToken != nil && lastNopToken.Type == lexer.ItemAs {
+					p.Alias = tkn.Text
+					lastNopToken = nil
+				} else {
+					return nil, fmt.Errorf("invalid token %s for variable projection %s", tkn.Type, p)
+				}
+			}
+		case lexer.ItemAs:
+			lastNopToken = tkn
+		case lexer.ItemSum, lexer.ItemCount:
+			p.OP = tkn.Type
+		case lexer.ItemDistinct:
+			p.Modifier = tkn.Type
+		default:
+			lastNopToken = nil
+		}
+		return f, nil
 	}
+	return f
 }
