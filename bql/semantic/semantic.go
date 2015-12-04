@@ -343,3 +343,29 @@ func (s *Statement) AddWorkingProjection() {
 func (s *Statement) Projections() []*Projection {
 	return s.projection
 }
+
+// InputBindings returns the list of incomming binding feed from a where clause.
+func (s *Statement) InputBindings() []string {
+	var res []string
+	for _, p := range s.projection {
+		if p.Binding != "" {
+			res = append(res, p.Binding)
+		}
+	}
+	return res
+}
+
+// OutputBindings returns the list of binding that a query will return.
+func (s *Statement) OutputBindings() []string {
+	var res []string
+	for _, p := range s.projection {
+		if p.Alias != "" {
+			res = append(res, p.Alias)
+			continue
+		}
+		if p.Binding != "" {
+			res = append(res, p.Binding)
+		}
+	}
+	return res
+}

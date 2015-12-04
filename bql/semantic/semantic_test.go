@@ -192,3 +192,23 @@ func TestProjectionIsEmpty(t *testing.T) {
 		t.Errorf("s.Projections should constina one projection, instead got %s", s.Projections())
 	}
 }
+
+func TestInputOutputBindings(t *testing.T) {
+	s := &Statement{
+		projection: []*Projection{
+			{
+				Binding: "?foo",
+				Alias:   "?foo_alias",
+			},
+			{
+				Binding: "?bar",
+			},
+		},
+	}
+	if got, want := s.InputBindings(), []string{"?foo", "?bar"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("s.InputBindings return the wrong input binding; got %v, want %v", got, want)
+	}
+	if got, want := s.OutputBindings(), []string{"?foo_alias", "?bar"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("s.OutputBindings return the wrong input binding; got %v, want %v", got, want)
+	}
+}
