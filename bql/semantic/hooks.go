@@ -584,6 +584,7 @@ func varAccumulator() ElementHook {
 				if lastNopToken != nil && lastNopToken.Type == lexer.ItemAs {
 					p.Alias = tkn.Text
 					lastNopToken = nil
+					st.AddWorkingProjection()
 				} else {
 					return nil, fmt.Errorf("invalid token %s for variable projection %s", tkn.Type, p)
 				}
@@ -594,6 +595,8 @@ func varAccumulator() ElementHook {
 			p.OP = tkn.Type
 		case lexer.ItemDistinct:
 			p.Modifier = tkn.Type
+		case lexer.ItemComma:
+			st.AddWorkingProjection()
 		default:
 			lastNopToken = nil
 		}

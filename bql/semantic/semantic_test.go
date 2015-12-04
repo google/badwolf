@@ -171,9 +171,6 @@ func TestSortedGraphPatternClauses(t *testing.T) {
 
 func TestProjectionIsEmpty(t *testing.T) {
 	s := &Statement{}
-	if s.WorkingProjection() != nil {
-		t.Fatalf("s.WorkingProjection() should have never returned a valid working clause")
-	}
 	s.ResetProjection()
 	if !s.WorkingProjection().IsEmpty() {
 		t.Errorf("s.WorkingProjections().IsEmpty() should be empty after reset, instead got %s", s.WorkingProjection())

@@ -327,6 +327,9 @@ func (s *Statement) ResetProjection() {
 
 // WorkingProjection returns the current working variable projection.
 func (s *Statement) WorkingProjection() *Projection {
+	if s.workingProjection == nil {
+		s.ResetProjection()
+	}
 	return s.workingProjection
 }
 

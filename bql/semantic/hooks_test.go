@@ -953,10 +953,10 @@ type testProjectionTable struct {
 }
 
 func runTabulatedProjectionHookTest(t *testing.T, testName string, f ElementHook, table []testProjectionTable) {
-	st := &Statement{}
-	st.ResetProjection()
+	var st *Statement
 	failed := false
 	for _, entry := range table {
+		st = &Statement{}
 		for _, ce := range entry.ces {
 			if _, err := f(st, ce); err != nil {
 				if entry.valid {
@@ -967,15 +967,18 @@ func runTabulatedProjectionHookTest(t *testing.T, testName string, f ElementHook
 			}
 		}
 		if entry.valid {
-			if got, want := st.WorkingProjection(), entry.want; !reflect.DeepEqual(got, want) {
-				t.Errorf("%s case %q should have populated all subject fields; got %+v, want %+v", testName, entry.id, got, want)
+			p := st.WorkingProjection()
+			if p.IsEmpty() && len(st.Projections()) > 0 {
+				p = st.Projections()[0]
+			}
+			if got, want := p, entry.want; !reflect.DeepEqual(got, want) {
+				t.Errorf("%s case %q should have populated all required fields; got %+v, want %+v", testName, entry.id, got, want)
 			}
 		} else {
 			if !failed {
 				t.Errorf("%s failed to reject invalid case %q", testName, entry.id)
 			}
 		}
-		st.ResetProjection()
 	}
 }
 
@@ -1069,7 +1072,7 @@ func TestVarAccumulatorHook(t *testing.T) {
 		},
 		{
 			valid: true,
-			id:    "sum var with alias",
+			id:    "count var with alias",
 			ces: []ConsumedElement{
 				NewConsumedSymbol("FOO"),
 				NewConsumedToken(&lexer.Token{
@@ -1109,7 +1112,7 @@ func TestVarAccumulatorHook(t *testing.T) {
 		},
 		{
 			valid: true,
-			id:    "sum var with alias",
+			id:    "count distinct var with alias",
 			ces: []ConsumedElement{
 				NewConsumedSymbol("FOO"),
 				NewConsumedToken(&lexer.Token{

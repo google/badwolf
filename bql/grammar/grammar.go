@@ -882,4 +882,13 @@ func initSemanticBQL() {
 			cls.ProcessedElement = semantic.WhereObjectClauseHook()
 		}
 	}
+
+	varSymbols := []semantic.Symbol{
+		"VARS", "VARS_AS", "MORE_VARS", "COUNT_DISTINCT",
+	}
+	for _, sym := range varSymbols {
+		for _, cls := range (*semanticBQL)[sym] {
+			cls.ProcessedElement = semantic.VarAccumulatorHook()
+		}
+	}
 }
