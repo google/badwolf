@@ -38,8 +38,8 @@ type ElementHook func(*Statement, ConsumedElement) (ElementHook, error)
 // TypeBindingClauseHook returns a ClauseHook that sets the binding type.
 func TypeBindingClauseHook(t StatementType) ClauseHook {
 	var f ClauseHook
-	f = func(stm *Statement, _ Symbol) (ClauseHook, error) {
-		stm.BindType(t)
+	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+		s.BindType(t)
 		return f, nil
 	}
 	return f
@@ -133,8 +133,11 @@ var (
 	// woch contains the where clause subject hook.
 	woch ElementHook
 
-	//vach contains the variable accumulator hook.
+	// vach contains the variable accumulator hook.
 	vach ElementHook
+
+	// bgch contains the variable for checking bindings.
+	bgch ClauseHook
 )
 
 func init() {
@@ -146,6 +149,7 @@ func init() {
 	wpch = wherePredicateClause()
 	woch = whereObjectClause()
 	vach = varAccumulator()
+	bgch = bindingsGraphChecker()
 
 	predicateRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?\]$`)
 	boundRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?,"?([^\]"]*)"?\]$`)
@@ -156,43 +160,49 @@ func DataAccumulatorHook() ElementHook {
 	return dach
 }
 
-// GraphAccumulatorHook return the singleton for graph accumulation.
+// GraphAccumulatorHook returns the singleton for graph accumulation.
 func GraphAccumulatorHook() ElementHook {
 	return gach
 }
 
-// WhereInitWorkingClauseHook return the singleton for graph accumulation.
+// WhereInitWorkingClauseHook returns the singleton for graph accumulation.
 func WhereInitWorkingClauseHook() ClauseHook {
 	return wnch
 }
 
-// WhereNextWorkingClauseHook return the singleton for graph accumulation.
+// WhereNextWorkingClauseHook returns the singleton for graph accumulation.
 func WhereNextWorkingClauseHook() ClauseHook {
 	return wnch
 }
 
-// WhereSubjectClauseHook returnce the singleton for working clause hooks that
+// WhereSubjectClauseHook returns the singleton for working clause hooks that
 // populates the subject.
 func WhereSubjectClauseHook() ElementHook {
 	return wsch
 }
 
-// WherePredicateClauseHook returnce the singleton for working clause hooks that
+// WherePredicateClauseHook returns the singleton for working clause hooks that
 // populates the predicate.
 func WherePredicateClauseHook() ElementHook {
 	return wpch
 }
 
-// WhereObjectClauseHook returnce the singleton for working clause hooks that
+// WhereObjectClauseHook returns the singleton for working clause hooks that
 // populates the object.
 func WhereObjectClauseHook() ElementHook {
 	return woch
 }
 
-// varAccumulatorHook returnce the singleton for working clause hooks that
-// populates the object.
-func varAccumulatorHook() ElementHook {
+// VarAccumulatorHook returns the singleton for accumulating variable
+// projections.
+func VarAccumulatorHook() ElementHook {
 	return vach
+}
+
+// VarBindingsGraphChecker returns the singleton for checking a query statement for
+// valid bidings in the select variables.
+func VarBindingsGraphChecker() ClauseHook {
+	return bgch
 }
 
 // graphAccumulator returns an element hook that keeps track of the graphs
@@ -221,8 +231,8 @@ func graphAccumulator() ElementHook {
 // clause and starts a new working one.
 func whereNextWorkingClause() ClauseHook {
 	var f ClauseHook
-	f = func(stm *Statement, _ Symbol) (ClauseHook, error) {
-		stm.AddWorkingGrpahClause()
+	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+		s.AddWorkingGrpahClause()
 		return f, nil
 	}
 	return f
@@ -231,8 +241,8 @@ func whereNextWorkingClause() ClauseHook {
 // whereInitWorkingClause initialize a new working graph clause.
 func whereInitWorkingClause() ClauseHook {
 	var f ClauseHook
-	f = func(stm *Statement, _ Symbol) (ClauseHook, error) {
-		stm.ResetWorkingGraphClause()
+	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+		s.ResetWorkingGraphClause()
 		return f, nil
 	}
 	return f
@@ -586,6 +596,22 @@ func varAccumulator() ElementHook {
 			p.Modifier = tkn.Type
 		default:
 			lastNopToken = nil
+		}
+		return f, nil
+	}
+	return f
+}
+
+// bindingsGraphChecker validate that all input bindings are provided by the
+// graph pattern.
+func bindingsGraphChecker() ClauseHook {
+	var f ClauseHook
+	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+		bs := s.BindingsMap()
+		for _, b := range s.InputBindings() {
+			if _, ok := bs[b]; !ok {
+				return nil, fmt.Errorf("specified binding %s not found in where clause, only %v bindings are available", b, s.Bindings())
+			}
 		}
 		return f, nil
 	}

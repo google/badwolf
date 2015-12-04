@@ -981,7 +981,7 @@ func runTabulatedProjectionHookTest(t *testing.T, testName string, f ElementHook
 
 func TestVarAccumulatorHook(t *testing.T) {
 	st := &Statement{}
-	f := varAccumulatorHook()
+	f := varAccumulator()
 	st.ResetProjection()
 
 	runTabulatedProjectionHookTest(t, "semantic.varAccumulator", f, []testProjectionTable{
@@ -1153,4 +1153,66 @@ func TestVarAccumulatorHook(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestBindingsGraphChecker(t *testing.T) {
+	f := bindingsGraphChecker()
+	testTable := []struct {
+		id   string
+		s    *Statement
+		want bool
+	}{
+		{
+			id: "missing biding",
+			s: &Statement{
+				pattern: []*GraphClause{
+					{},
+					{SAlias: "?foo"},
+					{OAlias: "?foo_bar"},
+				},
+				projection: []*Projection{
+					{Binding: "?foo"},
+					{Binding: "?bar"},
+				},
+			},
+			want: false,
+		},
+		{
+			id: "unknown binding",
+			s: &Statement{
+				pattern: []*GraphClause{
+					{},
+					{SAlias: "?foo"},
+					{PAlias: "?bar"},
+					{OAlias: "?foo_bar"},
+				},
+				projection: []*Projection{
+					{Binding: "?unknown"},
+				},
+			},
+			want: false,
+		},
+		{
+			id: "all bidings available",
+			s: &Statement{
+				pattern: []*GraphClause{
+					{},
+					{SAlias: "?foo"},
+					{PAlias: "?bar"},
+					{OAlias: "?foo_bar"},
+				},
+				projection: []*Projection{
+					{Binding: "?foo"},
+					{Binding: "?bar"},
+					{Binding: "?foo_bar"},
+				},
+			},
+			want: true,
+		},
+	}
+	for _, entry := range testTable {
+		if _, err := f(entry.s, Symbol("FOO")); (err == nil) != entry.want {
+			t.Errorf("semantic.bindingsGraphChecker invalid statement %#v for case %q; %v", entry.s, entry.id, err)
+		}
+	}
 }
