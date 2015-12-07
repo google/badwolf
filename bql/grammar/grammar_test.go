@@ -291,7 +291,8 @@ func TestAcceptQueryBySemanticParse(t *testing.T) {
 		// Test predicate bounds with bounds are accepted.
 		`select ?s from ?g where{/_<foo> as ?s "id"@[?foo, 2016-07-19T13:12:04.669618843-07:00] ?o};`,
 		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[2015-07-19T13:12:04.669618843-07:00, ?bar] as ?o};`,
-		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[?foo, ?bar] as ?o};`}
+		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[?foo, ?bar] as ?o};`,
+	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
 		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
@@ -310,6 +311,8 @@ func TestRejectByParseAndSemantic(t *testing.T) {
 		// Test invalid predicate bounds are rejected.
 		`select ?s from ?b where{/_<foo> as ?s "id"@[2018-07-19T13:12:04.669618843-07:00, 2015-07-19T13:12:04.669618843-07:00] ?o};`,
 		`select ?s from ?b where{/_<foo> as ?s  ?p "id"@[2019-07-19T13:12:04.669618843-07:00, 2015-07-19T13:12:04.669618843-07:00] as ?o};`,
+		// Check the bindings on the projection exist on the graph clauses.
+		`select ?foo from ?g where {?s ?p ?o};`,
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {

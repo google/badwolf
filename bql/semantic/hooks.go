@@ -610,6 +610,8 @@ func varAccumulator() ElementHook {
 func bindingsGraphChecker() ClauseHook {
 	var f ClauseHook
 	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+		// Force working projection flush.
+		s.AddWorkingProjection()
 		bs := s.BindingsMap()
 		for _, b := range s.InputBindings() {
 			if _, ok := bs[b]; !ok {

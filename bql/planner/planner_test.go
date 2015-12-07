@@ -247,12 +247,12 @@ func TestQuery(t *testing.T) {
 			nrws: 2,
 		},
 		{
-			q:    `select ?s, ?o from ?test where {?s ?p /t<car>};`,
+			q:    `select ?s, ?p from ?test where {?s ?p /t<car>};`,
 			nbs:  2,
 			nrws: 4,
 		},
 		{
-			q:    `select ?s, ?p from ?test where {?s "parent_of"@[] ?o};`,
+			q:    `select ?s, ?o from ?test where {?s "parent_of"@[] ?o};`,
 			nbs:  2,
 			nrws: 4,
 		},
@@ -282,7 +282,7 @@ func TestQuery(t *testing.T) {
 			nrws: 4,
 		},
 		{
-			q:    `select ?s from ?test where {/u<joe> "parent_of"@[] ?o. ?o "parent_of"@[] /u<john>};`,
+			q:    `select ?o from ?test where {/u<joe> "parent_of"@[] ?o. ?o "parent_of"@[] /u<john>};`,
 			nbs:  1,
 			nrws: 1,
 		},

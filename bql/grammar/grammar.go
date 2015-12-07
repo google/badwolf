@@ -838,7 +838,7 @@ func initSemanticBQL() {
 	// Query semantic hooks.
 	for _, cls := range (*semanticBQL)["WHERE"] {
 		cls.ProcessStart = semantic.WhereInitWorkingClauseHook()
-		cls.ProcessEnd = semantic.WhereNextWorkingClauseHook()
+		cls.ProcessEnd = semantic.VarBindingsGraphChecker()
 	}
 	clauseSymbols := []semantic.Symbol{
 		"CLAUSES", "MORE_CLAUSES",
