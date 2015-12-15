@@ -18,8 +18,17 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
+
+	"github.com/google/badwolf/bql/grammar"
+	"github.com/google/badwolf/bql/planner"
+	"github.com/google/badwolf/bql/semantic"
+	"github.com/google/badwolf/bql/table"
+	"github.com/google/badwolf/storage"
+	"github.com/google/badwolf/storage/memory"
 )
 
 // NewRunCommand create the help command.
@@ -39,21 +48,88 @@ sequentially.`,
 
 // runCommand runs all the BQL statements available in the file.
 func runCommand(cmd *Command, args []string) int {
-	if len(args) <= 3 {
+	if len(args) < 3 {
 		fmt.Fprintf(os.Stderr, "Missing required file path. ")
 		cmd.Usage()
 		return 2
 	}
-	for _, stm := range getStatementsFromFile(args[2]) {
-		fmt.Printf("Processing statement:\n%s\n", stm)
-		// TODO(xllora): Implement the BQL execution.
+	lines, err := getStatementsFromFile(args[2])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to read file %s\n\n\t%v\n\n", args[2], err)
+		return 2
+	}
+	fmt.Printf("Processing file %s\n\n", args[2])
+	s := memory.DefaultStore
+	for idx, stm := range lines {
+		fmt.Printf("Processing statement (%d/%d):\n%s\n\n", idx+1, len(lines), stm)
+		tbl, err := runBQL(stm, s)
+		if err != nil {
+			fmt.Printf("[FAIL] %v\n\n", err)
+			continue
+		}
+		fmt.Println("Result:")
+		if tbl.NumRows() > 0 {
+			fmt.Println(tbl)
+		}
+		fmt.Printf("OK\n\n")
 	}
 	return 0
 }
 
+// runBQL attemps to excecute the provided query against the given store.
+func runBQL(bql string, s storage.Store) (*table.Table, error) {
+	p, err := grammar.NewParser(grammar.SemanticBQL())
+	if err != nil {
+		return nil, fmt.Errorf("Failed to initilize a valid BQL parser")
+	}
+	stm := &semantic.Statement{}
+	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
+		return nil, fmt.Errorf("Failed to parse BQL statement with error %v", err)
+	}
+	pln, err := planner.New(s, stm)
+	if err != nil {
+		return nil, fmt.Errorf("Should have not failed to create a plan using memory.DefaultStorage for statement %v", stm)
+	}
+	res, err := pln.Excecute()
+	if err != nil {
+		return nil, fmt.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
+	}
+	return res, nil
+}
+
 // getStatementsFromFile returns the statements found in the provided file.
-func getStatementsFromFile(path string) []string {
-	var stms []string
-	// TODO(xllora): Extract statements from file.
-	return stms
+func getStatementsFromFile(path string) ([]string, error) {
+	stms, err := readLines(path)
+	if err != nil {
+		return nil, err
+	}
+	return stms, nil
+}
+
+// readLines from a file into a string array.
+func readLines(path string) ([]string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(f)
+	line := ""
+	for scanner.Scan() {
+		l := strings.TrimSpace(scanner.Text())
+		if len(l) == 0 || strings.Index(l, "#") == 0 {
+			continue
+		}
+		line += " " + l
+		if l[len(l)-1:] == ";" {
+			lines = append(lines, strings.TrimSpace(line))
+			line = ""
+		}
+	}
+	if line != "" {
+		lines = append(lines, strings.TrimSpace(line))
+	}
+	return lines, scanner.Err()
 }
