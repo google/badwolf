@@ -24,7 +24,7 @@ INSERT DATA INTO ?g {
 };
 
 # Find all Joe's grandchildren.
-SELECT ?grandChildren
+SELECT ?offspring, ?grandChildren
 FROM ?g
 WHERE {
   /u<joe> "parent_of"@[] ?offspring .

@@ -27,5 +27,6 @@ You can find more detail information on each of the components of BadWolf below:
 * [Graph Marshaling/Unmarshaling](./docs/graph_serialization.md).
 * [BadWolf Query Language overview](./docs/bql.md).
 * [BadWolf Query Language planner](./docs/bql_query_planner.md).
+* [BadWolf command line tool](./docs/command_line_tool.md).
 
 [![Build Status](https://travis-ci.org/google/badwolf.svg?branch=master)](https://travis-ci.org/google/badwolf)
