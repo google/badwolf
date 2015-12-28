@@ -34,8 +34,9 @@ badwolf vCli (alpha-0.1.dev)
 The run command allows you to excecute all the BQL statements contained in a
 given file. All lines in the file starting with # will be treated as comments
 and will be discarded. An example of a file containing a set of executable
-statements can be found at [](../examples/bql/example_0.bql). Below you can
-find the output of using the `run` command against the previously mentioned.
+statements can be found at
+[examples/bql/example_0.bql](../examples/bql/example_0.bql).
+Below you can find the output of using the `run` command against the previously mentioned.
 
 ```
 $ badwolf run examples/bql/example_0.bql
