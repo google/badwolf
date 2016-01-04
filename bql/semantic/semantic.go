@@ -73,6 +73,7 @@ type Statement struct {
 	workingClause     *GraphClause
 	projection        []*Projection
 	workingProjection *Projection
+	groupBy           []string
 }
 
 // GraphClause represents a clause of a graph pattern in a where clause.

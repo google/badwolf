@@ -292,6 +292,8 @@ func TestAcceptQueryBySemanticParse(t *testing.T) {
 		`select ?s from ?g where{/_<foo> as ?s "id"@[?foo, 2016-07-19T13:12:04.669618843-07:00] ?o};`,
 		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[2015-07-19T13:12:04.669618843-07:00, ?bar] as ?o};`,
 		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[?foo, ?bar] as ?o};`,
+		// Test group by acceptance.
+		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[?foo, ?bar] as ?o} group by ?s;`,
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
@@ -313,6 +315,8 @@ func TestRejectByParseAndSemantic(t *testing.T) {
 		`select ?s from ?b where{/_<foo> as ?s  ?p "id"@[2019-07-19T13:12:04.669618843-07:00, 2015-07-19T13:12:04.669618843-07:00] as ?o};`,
 		// Check the bindings on the projection exist on the graph clauses.
 		`select ?foo from ?g where {?s ?p ?o};`,
+		// Reject invalid group by acceptance.
+		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[?foo, ?bar] as ?o} group by ?unknown;`,
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {

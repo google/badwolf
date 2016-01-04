@@ -133,11 +133,17 @@ var (
 	// woch contains the where clause subject hook.
 	woch ElementHook
 
-	// vach contains the variable accumulator hook.
+	// vach contains the accumulator hook.
 	vach ElementHook
 
-	// bgch contains the variable for checking bindings.
+	// bgch contains the hook for checking bindings.
 	bgch ClauseHook
+
+	// gbch contains the variable for collecting bindings from a group by.
+	gbch ElementHook
+
+	// gcch contrains the clause hook to validate group by bindings.
+	gcch ClauseHook
 )
 
 func init() {
@@ -150,6 +156,8 @@ func init() {
 	woch = whereObjectClause()
 	vach = varAccumulator()
 	bgch = bindingsGraphChecker()
+	gbch = groupByBindings()
+	gcch = groupByBindingsChecker()
 
 	predicateRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?\]$`)
 	boundRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?,"?([^\]"]*)"?\]$`)
@@ -199,10 +207,22 @@ func VarAccumulatorHook() ElementHook {
 	return vach
 }
 
-// VarBindingsGraphChecker returns the singleton for checking a query statement for
-// valid bidings in the select variables.
+// VarBindingsGraphChecker returns the singleton for checking a query statement
+// for valid bidings in the select variables.
 func VarBindingsGraphChecker() ClauseHook {
 	return bgch
+}
+
+// GroupByBindings returns the singleton for collecting all the group by
+// bidings.
+func GroupByBindings() ElementHook {
+	return gbch
+}
+
+// GroupByBindingsChecker returns the singleton to check that the group by
+// bindings are valid.
+func GroupByBindingsChecker() ClauseHook {
+	return gcch
 }
 
 // graphAccumulator returns an element hook that keeps track of the graphs
@@ -616,6 +636,44 @@ func bindingsGraphChecker() ClauseHook {
 		for _, b := range s.InputBindings() {
 			if _, ok := bs[b]; !ok {
 				return nil, fmt.Errorf("specified binding %s not found in where clause, only %v bindings are available", b, s.Bindings())
+			}
+		}
+		return f, nil
+	}
+	return f
+}
+
+// groupByBindings collects the bindings listed in the group by clause.
+func groupByBindings() ElementHook {
+	var f func(st *Statement, ce ConsumedElement) (ElementHook, error)
+	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+		if ce.IsSymbol() {
+			return f, nil
+		}
+		tkn := ce.Token()
+		if tkn.Type == lexer.ItemBinding {
+			st.groupBy = append(st.groupBy, tkn.Text)
+		}
+		return f, nil
+	}
+	return f
+}
+
+// groupByBindingsChecker checks that all group by bindings are valid ouytput
+// bindings.
+func groupByBindingsChecker() ClauseHook {
+	var f ClauseHook
+	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+		// Force working projection flush.
+		for _, gb := range s.groupBy {
+			found := false
+			for _, ob := range s.OutputBindings() {
+				if gb == ob {
+					found = true
+				}
+			}
+			if !found {
+				return nil, fmt.Errorf("invalid GROUP BY binging %s; available bindings %v", gb, s.OutputBindings())
 			}
 		}
 		return f, nil

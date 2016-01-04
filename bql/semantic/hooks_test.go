@@ -1219,3 +1219,93 @@ func TestBindingsGraphChecker(t *testing.T) {
 		}
 	}
 }
+
+func TestGroupByBindings(t *testing.T) {
+	f := groupByBindings()
+	testTable := []struct {
+		ces  []ConsumedElement
+		want []string
+	}{
+		{
+			ces: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: []string{"?foo", "?bar"},
+		},
+	}
+	st := &Statement{}
+	for _, entry := range testTable {
+		// Run all tokens.
+		for _, ce := range entry.ces {
+			if _, err := f(st, ce); err != nil {
+				t.Errorf("semantic.groupByBindings should never fail with error %v", err)
+			}
+		}
+		// Check collected ouytput.
+		if got, want := st.groupBy, entry.want; !reflect.DeepEqual(got, want) {
+			t.Errorf("semantic.groupByBindings failed to collect the expected group by bindings; got %v, want %v", got, want)
+		}
+	}
+}
+
+func TestGroupByBindingsChecker(t *testing.T) {
+	f := groupByBindingsChecker()
+	testTable := []struct {
+		id   string
+		s    *Statement
+		want bool
+	}{
+		{
+			id:   "empty statement",
+			s:    &Statement{},
+			want: true,
+		},
+		{
+			id: "one binding",
+			s: &Statement{
+				projection: []*Projection{
+					{Binding: "?foo"},
+				},
+				groupBy: []string{"?foo"},
+			},
+			want: true,
+		},
+		{
+			id: "two binding",
+			s: &Statement{
+				projection: []*Projection{
+					{Binding: "?foo"},
+					{Binding: "?bar"},
+				},
+				groupBy: []string{"?foo"},
+			},
+			want: true,
+		},
+		{
+			id: "invalid binding",
+			s: &Statement{
+				projection: []*Projection{
+					{Binding: "?foo"},
+					{Binding: "?bar"},
+				},
+				groupBy: []string{"?invalid_binding"},
+			},
+			want: false,
+		},
+	}
+	for _, entry := range testTable {
+		if _, err := f(entry.s, Symbol("FOO")); (err == nil) != entry.want {
+			t.Errorf("semantic.groupByBindingsChecker invalid  group by statement %#v for case %q; %v", entry.s, entry.id, err)
+		}
+	}
+}
