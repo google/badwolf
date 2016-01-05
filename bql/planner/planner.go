@@ -466,8 +466,7 @@ func (p *queryPlan) projectAndGroupBy() error {
 		// TODO(xllora): Sort and group the table.
 	}
 	// The table needs to be projected.
-	// TODO(xllora): Project the resulting table.
-	return nil
+	return p.tbl.ProjectBindings(p.stm.OutputBindings())
 }
 
 // Execute queries the indicated graphs.

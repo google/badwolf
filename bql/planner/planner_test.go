@@ -297,6 +297,31 @@ func TestQuery(t *testing.T) {
 			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
 		},
 		{
+			q:    `select ?s, ?p, ?o, ?k, ?l from ?test where {?s ?p ?o. ?k ?l ?m};`,
+			nbs:  5,
+			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
+		},
+		{
+			q:    `select ?s, ?p, ?o, ?k from ?test where {?s ?p ?o. ?k ?l ?m};`,
+			nbs:  4,
+			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
+		},
+		{
+			q:    `select ?s, ?p, ?o from ?test where {?s ?p ?o. ?k ?l ?m};`,
+			nbs:  3,
+			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
+		},
+		{
+			q:    `select ?s, ?p from ?test where {?s ?p ?o. ?k ?l ?m};`,
+			nbs:  2,
+			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
+		},
+		{
+			q:    `select ?s from ?test where {?s ?p ?o. ?k ?l ?m};`,
+			nbs:  1,
+			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
+		},
+		{
 			q:    `select ?o from ?test where {/u<peter> "bought"@[,] ?o};`,
 			nbs:  1,
 			nrws: 4,

@@ -835,15 +835,6 @@ func initSemanticBQL() {
 	setClauseHook([]semantic.Symbol{"INSERT_OBJECT"}, nil, semantic.TypeBindingClauseHook(semantic.Insert))
 	setClauseHook([]semantic.Symbol{"DELETE_OBJECT"}, nil, semantic.TypeBindingClauseHook(semantic.Delete))
 
-	// Global data accumulator hook.
-	setElementHook([]semantic.Symbol{"START"}, semantic.DataAccumulatorHook(),
-		func(cls *Clause) bool {
-			if t := cls.Elements[0].Token(); t != lexer.ItemInsert && t != lexer.ItemDelete {
-				return false
-			}
-			return true
-		})
-
 	// Query semantic hooks.
 	setClauseHook([]semantic.Symbol{"WHERE"}, semantic.WhereInitWorkingClauseHook(), semantic.VarBindingsGraphChecker())
 
@@ -883,4 +874,14 @@ func initSemanticBQL() {
 	grpSymbols := []semantic.Symbol{"GROUP_BY", "GROUP_BY_BINDINGS"}
 	setElementHook(grpSymbols, semantic.GroupByBindings(), nil)
 	setClauseHook([]semantic.Symbol{"GROUP_BY"}, nil, semantic.GroupByBindingsChecker())
+
+	// Global data accumulator hook.
+	setElementHook([]semantic.Symbol{"START"}, semantic.DataAccumulatorHook(),
+		func(cls *Clause) bool {
+			if t := cls.Elements[0].Token(); t != lexer.ItemInsert && t != lexer.ItemDelete {
+				return false
+			}
+			return true
+		})
+	setClauseHook([]semantic.Symbol{"START"}, nil, semantic.GroupByBindingsChecker())
 }

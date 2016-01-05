@@ -669,9 +669,7 @@ func groupByBindingsChecker() ClauseHook {
 		idxs = make(map[int]bool)
 		for _, gb := range s.groupBy {
 			found := false
-			for idx, prj := range s.Projections() {
-				fmt.Println(gb)
-				fmt.Println(prj)
+			for idx, prj := range s.projection {
 				if gb == prj.Alias || (prj.Alias == "" && gb == prj.Binding) {
 					if prj.OP != lexer.ItemError || prj.Modifier != lexer.ItemError {
 						return nil, fmt.Errorf("GROUP BY %s binding cannot refer to an aggregation function", gb)
@@ -684,12 +682,19 @@ func groupByBindingsChecker() ClauseHook {
 				return nil, fmt.Errorf("invalid GROUP BY binging %s; available bindings %v", gb, s.OutputBindings())
 			}
 		}
-		for idx, prj := range s.Projections() {
+		for idx, prj := range s.projection {
 			if idxs[idx] {
 				continue
 			}
-			if prj.OP == lexer.ItemError {
-				return nil, fmt.Errorf("Binding %q not listed on GROUP BY require an aggregation function", prj.Binding)
+			if len(s.groupBy) > 0 && prj.OP == lexer.ItemError {
+				return nil, fmt.Errorf("Binding %q not listed on GROUP BY requires an aggregation function", prj.Binding)
+			}
+			if len(s.groupBy) == 0 && prj.OP != lexer.ItemError {
+				s := prj.Alias
+				if s == "" {
+					s = prj.Binding
+				}
+				return nil, fmt.Errorf("Binding %q with aggregation %s function requires GROUP BY clause", s, prj.OP)
 			}
 		}
 		return f, nil

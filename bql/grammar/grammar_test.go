@@ -294,6 +294,7 @@ func TestAcceptQueryBySemanticParse(t *testing.T) {
 		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[?foo, ?bar] as ?o};`,
 		// Test group by acceptance.
 		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[?foo, ?bar] as ?o} group by ?s;`,
+		`select count(?s) as ?a, sum(?o) as ?b, ?o as ?c from ?g where{?s ?p ?o} group by ?c;`,
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
@@ -317,6 +318,9 @@ func TestRejectByParseAndSemantic(t *testing.T) {
 		`select ?foo from ?g where {?s ?p ?o};`,
 		// Reject invalid group by acceptance.
 		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[?foo, ?bar] as ?o} group by ?unknown;`,
+		`select count(?s) as ?a, sum(?o) as ?b, ?o as ?c from ?g where{?s ?p ?o};`,
+		`select count(?s) as ?a, sum(?o) as ?b, ?o as ?c from ?g where{?s ?p ?o} group by ?b;`,
+		`select count(?s) as ?a, sum(?o) as ?b, ?o as ?c from ?g where{?s ?p ?o} group by ?a;`,
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
