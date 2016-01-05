@@ -277,6 +277,63 @@ func TestAppendTable(t *testing.T) {
 	}
 }
 
+func TestProjectBindings(t *testing.T) {
+	testTable := []struct {
+		t       *Table
+		bs      []string
+		success bool
+		want    []string
+	}{
+		{
+			t:       testTable(t),
+			bs:      []string{},
+			success: true,
+			want:    []string{},
+		},
+		{
+			t:       testTable(t),
+			bs:      []string{"?bar", "?foo"},
+			success: true,
+			want:    []string{"?bar", "?foo"},
+		},
+		{
+			t:       testTable(t),
+			bs:      []string{"?bar"},
+			success: true,
+			want:    []string{"?bar"},
+		},
+		{
+			t:       testTable(t),
+			bs:      []string{"?foo"},
+			success: true,
+			want:    []string{"?foo"},
+		},
+
+		{
+			t:       testTable(t),
+			bs:      []string{"?bar", "?moo"},
+			success: false,
+		},
+		{
+			t:       testTable(t),
+			bs:      []string{"?moo"},
+			success: false,
+		},
+	}
+	for _, entry := range testTable {
+		if err := entry.t.ProjectBindings(entry.bs); (err != nil) == entry.success {
+			verb := "accept"
+			if !entry.success {
+				verb = "reject"
+			}
+			t.Errorf("Failed to %s project table %s on %s with error %v", verb, entry.t, entry.bs, err)
+		}
+		if got, want := entry.t.Bindings(), entry.want; entry.success && !reflect.DeepEqual(got, want) {
+			t.Errorf("Failed to return the proper bindings; got %s want %s", got, want)
+		}
+	}
+}
+
 func TestDisjoingBinding(t *testing.T) {
 	testTable := []struct {
 		b1   map[string]bool

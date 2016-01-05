@@ -145,6 +145,23 @@ func (t *Table) AddBindings(bs []string) {
 	}
 }
 
+// ProjectBindings replaces the current bidings with the projected one. The
+// provided bindings needs to be a subsed of the original bindings. If the
+// provided bindings are not a subset of the original ones, the projection will
+// fail, leave the table unmodified, and return an error. The projection only
+// modify the bindings, but does not drop non projected data.
+func (t *Table) ProjectBindings(bs []string) error {
+	for _, b := range bs {
+		if !t.mbs[b] {
+			return fmt.Errorf("cannot project against unknow binding %s; known bindinds are %v", b, t.bs)
+		}
+	}
+	t.bs = []string{}
+	t.mbs = make(map[string]bool)
+	t.AddBindings(bs)
+	return nil
+}
+
 // HasBinding returns true if the binding currently exist on the teable.
 func (t *Table) HasBinding(b string) bool {
 	return t.mbs[b]
