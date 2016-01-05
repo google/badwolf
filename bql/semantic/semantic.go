@@ -373,3 +373,8 @@ func (s *Statement) OutputBindings() []string {
 	}
 	return res
 }
+
+// GroupByBindings returns the bindings used on the group by statement.
+func (s *Statement) GroupByBindings() []string {
+	return s.groupBy
+}
