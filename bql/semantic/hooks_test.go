@@ -1281,7 +1281,28 @@ func TestGroupByBindingsChecker(t *testing.T) {
 			want: true,
 		},
 		{
+			id: "one binding missing aggregation target",
+			s: &Statement{
+				projection: []*Projection{
+					{Binding: "?foo", OP: lexer.ItemSum},
+				},
+				groupBy: []string{"?foo"},
+			},
+			want: false,
+		},
+		{
 			id: "two binding",
+			s: &Statement{
+				projection: []*Projection{
+					{Binding: "?foo"},
+					{Binding: "?bar", OP: lexer.ItemSum},
+				},
+				groupBy: []string{"?foo"},
+			},
+			want: true,
+		},
+		{
+			id: "two binding missing aggregation function",
 			s: &Statement{
 				projection: []*Projection{
 					{Binding: "?foo"},
@@ -1289,7 +1310,7 @@ func TestGroupByBindingsChecker(t *testing.T) {
 				},
 				groupBy: []string{"?foo"},
 			},
-			want: true,
+			want: false,
 		},
 		{
 			id: "invalid binding",

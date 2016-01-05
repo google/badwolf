@@ -665,15 +665,31 @@ func groupByBindingsChecker() ClauseHook {
 	var f ClauseHook
 	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
 		// Force working projection flush.
+		var idxs map[int]bool
+		idxs = make(map[int]bool)
 		for _, gb := range s.groupBy {
 			found := false
-			for _, ob := range s.OutputBindings() {
-				if gb == ob {
+			for idx, prj := range s.Projections() {
+				fmt.Println(gb)
+				fmt.Println(prj)
+				if gb == prj.Alias || (prj.Alias == "" && gb == prj.Binding) {
+					if prj.OP != lexer.ItemError || prj.Modifier != lexer.ItemError {
+						return nil, fmt.Errorf("GROUP BY %s binding cannot refer to an aggregation function", gb)
+					}
+					idxs[idx] = true
 					found = true
 				}
 			}
 			if !found {
 				return nil, fmt.Errorf("invalid GROUP BY binging %s; available bindings %v", gb, s.OutputBindings())
+			}
+		}
+		for idx, prj := range s.Projections() {
+			if idxs[idx] {
+				continue
+			}
+			if prj.OP == lexer.ItemError {
+				return nil, fmt.Errorf("Binding %q not listed on GROUP BY require an aggregation function", prj.Binding)
 			}
 		}
 		return f, nil
