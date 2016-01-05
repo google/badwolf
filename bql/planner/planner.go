@@ -456,11 +456,28 @@ func (p *queryPlan) processGraphPattern(lo *storage.LookupOptions) error {
 	return nil
 }
 
+// projectAndGroupBy takes the resulting table and projects its contents and
+// groups it by if needed.
+func (p *queryPlan) projectAndGroupBy() error {
+	grp := p.stm.GroupByBindings()
+	if len(grp) > 0 {
+		// The table requires grouping. In order to group it, we need to sort the
+		// table and then apply the grouping functions while creating a new table.
+		// TODO(xllora): Sort and group the table.
+	}
+	// The table needs to be projected.
+	// TODO(xllora): Project the resulting table.
+	return nil
+}
+
 // Execute queries the indicated graphs.
 func (p *queryPlan) Excecute() (*table.Table, error) {
 	// Retrieve the data.
 	lo := &storage.LookupOptions{}
 	if err := p.processGraphPattern(lo); err != nil {
+		return nil, err
+	}
+	if err := p.projectAndGroupBy(); err != nil {
 		return nil, err
 	}
 	return p.tbl, nil

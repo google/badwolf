@@ -73,6 +73,7 @@ type Statement struct {
 	workingClause     *GraphClause
 	projection        []*Projection
 	workingProjection *Projection
+	groupBy           []string
 }
 
 // GraphClause represents a clause of a graph pattern in a where clause.
@@ -371,4 +372,9 @@ func (s *Statement) OutputBindings() []string {
 		}
 	}
 	return res
+}
+
+// GroupByBindings returns the bindings used on the group by statement.
+func (s *Statement) GroupByBindings() []string {
+	return s.groupBy
 }
