@@ -450,3 +450,103 @@ func TestTruncate(t *testing.T) {
 		t.Errorf("Failed to create a table with %d rows instead of %v", got, want)
 	}
 }
+
+func TestStringLess(t *testing.T) {
+	testTable := []struct {
+		i    string
+		j    string
+		desc bool
+		less int
+	}{
+		{"", "", false, 0},
+		{"", "", true, 0},
+		{" 1", "1 ", false, 0},
+		{" 1", "1 ", true, 0},
+		{" 1", "2 ", false, -1},
+		{" 1", "2 ", true, 1},
+		{" 2", "1 ", false, 1},
+		{" 2", "1 ", true, -1},
+	}
+	for _, entry := range testTable {
+		if got, want := stringLess(entry.i, entry.j, entry.desc), entry.less; got != want {
+			t.Errorf("table.stringLess(%q, %q, %v) = %d, want %d", entry.i, entry.j, entry.desc, got, want)
+		}
+	}
+}
+
+func TestRowLess(t *testing.T) {
+	r1 := Row{
+		"?s": &Cell{S: "1"},
+		"?t": &Cell{S: "1"},
+	}
+	r2 := Row{
+		"?s": &Cell{S: "2"},
+		"?t": &Cell{S: "1"},
+	}
+	testTable := []struct {
+		ri   Row
+		rj   Row
+		cfg  SortConfig
+		less bool
+	}{
+		{r1, r2, SortConfig{{"?s", false}}, true},
+		{r1, r2, SortConfig{{"?s", true}}, false},
+		{r1, r2, SortConfig{{"?t", false}}, false},
+		{r1, r2, SortConfig{{"?t", true}}, false},
+		{r1, r2, SortConfig{{"?t", false}, {"?s", false}}, true},
+		{r1, r2, SortConfig{{"?t", false}, {"?s", true}}, false},
+		{r1, r2, SortConfig{{"?t", false}, {"?t", false}}, false},
+		{r1, r2, SortConfig{{"?t", false}, {"?t", true}}, false},
+		{r1, r2, SortConfig{{"?t", true}, {"?t", false}}, false},
+		{r1, r2, SortConfig{{"?t", true}, {"?t", true}}, false},
+	}
+
+	for _, entry := range testTable {
+		if got, want := rowLess(entry.ri, entry.rj, entry.cfg), entry.less; got != want {
+			t.Errorf("table.rowLess(%v, %v, %v) = %v; want %v", entry.ri, entry.rj, entry.cfg, got, want)
+		}
+	}
+}
+
+func TestSort(t *testing.T) {
+	table := func() *Table {
+		return &Table{
+			bs: []string{"?s", "?t"},
+			mbs: map[string]bool{
+				"?s": true,
+				"?t": true,
+			},
+			data: []Row{
+				{
+					"?s": &Cell{S: "1"},
+					"?t": &Cell{S: "1"},
+				},
+				{
+					"?s": &Cell{S: "2"},
+					"?t": &Cell{S: "1"},
+				},
+			},
+		}
+	}
+	testTable := []struct {
+		t    *Table
+		cfg  SortConfig
+		desc bool
+	}{
+		{table(), SortConfig{{"?s", false}}, false},
+		{table(), SortConfig{{"?s", true}}, true},
+		{table(), SortConfig{{"?t", false}, {"?s", false}}, false},
+		{table(), SortConfig{{"?t", true}, {"?s", false}}, false},
+		{table(), SortConfig{{"?t", false}, {"?s", true}}, true},
+		{table(), SortConfig{{"?t", true}, {"?s", true}}, true},
+	}
+
+	for _, entry := range testTable {
+		entry.t.Sort(entry.cfg)
+		s1, s2 := entry.t.data[0]["?s"].S, entry.t.data[1]["?s"].S
+		b := s1 < s2
+		if !entry.desc && !b || entry.desc && b {
+			t.Errorf("table.Sort failed to sort table DESC=%v; returned\n%s", entry.desc, entry.t)
+		}
+	}
+}

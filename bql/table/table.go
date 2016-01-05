@@ -18,6 +18,7 @@ package table
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -281,4 +282,92 @@ func (t *Table) DeleteRow(i int) error {
 // Truncate flushes all the data away. It still retains all set bindings.
 func (t *Table) Truncate() {
 	t.data = []Row{}
+}
+
+// SortConfig contains the sorting information. Contains the binding order
+// to use wile sorting as well as the deriction for each of them to use.
+type SortConfig []struct {
+	Binding string
+	Desc    bool
+}
+
+type bySortConfig struct {
+	rows []Row
+	cfg  SortConfig
+}
+
+// Len returns the lenght of the table.
+func (c bySortConfig) Len() int {
+	return len(c.rows)
+}
+
+// Swap exchange the i and j rows in the table.
+func (c bySortConfig) Swap(i, j int) {
+	c.rows[i], c.rows[j] = c.rows[j], c.rows[i]
+}
+
+func stringLess(rsi, rsj string, desc bool) int {
+	si, sj := strings.TrimSpace(rsi), strings.TrimSpace(rsj)
+	if (si == "" && sj == "") || si == sj {
+		return 0
+	}
+	b := 1
+	if si < sj {
+		b = -1
+	}
+	if desc {
+		b *= -1
+	}
+	return b
+}
+
+func rowLess(ri, rj Row, c SortConfig) bool {
+	if c == nil {
+		return false
+	}
+	cfg, last := c[0], len(c) == 1
+	ci, cj := ri[cfg.Binding], rj[cfg.Binding]
+	si, sj := "", ""
+	// Check if it has a string.
+	if ci.S != "" && cj.S != "" {
+		si, sj = ci.S, cj.S
+	}
+	// Check if it has a nodes.
+	if ci.N != nil && cj.N != nil {
+		si, sj = ci.N.String(), cj.N.String()
+	}
+	// Check if it has a predicates.
+	if ci.P != nil && cj.P != nil {
+		si, sj = ci.P.String(), cj.P.String()
+	}
+	// Check if it has a literal.
+	if ci.L != nil && cj.L != nil {
+		si, sj = ci.L.ToComparableString(), cj.L.ToComparableString()
+	}
+	// Check if it has a time anchor.
+	if ci.T != nil && cj.T != nil {
+		si, sj = ci.T.Format(time.RFC3339Nano), cj.T.Format(time.RFC3339Nano)
+	}
+	l := stringLess(si, sj, cfg.Desc)
+	if l < 0 {
+		return true
+	}
+	if l > 0 || last {
+		return false
+	}
+	return rowLess(ri, rj, c[1:])
+}
+
+// Less returns true if the i row is less than j one.
+func (c bySortConfig) Less(i, j int) bool {
+	ri, rj, cfg := c.rows[i], c.rows[j], c.cfg
+	return rowLess(ri, rj, cfg)
+}
+
+// Sort sorts the table given a sort configuration.
+func (t *Table) Sort(cfg SortConfig) {
+	if cfg == nil {
+		return
+	}
+	sort.Sort(bySortConfig{t.data, cfg})
 }

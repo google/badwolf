@@ -15,7 +15,6 @@
 package literal
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
@@ -107,7 +106,38 @@ func TestPrettyPrinting(t *testing.T) {
 		if err != nil {
 			t.Errorf("Failed to generate literal for case %v with error %v", tc, err)
 		}
-		if got := fmt.Sprintf("%s", lit); got != tc.want {
+		if got := lit.String(); got != tc.want {
+			t.Errorf("Failed to pretty print a literal; got %s, want %s", got, tc.want)
+		}
+	}
+}
+
+func TestToComparableString(t *testing.T) {
+	table := []struct {
+		t    Type
+		v    interface{}
+		want string
+	}{
+		// Successful cases.
+		{Bool, true, `"true"^^type:bool`},
+		{Bool, false, `"false"^^type:bool`},
+		{Int64, int64(-1), `"-0000000000000000000000000000001"^^type:int64`},
+		{Int64, int64(0), `"00000000000000000000000000000000"^^type:int64`},
+		{Int64, int64(1), `"00000000000000000000000000000001"^^type:int64`},
+		{Float64, float64(-1), `"-000000000000000000000001.000000"^^type:float64`},
+		{Float64, float64(0), `"0000000000000000000000000.000000"^^type:float64`},
+		{Float64, float64(1), `"0000000000000000000000001.000000"^^type:float64`},
+		{Text, "", `""^^type:text`},
+		{Text, "some random string", `"some random string"^^type:text`},
+		{Blob, []byte{}, `"[]"^^type:blob`},
+		{Blob, []byte("some random bytes"), `"[115 111 109 101 32 114 97 110 100 111 109 32 98 121 116 101 115]"^^type:blob`},
+	}
+	for _, tc := range table {
+		lit, err := DefaultBuilder().Build(tc.t, tc.v)
+		if err != nil {
+			t.Errorf("Failed to generate literal for case %v with error %v", tc, err)
+		}
+		if got := lit.ToComparableString(); got != tc.want {
 			t.Errorf("Failed to pretty print a literal; got %s, want %s", got, tc.want)
 		}
 	}

@@ -72,6 +72,20 @@ func (l *Literal) String() string {
 	return fmt.Sprintf("\"%v\"^^type:%v", l.Interface(), l.Type())
 }
 
+// ToComparableString returns a string that can be directly compared.
+func (l *Literal) ToComparableString() string {
+	s := ""
+	switch l.t {
+	case Int64:
+		s = fmt.Sprintf("\"%032d\"^^type:%v", l.Interface(), l.Type())
+	case Float64:
+		s = fmt.Sprintf("\"%032f\"^^type:%v", l.Interface(), l.Type())
+	default:
+		s = l.String()
+	}
+	return s
+}
+
 // Bool returns the value of a literal as a boolean.
 func (l *Literal) Bool() (bool, error) {
 	if l.t != Bool {
