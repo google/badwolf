@@ -441,8 +441,58 @@ func NewCountDistinctAccumulator() Accumulator {
 	}
 }
 
-/*
-func (t *Table) groupRange(i, j int, ma map[string]Accumulator) (Row, error) {
-	return nil, nil
+// groupRangeReduce takes a sorted range and generates a new row containing
+// the aggregated colums and the non agggregated ones.
+func (t *Table) groupRangeReduce(i, j int, alias map[string]string, acc map[string]Accumulator) (Row, error) {
+	if i > j {
+		return nil, fmt.Errorf("cannot aggregate empty ranges [%d, %d)", i, j)
+	}
+	rng := t.data[i:j]
+	vaccs := make(map[string]interface{})
+	// Aggregate the range using the provided aggreators.
+	for _, r := range rng {
+		for b, a := range acc {
+			av, err := a(r[b])
+			if err != nil {
+				return nil, err
+			}
+			vaccs[b] = av
+		}
+	}
+	// Create a new row based on the resulting aggregations with the proper
+	// binding aliasing and the non aggregated values.
+	newRow := Row{}
+	for b, v := range rng[0] {
+		acc, ok := vaccs[b]
+		if !ok {
+			if a, ok := alias[b]; ok {
+				newRow[a] = v
+			} else {
+				newRow[b] = v
+			}
+		} else {
+			a, ok := alias[b]
+			if !ok {
+				return nil, fmt.Errorf("aggregated bindings require and alias; binding %s missing alias", b)
+			}
+			// Accumulators currently only can return numeric literals.
+			switch acc.(type) {
+			case int64:
+				l, err := literal.DefaultBuilder().Build(literal.Int64, acc)
+				if err != nil {
+					return nil, err
+				}
+				newRow[a] = &Cell{L: l}
+			case float64:
+				l, err := literal.DefaultBuilder().Build(literal.Float64, acc)
+				if err != nil {
+					return nil, err
+				}
+				newRow[a] = &Cell{L: l}
+			default:
+				return nil, fmt.Errorf("aggregation of binding %s returned unknown value %v or type", b, acc)
+			}
+		}
+	}
+	return newRow, nil
 }
-*/

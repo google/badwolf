@@ -660,3 +660,65 @@ func TestCountAccumulators(t *testing.T) {
 		t.Errorf("Count distinct accumulator failed; got %d, want %d", got, want)
 	}
 }
+
+func TestGroupRangeReduce(t *testing.T) {
+	int64LiteralCell := func(i int64) *Cell {
+		l, _ := literal.DefaultBuilder().Build(literal.Int64, i)
+		return &Cell{L: l}
+	}
+	testTable := []struct {
+		tbl   *Table
+		alias map[string]string
+		acc   map[string]Accumulator
+		want  Row
+	}{
+		{
+			tbl:   testTable(t),
+			alias: map[string]string{"?bar": "?bar_alias"},
+			acc:   map[string]Accumulator{"?bar": NewCountAccumulator()},
+			want: Row{
+				"?foo":       &Cell{S: "foo"},
+				"?bar_alias": int64LiteralCell(int64(3)),
+			},
+		},
+		{
+			tbl:   testTable(t),
+			alias: map[string]string{"?foo": "?foo_alias"},
+			acc:   map[string]Accumulator{"?foo": NewCountAccumulator()},
+			want: Row{
+				"?bar":       &Cell{S: "bar"},
+				"?foo_alias": int64LiteralCell(int64(3)),
+			},
+		},
+		{
+			tbl: testTable(t),
+			alias: map[string]string{
+				"?foo": "?foo_alias",
+				"?bar": "?bar_alias",
+			},
+			acc: map[string]Accumulator{"?foo": NewCountAccumulator()},
+			want: Row{
+				"?bar_alias": &Cell{S: "bar"},
+				"?foo_alias": int64LiteralCell(int64(3)),
+			},
+		},
+		{
+			tbl:   testTable(t),
+			alias: map[string]string{"?foo": "?foo_alias"},
+			acc:   map[string]Accumulator{"?bar": NewCountAccumulator()},
+		},
+	}
+	for _, entry := range testTable {
+		got, err := entry.tbl.groupRangeReduce(0, entry.tbl.NumRows(), entry.alias, entry.acc)
+		want := entry.want
+		if want != nil && err != nil {
+			t.Errorf("table.groupRangeReduce failed to compute reduced row with error %v", err)
+		}
+		if want == nil && err == nil {
+			t.Errorf("table.groupRangeReduce should have failed to reduced row; instead it produced %v", got)
+		}
+		if want != nil && !reflect.DeepEqual(got, want) {
+			t.Errorf("table.groupRangeReduce failed to produce correct reduce row; got %s, want %s", got, want)
+		}
+	}
+}
