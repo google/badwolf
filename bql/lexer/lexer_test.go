@@ -37,10 +37,13 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemGT, Text: ">"},
 				{Type: ItemEQ, Text: "="},
 				{Type: ItemEOF}}},
-		{"?foo ?bar",
+		{"?foo ?bar ?1234 ?foo_bar ?bar_foo",
 			[]Token{
 				{Type: ItemBinding, Text: "?foo"},
 				{Type: ItemBinding, Text: "?bar"},
+				{Type: ItemBinding, Text: "?1234"},
+				{Type: ItemBinding, Text: "?foo_bar"},
+				{Type: ItemBinding, Text: "?bar_foo"},
 				{Type: ItemEOF}}},
 		{`SeLeCt FrOm WhErE As BeFoRe AfTeR BeTwEeN CoUnT SuM GrOuP bY HaViNg LiMiT
 		  OrDeR AsC DeSc NoT AnD Or Id TyPe At DiStInCt InSeRt DeLeTe DaTa InTo

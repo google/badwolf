@@ -411,7 +411,7 @@ func isSingleSymboToken(l *lexer, tt TokenType, symbol rune) stateFn {
 // lexBinding lexes a binding variable.
 func lexBinding(l *lexer) stateFn {
 	for {
-		if r := l.next(); !unicode.IsLetter(r) || r == eof {
+		if r := l.next(); !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != rune('_') || r == eof {
 			l.backup()
 			l.emit(ItemBinding)
 			break
