@@ -562,15 +562,15 @@ func (t *Table) groupRangeReduce(i, j int, alias map[string]string, acc map[stri
 // BindingOrderedMapping represnents an ordered maping of input and output
 // binding alias.
 type BindingOrderedMapping []struct {
-	in  string
-	out string
+	In  string
+	Out string
 }
 
 // Map constructs a map of accumulators indexed by their binding name.
 func (b BindingOrderedMapping) Map() map[string]string {
 	m := make(map[string]string)
 	for _, o := range b {
-		m[o.in] = o.out
+		m[o.In] = o.Out
 	}
 	return m
 }
@@ -579,12 +579,15 @@ func (b BindingOrderedMapping) Map() map[string]string {
 func (b BindingOrderedMapping) Outputs() []string {
 	out := []string{}
 	for _, o := range b {
-		out = append(out, o.out)
+		out = append(out, o.Out)
 	}
 	return out
 }
 
 // Reduce alters the table by sorting and then range grouping the table data.
+// In order to group reduce the table, we sort the table and then apply the
+// accumulator functions to each group. Finally, the table metadata gets
+// updated to reflect the reduce operation.
 func (t *Table) Reduce(cfg SortConfig, sortedAlias BindingOrderedMapping, acc map[string]Accumulator) error {
 	alias := sortedAlias.Map()
 	// Input validation tests.

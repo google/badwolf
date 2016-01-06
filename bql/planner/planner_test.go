@@ -361,6 +361,16 @@ func TestQuery(t *testing.T) {
 			nbs:  1,
 			nrws: 4,
 		},
+		{
+			q:    `select ?grand_parent, count(?name) as ?grand_children from ?test where {/u<joe> as ?grand_parent "parent_of"@[] ?offspring . ?offspring "parent_of"@[] ?name} group by ?grand_parent;`,
+			nbs:  2,
+			nrws: 1,
+		},
+		{
+			q:    `select ?grand_parent, count(distinct ?name) as ?grand_children from ?test where {/u<joe> as ?grand_parent "parent_of"@[] ?offspring . ?offspring "parent_of"@[] ?name} group by ?grand_parent;`,
+			nbs:  2,
+			nrws: 1,
+		},
 	}
 
 	s := populateTestStore(t)

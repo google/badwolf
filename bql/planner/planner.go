@@ -23,6 +23,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/bql/semantic"
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/storage"
@@ -460,13 +461,64 @@ func (p *queryPlan) processGraphPattern(lo *storage.LookupOptions) error {
 // groups it by if needed.
 func (p *queryPlan) projectAndGroupBy() error {
 	grp := p.stm.GroupByBindings()
-	if len(grp) > 0 {
-		// The table requires grouping. In order to group it, we need to sort the
-		// table and then apply the grouping functions while creating a new table.
-		// TODO(xllora): Sort and group the table.
+	if len(grp) == 0 {
+		// The table only needs to be projected.
+		return p.tbl.ProjectBindings(p.stm.OutputBindings())
 	}
-	// The table needs to be projected.
-	return p.tbl.ProjectBindings(p.stm.OutputBindings())
+	// The table needs to be group reduced.
+	// Project only binding involved in the group operation.
+	tmpBindings := []string{}
+	// The table requires group reduce.
+	cfg := table.SortConfig{}
+	alias := table.BindingOrderedMapping{}
+	acc := make(map[string]table.Accumulator)
+	for _, prj := range p.stm.Projections() {
+		// Only include used incoming bindings.
+		tmpBindings = append(tmpBindings, prj.Binding)
+		// Update sorting configuration.
+		found := false
+		for _, g := range p.stm.GroupByBindings() {
+			if prj.Binding == g {
+				found = true
+			}
+		}
+		if found {
+			cfg = append(cfg, table.SortConfig{{Binding: prj.Binding}}...)
+		}
+		// Update alias mapping.
+		if prj.Alias == "" {
+			alias = append(alias, table.BindingOrderedMapping{{In: prj.Binding, Out: prj.Binding}}...)
+		} else {
+			alias = append(alias, table.BindingOrderedMapping{{In: prj.Binding, Out: prj.Alias}}...)
+		}
+		// Update accumulators.
+		switch prj.OP {
+		case lexer.ItemCount:
+			if prj.Modifier == lexer.ItemDistinct {
+				acc[prj.Binding] = table.NewCountDistinctAccumulator()
+			} else {
+				acc[prj.Binding] = table.NewCountAccumulator()
+			}
+		case lexer.ItemSum:
+			cell := p.tbl.Rows()[0][prj.Binding]
+			if cell.L == nil {
+				return fmt.Errorf("cannot only sum int64 and float64 literals; found %s instead for binding %q", cell, prj.Binding)
+			}
+			switch cell.L.Type() {
+			case literal.Int64:
+				acc[prj.Binding] = table.NewSumInt64LiteralAccumulator(0)
+			case literal.Float64:
+				acc[prj.Binding] = table.NewSumFloat64LiteralAccumulator(0)
+			default:
+				return fmt.Errorf("cannot only sum int64 and float64 literals; found literal type %s instead for binding %q", cell.L.Type(), prj.Binding)
+			}
+		}
+	}
+	if err := p.tbl.ProjectBindings(tmpBindings); err != nil {
+		return err
+	}
+	p.tbl.Reduce(cfg, alias, acc)
+	return nil
 }
 
 // Execute queries the indicated graphs.
