@@ -607,3 +607,30 @@ func TestSort(t *testing.T) {
 		}
 	}
 }
+
+func TestAccumulators(t *testing.T) {
+	// int64 sum accumulator.
+	var (
+		iv interface{}
+		ia = NewSumInt64LiteralAccumulator(0)
+	)
+	for i := int64(0); i < 5; i++ {
+		l, _ := literal.DefaultBuilder().Build(literal.Int64, i)
+		iv, _ = ia(l)
+	}
+	if got, want := iv.(int64), int64(10); got != want {
+		t.Errorf("Int64 sum accumulator failed; got %d, want %d", got, want)
+	}
+	// float64 sum accumulator.
+	var (
+		fv interface{}
+		fa = NewSumFloat64LiteralAccumulator(0)
+	)
+	for i := float64(0); i < 5; i += 1.0 {
+		l, _ := literal.DefaultBuilder().Build(literal.Float64, i)
+		fv, _ = fa(l)
+	}
+	if got, want := fv.(float64), float64(10); got != want {
+		t.Errorf("Int64 sum accumulator failed; got %d, want %d", got, want)
+	}
+}

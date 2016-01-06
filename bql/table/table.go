@@ -388,3 +388,41 @@ func (t *Table) Sort(cfg SortConfig) {
 	}
 	sort.Sort(bySortConfig{t.data, cfg})
 }
+
+// Accumulator type represents a generic accumulator for independent values
+// expressed as the element of the array slice. Returns the values after being
+// accumulated. If the wrong type is passed in, it will crash casting the
+// interface.
+type Accumulator func(interface{}) (interface{}, error)
+
+// NewSumInt64LiteralAccumulator accumulates the int64 types of a literal.
+func NewSumInt64LiteralAccumulator(s int64) Accumulator {
+	return func(vs interface{}) (interface{}, error) {
+		l := vs.(*literal.Literal)
+		v, err := l.Int64()
+		if err != nil {
+			return s, err
+		}
+		s += v
+		return s, nil
+	}
+}
+
+// NewSumFloat64LiteralAccumulator accumulates the float64 types of a literal.
+func NewSumFloat64LiteralAccumulator(s float64) Accumulator {
+	return func(vs interface{}) (interface{}, error) {
+		l := vs.(*literal.Literal)
+		v, err := l.Float64()
+		if err != nil {
+			return s, err
+		}
+		s += v
+		return s, nil
+	}
+}
+
+/*
+func (t *Table) groupRange(i, j int, ma map[string]Accumulator) (Row, error) {
+	return nil, nil
+}
+*/
