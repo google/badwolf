@@ -616,7 +616,7 @@ func TestSumAccumulators(t *testing.T) {
 	)
 	for i := int64(0); i < 5; i++ {
 		l, _ := literal.DefaultBuilder().Build(literal.Int64, i)
-		iv, _ = ia(l)
+		iv, _ = ia.Accumulate(l)
 	}
 	if got, want := iv.(int64), int64(10); got != want {
 		t.Errorf("Int64 sum accumulator failed; got %d, want %d", got, want)
@@ -628,7 +628,7 @@ func TestSumAccumulators(t *testing.T) {
 	)
 	for i := float64(0); i < 5; i += 1.0 {
 		l, _ := literal.DefaultBuilder().Build(literal.Float64, i)
-		fv, _ = fa(l)
+		fv, _ = fa.Accumulate(l)
 	}
 	if got, want := fv.(float64), float64(10); got != want {
 		t.Errorf("Int64 sum accumulator failed; got %f, want %f", got, want)
@@ -642,7 +642,7 @@ func TestCountAccumulators(t *testing.T) {
 		ca = NewCountAccumulator()
 	)
 	for i := int64(0); i < 5; i++ {
-		cv, _ = ca(i)
+		cv, _ = ca.Accumulate(i)
 	}
 	if got, want := cv.(int64), int64(5); got != want {
 		t.Errorf("Count accumulator failed; got %d, want %d", got, want)
@@ -654,7 +654,7 @@ func TestCountAccumulators(t *testing.T) {
 	)
 	for i := int64(0); i < 10; i++ {
 		l, _ := literal.DefaultBuilder().Build(literal.Int64, i%2)
-		dv, _ = da(l)
+		dv, _ = da.Accumulate(l)
 	}
 	if got, want := dv.(int64), int64(2); got != want {
 		t.Errorf("Count distinct accumulator failed; got %d, want %d", got, want)
@@ -702,6 +702,7 @@ func TestGroupRangeReduce(t *testing.T) {
 				"?foo_alias": int64LiteralCell(int64(3)),
 			},
 		},
+		// Proper rejection tests.
 		{
 			tbl:   testTable(t),
 			alias: map[string]string{"?foo": "?foo_alias"},
@@ -715,10 +716,258 @@ func TestGroupRangeReduce(t *testing.T) {
 			t.Errorf("table.groupRangeReduce failed to compute reduced row with error %v", err)
 		}
 		if want == nil && err == nil {
-			t.Errorf("table.groupRangeReduce should have failed to reduced row; instead it produced %v", got)
+			t.Errorf("table.groupRangeReduce should have failed to reduced row; instead it produced\n%v", got)
 		}
 		if want != nil && !reflect.DeepEqual(got, want) {
-			t.Errorf("table.groupRangeReduce failed to produce correct reduce row; got %s, want %s", got, want)
+			t.Errorf("table.groupRangeReduce failed to produce correct reduce row; got\n%s, want\n%s", got, want)
+		}
+	}
+}
+
+func TestTableReduce(t *testing.T) {
+	int64LiteralCell := func(i int64) *Cell {
+		l, _ := literal.DefaultBuilder().Build(literal.Int64, i)
+		return &Cell{L: l}
+	}
+	testTable := []struct {
+		tbl   *Table
+		cfg   SortConfig
+		alias BindingOrderedMapping
+		acc   map[string]Accumulator
+		want  *Table
+	}{
+		{
+			tbl: &Table{
+				bs: []string{"?foo", "?bar"},
+				mbs: map[string]bool{
+					"?foo": true,
+					"?bar": true,
+				},
+				data: []Row{
+					{
+						"?foo": &Cell{S: "foo"},
+						"?bar": &Cell{S: "bar"},
+					},
+					{
+						"?foo": &Cell{S: "foo"},
+						"?bar": &Cell{S: "bar"},
+					},
+					{
+						"?foo": &Cell{S: "foo"},
+						"?bar": &Cell{S: "bar"},
+					},
+				},
+			},
+			cfg: SortConfig{{"?foo", false}},
+			alias: BindingOrderedMapping{
+				{"?foo", "?foo_alias"},
+				{"?bar", "?bar_alias"},
+			},
+			acc: map[string]Accumulator{"?bar": NewCountAccumulator()},
+			want: &Table{
+				bs: []string{"?foo_alias", "?bar_alias"},
+				mbs: map[string]bool{
+					"?foo_alias": true,
+					"?bar_alias": true,
+				},
+				data: []Row{
+					{
+						"?foo_alias": &Cell{S: "foo"},
+						"?bar_alias": int64LiteralCell(int64(3)),
+					},
+				},
+			},
+		},
+		{
+			tbl: &Table{
+				bs: []string{"?foo", "?bar"},
+				mbs: map[string]bool{
+					"?foo": true,
+					"?bar": true,
+				},
+				data: []Row{
+					{
+						"?foo": &Cell{S: "foo"},
+						"?bar": &Cell{S: "bar"},
+					},
+					{
+						"?foo": &Cell{S: "foo"},
+						"?bar": &Cell{S: "bar"},
+					},
+					{
+						"?foo": &Cell{S: "foo"},
+						"?bar": &Cell{S: "bar"},
+					},
+					{
+						"?foo": &Cell{S: "foo2"},
+						"?bar": &Cell{S: "bar2"},
+					},
+					{
+						"?foo": &Cell{S: "foo2"},
+						"?bar": &Cell{S: "bar2"},
+					},
+					{
+						"?foo": &Cell{S: "foo3"},
+						"?bar": &Cell{S: "bar3"},
+					},
+				},
+			},
+			cfg: SortConfig{{"?foo", false}},
+			alias: BindingOrderedMapping{
+				{"?foo", "?foo_alias"},
+				{"?bar", "?bar_alias"},
+			},
+			acc: map[string]Accumulator{"?bar": NewCountAccumulator()},
+			want: &Table{
+				bs: []string{"?foo_alias", "?bar_alias"},
+				mbs: map[string]bool{
+					"?foo_alias": true,
+					"?bar_alias": true,
+				},
+				data: []Row{
+					{
+						"?foo_alias": &Cell{S: "foo"},
+						"?bar_alias": int64LiteralCell(int64(3)),
+					},
+					{
+						"?foo_alias": &Cell{S: "foo2"},
+						"?bar_alias": int64LiteralCell(int64(2)),
+					},
+					{
+						"?foo_alias": &Cell{S: "foo3"},
+						"?bar_alias": int64LiteralCell(int64(1)),
+					},
+				},
+			},
+		},
+		{
+			tbl: &Table{
+				bs: []string{"?foo", "?bar"},
+				mbs: map[string]bool{
+					"?foo": true,
+					"?bar": true,
+				},
+				data: []Row{
+					{
+						"?foo": &Cell{S: "foo"},
+						"?bar": &Cell{S: "bar"},
+					},
+					{
+						"?foo": &Cell{S: "foo"},
+						"?bar": &Cell{S: "bar"},
+					},
+					{
+						"?foo": &Cell{S: "foo"},
+						"?bar": &Cell{S: "bar"},
+					},
+					{
+						"?foo": &Cell{S: "foo2"},
+						"?bar": &Cell{S: "bar2"},
+					},
+					{
+						"?foo": &Cell{S: "foo2"},
+						"?bar": &Cell{S: "bar2"},
+					},
+					{
+						"?foo": &Cell{S: "foo3"},
+						"?bar": &Cell{S: "bar3"},
+					},
+				},
+			},
+			cfg: SortConfig{{"?foo", true}},
+			alias: BindingOrderedMapping{
+				{"?foo", "?foo_alias"},
+				{"?bar", "?bar_alias"},
+			},
+			acc: map[string]Accumulator{"?bar": NewCountAccumulator()},
+			want: &Table{
+				bs: []string{"?foo_alias", "?bar_alias"},
+				mbs: map[string]bool{
+					"?foo_alias": true,
+					"?bar_alias": true,
+				},
+				data: []Row{
+					{
+						"?foo_alias": &Cell{S: "foo3"},
+						"?bar_alias": int64LiteralCell(int64(1)),
+					},
+					{
+						"?foo_alias": &Cell{S: "foo2"},
+						"?bar_alias": int64LiteralCell(int64(2)),
+					},
+					{
+						"?foo_alias": &Cell{S: "foo"},
+						"?bar_alias": int64LiteralCell(int64(3)),
+					},
+				},
+			},
+		},
+		// Proper rejection tests.
+		{
+			tbl: testTable(t),
+			cfg: SortConfig{{"?foo", false}},
+			alias: BindingOrderedMapping{
+				{"?bar", "?bar_alias"},
+			},
+			acc: map[string]Accumulator{"?bar": NewCountAccumulator()},
+		},
+		{
+			tbl: testTable(t),
+			cfg: SortConfig{{"?foo", false}},
+			alias: BindingOrderedMapping{
+				{"?bar", "?bar_alias"},
+			},
+			acc: map[string]Accumulator{"?bar": NewCountAccumulator()},
+		},
+		{
+			tbl: testTable(t),
+			cfg: SortConfig{{"?wrong_foo", false}},
+			alias: BindingOrderedMapping{
+				{"?foo", "?foo_alias"},
+				{"?bar", "?bar_alias"},
+			},
+			acc: map[string]Accumulator{"?bar": NewCountAccumulator()},
+		},
+		{
+			tbl: testTable(t),
+			cfg: SortConfig{{"?foo", false}},
+			alias: BindingOrderedMapping{
+				{"?foo", "?foo_alias"},
+				{"?bar", "?bar_alias"},
+			},
+			acc: map[string]Accumulator{"?unknown_bar": NewCountAccumulator()},
+		},
+		{
+			tbl: testTable(t),
+			cfg: SortConfig{{"?foo", false}},
+			alias: BindingOrderedMapping{
+				{"?foo", "?foo_alias"},
+				{"?bar", "?bar_alias"},
+			},
+		},
+		{
+			tbl: testTable(t),
+			cfg: SortConfig{
+				{"?foo", false},
+				{"?bar", false},
+			},
+			alias: BindingOrderedMapping{
+				{"?foo", "?foo_alias"},
+				{"?bar", "?bar_alias"},
+			},
+		},
+	}
+	for _, entry := range testTable {
+		err := entry.tbl.Reduce(entry.cfg, entry.alias, entry.acc)
+		got, want := entry.tbl, entry.want
+		if want != nil && err != nil {
+			t.Errorf("table.Reduce failed to compute reduced row with error %v", err)
+		}
+		if want == nil && err == nil {
+			t.Errorf("table.Reduce(%v, %v, %v) should have failed to reduced table; instead it produced\n%v", entry.cfg, entry.alias, entry.acc, got)
+		}
+		if want != nil && !reflect.DeepEqual(got, want) {
+			t.Errorf("table.Reduce failed to produce correct reduce row; got\n%s, want\n%s", got, want)
 		}
 	}
 }

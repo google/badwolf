@@ -17,6 +17,7 @@ package table
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -393,52 +394,110 @@ func (t *Table) Sort(cfg SortConfig) {
 // expressed as the element of the array slice. Returns the values after being
 // accumulated. If the wrong type is passed in, it will crash casting the
 // interface.
-type Accumulator func(interface{}) (interface{}, error)
+type Accumulator interface {
+	// Accumulate takes the given value and accumulates it to the current state.
+	Accumulate(interface{}) (interface{}, error)
+
+	// Resets the current state back to the original one.
+	Reset()
+}
+
+// sumInt64 implements an accumulator that sum int64 values.
+type sumInt64 struct {
+	initialState int64
+	state        int64
+}
+
+// Accumulate takes the given value and accumulates it to the current state.
+func (s *sumInt64) Accumulate(v interface{}) (interface{}, error) {
+	l := v.(*literal.Literal)
+	iv, err := l.Int64()
+	if err != nil {
+		return s.state, err
+	}
+	s.state += iv
+	return s.state, nil
+}
+
+// Resets the current state back to the original one.
+func (s *sumInt64) Reset() {
+	s.state = s.initialState
+}
 
 // NewSumInt64LiteralAccumulator accumulates the int64 types of a literal.
 func NewSumInt64LiteralAccumulator(s int64) Accumulator {
-	return func(v interface{}) (interface{}, error) {
-		l := v.(*literal.Literal)
-		iv, err := l.Int64()
-		if err != nil {
-			return s, err
-		}
-		s += iv
-		return s, nil
-	}
+	return &sumInt64{s, s}
 }
 
-// NewSumFloat64LiteralAccumulator accumulates the float64 types of a literal.
+// sumFloat64 implements an accumulator that sum float64 values.
+type sumFloat64 struct {
+	initialState float64
+	state        float64
+}
+
+// Accumulate takes the given value and accumulates it to the current state.
+func (s *sumFloat64) Accumulate(v interface{}) (interface{}, error) {
+	l := v.(*literal.Literal)
+	iv, err := l.Float64()
+	if err != nil {
+		return s.state, err
+	}
+	s.state += iv
+	return s.state, nil
+}
+
+// Resets the current state back to the original one.
+func (s *sumFloat64) Reset() {
+	s.state = s.initialState
+}
+
+// NewSumFloat64LiteralAccumulator accumulates the int64 types of a literal.
 func NewSumFloat64LiteralAccumulator(s float64) Accumulator {
-	return func(v interface{}) (interface{}, error) {
-		l := v.(*literal.Literal)
-		fv, err := l.Float64()
-		if err != nil {
-			return s, err
-		}
-		s += fv
-		return s, nil
-	}
+	return &sumFloat64{s, s}
 }
 
-// NewCountAccumulator counts calls by incrementing the internal state.
+// countAcc implements an accumulator that count accumulation occurances.
+type countAcc struct {
+	state int64
+}
+
+// Accumulate takes the given value and accumulates it to the current state.
+func (c *countAcc) Accumulate(v interface{}) (interface{}, error) {
+	c.state++
+	return c.state, nil
+}
+
+// Resets the current state back to the original one.
+func (c *countAcc) Reset() {
+	c.state = 0
+}
+
+// NewCountAccumulator accumulates the int64 types of a literal.
 func NewCountAccumulator() Accumulator {
-	s := int64(0)
-	return func(v interface{}) (interface{}, error) {
-		s++
-		return s, nil
-	}
+	return &countAcc{0}
+}
+
+// countDistinctAcc implements an accumulator that count accumulation occurances.
+type countDistinctAcc struct {
+	state map[string]int64
+}
+
+// Accumulate takes the given value and accumulates it to the current state.
+func (c *countDistinctAcc) Accumulate(v interface{}) (interface{}, error) {
+	vs := fmt.Sprintf("%v", v)
+	c.state[vs]++
+	return int64(len(c.state)), nil
+}
+
+// Resets the current state back to the original one.
+func (c *countDistinctAcc) Reset() {
+	c.state = make(map[string]int64)
 }
 
 // NewCountDistinctAccumulator counts calls by incrementing the internal state
 // only if the value has not been seen before.
 func NewCountDistinctAccumulator() Accumulator {
-	s := make(map[string]int64)
-	return func(v interface{}) (interface{}, error) {
-		vs := fmt.Sprintf("%v", v)
-		s[vs]++
-		return int64(len(s)), nil
-	}
+	return &countDistinctAcc{make(map[string]int64)}
 }
 
 // groupRangeReduce takes a sorted range and generates a new row containing
@@ -449,10 +508,13 @@ func (t *Table) groupRangeReduce(i, j int, alias map[string]string, acc map[stri
 	}
 	rng := t.data[i:j]
 	vaccs := make(map[string]interface{})
+	for _, a := range acc {
+		a.Reset()
+	}
 	// Aggregate the range using the provided aggreators.
 	for _, r := range rng {
 		for b, a := range acc {
-			av, err := a(r[b])
+			av, err := a.Accumulate(r[b])
 			if err != nil {
 				return nil, err
 			}
@@ -495,4 +557,107 @@ func (t *Table) groupRangeReduce(i, j int, alias map[string]string, acc map[stri
 		}
 	}
 	return newRow, nil
+}
+
+// BindingOrderedMapping represnents an ordered maping of input and output
+// binding alias.
+type BindingOrderedMapping []struct {
+	in  string
+	out string
+}
+
+// Map constructs a map of accumulators indexed by their binding name.
+func (b BindingOrderedMapping) Map() map[string]string {
+	m := make(map[string]string)
+	for _, o := range b {
+		m[o.in] = o.out
+	}
+	return m
+}
+
+// Outputs return the list of output bindings.
+func (b BindingOrderedMapping) Outputs() []string {
+	out := []string{}
+	for _, o := range b {
+		out = append(out, o.out)
+	}
+	return out
+}
+
+// Reduce alters the table by sorting and then range grouping the table data.
+func (t *Table) Reduce(cfg SortConfig, sortedAlias BindingOrderedMapping, acc map[string]Accumulator) error {
+	alias := sortedAlias.Map()
+	// Input validation tests.
+	if len(t.bs) != len(alias) {
+		return fmt.Errorf("table.Reduce cannot project bindings; current %v, requested %v", t.bs, alias)
+	}
+	if len(acc) == 0 {
+		return errors.New("table.Reduce requires at least one accumulator binding")
+	}
+	for _, b := range t.bs {
+		if _, ok := alias[b]; !ok {
+			return fmt.Errorf("table.Reduce missing binding alias for %q", b)
+		}
+	}
+	cnt := 0
+	for _, c := range cfg {
+		if _, ok := t.mbs[c.Binding]; !ok {
+			return fmt.Errorf("table.Reduce unknown sorting binding %q; available bindings %v", c.Binding, t.bs)
+		}
+		cnt++
+	}
+	for b := range acc {
+		if _, ok := t.mbs[b]; !ok {
+			return fmt.Errorf("table.Reduce unknown reducer binding %q; available bindings %v", b, t.bs)
+		}
+		cnt++
+	}
+	if cnt != len(t.bs) {
+		return fmt.Errorf("table.Reduce invalid reduce configuration in cfg=%v, alias=%v, acc=%v for table with binding %v", cfg, alias, acc, t.bs)
+	}
+	// Valid reduce configuration. Reduce sorts the table and then reduces
+	// contigous groups row groups.
+	if t.NumRows() == 0 {
+		return nil
+	}
+	t.Sort(cfg)
+	last, lastIdx, current, newData := "", 0, "", []Row{}
+	id := func(r Row) string {
+		res := ""
+		for _, c := range cfg {
+			res += r[c.Binding].String()
+		}
+		return res
+	}
+	for idx, r := range t.data {
+		current = id(r)
+		// First time.
+		if last == "" {
+			last, lastIdx = current, idx
+			continue
+		}
+		// Still in the same group.
+		if last == current {
+			continue
+		}
+		// A group reduce operation is needed.
+		nr, err := t.groupRangeReduce(lastIdx, idx, alias, acc)
+		if err != nil {
+			return err
+		}
+		newData = append(newData, nr)
+		last, lastIdx = current, idx
+	}
+	nr, err := t.groupRangeReduce(lastIdx, len(t.data), alias, acc)
+	if err != nil {
+		return err
+	}
+	newData = append(newData, nr)
+	// Update the table.
+	t.bs, t.mbs = sortedAlias.Outputs(), make(map[string]bool)
+	for _, b := range alias {
+		t.mbs[b] = true
+	}
+	t.data = newData
+	return nil
 }
