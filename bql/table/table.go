@@ -397,27 +397,47 @@ type Accumulator func(interface{}) (interface{}, error)
 
 // NewSumInt64LiteralAccumulator accumulates the int64 types of a literal.
 func NewSumInt64LiteralAccumulator(s int64) Accumulator {
-	return func(vs interface{}) (interface{}, error) {
-		l := vs.(*literal.Literal)
-		v, err := l.Int64()
+	return func(v interface{}) (interface{}, error) {
+		l := v.(*literal.Literal)
+		iv, err := l.Int64()
 		if err != nil {
 			return s, err
 		}
-		s += v
+		s += iv
 		return s, nil
 	}
 }
 
 // NewSumFloat64LiteralAccumulator accumulates the float64 types of a literal.
 func NewSumFloat64LiteralAccumulator(s float64) Accumulator {
-	return func(vs interface{}) (interface{}, error) {
-		l := vs.(*literal.Literal)
-		v, err := l.Float64()
+	return func(v interface{}) (interface{}, error) {
+		l := v.(*literal.Literal)
+		fv, err := l.Float64()
 		if err != nil {
 			return s, err
 		}
-		s += v
+		s += fv
 		return s, nil
+	}
+}
+
+// NewCountAccumulator counts calls by incrementing the internal state.
+func NewCountAccumulator() Accumulator {
+	s := int64(0)
+	return func(v interface{}) (interface{}, error) {
+		s++
+		return s, nil
+	}
+}
+
+// NewCountDistinctAccumulator counts calls by incrementing the internal state
+// only if the value has not been seen before.
+func NewCountDistinctAccumulator() Accumulator {
+	s := make(map[string]int64)
+	return func(v interface{}) (interface{}, error) {
+		vs := fmt.Sprintf("%v", v)
+		s[vs]++
+		return int64(len(s)), nil
 	}
 }
 

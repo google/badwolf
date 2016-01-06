@@ -634,3 +634,29 @@ func TestSumAccumulators(t *testing.T) {
 		t.Errorf("Int64 sum accumulator failed; got %f, want %f", got, want)
 	}
 }
+
+func TestCountAccumulators(t *testing.T) {
+	// Count accumulator.
+	var (
+		cv interface{}
+		ca = NewCountAccumulator()
+	)
+	for i := int64(0); i < 5; i++ {
+		cv, _ = ca(i)
+	}
+	if got, want := cv.(int64), int64(5); got != want {
+		t.Errorf("Count accumulator failed; got %d, want %d", got, want)
+	}
+	// Count distint accumulator
+	var (
+		dv interface{}
+		da = NewCountDistinctAccumulator()
+	)
+	for i := int64(0); i < 10; i++ {
+		l, _ := literal.DefaultBuilder().Build(literal.Int64, i%2)
+		dv, _ = da(l)
+	}
+	if got, want := dv.(int64), int64(2); got != want {
+		t.Errorf("Count distinct accumulator failed; got %d, want %d", got, want)
+	}
+}
