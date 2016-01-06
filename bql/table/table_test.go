@@ -608,7 +608,7 @@ func TestSort(t *testing.T) {
 	}
 }
 
-func TestAccumulators(t *testing.T) {
+func TestSumAccumulators(t *testing.T) {
 	// int64 sum accumulator.
 	var (
 		iv interface{}
@@ -631,6 +631,6 @@ func TestAccumulators(t *testing.T) {
 		fv, _ = fa(l)
 	}
 	if got, want := fv.(float64), float64(10); got != want {
-		t.Errorf("Int64 sum accumulator failed; got %d, want %d", got, want)
+		t.Errorf("Int64 sum accumulator failed; got %f, want %f", got, want)
 	}
 }
