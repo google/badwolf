@@ -661,3 +661,14 @@ func (t *Table) Reduce(cfg SortConfig, sortedAlias BindingOrderedMapping, acc ma
 	t.data = newData
 	return nil
 }
+
+// Filter removes all the rows were the provided function returns true.
+func (t *Table) Filter(f func(Row) bool) {
+	for idx, processed := 0, len(t.data); processed > 0; processed-- {
+		if f(t.data[idx]) {
+			t.data = append(t.data[:idx], t.data[idx+1:]...)
+			idx--
+		}
+		idx++
+	}
+}

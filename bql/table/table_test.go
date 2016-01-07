@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -949,6 +950,86 @@ func TestTableReduce(t *testing.T) {
 		}
 		if want != nil && !reflect.DeepEqual(got, want) {
 			t.Errorf("table.Reduce failed to produce correct reduce row; got\n%s, want\n%s", got, want)
+		}
+	}
+}
+
+func TestFilter(t *testing.T) {
+	table := func() *Table {
+		return &Table{
+			bs: []string{"?s", "?t"},
+			mbs: map[string]bool{
+				"?s": true,
+				"?t": true,
+			},
+			data: []Row{
+				{
+					"?s": &Cell{S: "1s"},
+					"?t": &Cell{S: "1t"},
+				},
+				{
+					"?s": &Cell{S: "2s"},
+					"?t": &Cell{S: "2t"},
+				},
+				{
+					"?s": &Cell{S: "3s"},
+					"?t": &Cell{S: "3t"},
+				},
+			},
+		}
+	}
+	testTable := []struct {
+		t    *Table
+		f    func(Row) bool
+		want int
+	}{
+		{
+			t: table(),
+			f: func(Row) bool {
+				return true
+			},
+			want: 0,
+		},
+		{
+			t: table(),
+			f: func(Row) bool {
+				return false
+			},
+			want: 3,
+		},
+		{
+			t: table(),
+			f: func(r Row) bool {
+				return r["?s"].S == "1s"
+			},
+			want: 2,
+		},
+		{
+			t: table(),
+			f: func(r Row) bool {
+				return strings.Index(r["?s"].S, "1s") != -1
+			},
+			want: 2,
+		},
+		{
+			t: table(),
+			f: func(r Row) bool {
+				return strings.Index(r["?s"].S, "t") != -1
+			},
+			want: 3,
+		},
+		{
+			t: table(),
+			f: func(r Row) bool {
+				return strings.Index(r["?t"].S, "t") != -1
+			},
+			want: 0,
+		},
+	}
+	for _, entry := range testTable {
+		entry.t.Filter(entry.f)
+		if got, want := entry.t.NumRows(), entry.want; got != want {
+			t.Errorf("table.Filter failed to remove entries from table; got %d, want %d, output\n%v", got, want, entry.t)
 		}
 	}
 }
