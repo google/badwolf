@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/google/badwolf/bql/lexer"
+	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/node"
 	"github.com/google/badwolf/triple/predicate"
@@ -74,6 +75,7 @@ type Statement struct {
 	projection        []*Projection
 	workingProjection *Projection
 	groupBy           []string
+	orderBy           table.SortConfig
 }
 
 // GraphClause represents a clause of a graph pattern in a where clause.

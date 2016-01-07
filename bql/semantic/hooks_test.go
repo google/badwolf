@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/google/badwolf/bql/lexer"
+	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/literal"
 	"github.com/google/badwolf/triple/node"
@@ -1327,6 +1328,119 @@ func TestGroupByBindingsChecker(t *testing.T) {
 	for _, entry := range testTable {
 		if _, err := f(entry.s, Symbol("FOO")); (err == nil) != entry.want {
 			t.Errorf("semantic.groupByBindingsChecker invalid  group by statement %#v for case %q; %v", entry.s, entry.id, err)
+		}
+	}
+}
+
+func TestOrderByBindings(t *testing.T) {
+	f := orderByBindings()
+	testTable := []struct {
+		ces  []ConsumedElement
+		want table.SortConfig
+	}{
+		{
+			ces: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?asc",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAsc,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?desc",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemDesc,
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: table.SortConfig{
+				{"?foo", false},
+				{"?bar", false},
+				{"?asc", false},
+				{"?desc", true},
+			},
+		},
+	}
+	st := &Statement{}
+	for _, entry := range testTable {
+		// Run all tokens.
+		for _, ce := range entry.ces {
+			if _, err := f(st, ce); err != nil {
+				t.Errorf("semantic.orderByBindings should never fail with error %v", err)
+			}
+		}
+		// Check collected ouytput.
+		if got, want := st.orderBy, entry.want; !reflect.DeepEqual(got, want) {
+			t.Errorf("semantic.orderByBindings failed to collect the expected group by bindings; got %v, want %v", got, want)
+		}
+	}
+}
+
+func TestOrderByBindingsChecker(t *testing.T) {
+	f := orderByBindingsChecker()
+	testTable := []struct {
+		id   string
+		s    *Statement
+		want bool
+	}{
+		{
+			id:   "empty statement",
+			s:    &Statement{},
+			want: true,
+		},
+		{
+			id: "one binding",
+			s: &Statement{
+				projection: []*Projection{
+					{Binding: "?foo"},
+				},
+				orderBy: table.SortConfig{{Binding: "?foo"}},
+			},
+			want: true,
+		},
+		{
+			id: "two binding",
+			s: &Statement{
+				projection: []*Projection{
+					{Binding: "?foo"},
+					{Binding: "?bar"},
+				},
+				orderBy: table.SortConfig{{Binding: "?foo"}},
+			},
+			want: true,
+		},
+		{
+			id: "invalid binding",
+			s: &Statement{
+				projection: []*Projection{
+					{Binding: "?foo"},
+					{Binding: "?bar"},
+				},
+				orderBy: table.SortConfig{{Binding: "?invalid_binding"}},
+			},
+			want: false,
+		},
+	}
+	for _, entry := range testTable {
+		if _, err := f(entry.s, Symbol("FOO")); (err == nil) != entry.want {
+			t.Errorf("semantic.orderByBindingsChecker invalid order by statement %#v for case %q; %v", entry.s, entry.id, err)
 		}
 	}
 }

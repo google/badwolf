@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/badwolf/bql/lexer"
+	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/literal"
 	"github.com/google/badwolf/triple/node"
@@ -144,6 +145,12 @@ var (
 
 	// gcch contrains the clause hook to validate group by bindings.
 	gcch ClauseHook
+
+	// obch contains the variable for collecting bindings from a order by.
+	obch ElementHook
+
+	// occh contrains the clause hook to validate order by bindings.
+	occh ClauseHook
 )
 
 func init() {
@@ -158,6 +165,8 @@ func init() {
 	bgch = bindingsGraphChecker()
 	gbch = groupByBindings()
 	gcch = groupByBindingsChecker()
+	obch = orderByBindings()
+	occh = orderByBindingsChecker()
 
 	predicateRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?\]$`)
 	boundRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?,"?([^\]"]*)"?\]$`)
@@ -223,6 +232,18 @@ func GroupByBindings() ElementHook {
 // bindings are valid.
 func GroupByBindingsChecker() ClauseHook {
 	return gcch
+}
+
+// OrderByBindings returns the singleton for collecting all the group by
+// bidings.
+func OrderByBindings() ElementHook {
+	return obch
+}
+
+// OrderByBindingsChecker returns the singleton to check that the group by
+// bindings are valid.
+func OrderByBindingsChecker() ClauseHook {
+	return occh
 }
 
 // graphAccumulator returns an element hook that keeps track of the graphs
@@ -695,6 +716,47 @@ func groupByBindingsChecker() ClauseHook {
 					s = prj.Binding
 				}
 				return nil, fmt.Errorf("Binding %q with aggregation %s function requires GROUP BY clause", s, prj.OP)
+			}
+		}
+		return f, nil
+	}
+	return f
+}
+
+// orderByBindings collects the bindings listed in the order by clause.
+func orderByBindings() ElementHook {
+	var f func(st *Statement, ce ConsumedElement) (ElementHook, error)
+	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+		if ce.IsSymbol() {
+			return f, nil
+		}
+		tkn := ce.Token()
+		switch tkn.Type {
+		case lexer.ItemBinding:
+			st.orderBy = append(st.orderBy, table.SortConfig{{Binding: tkn.Text}}...)
+		case lexer.ItemAsc:
+			st.orderBy[len(st.orderBy)-1].Desc = false
+		case lexer.ItemDesc:
+			st.orderBy[len(st.orderBy)-1].Desc = true
+		}
+		return f, nil
+	}
+	return f
+}
+
+// orderByBindingsChecker checks that all order by bindings are valid ouytput
+// bindings.
+func orderByBindingsChecker() ClauseHook {
+	var f ClauseHook
+	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+		// Force working projection flush.
+		outs := make(map[string]bool)
+		for _, out := range s.OutputBindings() {
+			outs[out] = true
+		}
+		for _, cfg := range s.orderBy {
+			if _, ok := outs[cfg.Binding]; !ok {
+				return nil, fmt.Errorf("order by binding %q unknown; available bindings are %v", cfg.Binding, s.OutputBindings())
 			}
 		}
 		return f, nil
