@@ -56,7 +56,7 @@ WHERE {
 }
 GROUP BY ?manufacturer;
 
-# What cars does Joe's grand children's drive?
+# What cars does Joe's grand children's drive in descending order?
 SELECT ?manufacturer
 FROM ?family, ?cars
 WHERE {
@@ -64,7 +64,27 @@ WHERE {
   ?offspring      "parent_of"@[] ?grand_children .
   ?grand_children "drives"@[] ?car ID ?manufacturer
 }
-GROUP BY ?manufacturer;
+GROUP BY ?manufacturer
+ORDER BY ?manufacturer DESC;
+
+# For any unique owner and manufacture, list the manufacture in descending
+# order, and for each manufacture order the owners in ascending order.
+SELECT ?manufacturer, ?owner
+FROM ?family, ?cars
+WHERE {
+  ?owner_node ID ?owner "drives"@[] ?car ID ?manufacturer
+}
+GROUP BY ?owner, ?manufacturer
+ORDER BY ?manufacturer DESC, ?owner ASC;
+
+# List the manufactures in descending order by number of owners.
+SELECT ?manufacturer, COUNT(?owner) AS ?owners
+FROM ?family, ?cars
+WHERE {
+  ?owner_node ID ?owner "drives"@[] ?car ID ?manufacturer
+}
+GROUP BY ?manufacturer
+ORDER BY ?owners DESC;
 
 # Drop the graph.
 DROP GRAPH ?family, ?cars;
