@@ -295,6 +295,10 @@ func TestAcceptQueryBySemanticParse(t *testing.T) {
 		// Test group by acceptance.
 		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[?foo, ?bar] as ?o} group by ?s;`,
 		`select count(?s) as ?a, sum(?o) as ?b, ?o as ?c from ?g where{?s ?p ?o} group by ?c;`,
+		// Test order by acceptance.
+		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[?foo, ?bar] as ?o} order by ?s;`,
+		`select ?s as ?a, ?o as ?b, ?o as ?c from ?g where{?s ?p ?o} order by ?a ASC, ?b DESC;`,
+		`select ?s as ?a, ?o as ?b, ?o as ?c from ?g where{?s ?p ?o} order by ?a ASC, ?b DESC, ?a ASC, ?b DESC, ?c;`,
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
@@ -316,11 +320,14 @@ func TestRejectByParseAndSemantic(t *testing.T) {
 		`select ?s from ?b where{/_<foo> as ?s  ?p "id"@[2019-07-19T13:12:04.669618843-07:00, 2015-07-19T13:12:04.669618843-07:00] as ?o};`,
 		// Check the bindings on the projection exist on the graph clauses.
 		`select ?foo from ?g where {?s ?p ?o};`,
-		// Reject invalid group by acceptance.
+		// Reject invalid group by.
 		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[?foo, ?bar] as ?o} group by ?unknown;`,
 		`select count(?s) as ?a, sum(?o) as ?b, ?o as ?c from ?g where{?s ?p ?o};`,
 		`select count(?s) as ?a, sum(?o) as ?b, ?o as ?c from ?g where{?s ?p ?o} group by ?b;`,
 		`select count(?s) as ?a, sum(?o) as ?b, ?o as ?c from ?g where{?s ?p ?o} group by ?a;`,
+		// Reject order by acceptance.
+		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[?foo, ?bar] as ?o} order by ?unknown_s;`,
+		`select ?s as ?a, ?o as ?b, ?o as ?c from ?g where{?s ?p ?o} order by ?a ASC, ?a DESC;`,
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {

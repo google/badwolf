@@ -875,6 +875,11 @@ func initSemanticBQL() {
 	setElementHook(grpSymbols, semantic.GroupByBindings(), nil)
 	setClauseHook([]semantic.Symbol{"GROUP_BY"}, nil, semantic.GroupByBindingsChecker())
 
+	// Collect and validate order by bindings.
+	ordSymbols := []semantic.Symbol{"ORDER_BY", "ORDER_BY_DIRECTION", "ORDER_BY_BINDINGS"}
+	setElementHook(ordSymbols, semantic.OrderByBindings(), nil)
+	setClauseHook([]semantic.Symbol{"ORDER_BY"}, nil, semantic.OrderByBindingsChecker())
+
 	// Global data accumulator hook.
 	setElementHook([]semantic.Symbol{"START"}, semantic.DataAccumulatorHook(),
 		func(cls *Clause) bool {

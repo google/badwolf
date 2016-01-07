@@ -754,9 +754,27 @@ func orderByBindingsChecker() ClauseHook {
 		for _, out := range s.OutputBindings() {
 			outs[out] = true
 		}
+		seen, dups := make(map[string]bool), false
 		for _, cfg := range s.orderBy {
+			// Check there are no contradictions
+			if b, ok := seen[cfg.Binding]; ok {
+				if b != cfg.Desc {
+					return nil, fmt.Errorf("inconsisting sorting direction for %q binding", cfg.Binding)
+				}
+				dups = true
+			} else {
+				seen[cfg.Binding] = cfg.Desc
+			}
+			// Check that the binding exist.
 			if _, ok := outs[cfg.Binding]; !ok {
 				return nil, fmt.Errorf("order by binding %q unknown; available bindings are %v", cfg.Binding, s.OutputBindings())
+			}
+		}
+		// If dups exist rewrite the order by SortConfig.
+		if dups {
+			s.orderBy = table.SortConfig{}
+			for b, d := range seen {
+				s.orderBy = append(s.orderBy, table.SortConfig{{Binding: b, Desc: d}}...)
 			}
 		}
 		return f, nil
