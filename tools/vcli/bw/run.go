@@ -88,7 +88,7 @@ func runBQL(bql string, s storage.Store) (*table.Table, error) {
 	}
 	pln, err := planner.New(s, stm)
 	if err != nil {
-		return nil, fmt.Errorf("Should have not failed to create a plan using memory.DefaultStorage for statement %v", stm)
+		return nil, fmt.Errorf("Should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
 	res, err := pln.Excecute()
 	if err != nil {

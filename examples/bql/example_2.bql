@@ -1,0 +1,70 @@
+# Copyright 2016 Google Inc. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Create a graph.
+CREATE GRAPH ?family, ?cars;
+
+# Insert some data into the family graph.
+INSERT DATA INTO ?family {
+  /u<joe>   "parent_of"@[] /u<mary> .
+  /u<joe>   "parent_of"@[] /u<peter> .
+  /u<peter> "parent_of"@[] /u<eve> .
+  /u<mary>  "parent_of"@[] /u<john> .
+  /u<mary>  "parent_of"@[] /u<anne> .
+  /u<mary>  "parent_of"@[] /u<amy>
+};
+
+# Insert some data into the car graph.
+INSERT DATA INTO ?cars {
+  /u<joe>   "drives"@[] /c<lexus> .
+  /u<mary>  "drives"@[] /c<mazda> .
+  /u<peter> "drives"@[] /c<honda> .
+  /u<eve>   "drives"@[] /c<accura> .
+  /u<john>  "drives"@[] /c<subaru> .
+  /u<anne>  "drives"@[] /c<mini> .
+  /u<amy>   "drives"@[] /c<subaru> .
+  /u<mike>  "drives"@[] /c<volvo> .
+  /u<kim>   "drives"@[] /c<toyota> .
+  /u<elon>  "drives"@[] /c<tesla>
+};
+
+# How many grand children does Joe have?
+SELECT ?grand_parent_name, COUNT(?grand_children) AS ?number_of_grand_children
+FROM ?family
+WHERE {
+  /u<joe> AS ?grand_parent ID ?grand_parent_name "parent_of"@[] ?offspring .
+  ?offspring                                     "parent_of"@[] ?grand_children
+}
+GROUP BY ?grand_parent_name;
+
+# How many different brands of car manufactures do we know?
+SELECT ?manufacturer
+FROM ?cars
+WHERE {
+  ?owner "drives"@[] ?car ID ?manufacturer
+}
+GROUP BY ?manufacturer;
+
+# What cars does Joe's grand children's drive?
+SELECT ?manufacturer
+FROM ?family, ?cars
+WHERE {
+  /u<joe>         "parent_of"@[] ?offspring .
+  ?offspring      "parent_of"@[] ?grand_children .
+  ?grand_children "drives"@[] ?car ID ?manufacturer
+}
+GROUP BY ?manufacturer;
+
+# Drop the graph.
+DROP GRAPH ?family, ?cars;

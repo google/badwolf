@@ -13,23 +13,30 @@
 # limitations under the License.
 
 # Create a graph.
-CREATE GRAPH ?g;
+CREATE GRAPH ?family;
 
 # Insert some data into the graph.
-INSERT DATA INTO ?g {
+INSERT DATA INTO ?family {
   /u<joe> "parent_of"@[] /u<mary> .
   /u<joe> "parent_of"@[] /u<peter> .
   /u<peter> "parent_of"@[] /u<john> .
   /u<peter> "parent_of"@[] /u<eve>
 };
 
-# Find all Joe's grandchildren.
-SELECT ?offspring, ?grandChildren
-FROM ?g
+# Find all Joe's offspring names.
+SELECT ?name
+FROM ?family
+WHERE {
+  /u<joe> "parent_of"@[] ?offspring ID ?name
+};
+
+# Find all Joe's grand children.
+SELECT ?grand_children_name
+FROM ?family
 WHERE {
   /u<joe> "parent_of"@[] ?offspring .
-  ?offspring "parent_of"@[] ?grandChildren
+  ?offspring "parent_of"@[] ?grand_children ID ?grand_children_name
 };
 
 # Drop the graph.
-DROP GRAPH ?g;
+DROP GRAPH ?family;

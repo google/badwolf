@@ -346,7 +346,9 @@ func cellToObject(c *table.Cell) (*triple.Object, error) {
 // filterOnExistance removes rows based on the existance of the fully qualified
 // triple after the biding of the clause.
 func (p *queryPlan) filterOnExistance(cls *semantic.GraphClause, lo *storage.LookupOptions) error {
-	for idx, r := range p.tbl.Rows() {
+	rows := p.tbl.Rows()
+	for idx, pending := 0, len(rows); pending > 0; pending-- {
+		r := rows[idx]
 		sbj, prd, obj := cls.S, cls.P, cls.O
 		// Attempt to rebind the subject.
 		if sbj == nil && p.tbl.HasBinding(cls.SBinding) {
@@ -391,13 +393,10 @@ func (p *queryPlan) filterOnExistance(cls *semantic.GraphClause, lo *storage.Loo
 			prd = v.P
 		}
 		// Attempt to rebind the object.
-		if obj == nil && p.tbl.HasBinding(cls.PBinding) {
+		if obj == nil && p.tbl.HasBinding(cls.OBinding) {
 			v, ok := r[cls.OBinding]
 			if !ok {
 				return fmt.Errorf("row %+v misses binding %q", r, cls.OBinding)
-			}
-			if v.P == nil {
-				return fmt.Errorf("binding %q requires a object, got %+v instead", cls.OBinding, v)
 			}
 			co, err := cellToObject(v)
 			if err != nil {
@@ -436,10 +435,12 @@ func (p *queryPlan) filterOnExistance(cls *semantic.GraphClause, lo *storage.Loo
 			if err != nil {
 				return err
 			}
-			if b {
+			if !b {
 				p.tbl.DeleteRow(idx)
+				idx--
 			}
 		}
+		idx++
 	}
 	return nil
 }

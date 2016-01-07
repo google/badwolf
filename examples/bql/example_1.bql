@@ -1,0 +1,110 @@
+# Copyright 2016 Google Inc. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Create a graph.
+CREATE GRAPH ?family;
+
+# Insert some data into the family graph.
+INSERT DATA INTO ?family {
+  /u<joe>   "parent_of"@[] /u<mary> .
+  /u<joe>   "parent_of"@[] /u<peter> .
+  /u<peter> "parent_of"@[] /u<eve> .
+  /u<mary>  "parent_of"@[] /u<john> .
+  /u<mary>  "parent_of"@[] /u<anne> .
+  /u<mary>  "parent_of"@[] /u<amy> .
+  /u<joe>   "is_a"@[]      /t<mammal> .
+  /u<joe>   "gender"@[]    /g<male> .
+  /u<peter> "is_a"@[]      /t<mammal> .
+  /u<peter> "gender"@[]    /g<male> .
+  /u<mary>  "is_a"@[]      /t<mammal> .
+  /u<mary>  "gender"@[]    /g<female> .
+  /u<eve>   "is_a"@[]      /t<mammal> .
+  /u<eve>   "gender"@[]    /g<female> .
+  /u<john>  "is_a"@[]      /t<mammal> .
+  /u<john>  "gender"@[]    /g<male> .
+  /u<anne>  "is_a"@[]      /t<mammal> .
+  /u<anne>  "gender"@[]    /g<female> .
+  /u<amy>   "is_a"@[]      /t<mammal> .
+  /u<amy>   "gender"@[]    /g<female>
+};
+
+# How many grand children does Joe have?
+SELECT ?grand_parent, COUNT(?grand_children) AS ?number_of_grand_children
+FROM ?family
+WHERE {
+  /u<joe> AS ?grand_parent "parent_of"@[] ?offspring .
+  ?offspring               "parent_of"@[] ?grand_children
+}
+GROUP BY ?grand_parent;
+
+# How many different mammal do we know in the family graph?
+SELECT ?mammal
+FROM ?family
+WHERE {
+  ?mammal "is_a"@[] /t<mammal>
+}
+GROUP BY ?mammal;
+
+# What genders do mammals have from the family graph?
+SELECT ?gender
+FROM ?family
+WHERE {
+  ?mammal "is_a"@[]   /t<mammal> .
+  ?mammal "gender"@[] ?gender_node ID ?gender
+}
+GROUP BY ?gender;
+
+# What is the gender distribution in our family graph?
+SELECT ?gender, COUNT(?gender_node) AS ?count
+FROM ?family
+WHERE {
+  ?mammal "is_a"@[]   /t<mammal> .
+  ?mammal "gender"@[] ?gender_node ID ?gender
+}
+GROUP BY ?gender;
+
+# How many female grand children does Joe have?
+SELECT ?grand_parent, ?grand_children
+FROM ?family
+WHERE {
+  /u<joe> AS ?grand_parent "parent_of"@[] ?offspring .
+  ?offspring               "parent_of"@[] ?grand_children .
+  ?grand_children          "gender"@[]    /g<female>
+}
+GROUP BY ?grand_parent, ?grand_children;
+
+# How many male grand children does Joe have?
+SELECT ?grand_parent, ?grand_children
+FROM ?family
+WHERE {
+  /u<joe> AS ?grand_parent "parent_of"@[] ?offspring .
+  ?offspring               "parent_of"@[] ?grand_children .
+  ?grand_children          "gender"@[]    /g<male>
+}
+GROUP BY ?grand_parent, ?grand_children;
+
+# What is the gender distribution of Joe's mammal grandchildren in
+# our family graph?
+SELECT ?gender, COUNT(DISTINCT ?grand_children) AS ?count
+FROM ?family
+WHERE {
+  /u<joe> AS ?grand_parent "parent_of"@[] ?offspring .
+  ?offspring               "parent_of"@[] ?grand_children .
+  ?grand_children          "is_a"@[]      /t<mammal> .
+  ?grand_children          "gender"@[]    ?gender_node ID ?gender
+}
+GROUP BY ?gender;
+
+# Drop the graph.
+DROP GRAPH ?family;

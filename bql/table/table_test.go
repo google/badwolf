@@ -937,25 +937,6 @@ func TestTableReduce(t *testing.T) {
 			},
 			acc: map[string]Accumulator{"?unknown_bar": NewCountAccumulator()},
 		},
-		{
-			tbl: testTable(t),
-			cfg: SortConfig{{"?foo", false}},
-			alias: BindingOrderedMapping{
-				{"?foo", "?foo_alias"},
-				{"?bar", "?bar_alias"},
-			},
-		},
-		{
-			tbl: testTable(t),
-			cfg: SortConfig{
-				{"?foo", false},
-				{"?bar", false},
-			},
-			alias: BindingOrderedMapping{
-				{"?foo", "?foo_alias"},
-				{"?bar", "?bar_alias"},
-			},
-		},
 	}
 	for _, entry := range testTable {
 		err := entry.tbl.Reduce(entry.cfg, entry.alias, entry.acc)

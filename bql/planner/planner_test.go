@@ -41,7 +41,7 @@ func insertTest(t *testing.T) {
 	}
 	pln, err := New(memory.DefaultStore, stm)
 	if err != nil {
-		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v", stm)
+		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
 	if _, err := pln.Excecute(); err != nil {
 		t.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
@@ -77,7 +77,7 @@ func deleteTest(t *testing.T) {
 	}
 	pln, err := New(memory.DefaultStore, stm)
 	if err != nil {
-		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v", stm)
+		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
 	if _, err := pln.Excecute(); err != nil {
 		t.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
@@ -144,7 +144,7 @@ func TestCreateGraph(t *testing.T) {
 	}
 	pln, err := New(memory.DefaultStore, stm)
 	if err != nil {
-		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v", stm)
+		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
 	if _, err := pln.Excecute(); err != nil {
 		t.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
@@ -174,7 +174,7 @@ func TestDropGraph(t *testing.T) {
 	}
 	pln, err := New(memory.DefaultStore, stm)
 	if err != nil {
-		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v", stm)
+		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
 	if _, err := pln.Excecute(); err != nil {
 		t.Errorf("planner.Execute: failed to execute insert plan with error %v", err)

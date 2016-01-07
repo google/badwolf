@@ -17,7 +17,6 @@ package table
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -508,10 +507,11 @@ func (t *Table) groupRangeReduce(i, j int, alias map[string]string, acc map[stri
 	}
 	rng := t.data[i:j]
 	vaccs := make(map[string]interface{})
+	// Reset the accumulators.
 	for _, a := range acc {
 		a.Reset()
 	}
-	// Aggregate the range using the provided aggreators.
+	// Aggregate the range using the provided aggregators.
 	for _, r := range rng {
 		for b, a := range acc {
 			av, err := a.Accumulate(r[b])
@@ -593,9 +593,6 @@ func (t *Table) Reduce(cfg SortConfig, sortedAlias BindingOrderedMapping, acc ma
 	// Input validation tests.
 	if len(t.bs) != len(alias) {
 		return fmt.Errorf("table.Reduce cannot project bindings; current %v, requested %v", t.bs, alias)
-	}
-	if len(acc) == 0 {
-		return errors.New("table.Reduce requires at least one accumulator binding")
 	}
 	for _, b := range t.bs {
 		if _, ok := alias[b]; !ok {
