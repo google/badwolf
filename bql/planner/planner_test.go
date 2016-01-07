@@ -371,6 +371,11 @@ func TestQuery(t *testing.T) {
 			nbs:  2,
 			nrws: 1,
 		},
+		{
+			q:    `select ?s, ?p, ?o, ?k, ?l, ?m from ?test where {?s ?p ?o. ?k ?l ?m} order by ?s, ?p, ?o, ?k, ?l, ?m;`,
+			nbs:  6,
+			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
+		},
 	}
 
 	s := populateTestStore(t)

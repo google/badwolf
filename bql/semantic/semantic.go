@@ -380,3 +380,9 @@ func (s *Statement) OutputBindings() []string {
 func (s *Statement) GroupByBindings() []string {
 	return s.groupBy
 }
+
+// OrderByConfig returns the sort configuration specified by the order by
+// statement.
+func (s *Statement) OrderByConfig() table.SortConfig {
+	return s.orderBy
+}

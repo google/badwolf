@@ -522,6 +522,12 @@ func (p *queryPlan) projectAndGroupBy() error {
 	return nil
 }
 
+// orderBy takes the resulting table and sorts its contents according to the
+// specifications of the ORDER BY clause.
+func (p *queryPlan) orderBy() {
+	p.tbl.Sort(p.stm.OrderByConfig())
+}
+
 // Execute queries the indicated graphs.
 func (p *queryPlan) Excecute() (*table.Table, error) {
 	// Retrieve the data.
@@ -532,6 +538,7 @@ func (p *queryPlan) Excecute() (*table.Table, error) {
 	if err := p.projectAndGroupBy(); err != nil {
 		return nil, err
 	}
+	p.orderBy()
 	return p.tbl, nil
 }
 
