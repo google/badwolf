@@ -880,6 +880,11 @@ func initSemanticBQL() {
 	setElementHook(ordSymbols, semantic.OrderByBindings(), nil)
 	setClauseHook([]semantic.Symbol{"ORDER_BY"}, nil, semantic.OrderByBindingsChecker())
 
+	// Collect the tokens that form the having clause and build the function
+	// that will evaluate the result rows.
+	havingSymbols := []semantic.Symbol{"HAVING", "HAVING_CLAUSE", "HAVING_CLAUSE_BINARY_COMPOSITE"}
+	setElementHook(havingSymbols, semantic.HavingExpression(), nil)
+
 	// Global data accumulator hook.
 	setElementHook([]semantic.Symbol{"START"}, semantic.DataAccumulatorHook(),
 		func(cls *Clause) bool {
