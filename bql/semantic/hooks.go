@@ -151,6 +151,9 @@ var (
 
 	// occh contrains the clause hook to validate order by bindings.
 	occh ClauseHook
+
+	// ElementHook contains the tokens that form the having expression.
+	hech ElementHook
 )
 
 func init() {
@@ -167,6 +170,7 @@ func init() {
 	gcch = groupByBindingsChecker()
 	obch = orderByBindings()
 	occh = orderByBindingsChecker()
+	hech = havingExpression()
 
 	predicateRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?\]$`)
 	boundRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?,"?([^\]"]*)"?\]$`)
@@ -244,6 +248,12 @@ func OrderByBindings() ElementHook {
 // bindings are valid.
 func OrderByBindingsChecker() ClauseHook {
 	return occh
+}
+
+// HavingExpression return the singleton to collect the tokens that form the
+// having clause.
+func HavingExpression() ElementHook {
+	return hech
 }
 
 // graphAccumulator returns an element hook that keeps track of the graphs
@@ -777,6 +787,19 @@ func orderByBindingsChecker() ClauseHook {
 				s.orderBy = append(s.orderBy, table.SortConfig{{Binding: b, Desc: d}}...)
 			}
 		}
+		return f, nil
+	}
+	return f
+}
+
+// havingExpression collects the tokens that form the HAVING clause.
+func havingExpression() ElementHook {
+	var f func(st *Statement, ce ConsumedElement) (ElementHook, error)
+	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+		if ce.IsSymbol() {
+			return f, nil
+		}
+		st.havingExpression = append(st.havingExpression, ce)
 		return f, nil
 	}
 	return f

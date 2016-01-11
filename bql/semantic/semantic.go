@@ -76,6 +76,7 @@ type Statement struct {
 	workingProjection *Projection
 	groupBy           []string
 	orderBy           table.SortConfig
+	havingExpression  []ConsumedElement
 }
 
 // GraphClause represents a clause of a graph pattern in a where clause.

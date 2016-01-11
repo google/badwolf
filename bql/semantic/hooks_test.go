@@ -1444,3 +1444,142 @@ func TestOrderByBindingsChecker(t *testing.T) {
 		}
 	}
 }
+
+func TestHavingExpression(t *testing.T) {
+	f := havingExpression()
+	testTable := []struct {
+		ces  []ConsumedElement
+		want []ConsumedElement
+	}{
+		{
+			ces: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+				}),
+
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAnd,
+				}),
+
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAsc,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?desc",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemDesc,
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAnd,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAsc,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?desc",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemDesc,
+				}),
+			},
+		},
+	}
+	st := &Statement{}
+	for _, entry := range testTable {
+		// Run all tokens.
+		for _, ce := range entry.ces {
+			if _, err := f(st, ce); err != nil {
+				t.Errorf("semantic.havingExpression should never fail with error %v", err)
+			}
+		}
+		// Check collected ouytput.
+		if got, want := st.havingExpression, entry.want; !reflect.DeepEqual(got, want) {
+			t.Errorf("semantic.havingExpression failed to collect the expected tokens; got %v, want %v", got, want)
+		}
+	}
+}
