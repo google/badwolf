@@ -22,6 +22,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/google/badwolf/bql/lexer"
+	"github.com/google/badwolf/bql/semantic"
 	"github.com/google/badwolf/bql/table"
 )
 
@@ -228,4 +230,110 @@ func NewUnaryBooleanExpression(op OP, lE Evaluator) (Evaluator, error) {
 	default:
 		return nil, errors.New("unary boolean expresions require the operation to be one for the follwing 'not'")
 	}
+}
+
+// NewEvaluator construct an evaluator given a sequence of tokens. It will
+// return a descriptive error if it could build it properly.
+func NewEvaluator(ce []semantic.ConsumedElement) (Evaluator, error) {
+	e, tailCEs, err := internalNewEvaluator(ce)
+	if err != nil {
+		return nil, err
+	}
+	if len(tailCEs) > 1 || (len(tailCEs) == 1 && tailCEs[0].Token().Type != lexer.ItemRPar) {
+		return nil, fmt.Errorf("failed to consume all token; left over %v", tailCEs)
+	}
+	return e, nil
+}
+
+// internalNewEvaluator create and evaluation and returns the left overs.
+func internalNewEvaluator(ce []semantic.ConsumedElement) (Evaluator, []semantic.ConsumedElement, error) {
+	if len(ce) == 0 {
+		return nil, nil, errors.New("cannot create an evaluator from an empty sequence of tokens")
+	}
+	head, tail := ce[0], ce[1:]
+	tkn := head.Token()
+
+	// Not token
+	if tkn.Type == lexer.ItemNot {
+		tailEval, tailCEs, err := internalNewEvaluator(tail)
+		if err != nil {
+			return nil, tailCEs, err
+		}
+		e, err := NewUnaryBooleanExpression(NOT, tailEval)
+		if err != nil {
+			return nil, tailCEs, err
+		}
+		return e, tailCEs, nil
+	}
+
+	// Binding token
+	if tkn.Type == lexer.ItemBinding {
+		if len(tail) < 2 {
+			return nil, nil, fmt.Errorf("cannot create a binary evaluation operand for %v", ce)
+		}
+		opTkn, bndTkn := tail[0].Token(), tail[1].Token()
+		var op OP
+		switch opTkn.Type {
+		case lexer.ItemEQ:
+			op = EQ
+		case lexer.ItemLT:
+			op = LT
+		case lexer.ItemGT:
+			op = GT
+		default:
+			return nil, nil, fmt.Errorf("cannot create a binary evaluation operand for %v", opTkn)
+		}
+		if bndTkn.Type == lexer.ItemBinding {
+			e, err := NewEvaluationExpression(op, tkn.Text, bndTkn.Text)
+			if err != nil {
+				return nil, nil, err
+			}
+			var res []semantic.ConsumedElement
+			if len(tail) > 2 {
+				res = tail[2:]
+			}
+			return e, res, nil
+		}
+		return nil, nil, fmt.Errorf("cannot build a binary evaluation operand with right operant %v", bndTkn)
+	}
+
+	// LPar Token
+	if tkn.Type == lexer.ItemLPar {
+		tailEval, ce, err := internalNewEvaluator(tail)
+		if err != nil {
+			return nil, nil, err
+		}
+		if len(ce) < 1 {
+			return nil, nil, errors.New("incomplete parentesis expression; missing ')'")
+		}
+		head, tail = ce[0], ce[1:]
+		if head.Token().Type != lexer.ItemRPar {
+			return nil, nil, fmt.Errorf("missing right parentesis in expression; found %v instead", head)
+		}
+		if len(tail) > 0 {
+			// Binary boolean expression.
+			opTkn := tail[0].Token()
+			var op OP
+			switch opTkn.Type {
+			case lexer.ItemAnd:
+				op = AND
+			case lexer.ItemOr:
+				op = OR
+			default:
+				return nil, nil, fmt.Errorf("cannot create a binary boolean evaluation operand for %v", opTkn)
+			}
+			rTailEval, ceResTail, err := internalNewEvaluator(tail[1:])
+			if err != nil {
+				return nil, nil, err
+			}
+			ev, err := NewBinaryBooleanExpression(op, tailEval, rTailEval)
+			if err != nil {
+				return nil, nil, err
+			}
+			return ev, ceResTail, nil
+		}
+		return tailEval, tail, nil
+	}
+
+	return nil, nil, fmt.Errorf("could not create an evaluator for condition %v", ce)
 }

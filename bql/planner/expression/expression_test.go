@@ -17,6 +17,8 @@ package expression
 import (
 	"testing"
 
+	"github.com/google/badwolf/bql/lexer"
+	"github.com/google/badwolf/bql/semantic"
 	"github.com/google/badwolf/bql/table"
 )
 
@@ -189,6 +191,223 @@ func TestBooleanEvaluationNode(t *testing.T) {
 		}
 		if want := entry.want; got != want {
 			t.Errorf("failed to evaluate op %q for %v; got %v, want %v", entry.eval.(*booleanNode).op, entry.eval, got, want)
+		}
+	}
+}
+
+func TestNewEvaluator(t *testing.T) {
+	testTable := []struct {
+		id   string
+		in   []semantic.ConsumedElement
+		r    table.Row
+		err  bool
+		want bool
+	}{
+		{
+			id: "?foo = ?bar",
+			in: []semantic.ConsumedElement{
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+			},
+			r: table.Row{
+				"?foo": &table.Cell{S: "VALUE"},
+				"?bar": &table.Cell{S: "VALUE"},
+			},
+			err:  false,
+			want: true,
+		},
+		{
+			id: "?foo < ?bar",
+			in: []semantic.ConsumedElement{
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLT,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+			},
+			r: table.Row{
+				"?foo": &table.Cell{S: "foo"},
+				"?bar": &table.Cell{S: "bar"},
+			},
+			err:  false,
+			want: false,
+		},
+		{
+			id: "?foo > ?bar",
+			in: []semantic.ConsumedElement{
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+			},
+			r: table.Row{
+				"?foo": &table.Cell{S: "foo"},
+				"?bar": &table.Cell{S: "bar"},
+			},
+			err:  false,
+			want: true,
+		},
+		{
+			id: "not(?foo = ?bar)",
+			in: []semantic.ConsumedElement{
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemNot,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+				}),
+			},
+			r: table.Row{
+				"?foo": &table.Cell{S: "VALUE"},
+				"?bar": &table.Cell{S: "VALUE"},
+			},
+			err:  false,
+			want: false,
+		},
+		{
+			id: "(?foo < ?bar) or (?foo > ?bar)",
+			in: []semantic.ConsumedElement{
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLT,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemOr,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+				}),
+			},
+			r: table.Row{
+				"?foo": &table.Cell{S: "foo"},
+				"?bar": &table.Cell{S: "bar"},
+			},
+			err:  false,
+			want: true,
+		},
+		{
+			id: "(?foo < ?bar) and (?foo > ?bar)",
+			in: []semantic.ConsumedElement{
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLT,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAnd,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?bar",
+				}),
+				semantic.NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+				}),
+			},
+			r: table.Row{
+				"?foo": &table.Cell{S: "foo"},
+				"?bar": &table.Cell{S: "bar"},
+			},
+			err:  false,
+			want: false,
+		},
+	}
+	for _, entry := range testTable {
+		eval, err := NewEvaluator(entry.in)
+		if !entry.err && err != nil {
+			t.Fatalf("test %q should have never failed to process %v with error %v", entry.id, entry.in, err)
+		}
+		got, err := eval.Evaluate(entry.r)
+		if err != nil {
+			t.Errorf("test %q the created evaluator failed to evaluate row %v with error %v", entry.id, entry.r, err)
+		}
+		if want := entry.want; got != want {
+			t.Errorf("test %q failed to evaluate the proper value; got %v, want %v", entry.id, got, want)
 		}
 	}
 }
