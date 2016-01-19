@@ -1583,3 +1583,138 @@ func TestHavingExpression(t *testing.T) {
 		}
 	}
 }
+
+func TestHavingExpressionBuilder(t *testing.T) {
+	f := havingExpressionBuilder()
+	testTable := []struct {
+		id   string
+		s    *Statement
+		r    table.Row
+		want bool
+	}{
+		{
+			id:   "empty statement",
+			s:    &Statement{},
+			want: true,
+		},
+		{
+			id: "(?foo < ?bar) or (?foo > ?bar)",
+			s: &Statement{
+				havingExpression: []ConsumedElement{
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemLPar,
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemBinding,
+						Text: "?foo",
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemLT,
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemBinding,
+						Text: "?bar",
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemRPar,
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemOr,
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemLPar,
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemBinding,
+						Text: "?foo",
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemGT,
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemBinding,
+						Text: "?bar",
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemRPar,
+					}),
+				},
+			},
+			r: table.Row{
+				"?foo": &table.Cell{S: "foo"},
+				"?bar": &table.Cell{S: "bar"},
+			},
+			want: true,
+		},
+		{
+			id: "not((?foo < ?bar) or (?foo > ?bar))",
+			s: &Statement{
+				havingExpression: []ConsumedElement{
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemNot,
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemLPar,
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemLPar,
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemBinding,
+						Text: "?foo",
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemLT,
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemBinding,
+						Text: "?bar",
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemRPar,
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemOr,
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemLPar,
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemBinding,
+						Text: "?foo",
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemGT,
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemBinding,
+						Text: "?bar",
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemRPar,
+					}),
+					NewConsumedToken(&lexer.Token{
+						Type: lexer.ItemRPar,
+					}),
+				},
+			},
+			r: table.Row{
+				"?foo": &table.Cell{S: "foo"},
+				"?bar": &table.Cell{S: "bar"},
+			},
+			want: false,
+		},
+	}
+	for _, entry := range testTable {
+		if _, err := f(entry.s, Symbol("FOO")); err != nil {
+			t.Errorf("semantic.havingExpressionBuilder faile to build statement %#v for case %q with error %v", entry.s, entry.id, err)
+		}
+		got, err := entry.s.havingExpressionEvaluator.Evaluate(entry.r)
+		if err != nil {
+			t.Errorf("expression evaluator should have not fail with errorf %v for case %q", err, entry.id)
+		}
+		if want := entry.want; got != want {
+			t.Errorf("expression evaluator returned the wrong value for case %q; got %v, want %v", entry.id, got, want)
+		}
+	}
+}

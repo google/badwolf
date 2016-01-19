@@ -884,6 +884,7 @@ func initSemanticBQL() {
 	// that will evaluate the result rows.
 	havingSymbols := []semantic.Symbol{"HAVING", "HAVING_CLAUSE", "HAVING_CLAUSE_BINARY_COMPOSITE"}
 	setElementHook(havingSymbols, semantic.HavingExpression(), nil)
+	setClauseHook([]semantic.Symbol{"HAVING"}, nil, semantic.HavingExpressionBuilder())
 
 	// Global data accumulator hook.
 	setElementHook([]semantic.Symbol{"START"}, semantic.DataAccumulatorHook(),

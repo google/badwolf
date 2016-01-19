@@ -67,16 +67,17 @@ func (t StatementType) String() string {
 
 // Statement contains all the semantic information extract from the parsing
 type Statement struct {
-	sType             StatementType
-	graphs            []string
-	data              []*triple.Triple
-	pattern           []*GraphClause
-	workingClause     *GraphClause
-	projection        []*Projection
-	workingProjection *Projection
-	groupBy           []string
-	orderBy           table.SortConfig
-	havingExpression  []ConsumedElement
+	sType                     StatementType
+	graphs                    []string
+	data                      []*triple.Triple
+	pattern                   []*GraphClause
+	workingClause             *GraphClause
+	projection                []*Projection
+	workingProjection         *Projection
+	groupBy                   []string
+	orderBy                   table.SortConfig
+	havingExpression          []ConsumedElement
+	havingExpressionEvaluator Evaluator
 }
 
 // GraphClause represents a clause of a graph pattern in a where clause.

@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package expression
+package semantic
 
 import (
 	"testing"
 
 	"github.com/google/badwolf/bql/lexer"
-	"github.com/google/badwolf/bql/semantic"
 	"github.com/google/badwolf/bql/table"
 )
 
@@ -104,14 +103,6 @@ func TestEvaluationNode(t *testing.T) {
 	}
 }
 
-type alwaysReturn struct {
-	v bool
-}
-
-func (a *alwaysReturn) Evaluate(r table.Row) (bool, error) {
-	return a.v, nil
-}
-
 func TestBooleanEvaluationNode(t *testing.T) {
 	testTable := []struct {
 		eval Evaluator
@@ -119,67 +110,67 @@ func TestBooleanEvaluationNode(t *testing.T) {
 		err  bool
 	}{
 		{
-			eval: &booleanNode{op: NOT, lS: true, lE: &alwaysReturn{true}},
+			eval: &booleanNode{op: NOT, lS: true, lE: &AlwaysReturn{true}},
 			want: false,
 			err:  false,
 		},
 		{
-			eval: &booleanNode{op: NOT, lS: true, lE: &alwaysReturn{false}},
+			eval: &booleanNode{op: NOT, lS: true, lE: &AlwaysReturn{false}},
 			want: true,
 			err:  false,
 		},
 		{
-			eval: &booleanNode{op: NOT, lS: false, lE: &alwaysReturn{false}},
+			eval: &booleanNode{op: NOT, lS: false, lE: &AlwaysReturn{false}},
 			want: false,
 			err:  true,
 		},
 		{
-			eval: &booleanNode{op: OR, lS: true, lE: &alwaysReturn{false}, rS: true, rE: &alwaysReturn{false}},
+			eval: &booleanNode{op: OR, lS: true, lE: &AlwaysReturn{false}, rS: true, rE: &AlwaysReturn{false}},
 			want: false,
 			err:  false,
 		},
 		{
-			eval: &booleanNode{op: OR, lS: true, lE: &alwaysReturn{false}, rS: true, rE: &alwaysReturn{true}},
+			eval: &booleanNode{op: OR, lS: true, lE: &AlwaysReturn{false}, rS: true, rE: &AlwaysReturn{true}},
 			want: true,
 			err:  false,
 		},
 		{
-			eval: &booleanNode{op: OR, lS: true, lE: &alwaysReturn{true}, rS: true, rE: &alwaysReturn{false}},
+			eval: &booleanNode{op: OR, lS: true, lE: &AlwaysReturn{true}, rS: true, rE: &AlwaysReturn{false}},
 			want: true,
 			err:  false,
 		},
 		{
-			eval: &booleanNode{op: OR, lS: true, lE: &alwaysReturn{true}, rS: true, rE: &alwaysReturn{true}},
+			eval: &booleanNode{op: OR, lS: true, lE: &AlwaysReturn{true}, rS: true, rE: &AlwaysReturn{true}},
 			want: true,
 			err:  false,
 		},
 		{
-			eval: &booleanNode{op: AND, lS: true, lE: &alwaysReturn{false}, rS: true, rE: &alwaysReturn{false}},
+			eval: &booleanNode{op: AND, lS: true, lE: &AlwaysReturn{false}, rS: true, rE: &AlwaysReturn{false}},
 			want: false,
 			err:  false,
 		},
 		{
-			eval: &booleanNode{op: AND, lS: true, lE: &alwaysReturn{false}, rS: true, rE: &alwaysReturn{true}},
+			eval: &booleanNode{op: AND, lS: true, lE: &AlwaysReturn{false}, rS: true, rE: &AlwaysReturn{true}},
 			want: false,
 			err:  false,
 		},
 		{
-			eval: &booleanNode{op: AND, lS: true, lE: &alwaysReturn{true}, rS: true, rE: &alwaysReturn{false}},
+			eval: &booleanNode{op: AND, lS: true, lE: &AlwaysReturn{true}, rS: true, rE: &AlwaysReturn{false}},
 			want: false,
 			err:  false,
 		},
 		{
-			eval: &booleanNode{op: AND, lS: true, lE: &alwaysReturn{true}, rS: true, rE: &alwaysReturn{true}},
+			eval: &booleanNode{op: AND, lS: true, lE: &AlwaysReturn{true}, rS: true, rE: &AlwaysReturn{true}},
 			want: true,
 			err:  false,
 		},
 		{
-			eval: &booleanNode{op: AND, lS: false, lE: &alwaysReturn{true}, rS: true, rE: &alwaysReturn{true}},
+			eval: &booleanNode{op: AND, lS: false, lE: &AlwaysReturn{true}, rS: true, rE: &AlwaysReturn{true}},
 			want: false,
 			err:  true,
 		},
 		{
-			eval: &booleanNode{op: AND, lS: true, lE: &alwaysReturn{true}, rS: false, rE: &alwaysReturn{true}},
+			eval: &booleanNode{op: AND, lS: true, lE: &AlwaysReturn{true}, rS: false, rE: &AlwaysReturn{true}},
 			want: false,
 			err:  true,
 		},
@@ -198,22 +189,22 @@ func TestBooleanEvaluationNode(t *testing.T) {
 func TestNewEvaluator(t *testing.T) {
 	testTable := []struct {
 		id   string
-		in   []semantic.ConsumedElement
+		in   []ConsumedElement
 		r    table.Row
 		err  bool
 		want bool
 	}{
 		{
 			id: "?foo = ?bar",
-			in: []semantic.ConsumedElement{
-				semantic.NewConsumedToken(&lexer.Token{
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?foo",
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemEQ,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?bar",
 				}),
@@ -227,15 +218,15 @@ func TestNewEvaluator(t *testing.T) {
 		},
 		{
 			id: "?foo < ?bar",
-			in: []semantic.ConsumedElement{
-				semantic.NewConsumedToken(&lexer.Token{
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?foo",
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLT,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?bar",
 				}),
@@ -249,15 +240,15 @@ func TestNewEvaluator(t *testing.T) {
 		},
 		{
 			id: "?foo > ?bar",
-			in: []semantic.ConsumedElement{
-				semantic.NewConsumedToken(&lexer.Token{
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?foo",
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemGT,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?bar",
 				}),
@@ -271,25 +262,25 @@ func TestNewEvaluator(t *testing.T) {
 		},
 		{
 			id: "not(?foo = ?bar)",
-			in: []semantic.ConsumedElement{
-				semantic.NewConsumedToken(&lexer.Token{
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemNot,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLPar,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?foo",
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemEQ,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?bar",
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemRPar,
 				}),
 			},
@@ -302,42 +293,42 @@ func TestNewEvaluator(t *testing.T) {
 		},
 		{
 			id: "(?foo < ?bar) or (?foo > ?bar)",
-			in: []semantic.ConsumedElement{
-				semantic.NewConsumedToken(&lexer.Token{
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLPar,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?foo",
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLT,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?bar",
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemRPar,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemOr,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLPar,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?foo",
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemGT,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?bar",
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemRPar,
 				}),
 			},
@@ -350,42 +341,42 @@ func TestNewEvaluator(t *testing.T) {
 		},
 		{
 			id: "(?foo < ?bar) and (?foo > ?bar)",
-			in: []semantic.ConsumedElement{
-				semantic.NewConsumedToken(&lexer.Token{
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLPar,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?foo",
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLT,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?bar",
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemRPar,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemAnd,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLPar,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?foo",
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemGT,
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?bar",
 				}),
-				semantic.NewConsumedToken(&lexer.Token{
+				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemRPar,
 				}),
 			},

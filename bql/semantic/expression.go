@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package expression allows to check boolean evaluated expressions against
-// a result Table row.
-package expression
+package semantic
 
 import (
 	"errors"
@@ -23,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/google/badwolf/bql/lexer"
-	"github.com/google/badwolf/bql/semantic"
 	"github.com/google/badwolf/bql/table"
 )
 
@@ -33,6 +30,16 @@ type Evaluator interface {
 	// restults table row. It will return an
 	// error if it could not be evaluated for the provided table row.
 	Evaluate(r table.Row) (bool, error)
+}
+
+// AlwaysReturn evaluator always return the provided boolean value.
+type AlwaysReturn struct {
+	V bool
+}
+
+// Evaluate return the provided value.
+func (a *AlwaysReturn) Evaluate(r table.Row) (bool, error) {
+	return a.V, nil
 }
 
 // OP the operation to be use in the expression evaluation.
@@ -234,7 +241,7 @@ func NewUnaryBooleanExpression(op OP, lE Evaluator) (Evaluator, error) {
 
 // NewEvaluator construct an evaluator given a sequence of tokens. It will
 // return a descriptive error if it could build it properly.
-func NewEvaluator(ce []semantic.ConsumedElement) (Evaluator, error) {
+func NewEvaluator(ce []ConsumedElement) (Evaluator, error) {
 	e, tailCEs, err := internalNewEvaluator(ce)
 	if err != nil {
 		return nil, err
@@ -246,7 +253,7 @@ func NewEvaluator(ce []semantic.ConsumedElement) (Evaluator, error) {
 }
 
 // internalNewEvaluator create and evaluation and returns the left overs.
-func internalNewEvaluator(ce []semantic.ConsumedElement) (Evaluator, []semantic.ConsumedElement, error) {
+func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, error) {
 	if len(ce) == 0 {
 		return nil, nil, errors.New("cannot create an evaluator from an empty sequence of tokens")
 	}
@@ -288,7 +295,7 @@ func internalNewEvaluator(ce []semantic.ConsumedElement) (Evaluator, []semantic.
 			if err != nil {
 				return nil, nil, err
 			}
-			var res []semantic.ConsumedElement
+			var res []ConsumedElement
 			if len(tail) > 2 {
 				res = tail[2:]
 			}
@@ -310,7 +317,7 @@ func internalNewEvaluator(ce []semantic.ConsumedElement) (Evaluator, []semantic.
 		if head.Token().Type != lexer.ItemRPar {
 			return nil, nil, fmt.Errorf("missing right parentesis in expression; found %v instead", head)
 		}
-		if len(tail) > 0 {
+		if len(tail) > 1 {
 			// Binary boolean expression.
 			opTkn := tail[0].Token()
 			var op OP

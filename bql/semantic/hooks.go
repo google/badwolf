@@ -152,8 +152,13 @@ var (
 	// occh contrains the clause hook to validate order by bindings.
 	occh ClauseHook
 
-	// ElementHook contains the tokens that form the having expression.
+	// hech contains the element hook to collect all the tokens that form the
+	// having expression.
 	hech ElementHook
+
+	// hebl contains the clause hook that builds an evaluable expression for
+	// the available collected tokens for the having clause.
+	hebl ClauseHook
 )
 
 func init() {
@@ -171,6 +176,7 @@ func init() {
 	obch = orderByBindings()
 	occh = orderByBindingsChecker()
 	hech = havingExpression()
+	hebl = havingExpressionBuilder()
 
 	predicateRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?\]$`)
 	boundRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?,"?([^\]"]*)"?\]$`)
@@ -254,6 +260,12 @@ func OrderByBindingsChecker() ClauseHook {
 // having clause.
 func HavingExpression() ElementHook {
 	return hech
+}
+
+// HavingExpressionBuilder return the singleton to collect the tokens that form
+// the having clause.
+func HavingExpressionBuilder() ClauseHook {
+	return hebl
 }
 
 // graphAccumulator returns an element hook that keeps track of the graphs
@@ -800,6 +812,25 @@ func havingExpression() ElementHook {
 			return f, nil
 		}
 		st.havingExpression = append(st.havingExpression, ce)
+		return f, nil
+	}
+	return f
+}
+
+// havingExpressionBuilder given the collected tokens that forms the having
+// clause expression, it builds the expresion to use when filtering values
+// on the final result table.
+func havingExpressionBuilder() ClauseHook {
+	var f ClauseHook
+	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+		s.havingExpressionEvaluator = &AlwaysReturn{V: true}
+		if len(s.havingExpression) > 0 {
+			eval, err := NewEvaluator(s.havingExpression)
+			if err != nil {
+				return nil, err
+			}
+			s.havingExpressionEvaluator = eval
+		}
 		return f, nil
 	}
 	return f
