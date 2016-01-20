@@ -388,3 +388,14 @@ func (s *Statement) GroupByBindings() []string {
 func (s *Statement) OrderByConfig() table.SortConfig {
 	return s.orderBy
 }
+
+// HasHavingClause returns true if there is a having clause.
+func (s *Statement) HasHavingClause() bool {
+	return len(s.havingExpression) > 0
+}
+
+// HavingEvaluator returns the evaluator constructed for the provided having
+// clause.
+func (s *Statement) HavingEvaluator() Evaluator {
+	return s.havingExpressionEvaluator
+}

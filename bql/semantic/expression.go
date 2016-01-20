@@ -342,5 +342,9 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 		return tailEval, tail, nil
 	}
 
-	return nil, nil, fmt.Errorf("could not create an evaluator for condition %v", ce)
+	var tkns []string
+	for _, e := range ce {
+		tkns = append(tkns, fmt.Sprintf("%q", e.token.Type))
+	}
+	return nil, nil, fmt.Errorf("could not create an evaluator for condition {%s}", strings.Join(tkns, ","))
 }

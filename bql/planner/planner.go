@@ -528,6 +528,26 @@ func (p *queryPlan) orderBy() {
 	p.tbl.Sort(p.stm.OrderByConfig())
 }
 
+// having runs the filtering based on the having clause if needed.
+func (p *queryPlan) having() error {
+	if p.stm.HasHavingClause() {
+		eval := p.stm.HavingEvaluator()
+		ok := true
+		var eErr error
+		p.tbl.Filter(func(r table.Row) bool {
+			b, err := eval.Evaluate(r)
+			if err != nil {
+				ok, eErr = false, err
+			}
+			return !b
+		})
+		if !ok {
+			return eErr
+		}
+	}
+	return nil
+}
+
 // Execute queries the indicated graphs.
 func (p *queryPlan) Excecute() (*table.Table, error) {
 	// Retrieve the data.
@@ -539,6 +559,10 @@ func (p *queryPlan) Excecute() (*table.Table, error) {
 		return nil, err
 	}
 	p.orderBy()
+	err := p.having()
+	if err != nil {
+		return nil, err
+	}
 	return p.tbl, nil
 }
 

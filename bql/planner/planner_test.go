@@ -376,6 +376,11 @@ func TestQuery(t *testing.T) {
 			nbs:  6,
 			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
 		},
+		{
+			q:    `select ?s, ?p, ?o, ?k, ?l, ?m from ?test where {?s ?p ?o. ?k ?l ?m} order by ?s, ?p, ?o, ?k, ?l, ?m  having not(?s = ?s);`,
+			nbs:  6,
+			nrws: 0,
+		},
 	}
 
 	s := populateTestStore(t)

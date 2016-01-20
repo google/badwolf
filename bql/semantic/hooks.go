@@ -811,7 +811,9 @@ func havingExpression() ElementHook {
 		if ce.IsSymbol() {
 			return f, nil
 		}
-		st.havingExpression = append(st.havingExpression, ce)
+		if ce.token.Type != lexer.ItemHaving {
+			st.havingExpression = append(st.havingExpression, ce)
+		}
 		return f, nil
 	}
 	return f
