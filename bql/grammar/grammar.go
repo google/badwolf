@@ -669,14 +669,12 @@ func initBQL() {
 				Elements: []Element{
 					NewTokenType(lexer.ItemBefore),
 					NewTokenType(lexer.ItemPredicate),
-					NewSymbol("GLOBAL_TIME_BOUND_COMPOSITE"),
 				},
 			},
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemAfter),
 					NewTokenType(lexer.ItemPredicate),
-					NewSymbol("GLOBAL_TIME_BOUND_COMPOSITE"),
 				},
 			},
 			{
@@ -685,29 +683,6 @@ func initBQL() {
 					NewTokenType(lexer.ItemPredicate),
 					NewTokenType(lexer.ItemComma),
 					NewTokenType(lexer.ItemPredicate),
-					NewSymbol("GLOBAL_TIME_BOUND_COMPOSITE"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemLPar),
-					NewSymbol("GLOBAL_TIME_BOUND"),
-					NewTokenType(lexer.ItemRPar),
-				},
-			},
-			{},
-		},
-		"GLOBAL_TIME_BOUND_COMPOSITE": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemAnd),
-					NewSymbol("GLOBAL_TIME_BOUND"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemOr),
-					NewSymbol("GLOBAL_TIME_BOUND"),
 				},
 			},
 			{},

@@ -77,13 +77,9 @@ func TestAcceptByParse(t *testing.T) {
 		`select ?a from ?b where {?a ?p ?o} having (?b and ?b) or not (?b = ?b);`,
 		`select ?a from ?b where {?a ?p ?o} having ((?b and ?b) or not (?b = ?b));`,
 		// Test global time bounds.
-		`select ?a from ?b where {?s ?p ?o} before "foo"@["123"];`,
-		`select ?a from ?b where {?s ?p ?o} after "foo"@["123"];`,
-		`select ?a from ?b where {?s ?p ?o} between "foo"@["123"], "bar"@["123"];`,
-		`select ?a from ?b where {?s ?p ?o} (before "foo"@["123"]);`,
-		`select ?a from ?b where {?s ?p ?o} before "foo"@["123"] and before "foo"@["123"];`,
-		`select ?a from ?b where {?s ?p ?o} before "foo"@["123"] or before "foo"@["123"];`,
-		`select ?a from ?b where {?s ?p ?o} before "foo"@["123"] or (before "foo"@["123"] and before "foo"@["123"]);`,
+		`select ?a from ?b where {?s ?p ?o} before ""@["123"];`,
+		`select ?a from ?b where {?s ?p ?o} after ""@["123"];`,
+		`select ?a from ?b where {?s ?p ?o} between ""@["123"], ""@["123"];`,
 		// Test limit clause.
 		`select ?a from ?b where {?s ?p ?o} limit "10"^^type:int64;`,
 		// Insert data.
