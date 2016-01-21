@@ -1718,3 +1718,36 @@ func TestHavingExpressionBuilder(t *testing.T) {
 		}
 	}
 }
+
+func TestLimitCollection(t *testing.T) {
+	f := limitCollection()
+	testTable := []struct {
+		in   []ConsumedElement
+		want int64
+	}{
+		{
+			in: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: `"1234"^^type:int64`,
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: 1234,
+		},
+	}
+	st := &Statement{}
+	for _, entry := range testTable {
+		// Run all tokens.
+		for _, ce := range entry.in {
+			if _, err := f(st, ce); err != nil {
+				t.Errorf("semantic.limitCollection should never fail with error %v", err)
+			}
+		}
+		// Check collected ouytput.
+		if got, want := st.limit, entry.want; !st.limitSet || got != want {
+			t.Errorf("semantic.limitClause failed to collect the expected value; got %v, want %v (%v)", got, want, st.limitSet)
+		}
+	}
+}

@@ -78,6 +78,8 @@ type Statement struct {
 	orderBy                   table.SortConfig
 	havingExpression          []ConsumedElement
 	havingExpressionEvaluator Evaluator
+	limitSet                  bool
+	limit                     int64
 }
 
 // GraphClause represents a clause of a graph pattern in a where clause.

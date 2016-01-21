@@ -837,3 +837,31 @@ func havingExpressionBuilder() ClauseHook {
 	}
 	return f
 }
+
+// limitCollection collects the limit of rows to return as indicated by the
+// LIMIT clause.
+func limitCollection() ElementHook {
+	var f func(st *Statement, ce ConsumedElement) (ElementHook, error)
+	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+		if ce.IsSymbol() {
+			return f, nil
+		}
+		if ce.token.Type != lexer.ItemLiteral {
+			return nil, fmt.Errorf("limit clause required an int64 literal; found %v instead", ce.token)
+		}
+		l, err := literal.DefaultBuilder().Parse(ce.token.Text)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse limit literal %q with error %v", ce.token.Text, err)
+		}
+		if l.Type() != literal.Int64 {
+			return nil, fmt.Errorf("limit required an int64 value; found %s instead", l)
+		}
+		lv, err := l.Int64()
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve the int64 value for literal %v with error %v", l, err)
+		}
+		st.limitSet, st.limit = true, lv
+		return f, nil
+	}
+	return f
+}
