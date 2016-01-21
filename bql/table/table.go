@@ -301,6 +301,13 @@ func (t *Table) Truncate() {
 	t.data = []Row{}
 }
 
+// Limit keeps the initial ith rows.
+func (t *Table) Limit(i int64) {
+	if int64(len(t.data)) > i {
+		t.data = t.data[:i]
+	}
+}
+
 // SortConfig contains the sorting information. Contains the binding order
 // to use wile sorting as well as the deriction for each of them to use.
 type SortConfig []struct {

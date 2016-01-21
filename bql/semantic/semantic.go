@@ -401,3 +401,13 @@ func (s *Statement) HasHavingClause() bool {
 func (s *Statement) HavingEvaluator() Evaluator {
 	return s.havingExpressionEvaluator
 }
+
+// IsLimitSet returns true if the limit is set.
+func (s *Statement) IsLimitSet() bool {
+	return s.limitSet
+}
+
+// Limit returns the limit value set in the limit clause.
+func (s *Statement) Limit() int64 {
+	return s.limit
+}

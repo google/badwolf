@@ -381,6 +381,11 @@ func TestQuery(t *testing.T) {
 			nbs:  6,
 			nrws: 0,
 		},
+		{
+			q:    `select ?o from ?test where {/l<barcelona> "predicate"@[] "turned"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] as ?o} LIMIT "2"^^type:int64;`,
+			nbs:  1,
+			nrws: 2,
+		},
 	}
 
 	s := populateTestStore(t)

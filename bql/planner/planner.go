@@ -548,6 +548,13 @@ func (p *queryPlan) having() error {
 	return nil
 }
 
+// limit truncates the table if the limit clause if available.
+func (p *queryPlan) limit() {
+	if p.stm.IsLimitSet() {
+		p.tbl.Limit(p.stm.Limit())
+	}
+}
+
 // Execute queries the indicated graphs.
 func (p *queryPlan) Excecute() (*table.Table, error) {
 	// Retrieve the data.
@@ -563,6 +570,7 @@ func (p *queryPlan) Excecute() (*table.Table, error) {
 	if err != nil {
 		return nil, err
 	}
+	p.limit()
 	return p.tbl, nil
 }
 

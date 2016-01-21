@@ -853,7 +853,7 @@ func havingExpressionBuilder() ClauseHook {
 func limitCollection() ElementHook {
 	var f func(st *Statement, ce ConsumedElement) (ElementHook, error)
 	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
-		if ce.IsSymbol() {
+		if ce.IsSymbol() || ce.token.Type == lexer.ItemLimit {
 			return f, nil
 		}
 		if ce.token.Type != lexer.ItemLiteral {

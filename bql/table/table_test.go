@@ -505,7 +505,32 @@ func TestTruncate(t *testing.T) {
 	}
 	tbl.Truncate()
 	if got, want := len(tbl.Rows()), 0; got != want {
+		t.Errorf("Failed to truncate a table; got %d rows, want %v", got, want)
+	}
+}
+
+func Limit(t *testing.T) {
+	tbl := testDotTable(t, []string{"?foo"}, 3)
+	if got, want := len(tbl.Rows()), 3; got != want {
 		t.Errorf("Failed to create a table with %d rows instead of %v", got, want)
+	}
+
+	testTable := []struct {
+		in   int64
+		want int
+	}{
+		{100, 3},
+		{4, 3},
+		{3, 3},
+		{2, 2},
+		{1, 1},
+		{0, 0},
+	}
+	for _, entry := range testTable {
+		tbl.Limit(entry.in)
+		if got, want := len(tbl.Rows()), entry.want; got != want {
+			t.Errorf("Failed to limit a table correctly; want %d rows, got %v", got, want)
+		}
 	}
 }
 
