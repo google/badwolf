@@ -328,6 +328,8 @@ func TestRejectByParseAndSemantic(t *testing.T) {
 		// Reject order by acceptance.
 		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[?foo, ?bar] as ?o} order by ?unknown_s;`,
 		`select ?s as ?a, ?o as ?b, ?o as ?c from ?g where{?s ?p ?o} order by ?a ASC, ?a DESC;`,
+		// Wrong limit literal.
+		`select ?s as ?a, ?o as ?b, ?o as ?c from ?g where{?s ?p ?o} LIMIT "true"^^type:bool;`,
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {

@@ -159,6 +159,10 @@ var (
 	// hebl contains the clause hook that builds an evaluable expression for
 	// the available collected tokens for the having clause.
 	hebl ClauseHook
+
+	// licl contains the element hook to collect all the limit value that form the
+	// limit clause expression.
+	licl ElementHook
 )
 
 func init() {
@@ -177,6 +181,7 @@ func init() {
 	occh = orderByBindingsChecker()
 	hech = havingExpression()
 	hebl = havingExpressionBuilder()
+	licl = limitCollection()
 
 	predicateRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?\]$`)
 	boundRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?,"?([^\]"]*)"?\]$`)
@@ -256,16 +261,21 @@ func OrderByBindingsChecker() ClauseHook {
 	return occh
 }
 
-// HavingExpression return the singleton to collect the tokens that form the
+// HavingExpression returns the singleton to collect the tokens that form the
 // having clause.
 func HavingExpression() ElementHook {
 	return hech
 }
 
-// HavingExpressionBuilder return the singleton to collect the tokens that form
+// HavingExpressionBuilder returns the singleton to collect the tokens that form
 // the having clause.
 func HavingExpressionBuilder() ClauseHook {
 	return hebl
+}
+
+// LimitCollection returns the limit collection hook.
+func LimitCollection() ElementHook {
+	return licl
 }
 
 // graphAccumulator returns an element hook that keeps track of the graphs

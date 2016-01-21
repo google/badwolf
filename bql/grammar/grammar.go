@@ -886,6 +886,10 @@ func initSemanticBQL() {
 	setElementHook(havingSymbols, semantic.HavingExpression(), nil)
 	setClauseHook([]semantic.Symbol{"HAVING"}, nil, semantic.HavingExpressionBuilder())
 
+	// Insert and Delete semantic hooks addition.
+	limitSymbols := []semantic.Symbol{"LIMIT"}
+	setElementHook(limitSymbols, semantic.LimitCollection(), nil)
+
 	// Global data accumulator hook.
 	setElementHook([]semantic.Symbol{"START"}, semantic.DataAccumulatorHook(),
 		func(cls *Clause) bool {
