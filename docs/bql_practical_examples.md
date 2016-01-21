@@ -26,4 +26,4 @@ each of the example files with a brief description.
 * [Filtering results](../examples/bql/example_3.bql):
    The HAVING clause is useful for filtering rows out from the resulting results
    table. This example shows some simple examples of how you can easily achieve
-   it by simply providing the filtering criteria on the where clause. 
+   it by simply providing the filtering criteria on the where clause.
