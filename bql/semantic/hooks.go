@@ -163,6 +163,10 @@ var (
 	// licl contains the element hook to collect all the limit value that form the
 	// limit clause expression.
 	licl ElementHook
+
+	// gbcl contains the element hook that collects the global time bounds
+	// to apply to the graph clause when temporal predicates are present.
+	gbcl ElementHook
 )
 
 func init() {
@@ -182,6 +186,7 @@ func init() {
 	hech = havingExpression()
 	hebl = havingExpressionBuilder()
 	licl = limitCollection()
+	gbcl = collectGlobalBounds()
 
 	predicateRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?\]$`)
 	boundRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?,"?([^\]"]*)"?\]$`)
@@ -276,6 +281,11 @@ func HavingExpressionBuilder() ClauseHook {
 // LimitCollection returns the limit collection hook.
 func LimitCollection() ElementHook {
 	return licl
+}
+
+// CollectGlobalBounds returns the global temporary bounds hook.
+func CollectGlobalBounds() ElementHook {
+	return gbcl
 }
 
 // graphAccumulator returns an element hook that keeps track of the graphs
@@ -871,6 +881,62 @@ func limitCollection() ElementHook {
 			return nil, fmt.Errorf("failed to retrieve the int64 value for literal %v with error %v", l, err)
 		}
 		st.limitSet, st.limit = true, lv
+		return f, nil
+	}
+	return f
+}
+
+// collectGlobalBounds collects the global time bounds that should be applied
+// to all temporal predicates.
+func collectGlobalBounds() ElementHook {
+	var (
+		f         func(st *Statement, ce ConsumedElement) (ElementHook, error)
+		opToken   *lexer.Token
+		lastToken *lexer.Token
+	)
+	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+		if ce.IsSymbol() {
+			return f, nil
+		}
+		tkn := ce.token
+		switch tkn.Type {
+		case lexer.ItemBefore, lexer.ItemAfter, lexer.ItemBetween:
+			if lastToken != nil {
+				return nil, fmt.Errorf("invalid token %v after already valid token %v", tkn, lastToken)
+			}
+			opToken, lastToken = tkn, tkn
+		case lexer.ItemComma:
+			if lastToken == nil || opToken.Type != lexer.ItemBetween {
+				return nil, fmt.Errorf("token %v can only be used in a between clause; previous token %v instead", tkn, lastToken)
+			}
+			lastToken = tkn
+		case lexer.ItemPredicate:
+			if lastToken == nil {
+				return nil, fmt.Errorf("invalid token %v without a global time modifier", tkn)
+			}
+			p, err := predicate.Parse(tkn.Text)
+			if err != nil {
+				return nil, err
+			}
+			if p.ID() != "" {
+				return nil, fmt.Errorf("global time bounds do not accept individual predicate IDs; found %s instead", p)
+			}
+			ta, err := p.TimeAnchor()
+			if err != nil {
+				return nil, err
+			}
+			if lastToken.Type == lexer.ItemComma || lastToken.Type == lexer.ItemBefore {
+				st.lookupOptions.UpperAnchor = ta
+				opToken, lastToken = nil, nil
+			} else {
+				st.lookupOptions.LowerAnchor = ta
+				if opToken.Type != lexer.ItemBetween {
+					opToken, lastToken = nil, nil
+				}
+			}
+		default:
+			return nil, fmt.Errorf("global bound found unexpected token %v", tkn)
+		}
 		return f, nil
 	}
 	return f

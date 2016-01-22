@@ -26,6 +26,7 @@ import (
 
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/bql/table"
+	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/node"
 	"github.com/google/badwolf/triple/predicate"
@@ -80,6 +81,7 @@ type Statement struct {
 	havingExpressionEvaluator Evaluator
 	limitSet                  bool
 	limit                     int64
+	lookupOptions             storage.LookupOptions
 }
 
 // GraphClause represents a clause of a graph pattern in a where clause.

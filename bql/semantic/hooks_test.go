@@ -15,12 +15,14 @@
 package semantic
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/bql/table"
+	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/literal"
 	"github.com/google/badwolf/triple/node"
@@ -1748,6 +1750,166 @@ func TestLimitCollection(t *testing.T) {
 		// Check collected ouytput.
 		if got, want := st.limit, entry.want; !st.limitSet || got != want {
 			t.Errorf("semantic.limitClause failed to collect the expected value; got %v, want %v (%v)", got, want, st.limitSet)
+		}
+	}
+}
+
+func TestCollectGlobalBounds(t *testing.T) {
+	f := collectGlobalBounds()
+	date := "2015-07-19T13:12:04.669618843-07:00"
+	pd, err := time.Parse(time.RFC3339Nano, date)
+	if err != nil {
+		t.Fatalf("time.Parse failed to parse valid time %s with error %v", date, err)
+	}
+	pretty, invalid := fmt.Sprintf("\"\"@[%s]", date), fmt.Sprintf("\"INVALID\"@[%s]", date)
+	testTable := []struct {
+		id   string
+		in   []ConsumedElement
+		want storage.LookupOptions
+		fail bool
+	}{
+		{
+			id: "before X",
+			in: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBefore,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: pretty,
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: storage.LookupOptions{
+				UpperAnchor: &pd,
+			},
+			fail: false,
+		},
+		{
+			id: "after X",
+			in: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAfter,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: pretty,
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: storage.LookupOptions{
+				LowerAnchor: &pd,
+			},
+			fail: false,
+		},
+		{
+			id: "between X, Y",
+			in: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBetween,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: pretty,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemComma,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: pretty,
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: storage.LookupOptions{
+				LowerAnchor: &pd,
+				UpperAnchor: &pd,
+			},
+			fail: false,
+		},
+		{
+			id: "before INVALID_X",
+			in: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBefore,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: invalid,
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			fail: true,
+		},
+		{
+			id: "after INVALID_X",
+			in: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemAfter,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: invalid,
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			fail: true,
+		},
+		{
+			id: "between X, INVALID_Y",
+			in: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBetween,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: pretty,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemComma,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: invalid,
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			fail: true,
+		},
+	}
+	for _, entry := range testTable {
+		st := &Statement{}
+		// Run all tokens.
+		fail := false
+		for _, ce := range entry.in {
+			if _, err := f(st, ce); (err != nil) && !entry.fail {
+				t.Errorf("semantic.CollectGlobalBounds should never fail with error %v for case %q", err, entry.id)
+				fail = true
+				break
+			}
+		}
+		if fail {
+			continue
+		}
+		// Check collected ouytput.
+		if got, want := st.lookupOptions, entry.want; !entry.fail && !reflect.DeepEqual(got, want) {
+			t.Errorf("semantic.CollectGlobalBounds failed to collect the expected value for case %q; got %v, want %v (%v)", entry.id, got, want, st.limitSet)
 		}
 	}
 }
