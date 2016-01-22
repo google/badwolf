@@ -386,6 +386,21 @@ func TestQuery(t *testing.T) {
 			nbs:  1,
 			nrws: 2,
 		},
+		{
+			q:    `select ?o from ?test where {/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o} before ""@[2014-01-01T00:00:00-08:00];`,
+			nbs:  1,
+			nrws: 0,
+		},
+		{
+			q:    `select ?o from ?test where {/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o} after ""@[2017-01-01T00:00:00-08:00];`,
+			nbs:  1,
+			nrws: 0,
+		},
+		{
+			q:    `select ?o from ?test where {/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o} between ""@[2014-01-01T00:00:00-08:00], ""@[2017-01-01T00:00:00-08:00];`,
+			nbs:  1,
+			nrws: 4,
+		},
 	}
 
 	s := populateTestStore(t)

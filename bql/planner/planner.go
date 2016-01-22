@@ -558,7 +558,7 @@ func (p *queryPlan) limit() {
 // Execute queries the indicated graphs.
 func (p *queryPlan) Excecute() (*table.Table, error) {
 	// Retrieve the data.
-	lo := &storage.LookupOptions{}
+	lo := p.stm.GlobalLookupOptions()
 	if err := p.processGraphPattern(lo); err != nil {
 		return nil, err
 	}

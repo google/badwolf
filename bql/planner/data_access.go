@@ -29,15 +29,19 @@ import (
 // updateTimeBounds updates the time bounds use for the lookup based on the
 // provided graph clause.
 func updateTimeBounds(lo *storage.LookupOptions, cls *semantic.GraphClause) *storage.LookupOptions {
-	nlo := &storage.LookupOptions{}
+	nlo := &storage.LookupOptions{
+		MaxElements: lo.MaxElements,
+		LowerAnchor: lo.LowerAnchor,
+		UpperAnchor: lo.UpperAnchor,
+	}
 	if cls.PLowerBound != nil {
 		if lo.LowerAnchor == nil || (lo.LowerAnchor != nil && cls.PLowerBound.After(*lo.LowerAnchor)) {
-			lo.LowerAnchor = cls.PLowerBound
+			nlo.LowerAnchor = cls.PLowerBound
 		}
 	}
 	if cls.PUpperBound != nil {
 		if lo.UpperAnchor == nil || (lo.UpperAnchor != nil && cls.PUpperBound.Before(*lo.UpperAnchor)) {
-			lo.UpperAnchor = cls.PUpperBound
+			nlo.UpperAnchor = cls.PUpperBound
 		}
 	}
 	return nlo

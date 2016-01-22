@@ -413,3 +413,10 @@ func (s *Statement) IsLimitSet() bool {
 func (s *Statement) Limit() int64 {
 	return s.limit
 }
+
+// GlobalLookupOptions returns the global lookup options available in the
+// statement.
+func (s *Statement) GlobalLookupOptions() *storage.LookupOptions {
+	lo := s.lookupOptions
+	return &lo
+}
