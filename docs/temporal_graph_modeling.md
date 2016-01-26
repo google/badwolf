@@ -36,7 +36,8 @@ types.
 * _Covariant_: Given two types A and B, A
               [covariant](https://en.wikipedia.org/wiki/Covariance_and_contravariance_(computer_science) )
               B if B _is a_ A. In other word, A _covariant_ B if B is a prefix
-              of A.
+              of A. Or in other words, A could replace the usage of B and still
+              convey a refined meaning.
 
 ### Node ID
 
