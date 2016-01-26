@@ -79,7 +79,7 @@ func TestRun(t *testing.T) {
 			Assertions: []*Assertion{
 				{
 					Requires:  "retrieving the objects",
-					Statement: "SELECT ?o FROM ?g WHERE {/t<id> \"predicate\"@[] ?o};",
+					Statement: "SELECT ?o FROM ?g WHERE {/t<id> \"predicate\"@[] ?o} ORDER BY ?o DESC;",
 					WillFail:  true,
 					MustReturn: []map[string]string{
 						{"?o": "/foo<bar>"},
