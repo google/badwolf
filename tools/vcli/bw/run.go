@@ -38,7 +38,8 @@ func NewRunCommand() *Command {
 		Short:     "runs BQL statements.",
 		Long: `Runs all the commands listed in the provided file. Lines in the
 the file starting with # will be ignored. All statements will be run
-sequentially.`,
+sequentially.
+`,
 	}
 	cmd.Run = func(args []string) int {
 		return runCommand(cmd, args)

@@ -23,6 +23,7 @@ import (
 
 // Registration of the available commands. Please keep sorted.
 var cmds = []*Command{
+	NewAssertCommand(),
 	NewRunCommand(),
 	NewVersionCommand(),
 }

@@ -32,7 +32,7 @@ func TestJSONMarshaling(t *testing.T) {
 		},
 		Assertions: []*Assertion{
 			{
-				Name:      "Assertion description",
+				Requires:  "Assertion description",
 				Statement: "some BQL statement;",
 				WillFail:  false,
 				MustReturn: []map[string]string{
@@ -56,7 +56,7 @@ func TestJSONMarshaling(t *testing.T) {
 
 func TestOutputTableAssertion(t *testing.T) {
 	testAssertion := &Assertion{
-		Name:      "Assertion description",
+		Requires:  "Assertion description",
 		Statement: "some BQL statement;",
 		WillFail:  false,
 		MustReturn: []map[string]string{

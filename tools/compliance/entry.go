@@ -43,8 +43,8 @@ type Graph struct {
 // Assertion contains a BQL, the expecte status of the BQL query execution,
 // and the returned results table.
 type Assertion struct {
-	// Name of the assertion.
-	Name string
+	// Requires of the assertion.
+	Requires string
 
 	// Statement contains the BQL query to assert.
 	Statement string

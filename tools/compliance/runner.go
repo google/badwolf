@@ -16,7 +16,6 @@ package compliance
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/google/badwolf/bql/grammar"
@@ -94,7 +93,10 @@ func (a *Assertion) runAssertion(st storage.Store) (bool, *table.Table, *table.T
 	if err != nil {
 		return errorizer(err)
 	}
-	return reflect.DeepEqual(tbl, want), tbl, want, nil
+	// Cannot use reflect.DeepEqual, since projections only remove bindings from
+	// the table but not the actual data. However, the serialized text version
+	// of the tables will be equal regardless of the internal representation.
+	return tbl.String() == want.String(), tbl, want, nil
 }
 
 // Run evaluates a story. Returns if the story is true or not. It will also
@@ -113,7 +115,7 @@ func (s *Story) Run(st storage.Store, b literal.Builder) (map[string]*AssertionO
 		if err != nil {
 			return nil, err
 		}
-		aName := fmt.Sprintf("%s ==> %s", strings.TrimSpace(s.Name), strings.TrimSpace(a.Name))
+		aName := fmt.Sprintf("%s requires %s", strings.TrimSpace(s.Name), strings.TrimSpace(a.Requires))
 		m[aName] = &AssertionOutcome{
 			Equal: b,
 			Got:   got,
