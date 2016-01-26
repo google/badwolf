@@ -98,20 +98,34 @@ func TestNewNodeFromString(t *testing.T) {
 
 func TestParse(t *testing.T) {
 	table := []struct {
-		s string
-		v bool
+		s  string
+		t  string
+		id string
+		v  bool
 	}{
 		// Valid text nodes.
-		{"/foo<123>", true},
+		{
+			s:  "/foo<123>",
+			t:  "/foo",
+			id: "123",
+			v:  true,
+		},
 		// Invalid text nodes.
 	}
 	for _, tc := range table {
-		_, err := Parse(tc.s)
+		n, err := Parse(tc.s)
 		if tc.v && err != nil {
 			t.Errorf("node.Parse: failed to parse %q; %v", tc.s, err)
 		}
 		if !tc.v && err == nil {
 			t.Errorf("node.Parse: failed to reject invalid %q", tc.s)
+			continue
+		}
+		if got, want := n.Type().String(), tc.t; got != want {
+			t.Errorf("node.Parse: failed to return proper type; got %q, want %q", got, want)
+		}
+		if got, want := n.ID().String(), tc.id; got != want {
+			t.Errorf("node.Parse: failed to return proper id; got %q, want %q", got, want)
 		}
 	}
 }

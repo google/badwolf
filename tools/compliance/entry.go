@@ -60,6 +60,14 @@ type Assertion struct {
 	table *table.Table
 }
 
+// AssertionOutcome contains the result of running one assertion of a given
+// story.
+type AssertionOutcome struct {
+	Equal bool
+	Got   *table.Table
+	Want  *table.Table
+}
+
 // Story contains the available graphs and the collection of assertions to
 // validate.
 type Story struct {

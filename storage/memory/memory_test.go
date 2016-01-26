@@ -136,7 +136,7 @@ func getTestTriples(t *testing.T) []*triple.Triple {
 		"/u<mary>\t\"knows\"@[]\t/u<alice>",
 	}
 	for _, s := range ss {
-		trpl, err := triple.ParseTriple(s, literal.DefaultBuilder())
+		trpl, err := triple.Parse(s, literal.DefaultBuilder())
 		if err != nil {
 			t.Errorf("triple.Parse failed to parse valid triple %s with error %v", s, err)
 			continue

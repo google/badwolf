@@ -42,9 +42,9 @@ func TestStatementAddGraph(t *testing.T) {
 }
 
 func TestStatementAddData(t *testing.T) {
-	tr, err := triple.ParseTriple(`/_<foo> "foo"@[] /_<bar>`, literal.DefaultBuilder())
+	tr, err := triple.Parse(`/_<foo> "foo"@[] /_<bar>`, literal.DefaultBuilder())
 	if err != nil {
-		t.Fatalf("triple.ParseTriple failed to parse valid triple with error %v", err)
+		t.Fatalf("triple.Parse failed to parse valid triple with error %v", err)
 	}
 	st := &Statement{}
 	st.BindType(Query)

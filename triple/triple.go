@@ -175,9 +175,9 @@ func init() {
 	oSplit = regexp.MustCompile("(]\\s+/)|(]\\s+\")")
 }
 
-// ParseTriple process the provided text and tries to create a triple. It asumes
+// Parse process the provided text and tries to create a triple. It asumes
 // that the provided text contains only one triple.
-func ParseTriple(line string, b literal.Builder) (*Triple, error) {
+func Parse(line string, b literal.Builder) (*Triple, error) {
 	raw := strings.TrimSpace(line)
 	idxp := pSplit.FindIndex([]byte(raw))
 	idxo := oSplit.FindIndex([]byte(raw))

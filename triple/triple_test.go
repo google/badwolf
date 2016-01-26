@@ -68,22 +68,22 @@ func TestPrettyTriple(t *testing.T) {
 	}
 }
 
-func TestParsetriple(t *testing.T) {
+func TestParse(t *testing.T) {
 	ss := []string{
 		"/some/type<some id>\t\"foo\"@[]\t/some/type<some id>",
 		"/some/type<some id>\t\"foo\"@[]\t\"bar\"@[]",
 	}
 	for _, s := range ss {
-		if _, err := ParseTriple(s, literal.DefaultBuilder()); err != nil {
+		if _, err := Parse(s, literal.DefaultBuilder()); err != nil {
 			t.Errorf("triple.Parse failed to parse valid triple %s with error %v", s, err)
 		}
 	}
 }
 
 func TestReify(t *testing.T) {
-	tr, err := ParseTriple("/some/type<some id>\t\"foo\"@[]\t\"bar\"@[]", literal.DefaultBuilder())
+	tr, err := Parse("/some/type<some id>\t\"foo\"@[]\t\"bar\"@[]", literal.DefaultBuilder())
 	if err != nil {
-		t.Fatalf("triple.ParseTriple failed to parse valid triple with error %v", err)
+		t.Fatalf("triple.Parse failed to parse valid triple with error %v", err)
 	}
 	rts, bn, err := tr.Reify()
 	if err != nil {

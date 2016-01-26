@@ -39,7 +39,7 @@ func ReadIntoGraph(g storage.Graph, r io.Reader, b literal.Builder) (int, error)
 		if text == "" {
 			continue
 		}
-		t, err := triple.ParseTriple(text, b)
+		t, err := triple.Parse(text, b)
 		if err != nil {
 			return cnt, err
 		}

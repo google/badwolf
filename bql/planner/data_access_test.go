@@ -44,7 +44,7 @@ func init() {
 func getTestTriples(t *testing.T) []*triple.Triple {
 	var ts []*triple.Triple
 	for _, s := range testTextTriples {
-		trpl, err := triple.ParseTriple(s, literal.DefaultBuilder())
+		trpl, err := triple.Parse(s, literal.DefaultBuilder())
 		if err != nil {
 			t.Fatalf("triple.Parse failed to parse valid triple %s with error %v", s, err)
 			continue
@@ -222,7 +222,7 @@ func TestFBasicBindings(t *testing.T) {
 		},
 	}
 	for _, entry := range testTable {
-		tpl, err := triple.ParseTriple(entry.t, literal.DefaultBuilder())
+		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
 			t.Errorf("triple.Parse failed to parse valid triple %q with error %v", entry.t, err)
 		}
@@ -267,7 +267,7 @@ func TestTripleToRowSubjectBindings(t *testing.T) {
 		},
 	}
 	for _, entry := range testTable {
-		tpl, err := triple.ParseTriple(entry.t, literal.DefaultBuilder())
+		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
 			t.Errorf("triple.Parse failed to parse valid triple %q with error %v", entry.t, err)
 		}
@@ -322,7 +322,7 @@ func TestTripleToRowPredicateBindings(t *testing.T) {
 		},
 	}
 	for _, entry := range testTable {
-		tpl, err := triple.ParseTriple(entry.t, literal.DefaultBuilder())
+		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
 			t.Errorf("triple.Parse failed to parse valid triple %q with error %v", entry.t, err)
 		}
@@ -394,7 +394,7 @@ func TestTripleToRowObjectBindings(t *testing.T) {
 		},
 	}
 	for _, entry := range testTable {
-		tpl, err := triple.ParseTriple(entry.t, literal.DefaultBuilder())
+		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
 			t.Errorf("triple.Parse failed to parse valid triple %q with error %v", entry.t, err)
 		}
@@ -469,7 +469,7 @@ func TestTripleToRowObjectBindingsDroping(t *testing.T) {
 		},
 	}
 	for _, entry := range testTable {
-		tpl, err := triple.ParseTriple(entry.t, literal.DefaultBuilder())
+		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
 			t.Errorf("triple.Parse failed to parse valid triple %q with error %v", entry.t, err)
 		}
