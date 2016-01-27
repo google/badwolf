@@ -14,7 +14,14 @@
   "Assertions": [
     {
       "Requires": "Joe to has two grand children",
-      "Statement": "SELECT ?name FROM ?g WHERE {/u<joe> \"parent_of\"@[] ?c. ?c \"parent_of\"@[] ?gc ID ?name } ORDER BY ?name ASC;",
+      "Statement": "
+      SELECT ?name
+      FROM ?g
+      WHERE {
+        /u<joe> \"parent_of\"@[] ?c.
+        ?c \"parent_of\"@[] ?gc ID ?name
+      }
+      ORDER BY ?name ASC;",
       "WillFail": false,
       "MustReturn": [
         {

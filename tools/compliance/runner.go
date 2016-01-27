@@ -89,7 +89,7 @@ func (a *Assertion) runAssertion(st storage.Store) (bool, *table.Table, *table.T
 	}
 
 	// Check the output.
-	want, err := a.OutputTable()
+	want, err := a.OutputTable(tbl.Bindings())
 	if err != nil {
 		return errorizer(err)
 	}

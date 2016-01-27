@@ -11,7 +11,12 @@
   "Assertions": [
     {
       "Requires": "retrieving the type",
-      "Statement": "SELECT ?type FROM ?g WHERE {/t<id> \"predicate\"@[] /foo<bar> TYPE ?type};",
+      "Statement": "
+      SELECT ?type
+      FROM ?g
+      WHERE {
+        /t<id> \"predicate\"@[] /foo<bar> TYPE ?type
+      };",
       "WillFail": false,
       "MustReturn": [
         {
@@ -21,7 +26,12 @@
     },
     {
       "Requires": "retrieving the id",
-      "Statement": "SELECT ?id FROM ?g WHERE {/t<id> \"predicate\"@[] /foo<bar> ID ?id};",
+      "Statement": "
+      SELECT ?id
+      FROM ?g
+      WHERE {
+        /t<id> \"predicate\"@[] /foo<bar> ID ?id
+      };",
       "WillFail": false,
       "MustReturn": [
         {
@@ -31,7 +41,12 @@
     },
     {
       "Requires": "retrieving the object",
-      "Statement": "SELECT ?o FROM ?g WHERE {/t<id> \"predicate\"@[] ?o};",
+      "Statement": "
+      SELECT ?o
+      FROM ?g
+      WHERE {
+        /t<id> \"predicate\"@[] ?o
+      };",
       "WillFail": true,
       "MustReturn": [
         {

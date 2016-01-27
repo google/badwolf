@@ -63,7 +63,7 @@ func TestOutputTableAssertion(t *testing.T) {
 			{"?foo": "foo"},
 		},
 	}
-	table, err := testAssertion.OutputTable()
+	table, err := testAssertion.OutputTable([]string{"?foo"})
 	if err != nil {
 		t.Errorf("testAssertion.OutputTable failed with error %v", err)
 	}
