@@ -30,7 +30,7 @@ INSERT DATA INTO ?cars {
   /u<joe>   "drives"@[] /c<lexus> .
   /u<mary>  "drives"@[] /c<mazda> .
   /u<peter> "drives"@[] /c<honda> .
-  /u<eve>   "drives"@[] /c<accura> .
+  /u<eve>   "drives"@[] /c<acura> .
   /u<john>  "drives"@[] /c<subaru> .
   /u<anne>  "drives"@[] /c<mini> .
   /u<amy>   "drives"@[] /c<subaru> .
@@ -39,14 +39,14 @@ INSERT DATA INTO ?cars {
   /u<elon>  "drives"@[] /c<tesla>
 };
 
-# How many grand children does Joe have?
-SELECT ?grand_parent_name, COUNT(?grand_children) AS ?number_of_grand_children
+# How many grandchildren does Joe have?
+SELECT ?grandparent_name, COUNT(?grandchildren) AS ?number_of_grandchildren
 FROM ?family
 WHERE {
-  /u<joe> AS ?grand_parent ID ?grand_parent_name "parent_of"@[] ?offspring .
-  ?offspring                                     "parent_of"@[] ?grand_children
+  /u<joe> AS ?grandparent ID ?grandparent_name "parent_of"@[] ?offspring .
+  ?offspring                                     "parent_of"@[] ?grandchildren
 }
-GROUP BY ?grand_parent_name;
+GROUP BY ?grandparent_name;
 
 # How many different brands of car manufactures do we know?
 SELECT ?manufacturer
@@ -56,13 +56,13 @@ WHERE {
 }
 GROUP BY ?manufacturer;
 
-# What cars does Joe's grand children's drive in descending order?
+# What cars does Joe's grandchildren's drive in descending order?
 SELECT ?manufacturer
 FROM ?family, ?cars
 WHERE {
   /u<joe>         "parent_of"@[] ?offspring .
-  ?offspring      "parent_of"@[] ?grand_children .
-  ?grand_children "drives"@[] ?car ID ?manufacturer
+  ?offspring      "parent_of"@[] ?grandchildren .
+  ?grandchildren "drives"@[] ?car ID ?manufacturer
 }
 GROUP BY ?manufacturer
 ORDER BY ?manufacturer DESC;

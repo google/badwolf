@@ -362,12 +362,12 @@ func TestQuery(t *testing.T) {
 			nrws: 4,
 		},
 		{
-			q:    `select ?grand_parent, count(?name) as ?grand_children from ?test where {/u<joe> as ?grand_parent "parent_of"@[] ?offspring . ?offspring "parent_of"@[] ?name} group by ?grand_parent;`,
+			q:    `select ?grandparent, count(?name) as ?grandchildren from ?test where {/u<joe> as ?grandparent "parent_of"@[] ?offspring . ?offspring "parent_of"@[] ?name} group by ?grandparent;`,
 			nbs:  2,
 			nrws: 1,
 		},
 		{
-			q:    `select ?grand_parent, count(distinct ?name) as ?grand_children from ?test where {/u<joe> as ?grand_parent "parent_of"@[] ?offspring . ?offspring "parent_of"@[] ?name} group by ?grand_parent;`,
+			q:    `select ?grandparent, count(distinct ?name) as ?grandchildren from ?test where {/u<joe> as ?grandparent "parent_of"@[] ?offspring . ?offspring "parent_of"@[] ?name} group by ?grandparent;`,
 			nbs:  2,
 			nrws: 1,
 		},

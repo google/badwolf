@@ -31,7 +31,7 @@ badwolf vCli (alpha-0.1.dev)
 
 ## Command: Run
 
-The run command allows you to excecute all the BQL statements contained in a
+The run command allows you to run all the BQL statements contained in a
 given file. All lines in the file starting with # will be treated as comments
 and will be discarded. An example of a file containing a set of executable
 statements can be found at
@@ -65,10 +65,10 @@ peter
 OK
 
 Processing statement (4/5):
-SELECT ?grand_children_name FROM ?family WHERE { /u<joe> "parent_of"@[] ?offspring . ?offspring "parent_of"@[] ?grand_children ID ?grand_children_name };
+SELECT ?grandchildren_name FROM ?family WHERE { /u<joe> "parent_of"@[] ?offspring . ?offspring "parent_of"@[] ?grandchildren ID ?grandchildren_name };
 
 Result:
-?grand_children_name
+?grandchildren_name
 john
 eve
 
@@ -81,3 +81,63 @@ Result:
 OK
 
 ```
+
+## Command: Assert
+
+The assert command will bulk-assert all the stories contained in the provided
+stories folder. A compliance story is a JSON file that contains the data
+to be used (one or more graphs), and the list of assertions (BQL query +
+output table) to be validated against the provided data. An example of a file containing a simple story can be found at
+[examples/compliance/cmpl_simple.json](../examples/compliance/cmpl_simple.json).
+Below you can find the output of using the `assert` command against a folder
+containing multiple stories.
+
+```
+$ bw assert examples/compliance
+Processing folder "examples/compliance"...
+
+-------------------------------------------------------------
+Processing file "cmpl_example_1.json"...
+
+Family graph data requires finding all different mammal we know in the family graph [TRUE]
+Family graph data requires finding all genders of the members in the family graph [TRUE]
+Family graph data requires finding all the gender distribution in our family graph [TRUE]
+Family graph data requires finding how many female grandchildren does Joe have [TRUE]
+Family graph data requires finding all male grandchildren does Joe have [TRUE]
+Family graph data requires finding the gender distribution of Joe's mammal grandchildren in our family graph? [TRUE]
+Family graph data requires finding all Joe's offspring name [TRUE]
+-------------------------------------------------------------
+Processing file "cmpl_example_0.json"...
+
+Family graph data requires finding all Joe's offspring name [TRUE]
+Family graph data requires finding all Joe's grandchildren [TRUE]
+-------------------------------------------------------------
+Processing file "cmpl_family_grandchildren.json"...
+
+Family traversal requires Joe to has two grandchildren [TRUE]
+-------------------------------------------------------------
+Processing file "cmpl_simple.json"...
+
+A simple object manipulation requires retrieving the type [TRUE]
+A simple object manipulation requires retrieving the id [TRUE]
+A simple object manipulation requires retrieving the object [TRUE]
+-------------------------------------------------------------
+Processing file "cmpl_example_3.json"...
+
+Family and car graph data requires finding if any of Joe's grandchildren have the same name of his parent [TRUE]
+Family and car graph data requires finding who are Joe's grandchildren that do not have the same name of his parent [TRUE]
+-------------------------------------------------------------
+Processing file "cmpl_example_2.json"...
+
+Family and car graph data requires finding the different brands of car manufactures do we know [TRUE]
+Family and car graph data requires finding what cars does Joe's grandchildren's drive in descending order? [TRUE]
+Family and car graph data requires finding any unique owner and manufacture, list the manufacture in descending order, and for each manufacture order the owners in ascending order [TRUE]
+Family and car graph data requires finding the manufactures in descending order by number of owners [TRUE]
+Family and car graph data requires finding how many grandchildren does Joe have [TRUE]
+-------------------------------------------------------------
+
+done
+```
+
+If any of the assertions of a story fails, it will be proper indicated and the
+obtained result table and the expected one will both be displayed.

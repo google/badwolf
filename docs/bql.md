@@ -142,11 +142,11 @@ all the predicate about Joe related to Mary, we would just write
 
 Where ?p represents all possible predicates. Bindings become more interesting
 when we start building complex graph patterns that contain more than one clause.
-Imagine you want to get the list of all users that are grand parents. You could
+Imagine you want to get the list of all users that are grandparents. You could
 express such pattern as
 
 ```
-  ?grand_parent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+  ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
 ```
 
 You can combine multiple graph patterns together using '.' to separate clauses.
@@ -154,7 +154,7 @@ The important thing to keep in mind is that the above composite clause
 represents a single context. That means that ?x is a binding that once
 instantiated, it cannot change the value in that context. Imagine Joe is the
 parent of Peter and Peter is the parent of Mary. Once the first part of the
-clause is match againt Joe is the parent of Peter, ```?grand_parent``` gets
+clause is match againt Joe is the parent of Peter, ```?grandparent``` gets
 binded against Joe and ```?x``` against Peter. To satisfy the second part of
 the composite clause we now need to find triples where the subject is Peter
 (remember that once the value is binded in a context it cannot change) a
@@ -177,7 +177,7 @@ of a query is expressed as follows
   };
 ```
 
-The above query would return all the grand children of Joe. BQL users binding
+The above query would return all the grandchildren of Joe. BQL users binding
 notation to identify a graph to use. It over uses the '?' and it just indicates
 the name of the graph. In the above example that query would be run against
 a graph which ID is equal to "?family_tree". You can also query against multiple
@@ -195,23 +195,23 @@ There is no limit on how many variable you may return. You can return multiple
 variables instead as shown below.
 
 ```
-  SELECT ?grand_parent, ?grand_child
+  SELECT ?grandparent, ?grand_child
   FROM ?family_tree
   WHERE {
-    ?grand_parent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
   };
 ```
 
-The above query would return all grand parents together with the name of their
+The above query would return all grandparents together with the name of their
 grand kids, one pair per row. In some cases it is useful to return a different
 name for the variables, and not use the biding name used in the graph pattern
 directly. This is achieved using the as keyword as shown below.
 
 ```
-  SELECT ?grand_parent as ?gp, ?grand_child as ?gc
+  SELECT ?grandparent as ?gp, ?grand_child as ?gc
   FROM ?family_tree
   WHERE {
-    ?grand_parent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
   };
 ```
 
@@ -224,10 +224,10 @@ available on the graph. If we want to get rid of the duplicates we could just
 group them as follows to remove the duplicates.
 
 ```
-  SELECT ?grand_parent as ?gp, ?grand_child as ?gc
+  SELECT ?grandparent as ?gp, ?grand_child as ?gc
   FROM ?family_tree
   WHERE {
-    ?grand_parent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
   }
   GROUP BY ?gp, ?gc;
 ```
@@ -238,24 +238,24 @@ variant with distinct, and ```sum```. Other functions will be added as needed.
 The queries below illustrate how this simple aggregations can be used.
 
 ```
-  SELECT ?grand_parent as ?gp, count(?grand_child) as ?gc
+  SELECT ?grandparent as ?gp, count(?grand_child) as ?gc
   FROM ?family_tree
   WHERE {
-    ?grand_parent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
   }
   GROUP BY ?gp;
 ```
 
-Would return the number of grand childre per grand parent. However, it would
+Would return the number of grand childre per grandparent. However, it would
 be better if the distinct version was used to guaranteed that all duplicates
 resulting on the graph data are removed. The query below illustrates how
 the distinct variant work.
 
 ```
-  SELECT ?grand_parent as ?gp, count(distinct ?grand_child) as ?gc
+  SELECT ?grandparent as ?gp, count(distinct ?grand_child) as ?gc
   FROM ?family_tree
   WHERE {
-    ?grand_parent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
   }
   GROUP BY ?gp;
 ```
@@ -275,17 +275,17 @@ You can also use ```sum``` to do partial accumulations in the same maner as was
 done in the ```count``` examples above.
 
 Results of the query can be sorted. By default on ascending order based on
-the provided variables. The example below orders first by grand parent name
+the provided variables. The example below orders first by grandparent name
 ascending (implicit direction), and then for each equal value descending based
 on the grand child name.
 
 ```
-  SELECT ?grand_parent, ?grand_child
+  SELECT ?grandparent, ?grand_child
   FROM ?family_tree
   WHERE {
-    ?grand_parent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
   }
-  ORDER BY ?grand_parent, ?grand_child DESC;
+  ORDER BY ?grandparent, ?grand_child DESC;
 ```
 
 The having modifier allows to filter the returned data further. For instance,

@@ -39,14 +39,14 @@ INSERT DATA INTO ?family {
   /u<amy>   "gender"@[]    /g<female>
 };
 
-# How many grand children does Joe have?
-SELECT ?grand_parent, COUNT(?grand_children) AS ?number_of_grand_children
+# How many grandchildren does Joe have?
+SELECT ?grandparent, COUNT(?grandchildren) AS ?number_of_grandchildren
 FROM ?family
 WHERE {
-  /u<joe> AS ?grand_parent "parent_of"@[] ?offspring .
-  ?offspring               "parent_of"@[] ?grand_children
+  /u<joe> AS ?grandparent "parent_of"@[] ?offspring .
+  ?offspring               "parent_of"@[] ?grandchildren
 }
-GROUP BY ?grand_parent;
+GROUP BY ?grandparent;
 
 # How many different mammal do we know in the family graph?
 SELECT ?mammal
@@ -74,35 +74,35 @@ WHERE {
 }
 GROUP BY ?gender;
 
-# How many female grand children does Joe have?
-SELECT ?grand_parent, ?grand_children
+# How many female grandchildren does Joe have?
+SELECT ?grandparent, ?grandchildren
 FROM ?family
 WHERE {
-  /u<joe> AS ?grand_parent "parent_of"@[] ?offspring .
-  ?offspring               "parent_of"@[] ?grand_children .
-  ?grand_children          "gender"@[]    /g<female>
+  /u<joe> AS ?grandparent "parent_of"@[] ?offspring .
+  ?offspring               "parent_of"@[] ?grandchildren .
+  ?grandchildren          "gender"@[]    /g<female>
 }
-GROUP BY ?grand_parent, ?grand_children;
+GROUP BY ?grandparent, ?grandchildren;
 
-# How many male grand children does Joe have?
-SELECT ?grand_parent, ?grand_children
+# How many male grandchildren does Joe have?
+SELECT ?grandparent, ?grandchildren
 FROM ?family
 WHERE {
-  /u<joe> AS ?grand_parent "parent_of"@[] ?offspring .
-  ?offspring               "parent_of"@[] ?grand_children .
-  ?grand_children          "gender"@[]    /g<male>
+  /u<joe> AS ?grandparent "parent_of"@[] ?offspring .
+  ?offspring               "parent_of"@[] ?grandchildren .
+  ?grandchildren          "gender"@[]    /g<male>
 }
-GROUP BY ?grand_parent, ?grand_children;
+GROUP BY ?grandparent, ?grandchildren;
 
 # What is the gender distribution of Joe's mammal grandchildren in
 # our family graph?
-SELECT ?gender, COUNT(DISTINCT ?grand_children) AS ?count
+SELECT ?gender, COUNT(DISTINCT ?grandchildren) AS ?count
 FROM ?family
 WHERE {
-  /u<joe> AS ?grand_parent "parent_of"@[] ?offspring .
-  ?offspring               "parent_of"@[] ?grand_children .
-  ?grand_children          "is_a"@[]      /t<mammal> .
-  ?grand_children          "gender"@[]    ?gender_node ID ?gender
+  /u<joe> AS ?grandparent "parent_of"@[] ?offspring .
+  ?offspring               "parent_of"@[] ?grandchildren .
+  ?grandchildren          "is_a"@[]      /t<mammal> .
+  ?grandchildren          "gender"@[]    ?gender_node ID ?gender
 }
 GROUP BY ?gender;
 

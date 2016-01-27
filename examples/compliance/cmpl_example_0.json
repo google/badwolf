@@ -32,22 +32,22 @@
       ]
     },
     {
-      "Requires": "finding all Joe's grand children",
+      "Requires": "finding all Joe's grandchildren",
       "Statement": "
-      SELECT ?grand_children_name
+      SELECT ?grandchildren_name
       FROM ?family
       WHERE {
         /u<joe> \"parent_of\"@[] ?offspring .
-        ?offspring \"parent_of\"@[] ?grand_children ID ?grand_children_name
+        ?offspring \"parent_of\"@[] ?grandchildren ID ?grandchildren_name
       }
-      ORDER BY ?grand_children_name;",
+      ORDER BY ?grandchildren_name;",
       "WillFail": false,
       "MustReturn": [
         {
-          "?grand_children_name": "eve"
+          "?grandchildren_name": "eve"
         },
         {
-          "?grand_children_name": "john"
+          "?grandchildren_name": "john"
         }
       ]
     }

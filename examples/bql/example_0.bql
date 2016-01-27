@@ -30,12 +30,12 @@ WHERE {
   /u<joe> "parent_of"@[] ?offspring ID ?name
 };
 
-# Find all Joe's grand children.
-SELECT ?grand_children_name
+# Find all Joe's grandchildren.
+SELECT ?grandchildren_name
 FROM ?family
 WHERE {
   /u<joe> "parent_of"@[] ?offspring .
-  ?offspring "parent_of"@[] ?grand_children ID ?grand_children_name
+  ?offspring "parent_of"@[] ?grandchildren ID ?grandchildren_name
 };
 
 # Drop the graph.

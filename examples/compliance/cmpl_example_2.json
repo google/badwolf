@@ -1,0 +1,220 @@
+{
+  "Name": "Family and car graph data",
+  "Sources": [
+    {
+      "ID": "?family",
+      "Facts": [
+        "/u<joe>   \"parent_of\"@[] /u<mary>",
+        "/u<joe>   \"parent_of\"@[] /u<peter>",
+        "/u<peter> \"parent_of\"@[] /u<eve>",
+        "/u<mary>  \"parent_of\"@[] /u<john>",
+        "/u<mary>  \"parent_of\"@[] /u<anne>",
+        "/u<mary>  \"parent_of\"@[] /u<amy>"
+      ]
+    },
+    {
+      "ID": "?cars",
+      "Facts": [
+        "/u<joe>   \"drives\"@[] /c<lexus>",
+        "/u<mary>  \"drives\"@[] /c<mazda>",
+        "/u<peter> \"drives\"@[] /c<honda>",
+        "/u<eve>   \"drives\"@[] /c<acura>",
+        "/u<john>  \"drives\"@[] /c<subaru>",
+        "/u<anne>  \"drives\"@[] /c<mini>",
+        "/u<amy>   \"drives\"@[] /c<subaru>",
+        "/u<mike>  \"drives\"@[] /c<volvo>",
+        "/u<kim>   \"drives\"@[] /c<toyota>",
+        "/u<elon>  \"drives\"@[] /c<tesla>"
+      ]
+    }
+  ],
+  "Assertions": [
+    {
+      "Requires": "finding how many grandchildren does Joe have",
+      "Statement": "
+      SELECT ?grandparent_name, COUNT(?grandchildren) AS ?number_of_grandchildren
+      FROM ?family
+      WHERE {
+        /u<joe> AS ?grandparent ID ?grandparent_name \"parent_of\"@[] ?offspring .
+        ?offspring                                     \"parent_of\"@[] ?grandchildren
+      }
+      GROUP BY ?grandparent_name;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?grandparent_name":	"joe",
+          "?number_of_grandchildren":	"\"4\"^^type:int64"
+        }
+      ]
+    },
+    {
+      "Requires": "finding the different brands of car manufactures do we know",
+      "Statement": "
+      SELECT ?manufacturer
+      FROM ?cars
+      WHERE {
+        ?owner \"drives\"@[] ?car ID ?manufacturer
+      }
+      GROUP BY ?manufacturer;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?manufacturer":	"acura"
+        },
+        {
+          "?manufacturer":	"honda"
+        },
+        {
+          "?manufacturer":	"lexus"
+        },
+        {
+          "?manufacturer":	"mazda"
+        },
+        {
+          "?manufacturer":	"mini"
+        },
+        {
+          "?manufacturer":	"subaru"
+        },
+        {
+          "?manufacturer":	"tesla"
+        },
+        {
+          "?manufacturer":	"toyota"
+        },
+        {
+          "?manufacturer":	"volvo"
+        }
+      ]
+    },
+    {
+      "Requires": "finding what cars does Joe's grandchildren's drive in descending order?",
+      "Statement": "
+      SELECT ?manufacturer
+      FROM ?family, ?cars
+      WHERE {
+        /u<joe>        \"parent_of\"@[] ?offspring .
+        ?offspring     \"parent_of\"@[] ?grandchildren .
+        ?grandchildren \"drives\"@[] ?car ID ?manufacturer
+      }
+      GROUP BY ?manufacturer
+      ORDER BY ?manufacturer DESC;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?manufacturer":	"subaru"
+        },
+        {
+          "?manufacturer":	"mini"
+        },
+        {
+          "?manufacturer":	"acura"
+        }
+      ]
+    },
+    {
+      "Requires": "finding any unique owner and manufacture, list the manufacture in descending order, and for each manufacture order the owners in ascending order",
+      "Statement": "
+      SELECT ?manufacturer, ?owner
+      FROM ?family, ?cars
+      WHERE {
+        ?owner_node ID ?owner \"drives\"@[] ?car ID ?manufacturer
+      }
+      GROUP BY ?owner, ?manufacturer
+      ORDER BY ?manufacturer DESC, ?owner ASC;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?manufacturer":	"volvo",
+          "?owner": "mike"
+        },
+        {
+          "?manufacturer":	"toyota",
+          "?owner": "kim"
+        },
+        {
+          "?manufacturer":	"tesla",
+          "?owner": "elon"
+        },
+        {
+          "?manufacturer":	"subaru",
+          "?owner": "amy"
+        },
+        {
+          "?manufacturer":	"subaru",
+          "?owner": "john"
+        },
+        {
+          "?manufacturer":	"mini",
+          "?owner": "anne"
+        },
+        {
+          "?manufacturer":	"mazda",
+          "?owner": "mary"
+        },
+        {
+          "?manufacturer":	"lexus",
+          "?owner": "joe"
+        },
+        {
+          "?manufacturer":	"honda",
+          "?owner": "peter"
+        },
+        {
+          "?manufacturer":	"acura",
+          "?owner": "eve"
+        }
+      ]
+    },
+    {
+      "Requires": "finding the manufactures in descending order by number of owners",
+      "Statement": "
+      SELECT ?manufacturer, COUNT(?owner) AS ?owners
+      FROM ?family, ?cars
+      WHERE {
+        ?owner_node ID ?owner \"drives\"@[] ?car ID ?manufacturer
+      }
+      GROUP BY ?manufacturer
+      ORDER BY ?owners DESC;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?manufacturer": "subaru",
+          "?owners":	"\"2\"^^type:int64"
+        },
+        {
+          "?manufacturer": "honda",
+          "?owners": "\"1\"^^type:int64"
+        },
+        {
+          "?manufacturer": "lexus",
+          "?owners": "\"1\"^^type:int64"
+        },
+        {
+          "?manufacturer": "mazda",
+          "?owners": "\"1\"^^type:int64"
+        },
+        {
+          "?manufacturer": "mini",
+          "?owners": "\"1\"^^type:int64"
+        },
+        {
+          "?manufacturer": "tesla",
+          "?owners": "\"1\"^^type:int64"
+        },
+        {
+          "?manufacturer": "toyota",
+          "?owners":	"\"1\"^^type:int64"
+        },
+        {
+          "?manufacturer": "volvo",
+          "?owners": "\"1\"^^type:int64"
+        },
+        {
+          "?manufacturer": "acura",
+          "?owners": "\"1\"^^type:int64"
+        }
+      ]
+    }
+  ]
+}

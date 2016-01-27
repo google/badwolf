@@ -26,20 +26,23 @@ INSERT DATA INTO ?family {
   /u<mary>  "parent_of"@[] /u<amy>
 };
 
-# Does any of Joe's grand children have the same name of his parent?
-SELECT ?offspring, ?grand_children
+# Does any of Joe's grandchildren have the same name of his parent?
+SELECT ?offspring, ?grandchildren
 FROM ?family
 WHERE {
-  /u<joe> AS ?grand_parent ID ?grand_parent_name "parent_of"@[] ?offspring .
-  ?offspring                                     "parent_of"@[] ?grand_children
+  /u<joe> AS ?grandparent ID ?grandparent_name "parent_of"@[] ?offspring .
+  ?offspring                                     "parent_of"@[] ?grandchildren
 }
-HAVING ?offspring = ?grand_children;
+HAVING ?offspring = ?grandchildren;
 
-# Who are Joe's grand children that do not have the same name of his parent?
-SELECT ?offspring, ?grand_children
+# Who are Joe's grandchildren that do not have the same name of his parent?
+SELECT ?offspring, ?grandchildren
 FROM ?family
 WHERE {
-  /u<joe> AS ?grand_parent ID ?grand_parent_name "parent_of"@[] ?offspring .
-  ?offspring                                     "parent_of"@[] ?grand_children
+  /u<joe> AS ?grandparent ID ?grandparent_name "parent_of"@[] ?offspring .
+  ?offspring                                     "parent_of"@[] ?grandchildren
 }
-HAVING NOT(?offspring = ?grand_children);
+HAVING NOT(?offspring = ?grandchildren);
+
+# Drop the graph.
+DROP GRAPH ?family;

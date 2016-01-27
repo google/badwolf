@@ -1,0 +1,68 @@
+{
+  "Name": "Family and car graph data",
+  "Sources": [
+    {
+      "ID": "?family",
+      "Facts": [
+        "/u<joe>   \"parent_of\"@[] /u<mary>",
+        "/u<joe>   \"parent_of\"@[] /u<peter>",
+        "/u<peter> \"parent_of\"@[] /u<eve>",
+        "/u<peter> \"parent_of\"@[] /u<peter>",
+        "/u<mary>  \"parent_of\"@[] /u<john>",
+        "/u<mary>  \"parent_of\"@[] /u<anne>",
+        "/u<mary>  \"parent_of\"@[] /u<amy>"
+      ]
+    }
+  ],
+  "Assertions": [
+    {
+      "Requires": "finding if any of Joe's grandchildren have the same name of his parent",
+      "Statement": "
+      SELECT ?offspring, ?grandchildren
+      FROM ?family
+      WHERE {
+        /u<joe> AS ?grandparent ID ?grandparent_name \"parent_of\"@[] ?offspring .
+        ?offspring                                   \"parent_of\"@[] ?grandchildren
+      }
+      HAVING ?offspring = ?grandchildren;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?offspring":	"/u<peter>",
+          "?grandchildren":	"/u<peter>"
+        }
+      ]
+    },
+    {
+      "Requires": "finding who are Joe's grandchildren that do not have the same name of his parent",
+      "Statement": "
+      SELECT ?offspring, ?grandchildren
+      FROM ?family
+      WHERE {
+        /u<joe> AS ?grandparent ID ?grandparent_name \"parent_of\"@[] ?offspring .
+        ?offspring                                   \"parent_of\"@[] ?grandchildren
+      }
+      ORDER BY ?offspring, ?grandchildren
+      HAVING NOT(?offspring = ?grandchildren);",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?offspring":	"/u<mary>",
+          "?grandchildren":	"/u<amy>"
+        },
+        {
+          "?offspring":	"/u<mary>",
+          "?grandchildren":	"/u<anne>"
+        },
+        {
+          "?offspring":	"/u<mary>",
+          "?grandchildren":	"/u<john>"
+        },
+        {
+          "?offspring":	"/u<peter>",
+          "?grandchildren":	"/u<eve>"
+        }
+      ]
+    }
+  ]
+}

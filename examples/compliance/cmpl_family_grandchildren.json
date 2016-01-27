@@ -13,7 +13,7 @@
   ],
   "Assertions": [
     {
-      "Requires": "Joe to has two grand children",
+      "Requires": "Joe to has two grandchildren",
       "Statement": "
       SELECT ?name
       FROM ?g
