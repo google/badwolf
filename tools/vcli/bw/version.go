@@ -17,6 +17,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/google/badwolf/bql/version"
 )
 
 var stage = "alpha"
@@ -28,7 +30,7 @@ var patch = "dev"
 func NewVersionCommand() *Command {
 	return &Command{
 		Run: func(args []string) int {
-			fmt.Fprintf(os.Stderr, "badwolf vCli (%s-%d.%d.%s)\n", stage, major, minor, patch)
+			fmt.Fprintf(os.Stderr, "badwolf vCli (%d.%d.%d-%s)\n", version.Major, version.Minor, version.Patch, version.Release)
 			return 0
 		},
 		UsageLine: "version",
