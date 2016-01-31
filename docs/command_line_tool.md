@@ -106,13 +106,13 @@ Processing folder "examples/compliance"...
 -------------------------------------------------------------
 Processing file "cmpl_bql_example_1.json"...
 
-Family graph data requires finding all different mammal we know in the family graph [TRUE]
 Family graph data requires finding all genders of the members in the family graph [TRUE]
 Family graph data requires finding all the gender distribution in our family graph [TRUE]
 Family graph data requires finding how many female grandchildren does Joe have [TRUE]
 Family graph data requires finding all male grandchildren does Joe have [TRUE]
 Family graph data requires finding the gender distribution of Joe's mammal grandchildren in our family graph? [TRUE]
 Family graph data requires finding all Joe's offspring name [TRUE]
+Family graph data requires finding all different mammal we know in the family graph [TRUE]
 -------------------------------------------------------------
 Processing file "cmpl_bql_example_3.json"...
 
@@ -121,14 +121,14 @@ Family and car graph data requires finding who are Joe's grandchildren that do n
 -------------------------------------------------------------
 Processing file "cmpl_bql_minimal.json"...
 
+A simple object manipulation requires retrieving the type [TRUE]
 A simple object manipulation requires retrieving the id [TRUE]
 A simple object manipulation requires retrieving the object [TRUE]
-A simple object manipulation requires retrieving the type [TRUE]
 -------------------------------------------------------------
 Processing file "cmpl_bql_example_0.json"...
 
-Family graph data requires finding all Joe's grandchildren [TRUE]
 Family graph data requires finding all Joe's offspring name [TRUE]
+Family graph data requires finding all Joe's grandchildren [TRUE]
 -------------------------------------------------------------
 Processing file "cmpl_bql_example_2.json"...
 
@@ -140,11 +140,15 @@ Family and car graph data requires finding the manufactures in descending order 
 -------------------------------------------------------------
 Processing file "cmpl_bql_graph_clauses.json"...
 
-Family traversal requires Joe to have two grandchildren [TRUE]
 Family traversal requires Joe has two children despite redundant clause [TRUE]
 Family traversal requires four possible combinations of Joe's children [TRUE]
+Family traversal requires Joe has at least two children and their names are Eve and John and both share the same parent [TRUE]
+Family traversal requires Joe has at least two children and their names are Eve and John and both are children of Peter [TRUE]
+Family traversal requires Joe has no two children and bot are children of Mary [TRUE]
+Family traversal requires Joe to have two grandchildren [TRUE]
 Family traversal requires Joe has two kids and one is Mary for sure [TRUE]
 Family traversal requires no Joe's children gets returned if he does not have one called Zoe [TRUE]
+Family traversal requires Joe has at least two children and their names are Eve and John [TRUE]
 -------------------------------------------------------------
 
 done

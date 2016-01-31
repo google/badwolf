@@ -115,6 +115,88 @@
       "WillFail": false,
       "MustReturn": [
       ]
+    },
+    {
+      "Requires": "Joe has at least two children and their names are Eve and John",
+      "Statement": "
+      SELECT ?name
+      FROM ?g
+      WHERE {
+        /u<joe> \"parent_of\"@[] ?c.
+        ?c \"parent_of\"@[] ?gc ID ?name .
+        ?parent \"parent_of\"@[] /u<eve> .
+        ?other_parent \"parent_of\"@[] /u<john>
+      }
+      ORDER BY ?name ASC;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?name": "eve"
+        },
+        {
+          "?name": "john"
+        }
+      ]
+    },
+    {
+      "Requires": "Joe has at least two children and their names are Eve and John and both share the same parent",
+      "Statement": "
+      SELECT ?name
+      FROM ?g
+      WHERE {
+        /u<joe> \"parent_of\"@[] ?c.
+        ?c \"parent_of\"@[] ?gc ID ?name .
+        ?parent \"parent_of\"@[] /u<eve> .
+        ?other_parent \"parent_of\"@[] /u<john>
+      }
+      ORDER BY ?name ASC
+      HAVING ?parent = ?other_parent;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?name": "eve"
+        },
+        {
+          "?name": "john"
+        }
+      ]
+    },
+    {
+      "Requires": "Joe has at least two children and their names are Eve and John and both are children of Peter",
+      "Statement": "
+      SELECT ?name
+      FROM ?g
+      WHERE {
+        /u<joe> \"parent_of\"@[] ?c.
+        ?c \"parent_of\"@[] ?gc ID ?name .
+        /u<peter> \"parent_of\"@[] /u<eve> .
+        /u<peter> \"parent_of\"@[] /u<john>
+      }
+      ORDER BY ?name ASC;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?name": "eve"
+        },
+        {
+          "?name": "john"
+        }
+      ]
+    },
+    {
+      "Requires": "Joe has no two children and bot are children of Mary",
+      "Statement": "
+      SELECT ?name
+      FROM ?g
+      WHERE {
+        /u<joe> \"parent_of\"@[] ?c.
+        ?c \"parent_of\"@[] ?gc ID ?name .
+        /u<mary> \"parent_of\"@[] ?name
+      }
+      ORDER BY ?name ASC;",
+      "WillFail": false,
+      "MustReturn": [
+      ]
     }
   ]
 }
