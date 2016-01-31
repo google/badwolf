@@ -204,9 +204,23 @@ func newQueryPlan(store storage.Store, stm *semantic.Statement) (*queryPlan, err
 
 // processClause retrives the triples for the provided triple given the
 // information available.
-func (p *queryPlan) processClause(cls *semantic.GraphClause, lo *storage.LookupOptions) error {
+func (p *queryPlan) processClause(cls *semantic.GraphClause, lo *storage.LookupOptions) (bool, error) {
 	// This method decides how to process the clause based on the current
 	// list of bindings solved and data available.
+	if cls.Specificity() == 3 {
+		t, err := triple.New(cls.S, cls.P, cls.O)
+		if err != nil {
+			return false, err
+		}
+		b, tbl, err := simpleExist(p.grfs, cls, t)
+		if err != nil {
+			return false, err
+		}
+		if err := p.tbl.AppendTable(tbl); err != nil {
+			return b, err
+		}
+		return b, nil
+	}
 	exist, total := 0, 0
 	for _, b := range cls.Bindings() {
 		total++
@@ -218,26 +232,26 @@ func (p *queryPlan) processClause(cls *semantic.GraphClause, lo *storage.LookupO
 		// Data is new.
 		tbl, err := simpleFetch(p.grfs, cls, lo)
 		if err != nil {
-			return err
+			return false, err
 		}
 		if len(p.tbl.Bindings()) > 0 {
-			return p.tbl.DotProduct(tbl)
+			return false, p.tbl.DotProduct(tbl)
 		}
-		return p.tbl.AppendTable(tbl)
+		return false, p.tbl.AppendTable(tbl)
 	}
 	if exist > 0 && exist < total {
 		// Data is partially binded, retrieve data either extends the row with the
 		// new bindings or filters it out if now new bindings are available.
-		return p.specifyClauseWithTable(cls, lo)
+		return false, p.specifyClauseWithTable(cls, lo)
 	}
 	if exist > 0 && exist == total {
 		// Since all bindings in the clause are already solved, the clause becomes a
 		// fully specified triple. If the triple does not exist the row will be
 		// deleted.
-		return p.filterOnExistance(cls, lo)
+		return false, p.filterOnExistance(cls, lo)
 	}
 	// Somethign is wrong with the code.
-	return fmt.Errorf("queryPlan.processClause(%v) should have never failed to resolve the clause", cls)
+	return false, fmt.Errorf("queryPlan.processClause(%v) should have never failed to resolve the clause", cls)
 }
 
 // getBindedValueForComponent return the unique binded value if available on
@@ -451,8 +465,13 @@ func (p *queryPlan) processGraphPattern(lo *storage.LookupOptions) error {
 	for _, cls := range p.cls {
 		// The current planner is based on naively excecuting clauses by
 		// specificity.
-		if err := p.processClause(cls, lo); err != nil {
+		unresolvable, err := p.processClause(cls, lo)
+		if err != nil {
 			return err
+		}
+		if unresolvable {
+			p.tbl.Truncate()
+			return nil
 		}
 	}
 	return nil
@@ -571,6 +590,14 @@ func (p *queryPlan) Excecute() (*table.Table, error) {
 		return nil, err
 	}
 	p.limit()
+	if p.tbl.NumRows() == 0 {
+		// Correct the bindings.
+		t, err := table.New(p.stm.OutputBindings())
+		if err != nil {
+			return nil, err
+		}
+		p.tbl = t
+	}
 	return p.tbl, nil
 }
 

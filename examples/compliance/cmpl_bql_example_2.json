@@ -88,7 +88,7 @@
       ]
     },
     {
-      "Requires": "finding what cars does Joe's grandchildren's drive in descending order?",
+      "Requires": "finding what cars does Joe's grandchildren drive in descending order?",
       "Statement": "
       SELECT ?manufacturer
       FROM ?family, ?cars

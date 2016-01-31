@@ -85,11 +85,11 @@ func (a *Assertion) runAssertion(st storage.Store) (bool, *table.Table, *table.T
 	}
 	tbl, err := pln.Excecute()
 	if err != nil {
-		return errorizer(fmt.Errorf("planner.Execute: failed to execute insert plan with error %v", err))
+		return errorizer(fmt.Errorf("planner.Execute: failed to execute assertion %q with error %v", a.Requires, err))
 	}
 
 	// Check the output.
-	want, err := a.OutputTable(tbl.Bindings())
+	want, err := a.OutputTable(stm.OutputBindings())
 	if err != nil {
 		return errorizer(err)
 	}

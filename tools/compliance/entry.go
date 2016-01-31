@@ -119,10 +119,11 @@ func inferCell(s string) *table.Cell {
 // OutputTable returns the expected result table for the must result table
 // provided by the story.
 func (a *Assertion) OutputTable(bo []string) (*table.Table, error) {
+	// Return the already computed output table.
 	if a.table != nil {
 		return a.table, nil
 	}
-
+	// Compute the output table.
 	var (
 		first  bool
 		mBdngs map[string]bool
@@ -145,12 +146,17 @@ func (a *Assertion) OutputTable(bo []string) (*table.Table, error) {
 		data = append(data, nr)
 		first = false
 	}
+	if first {
+		// No data was provided. This will create the empty table with the right
+		// bindings.
+		bs = bo
+	}
 	// Build the table.
 	if len(bo) != len(bs) {
 		return nil, fmt.Errorf("incompatible bindings; got %v, want %v", bs, bo)
 	}
 	for _, b := range bo {
-		if _, ok := mBdngs[b]; !ok {
+		if _, ok := mBdngs[b]; !first && !ok {
 			return nil, fmt.Errorf("missing binding %q; want bining in %v", b, bo)
 		}
 	}

@@ -104,7 +104,7 @@ $ bw assert examples/compliance
 Processing folder "examples/compliance"...
 
 -------------------------------------------------------------
-Processing file "cmpl_example_1.json"...
+Processing file "cmpl_bql_example_1.json"...
 
 Family graph data requires finding all different mammal we know in the family graph [TRUE]
 Family graph data requires finding all genders of the members in the family graph [TRUE]
@@ -114,33 +114,37 @@ Family graph data requires finding all male grandchildren does Joe have [TRUE]
 Family graph data requires finding the gender distribution of Joe's mammal grandchildren in our family graph? [TRUE]
 Family graph data requires finding all Joe's offspring name [TRUE]
 -------------------------------------------------------------
-Processing file "cmpl_example_0.json"...
-
-Family graph data requires finding all Joe's offspring name [TRUE]
-Family graph data requires finding all Joe's grandchildren [TRUE]
--------------------------------------------------------------
-Processing file "cmpl_family_grandchildren.json"...
-
-Family traversal requires Joe to has two grandchildren [TRUE]
--------------------------------------------------------------
-Processing file "cmpl_simple.json"...
-
-A simple object manipulation requires retrieving the type [TRUE]
-A simple object manipulation requires retrieving the id [TRUE]
-A simple object manipulation requires retrieving the object [TRUE]
--------------------------------------------------------------
-Processing file "cmpl_example_3.json"...
+Processing file "cmpl_bql_example_3.json"...
 
 Family and car graph data requires finding if any of Joe's grandchildren have the same name of his parent [TRUE]
 Family and car graph data requires finding who are Joe's grandchildren that do not have the same name of his parent [TRUE]
 -------------------------------------------------------------
-Processing file "cmpl_example_2.json"...
+Processing file "cmpl_bql_minimal.json"...
 
+A simple object manipulation requires retrieving the id [TRUE]
+A simple object manipulation requires retrieving the object [TRUE]
+A simple object manipulation requires retrieving the type [TRUE]
+-------------------------------------------------------------
+Processing file "cmpl_bql_example_0.json"...
+
+Family graph data requires finding all Joe's grandchildren [TRUE]
+Family graph data requires finding all Joe's offspring name [TRUE]
+-------------------------------------------------------------
+Processing file "cmpl_bql_example_2.json"...
+
+Family and car graph data requires finding how many grandchildren does Joe have [TRUE]
 Family and car graph data requires finding the different brands of car manufactures do we know [TRUE]
-Family and car graph data requires finding what cars does Joe's grandchildren's drive in descending order? [TRUE]
+Family and car graph data requires finding what cars does Joe's grandchildren drive in descending order? [TRUE]
 Family and car graph data requires finding any unique owner and manufacture, list the manufacture in descending order, and for each manufacture order the owners in ascending order [TRUE]
 Family and car graph data requires finding the manufactures in descending order by number of owners [TRUE]
-Family and car graph data requires finding how many grandchildren does Joe have [TRUE]
+-------------------------------------------------------------
+Processing file "cmpl_bql_graph_clauses.json"...
+
+Family traversal requires Joe to have two grandchildren [TRUE]
+Family traversal requires Joe has two children despite redundant clause [TRUE]
+Family traversal requires four possible combinations of Joe's children [TRUE]
+Family traversal requires Joe has two kids and one is Mary for sure [TRUE]
+Family traversal requires no Joe's children gets returned if he does not have one called Zoe [TRUE]
 -------------------------------------------------------------
 
 done

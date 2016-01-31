@@ -15,6 +15,7 @@
 package planner
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 
@@ -92,6 +93,58 @@ func TestSimpleFetch(t *testing.T) {
 		if got, want := len(r), len(testBindings); got != want {
 			t.Errorf("addTriples returned row %v with the incorrect number of bindings; got %d, want %d", r, got, want)
 		}
+	}
+}
+
+func TestFeasibleSimpleExist(t *testing.T) {
+	g, err := getTestStore(t).Graph("?test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tt := getTestTriples(t)
+	s, p, o := tt[0].S(), tt[0].P(), tt[0].O()
+	clsOK := &semantic.GraphClause{
+		S: s,
+		P: p,
+		O: o,
+	}
+	unf, tbl, err := simpleExist([]storage.Graph{g}, clsOK, tt[0])
+	if err != nil {
+		t.Errorf("simpleExist should have not failed with error %v", err)
+	}
+	if unf {
+		t.Error(errors.New("simpleExist should have return an unfeasible table instead"))
+	}
+	if got, want := tbl.NumRows(), 0; got != want {
+		t.Errorf("simpleExist failed to return the right number of rows: got %d, want %d", got, want)
+	}
+}
+
+func TestUnfeasibleSimpleExist(t *testing.T) {
+	g, err := getTestStore(t).Graph("?test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	unknown, err := node.Parse("/unknown<unknown>")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tt := getTestTriples(t)
+	s, p, o := unknown, tt[0].P(), tt[0].O()
+	clsOK := &semantic.GraphClause{
+		S: s,
+		P: p,
+		O: o,
+	}
+	unf, tbl, err := simpleExist([]storage.Graph{g}, clsOK, tt[0])
+	if err != nil {
+		t.Errorf("simpleExist should have not failed with error %v", err)
+	}
+	if !unf {
+		t.Error(errors.New("simpleExist should have return a feasible table instead"))
+	}
+	if got, want := tbl.NumRows(), 0; got != want {
+		t.Errorf("simpleExist failed to return the right number of rows: got %d, want %d", got, want)
 	}
 }
 

@@ -18,6 +18,7 @@ package table
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"sort"
 	"strings"
 	"time"
@@ -113,7 +114,9 @@ func (r Row) ToTextLine(res *bytes.Buffer, bs []string, sep string) error {
 // creation. BQL builds valid tables, if you plan to create tables on your own
 // you should be carful to provide valid rows.
 func (t *Table) AddRow(r Row) {
-	t.data = append(t.data, r)
+	if len(r) > 0 {
+		t.data = append(t.data, r)
+	}
 }
 
 // NumRows returns the number of rows currently available on the table.
@@ -151,6 +154,9 @@ func (t *Table) AddBindings(bs []string) {
 // fail, leave the table unmodified, and return an error. The projection only
 // modify the bindings, but does not drop non projected data.
 func (t *Table) ProjectBindings(bs []string) error {
+	if len(t.mbs) == 0 {
+		return nil
+	}
 	for _, b := range bs {
 		if !t.mbs[b] {
 			return fmt.Errorf("cannot project against unknow binding %s; known bindinds are %v", b, t.bs)
@@ -219,6 +225,9 @@ func equalBindings(b1, b2 map[string]bool) bool {
 // AppendTable appends the content of the provided table. It will fail it the
 // target table is not empty and the binidngs do not match.
 func (t *Table) AppendTable(t2 *Table) error {
+	if t2 == nil {
+		return nil
+	}
 	if len(t.Bindings()) > 0 && !equalBindings(t.mbs, t2.mbs) {
 		return fmt.Errorf("AppendTable can only append to an empty table or equally binded table; intead got %v and %v", t.bs, t2.bs)
 	}
@@ -350,7 +359,14 @@ func rowLess(ri, rj Row, c SortConfig) bool {
 		return false
 	}
 	cfg, last := c[0], len(c) == 1
-	ci, cj := ri[cfg.Binding], rj[cfg.Binding]
+	ci, ok := ri[cfg.Binding]
+	if !ok {
+		log.Fatalf("Could not retrieve binding %q! %v %v", cfg.Binding, ri, rj)
+	}
+	cj, ok := rj[cfg.Binding]
+	if !ok {
+		log.Fatalf("Could not retrieve binding %q! %v %v", cfg.Binding, ri, rj)
+	}
 	si, sj := "", ""
 	// Check if it has a string.
 	if ci.S != "" && cj.S != "" {

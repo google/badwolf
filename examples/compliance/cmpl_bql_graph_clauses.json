@@ -1,0 +1,120 @@
+{
+  "Name": "Family traversal",
+  "Sources": [
+    {
+      "ID": "?g",
+      "Facts": [
+        "/u<joe> \"parent_of\"@[] /u<mary>",
+        "/u<joe> \"parent_of\"@[] /u<peter>",
+        "/u<peter> \"parent_of\"@[] /u<john>",
+        "/u<peter> \"parent_of\"@[] /u<eve>"
+      ]
+    }
+  ],
+  "Assertions": [
+    {
+      "Requires": "Joe to have two grandchildren",
+      "Statement": "
+      SELECT ?name
+      FROM ?g
+      WHERE {
+        /u<joe> \"parent_of\"@[] ?c.
+        ?c \"parent_of\"@[] ?gc ID ?name
+      }
+      ORDER BY ?name ASC;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?name": "eve"
+        },
+        {
+          "?name": "john"
+        }
+      ]
+    },
+    {
+      "Requires": "Joe has two children despite redundant clause",
+      "Statement": "
+      SELECT ?repeated_name
+      FROM ?g
+      WHERE {
+        /u<joe> \"parent_of\"@[] ?c ID ?repeated_name .
+        /u<joe> \"parent_of\"@[] ?c ID ?repeated_name
+      }
+      ORDER BY ?repeated_name ASC;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?repeated_name": "mary"
+        },
+        {
+          "?repeated_name": "peter"
+        }
+      ]
+    },
+    {
+      "Requires": "four possible combinations of Joe's children",
+      "Statement": "
+      SELECT ?name_1, ?name_2
+      FROM ?g
+      WHERE {
+        /u<joe> \"parent_of\"@[] ?c ID ?name_1 .
+        /u<joe> \"parent_of\"@[] ?c ID ?name_2
+      }
+      ORDER BY ?name_1 ASC, ?name_2 ASC;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?name_1": "mary",
+          "?name_2": "mary"
+        },
+        {
+          "?name_1": "mary",
+          "?name_2": "peter"
+        },
+        {
+          "?name_1": "peter",
+          "?name_2": "mary"
+        },
+        {
+          "?name_1": "peter",
+          "?name_2": "peter"
+        }
+      ]
+    },
+    {
+      "Requires": "Joe has two kids and one is Mary for sure",
+      "Statement": "
+      SELECT ?mary_name
+      FROM ?g
+      WHERE {
+        /u<joe> \"parent_of\"@[] /u<mary> .
+        /u<joe> \"parent_of\"@[] ?c ID ?mary_name
+      }
+      ORDER BY ?mary_name ASC;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?mary_name": "mary"
+        },
+        {
+          "?mary_name": "peter"
+        }
+      ]
+    },
+    {
+      "Requires": "no Joe's children gets returned if he does not have one called Zoe",
+      "Statement": "
+      SELECT ?impossible_name
+      FROM ?g
+      WHERE {
+        /u<joe> \"parent_of\"@[] /u<zoe> .
+        /u<joe> \"parent_of\"@[] ?c ID ?impossible_name
+      }
+      ORDER BY ?impossible_name ASC;",
+      "WillFail": false,
+      "MustReturn": [
+      ]
+    }
+  ]
+}

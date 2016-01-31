@@ -73,6 +73,32 @@ func updateTimeBoundsForRow(lo *storage.LookupOptions, cls *semantic.GraphClause
 	return nlo, nil
 }
 
+// simpleExist returns true if the triple exist. Return the unfeasible state,
+// the table and the error if present.
+func simpleExist(gs []storage.Graph, cls *semantic.GraphClause, t *triple.Triple) (bool, *table.Table, error) {
+	unfeasible := true
+	tbl, err := table.New(cls.Bindings())
+	if err != nil {
+		return true, nil, err
+	}
+	for _, g := range gs {
+		b, err := g.Exist(t)
+		if err != nil {
+			return true, nil, err
+		}
+		if b {
+			unfeasible = false
+			ts := make(chan *triple.Triple, 1)
+			ts <- t
+			close(ts)
+			if err := addTriples(ts, cls, tbl); err != nil {
+				return true, nil, err
+			}
+		}
+	}
+	return unfeasible, tbl, nil
+}
+
 // simpleFetch returns a table containing the data specified by the graph
 // clause by querying the provided stora. Will return an error if it had poblems
 // retrieveing the data.
