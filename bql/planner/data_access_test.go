@@ -108,12 +108,12 @@ func TestFeasibleSimpleExist(t *testing.T) {
 		P: p,
 		O: o,
 	}
-	unf, tbl, err := simpleExist([]storage.Graph{g}, clsOK, tt[0])
+	unfeasible, tbl, err := simpleExist([]storage.Graph{g}, clsOK, tt[0])
 	if err != nil {
 		t.Errorf("simpleExist should have not failed with error %v", err)
 	}
-	if unf {
-		t.Error(errors.New("simpleExist should have return an unfeasible table instead"))
+	if unfeasible {
+		t.Error(errors.New("simpleExist should have return a feasible table instead"))
 	}
 	if got, want := tbl.NumRows(), 0; got != want {
 		t.Errorf("simpleExist failed to return the right number of rows: got %d, want %d", got, want)
@@ -131,17 +131,21 @@ func TestUnfeasibleSimpleExist(t *testing.T) {
 	}
 	tt := getTestTriples(t)
 	s, p, o := unknown, tt[0].P(), tt[0].O()
-	clsOK := &semantic.GraphClause{
+	clsNotOK := &semantic.GraphClause{
 		S: s,
 		P: p,
 		O: o,
 	}
-	unf, tbl, err := simpleExist([]storage.Graph{g}, clsOK, tt[0])
+	tplNotOK, err := triple.New(s, p, o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	unfeasible, tbl, err := simpleExist([]storage.Graph{g}, clsNotOK, tplNotOK)
 	if err != nil {
 		t.Errorf("simpleExist should have not failed with error %v", err)
 	}
-	if !unf {
-		t.Error(errors.New("simpleExist should have return a feasible table instead"))
+	if !unfeasible {
+		t.Error(errors.New("simpleExist should have return an unfeasible table instead"))
 	}
 	if got, want := tbl.NumRows(), 0; got != want {
 		t.Errorf("simpleExist failed to return the right number of rows: got %d, want %d", got, want)
