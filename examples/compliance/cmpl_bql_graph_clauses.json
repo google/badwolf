@@ -18,7 +18,7 @@
       SELECT ?name
       FROM ?g
       WHERE {
-        /u<joe> \"parent_of\"@[] ?c.
+        /u<joe> \"parent_of\"@[] ?c .
         ?c \"parent_of\"@[] ?gc ID ?name
       }
       ORDER BY ?name ASC;",
@@ -83,6 +83,214 @@
       ]
     },
     {
+      "Requires": "Joe's grandchildren should product four combinations",
+      "Statement": "
+      SELECT ?name_1, ?name_2
+      FROM ?g
+      WHERE {
+        /u<joe> \"parent_of\"@[] ?c .
+        ?c \"parent_of\"@[] ?gc ID ?name_1 .
+        ?c \"parent_of\"@[] ?gc ID ?name_2
+      }
+      ORDER BY ?name_1 ASC, ?name_2 ASC;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?name_1": "eve",
+          "?name_2": "eve"
+        },
+        {
+          "?name_1": "eve",
+          "?name_2": "john"
+        },
+        {
+          "?name_1": "john",
+          "?name_2": "eve"
+        },
+        {
+          "?name_1": "john",
+          "?name_2": "john"
+        }
+      ]
+    },
+    {
+      "Requires": "returning the first Joe's grandchildren of the possible combinations",
+      "Statement": "
+      SELECT ?name_1, ?name_2
+      FROM ?g
+      WHERE {
+        /u<joe> \"parent_of\"@[] ?c .
+        ?c \"parent_of\"@[] ?gc ID ?name_1 .
+        ?c \"parent_of\"@[] ?gc ID ?name_2
+      }
+      ORDER BY ?name_1 ASC, ?name_2 ASC
+      LIMIT \"1\"^^type:int64;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?name_1": "eve",
+          "?name_2": "eve"
+        }
+      ]
+    },
+    {
+      "Requires": "Joe's grandchildren conbinations to be returned only if both have the same name",
+      "Statement": "
+      SELECT ?name_1, ?name_2
+      FROM ?g
+      WHERE {
+        /u<joe> \"parent_of\"@[] ?c .
+        ?c \"parent_of\"@[] ?gc ID ?name_1 .
+        ?c \"parent_of\"@[] ?gc ID ?name_2
+      }
+      ORDER BY ?name_1 ASC, ?name_2 ASC
+      HAVING ?name_1 = ?name_2;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?name_1": "eve",
+          "?name_2": "eve"
+        },
+        {
+          "?name_1": "john",
+          "?name_2": "john"
+        }
+      ]
+    },
+    {
+      "Requires": "Joe's grandchildren conbinations to be returned only if both do not have the same name",
+      "Statement": "
+      SELECT ?name_1, ?name_2
+      FROM ?g
+      WHERE {
+        /u<joe> \"parent_of\"@[] ?c .
+        ?c \"parent_of\"@[] ?gc ID ?name_1 .
+        ?c \"parent_of\"@[] ?gc ID ?name_2
+      }
+      ORDER BY ?name_1 ASC, ?name_2 ASC
+      HAVING NOT(?name_1 = ?name_2);",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?name_1": "eve",
+          "?name_2": "john"
+        },
+        {
+          "?name_1": "john",
+          "?name_2": "eve"
+        }
+      ]
+    },
+    {
+      "Requires": "Joe's grandchildren conbinations to be returned only if the first name is less than the second one",
+      "Statement": "
+      SELECT ?name_1, ?name_2
+      FROM ?g
+      WHERE {
+        /u<joe> \"parent_of\"@[] ?c .
+        ?c \"parent_of\"@[] ?gc ID ?name_1 .
+        ?c \"parent_of\"@[] ?gc ID ?name_2
+      }
+      ORDER BY ?name_1 ASC, ?name_2 ASC
+      HAVING ?name_1 < ?name_2;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?name_1": "eve",
+          "?name_2": "john"
+        }
+      ]
+    },
+    {
+      "Requires": "listing all the posible four combination of Joe's children and grandchildren",
+      "Statement": "
+      SELECT ?name_children, ?name_grandchildren
+      FROM ?g
+      WHERE {
+        /u<joe> \"parent_of\"@[] ?c .
+        ?c \"parent_of\"@[] ?gc ID ?name_grandchildren .
+
+        /u<joe> \"parent_of\"@[] ?oc ID ?name_children
+      }
+      ORDER BY ?name_children ASC, ?name_grandchildren ASC;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?name_children": "mary",
+          "?name_grandchildren": "eve"
+        },
+        {
+          "?name_children": "mary",
+          "?name_grandchildren": "john"
+        },
+        {
+          "?name_children": "peter",
+          "?name_grandchildren": "eve"
+        },
+        {
+          "?name_children": "peter",
+          "?name_grandchildren": "john"
+        }
+      ]
+    },
+    {
+      "Requires": "listing all the posible four combination of Joe's children and grandchildren only if the children has kids",
+      "Statement": "
+      SELECT ?name_children, ?name_grandchildren
+      FROM ?g
+      WHERE {
+        /u<joe> \"parent_of\"@[] ?c ID ?name_children .
+        ?c \"parent_of\"@[] ?gc ID ?name_grandchildren
+      }
+      ORDER BY ?name_children ASC, ?name_grandchildren ASC;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?name_children": "peter",
+          "?name_grandchildren": "eve"
+        },
+        {
+          "?name_children": "peter",
+          "?name_grandchildren": "john"
+        }
+      ]
+    },
+    {
+      "Requires": "listing Joe as the only grandparent",
+      "Statement": "
+      SELECT ?grandparent
+      FROM ?g
+      WHERE {
+        ?gp ID ?grandparent \"parent_of\"@[] ?c .
+        ?c \"parent_of\"@[] ?gc ID ?gc
+      }
+      GROUP BY ?grandparent;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?grandparent": "joe"
+        }
+      ]
+    },
+    {
+      "Requires": "counting XX two as the number of grand children Joe has",
+      "Statement": "
+      SELECT ?grandparent, COUNT(?gc) AS ?number_of_grandchildren
+      FROM ?g
+      WHERE {
+        ?gp ID ?grandparent \"parent_of\"@[] ?c .
+        ?c \"parent_of\"@[] ?gc ID ?gc
+      }
+      GROUP BY ?grandparent;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?grandparent": "joe",
+          "?number_of_grandchildren": "\"2\"^^type:int64"
+        }
+      ]
+    },
+    {
       "Requires": "Joe has two kids and one is Mary for sure",
       "Statement": "
       SELECT ?mary_name
@@ -122,7 +330,7 @@
       SELECT ?name
       FROM ?g
       WHERE {
-        /u<joe> \"parent_of\"@[] ?c.
+        /u<joe> \"parent_of\"@[] ?c .
         ?c \"parent_of\"@[] ?gc ID ?name .
         ?parent \"parent_of\"@[] /u<eve> .
         ?other_parent \"parent_of\"@[] /u<john>
@@ -144,7 +352,7 @@
       SELECT ?name
       FROM ?g
       WHERE {
-        /u<joe> \"parent_of\"@[] ?c.
+        /u<joe> \"parent_of\"@[] ?c .
         ?c \"parent_of\"@[] ?gc ID ?name .
         ?parent \"parent_of\"@[] /u<eve> .
         ?other_parent \"parent_of\"@[] /u<john>
@@ -167,7 +375,7 @@
       SELECT ?name
       FROM ?g
       WHERE {
-        /u<joe> \"parent_of\"@[] ?c.
+        /u<joe> \"parent_of\"@[] ?c .
         ?c \"parent_of\"@[] ?gc ID ?name .
         /u<peter> \"parent_of\"@[] /u<eve> .
         /u<peter> \"parent_of\"@[] /u<john>
@@ -189,7 +397,7 @@
       SELECT ?name
       FROM ?g
       WHERE {
-        /u<joe> \"parent_of\"@[] ?c.
+        /u<joe> \"parent_of\"@[] ?c .
         ?c \"parent_of\"@[] ?gc ID ?name .
         /u<mary> \"parent_of\"@[] ?name
       }
