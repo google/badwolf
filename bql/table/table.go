@@ -17,6 +17,7 @@ package table
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"sort"
@@ -528,6 +529,7 @@ func (t *Table) groupRangeReduce(i, j int, alias map[string]string, acc map[stri
 	if i > j {
 		return nil, fmt.Errorf("cannot aggregate empty ranges [%d, %d)", i, j)
 	}
+	// Ininitalize the range and accumulator results.
 	rng := t.data[i:j]
 	vaccs := make(map[string]interface{})
 	// Reset the accumulators.
@@ -582,61 +584,121 @@ func (t *Table) groupRangeReduce(i, j int, alias map[string]string, acc map[stri
 	return newRow, nil
 }
 
-// BindingOrderedMapping represnents an ordered maping of input and output
-// binding alias.
-type BindingOrderedMapping []struct {
-	In  string
-	Out string
+// AliasAccPair contains the in, out alias, and the optional accumulator to use.
+type AliasAccPair struct {
+	InAlias  string
+	OutAlias string
+	Acc      Accumulator
 }
 
-// Map constructs a map of accumulators indexed by their binding name.
-func (b BindingOrderedMapping) Map() map[string]string {
-	m := make(map[string]string)
-	for _, o := range b {
-		m[o.In] = o.Out
+// fullGroupRangeReduce takes a sorted range and generates a new row containing
+// the aggregated colums and the non agggregated ones.
+func (t *Table) fullGroupRangeReduce(i, j int, acc map[string]map[string]AliasAccPair) (Row, error) {
+	if i > j {
+		return nil, fmt.Errorf("cannot aggregate empty ranges [%d, %d)", i, j)
 	}
-	return m
+	// Ininitalize the range and accumulator results.
+	rng := t.data[i:j]
+	// Reset the accumulators.
+	for _, aap := range acc {
+		for _, a := range aap {
+			if a.Acc != nil {
+				a.Acc.Reset()
+			}
+		}
+	}
+	// Aggregate the range using the provided aggregators.
+	vaccs := make(map[string]map[string]interface{})
+	for _, r := range rng {
+		for _, aap := range acc {
+			for _, a := range aap {
+				if a.Acc == nil {
+					continue
+				}
+				av, err := a.Acc.Accumulate(r[a.InAlias])
+				if err != nil {
+					return nil, err
+				}
+				if _, ok := vaccs[a.InAlias]; !ok {
+					vaccs[a.InAlias] = make(map[string]interface{})
+				}
+				vaccs[a.InAlias][a.OutAlias] = av
+			}
+		}
+	}
+	// Create a new row based on the resulting aggregations with the proper
+	// binding aliasing and the non aggregated values.
+	newRow := Row{}
+	for b, v := range rng[0] {
+		for _, app := range acc[b] { //macc {
+			if app.Acc == nil {
+				newRow[app.OutAlias] = v
+			} else {
+				// Accumulators currently only can return numeric literals.
+				switch vaccs[app.InAlias][app.OutAlias].(type) {
+				case int64:
+					l, err := literal.DefaultBuilder().Build(literal.Int64, vaccs[app.InAlias][app.OutAlias])
+					if err != nil {
+						return nil, err
+					}
+					newRow[app.OutAlias] = &Cell{L: l}
+				case float64:
+					l, err := literal.DefaultBuilder().Build(literal.Float64, vaccs[app.InAlias][app.OutAlias])
+					if err != nil {
+						return nil, err
+					}
+					newRow[app.OutAlias] = &Cell{L: l}
+				default:
+					return nil, fmt.Errorf("aggregation of binding %s returned unknown value %v or type", b, acc)
+				}
+			}
+		}
+	}
+	if len(newRow) == 0 {
+		return nil, errors.New("failed to reduced row range returning an empty one")
+	}
+	return newRow, nil
 }
 
-// Outputs return the list of output bindings.
-func (b BindingOrderedMapping) Outputs() []string {
-	out := []string{}
-	for _, o := range b {
-		out = append(out, o.Out)
+// toMap converts a list of alias and acc pairs into a nested map. The first
+// key is the input binding, the second one is the output binding.
+func toMap(aaps []AliasAccPair) map[string]map[string]AliasAccPair {
+	resMap := make(map[string]map[string]AliasAccPair)
+	for _, aap := range aaps {
+		m, ok := resMap[aap.InAlias]
+		if !ok {
+			m = make(map[string]AliasAccPair)
+			resMap[aap.InAlias] = m
+		}
+		m[aap.OutAlias] = aap
 	}
-	return out
+	return resMap
 }
 
 // Reduce alters the table by sorting and then range grouping the table data.
 // In order to group reduce the table, we sort the table and then apply the
 // accumulator functions to each group. Finally, the table metadata gets
 // updated to reflect the reduce operation.
-func (t *Table) Reduce(cfg SortConfig, sortedAlias BindingOrderedMapping, acc map[string]Accumulator) error {
-	alias := sortedAlias.Map()
+func (t *Table) Reduce(cfg SortConfig, aaps []AliasAccPair) error {
+	maaps := toMap(aaps)
 	// Input validation tests.
-	if len(t.bs) != len(alias) {
-		return fmt.Errorf("table.Reduce cannot project bindings; current %v, requested %v", t.bs, alias)
+	if len(t.bs) != len(maaps) {
+		return fmt.Errorf("table.Reduce cannot project bindings; current %v, requested %v", t.bs, aaps)
 	}
 	for _, b := range t.bs {
-		if _, ok := alias[b]; !ok {
+		if _, ok := maaps[b]; !ok {
 			return fmt.Errorf("table.Reduce missing binding alias for %q", b)
 		}
 	}
 	cnt := 0
-	for _, c := range cfg {
-		if _, ok := t.mbs[c.Binding]; !ok {
-			return fmt.Errorf("table.Reduce unknown sorting binding %q; available bindings %v", c.Binding, t.bs)
-		}
-		cnt++
-	}
-	for b := range acc {
+	for b := range maaps {
 		if _, ok := t.mbs[b]; !ok {
 			return fmt.Errorf("table.Reduce unknown reducer binding %q; available bindings %v", b, t.bs)
 		}
 		cnt++
 	}
 	if cnt != len(t.bs) {
-		return fmt.Errorf("table.Reduce invalid reduce configuration in cfg=%v, alias=%v, acc=%v for table with binding %v", cfg, alias, acc, t.bs)
+		return fmt.Errorf("table.Reduce invalid reduce configuration in cfg=%v, aap=%v for table with binding %v", cfg, aaps, t.bs)
 	}
 	// Valid reduce configuration. Reduce sorts the table and then reduces
 	// contigous groups row groups.
@@ -664,22 +726,25 @@ func (t *Table) Reduce(cfg SortConfig, sortedAlias BindingOrderedMapping, acc ma
 			continue
 		}
 		// A group reduce operation is needed.
-		nr, err := t.groupRangeReduce(lastIdx, idx, alias, acc)
+		nr, err := t.fullGroupRangeReduce(lastIdx, idx, maaps)
 		if err != nil {
 			return err
 		}
 		newData = append(newData, nr)
 		last, lastIdx = current, idx
 	}
-	nr, err := t.groupRangeReduce(lastIdx, len(t.data), alias, acc)
+	nr, err := t.fullGroupRangeReduce(lastIdx, len(t.data), maaps)
 	if err != nil {
 		return err
 	}
 	newData = append(newData, nr)
 	// Update the table.
-	t.bs, t.mbs = sortedAlias.Outputs(), make(map[string]bool)
-	for _, b := range alias {
-		t.mbs[b] = true
+	t.bs, t.mbs = []string{}, make(map[string]bool)
+	for _, aap := range aaps {
+		if !t.mbs[aap.OutAlias] {
+			t.bs = append(t.bs, aap.OutAlias)
+		}
+		t.mbs[aap.OutAlias] = true
 	}
 	t.data = newData
 	return nil

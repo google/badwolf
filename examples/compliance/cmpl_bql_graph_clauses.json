@@ -1,5 +1,5 @@
 {
-  "Name": "Family traversal",
+  "Name": "Family graph clauses traversal",
   "Sources": [
     {
       "ID": "?g",
@@ -134,7 +134,7 @@
       ]
     },
     {
-      "Requires": "Joe's grandchildren conbinations to be returned only if both have the same name",
+      "Requires": "Joe's grandchildren combinations to be returned only if both have the same name",
       "Statement": "
       SELECT ?name_1, ?name_2
       FROM ?g
@@ -158,7 +158,7 @@
       ]
     },
     {
-      "Requires": "Joe's grandchildren conbinations to be returned only if both do not have the same name",
+      "Requires": "Joe's grandchildren combinations to be returned only if both do not have the same name",
       "Statement": "
       SELECT ?name_1, ?name_2
       FROM ?g
@@ -182,7 +182,7 @@
       ]
     },
     {
-      "Requires": "Joe's grandchildren conbinations to be returned only if the first name is less than the second one",
+      "Requires": "Joe's grandchildren combinations to be returned only if the first name is less than the second one",
       "Statement": "
       SELECT ?name_1, ?name_2
       FROM ?g
@@ -202,7 +202,7 @@
       ]
     },
     {
-      "Requires": "listing all the posible four combination of Joe's children and grandchildren",
+      "Requires": "listing all the possible four combination of Joe's children and grandchildren",
       "Statement": "
       SELECT ?name_children, ?name_grandchildren
       FROM ?g
@@ -234,7 +234,7 @@
       ]
     },
     {
-      "Requires": "listing all the posible four combination of Joe's children and grandchildren only if the children has kids",
+      "Requires": "listing all the possible four combination of Joe's children and grandchildren only if the children has kids",
       "Statement": "
       SELECT ?name_children, ?name_grandchildren
       FROM ?g

@@ -47,72 +47,18 @@ Below you can find the output of using the `run` command against the previously 
 
 ```
 $ bw run examples/bql/example_0.bql
-Processing file examples/bql/example_0.bql
-
-Processing statement (1/5):
-CREATE GRAPH ?family;
-
-Result:
-OK
-
-Processing statement (2/5):
-INSERT DATA INTO ?family { /u<joe> "parent_of"@[] /u<mary> . /u<joe> "parent_of"@[] /u<peter> . /u<peter> "parent_of"@[] /u<john> . /u<peter> "parent_of"@[] /u<eve> };
-
-Result:
-OK
-
-Processing statement (3/5):
-SELECT ?name FROM ?family WHERE { /u<joe> "parent_of"@[] ?offspring ID ?name };
-
-Result:
-?name
-mary
-peter
-
-OK
-
-Processing statement (4/5):
-SELECT ?grandchildren_name FROM ?family WHERE { /u<joe> "parent_of"@[] ?offspring . ?offspring "parent_of"@[] ?grandchildren ID ?grandchildren_name };
-
-Result:
-?grandchildren_name
-john
-eve
-
-OK
-
-Processing statement (5/5):
-DROP GRAPH ?family;
-
-Result:
-OK
-
-```
-
-## Command: Assert
-
-The assert command will bulk-assert all the stories contained in the provided
-stories folder. A compliance story is a JSON file that contains the data
-to be used (one or more graphs), and the list of assertions (BQL query +
-output table) to be validated against the provided data. An example of a file containing a simple story can be found at
-[examples/compliance/cmpl_simple.json](../examples/compliance/cmpl_simple.json).
-Below you can find the output of using the `assert` command against a folder
-containing multiple stories.
-
-```
-$ bw assert examples/compliance
-Processing folder "examples/compliance"...
+Processing folder "examples/compliance/"...
 
 -------------------------------------------------------------
 Processing file "cmpl_bql_example_1.json"...
 
+Family graph data requires finding all different mammal we know in the family graph [TRUE]
 Family graph data requires finding all genders of the members in the family graph [TRUE]
 Family graph data requires finding all the gender distribution in our family graph [TRUE]
 Family graph data requires finding how many female grandchildren does Joe have [TRUE]
 Family graph data requires finding all male grandchildren does Joe have [TRUE]
 Family graph data requires finding the gender distribution of Joe's mammal grandchildren in our family graph? [TRUE]
 Family graph data requires finding all Joe's offspring name [TRUE]
-Family graph data requires finding all different mammal we know in the family graph [TRUE]
 -------------------------------------------------------------
 Processing file "cmpl_bql_example_3.json"...
 
@@ -132,23 +78,32 @@ Family graph data requires finding all Joe's grandchildren [TRUE]
 -------------------------------------------------------------
 Processing file "cmpl_bql_example_2.json"...
 
+Family and car graph data requires finding any unique owner and manufacture, list the manufacture in descending order, and for each manufacture order the owners in ascending order [TRUE]
+Family and car graph data requires finding the manufactures in descending order by number of owners [TRUE]
 Family and car graph data requires finding how many grandchildren does Joe have [TRUE]
 Family and car graph data requires finding the different brands of car manufactures do we know [TRUE]
 Family and car graph data requires finding what cars does Joe's grandchildren drive in descending order? [TRUE]
-Family and car graph data requires finding any unique owner and manufacture, list the manufacture in descending order, and for each manufacture order the owners in ascending order [TRUE]
-Family and car graph data requires finding the manufactures in descending order by number of owners [TRUE]
 -------------------------------------------------------------
 Processing file "cmpl_bql_graph_clauses.json"...
 
-Family traversal requires Joe has two children despite redundant clause [TRUE]
-Family traversal requires four possible combinations of Joe's children [TRUE]
-Family traversal requires Joe has at least two children and their names are Eve and John and both share the same parent [TRUE]
-Family traversal requires Joe has at least two children and their names are Eve and John and both are children of Peter [TRUE]
-Family traversal requires Joe has no two children and bot are children of Mary [TRUE]
-Family traversal requires Joe to have two grandchildren [TRUE]
-Family traversal requires Joe has two kids and one is Mary for sure [TRUE]
-Family traversal requires no Joe's children gets returned if he does not have one called Zoe [TRUE]
-Family traversal requires Joe has at least two children and their names are Eve and John [TRUE]
+Family graph clauses traversal requires returning the first Joe's grandchildren of the possible combinations [TRUE]
+Family graph clauses traversal requires listing all the possible four combination of Joe's children and grandchildren [TRUE]
+Family graph clauses traversal requires listing Joe as the only grandparent [TRUE]
+Family graph clauses traversal requires Joe has at least two children and their names are Eve and John [TRUE]
+Family graph clauses traversal requires Joe has at least two children and their names are Eve and John and both are children of Peter [TRUE]
+Family graph clauses traversal requires Joe to have two grandchildren [TRUE]
+Family graph clauses traversal requires Joe has two children despite redundant clause [TRUE]
+Family graph clauses traversal requires Joe's grandchildren should product four combinations [TRUE]
+Family graph clauses traversal requires Joe's grandchildren combinations to be returned only if both have the same name [TRUE]
+Family graph clauses traversal requires no Joe's children gets returned if he does not have one called Zoe [TRUE]
+Family graph clauses traversal requires counting XX two as the number of grand children Joe has [TRUE]
+Family graph clauses traversal requires Joe has at least two children and their names are Eve and John and both share the same parent [TRUE]
+Family graph clauses traversal requires Joe has no two children and bot are children of Mary [TRUE]
+Family graph clauses traversal requires four possible combinations of Joe's children [TRUE]
+Family graph clauses traversal requires Joe's grandchildren combinations to be returned only if both do not have the same name [TRUE]
+Family graph clauses traversal requires Joe's grandchildren combinations to be returned only if the first name is less than the second one [TRUE]
+Family graph clauses traversal requires listing all the possible four combination of Joe's children and grandchildren only if the children has kids [TRUE]
+Family graph clauses traversal requires Joe has two kids and one is Mary for sure [TRUE]
 -------------------------------------------------------------
 
 done

@@ -401,6 +401,11 @@ func TestQuery(t *testing.T) {
 			nbs:  1,
 			nrws: 4,
 		},
+		{
+			q:    `SELECT ?grandparent, COUNT(?grandparent) AS ?number_of_grandchildren FROM ?test WHERE{ ?gp ID ?grandparent "parent_of"@[] ?c . ?c "parent_of"@[] ?gc ID ?gc } GROUP BY ?grandparent;`,
+			nbs:  2,
+			nrws: 1,
+		},
 	}
 
 	s := populateTestStore(t)
@@ -425,7 +430,7 @@ func TestQuery(t *testing.T) {
 			t.Errorf("tbl.Bindings returned the wrong number of bindings for %q; got %d, want %d", entry.q, got, want)
 		}
 		if got, want := len(tbl.Rows()), entry.nrws; got != want {
-			t.Errorf("planner.Excecute failed to return the expected number of rows for query %q; got %d want %d", entry.q, got, want)
+			t.Errorf("planner.Excecute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", entry.q, got, want, tbl)
 		}
 	}
 }

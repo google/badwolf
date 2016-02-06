@@ -488,10 +488,10 @@ func (p *queryPlan) projectAndGroupBy() error {
 	// The table needs to be group reduced.
 	// Project only binding involved in the group operation.
 	tmpBindings := []string{}
+	mapBindings := make(map[string]bool)
 	// The table requires group reduce.
 	cfg := table.SortConfig{}
-	alias := table.BindingOrderedMapping{}
-	acc := make(map[string]table.Accumulator)
+	aaps := []table.AliasAccPair{}
 	for _, prj := range p.stm.Projections() {
 		// Only include used incoming bindings.
 		tmpBindings = append(tmpBindings, prj.Binding)
@@ -502,22 +502,25 @@ func (p *queryPlan) projectAndGroupBy() error {
 				found = true
 			}
 		}
-		if found {
+		if found && !mapBindings[prj.Binding] {
 			cfg = append(cfg, table.SortConfig{{Binding: prj.Binding}}...)
+			mapBindings[prj.Binding] = true
 		}
-		// Update alias mapping.
+		aap := table.AliasAccPair{
+			InAlias: prj.Binding,
+		}
 		if prj.Alias == "" {
-			alias = append(alias, table.BindingOrderedMapping{{In: prj.Binding, Out: prj.Binding}}...)
+			aap.OutAlias = prj.Binding
 		} else {
-			alias = append(alias, table.BindingOrderedMapping{{In: prj.Binding, Out: prj.Alias}}...)
+			aap.OutAlias = prj.Alias
 		}
 		// Update accumulators.
 		switch prj.OP {
 		case lexer.ItemCount:
 			if prj.Modifier == lexer.ItemDistinct {
-				acc[prj.Binding] = table.NewCountDistinctAccumulator()
+				aap.Acc = table.NewCountDistinctAccumulator()
 			} else {
-				acc[prj.Binding] = table.NewCountAccumulator()
+				aap.Acc = table.NewCountAccumulator()
 			}
 		case lexer.ItemSum:
 			cell := p.tbl.Rows()[0][prj.Binding]
@@ -526,18 +529,19 @@ func (p *queryPlan) projectAndGroupBy() error {
 			}
 			switch cell.L.Type() {
 			case literal.Int64:
-				acc[prj.Binding] = table.NewSumInt64LiteralAccumulator(0)
+				aap.Acc = table.NewSumInt64LiteralAccumulator(0)
 			case literal.Float64:
-				acc[prj.Binding] = table.NewSumFloat64LiteralAccumulator(0)
+				aap.Acc = table.NewSumFloat64LiteralAccumulator(0)
 			default:
 				return fmt.Errorf("cannot only sum int64 and float64 literals; found literal type %s instead for binding %q", cell.L.Type(), prj.Binding)
 			}
 		}
+		aaps = append(aaps, aap)
 	}
 	if err := p.tbl.ProjectBindings(tmpBindings); err != nil {
 		return err
 	}
-	p.tbl.Reduce(cfg, alias, acc)
+	p.tbl.Reduce(cfg, aaps)
 	return nil
 }
 

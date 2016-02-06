@@ -750,17 +750,108 @@ func TestGroupRangeReduce(t *testing.T) {
 	}
 }
 
+func TestFullGroupRangeReduce(t *testing.T) {
+	int64LiteralCell := func(i int64) *Cell {
+		l, _ := literal.DefaultBuilder().Build(literal.Int64, i)
+		return &Cell{L: l}
+	}
+	testTable := []struct {
+		id   string
+		tbl  *Table
+		red  map[string]map[string]AliasAccPair
+		want Row
+	}{
+		{
+			id:  "group ?foo and pass ?bar",
+			tbl: testTable(t),
+			red: map[string]map[string]AliasAccPair{
+				"?foo": map[string]AliasAccPair{
+					"?foo_alias": AliasAccPair{
+						InAlias:  "?foo",
+						OutAlias: "?foo_alias",
+						Acc:      NewCountAccumulator(),
+					},
+				},
+				"?bar": map[string]AliasAccPair{
+					"?bar_alias": AliasAccPair{
+						InAlias:  "?bar",
+						OutAlias: "?bar_alias",
+					},
+				},
+			},
+			want: Row{
+				"?bar_alias": &Cell{S: "bar"},
+				"?foo_alias": int64LiteralCell(int64(3)),
+			},
+		},
+		{
+			id:  "group count ?foo and alias ?foo and ?bar",
+			tbl: testTable(t),
+			red: map[string]map[string]AliasAccPair{
+				"?foo": map[string]AliasAccPair{
+					"?foo_count": AliasAccPair{
+						InAlias:  "?foo",
+						OutAlias: "?foo_count",
+						Acc:      NewCountAccumulator(),
+					},
+					"?foo_alias": AliasAccPair{
+						InAlias:  "?foo",
+						OutAlias: "?foo_alias",
+					},
+				},
+				"?bar": map[string]AliasAccPair{
+					"?bar_alias": AliasAccPair{
+						InAlias:  "?bar",
+						OutAlias: "?bar_alias",
+					},
+				},
+			},
+			want: Row{
+				"?foo_alias": &Cell{S: "foo"},
+				"?bar_alias": &Cell{S: "bar"},
+				"?foo_count": int64LiteralCell(int64(3)),
+			},
+		},
+		// Proper rejection tests.
+		{
+			id:  "reject query",
+			tbl: testTable(t),
+			red: map[string]map[string]AliasAccPair{
+				"?other": map[string]AliasAccPair{
+					"?other_alias": AliasAccPair{
+						InAlias:  "?other",
+						OutAlias: "?other_alias",
+						Acc:      NewCountAccumulator(),
+					},
+				},
+			},
+		},
+	}
+	for _, entry := range testTable {
+		got, err := entry.tbl.fullGroupRangeReduce(0, entry.tbl.NumRows(), entry.red)
+		want := entry.want
+		if want != nil && err != nil {
+			t.Errorf("table.fullGroupRangeReduce failed %q to compute reduced row with error %v", entry.id, err)
+		}
+		if want == nil && err == nil {
+			t.Errorf("table.fullGroupRangeReduce should have failed %q to reduced row; instead it produced\n%v", entry.id, got)
+		}
+		if want != nil && !reflect.DeepEqual(got, want) {
+			t.Errorf("table.fullGroupRangeReduce failed to produce correct reduce row in %q; got\n%s, want\n%s", entry.id, got, want)
+		}
+	}
+}
+
 func TestTableReduce(t *testing.T) {
 	int64LiteralCell := func(i int64) *Cell {
 		l, _ := literal.DefaultBuilder().Build(literal.Int64, i)
 		return &Cell{L: l}
 	}
 	testTable := []struct {
-		tbl   *Table
-		cfg   SortConfig
-		alias BindingOrderedMapping
-		acc   map[string]Accumulator
-		want  *Table
+		tbl  *Table
+		cfg  SortConfig
+		aap  []AliasAccPair
+		want *Table
 	}{
 		{
 			tbl: &Table{
@@ -784,12 +875,21 @@ func TestTableReduce(t *testing.T) {
 					},
 				},
 			},
-			cfg: SortConfig{{"?foo", false}},
-			alias: BindingOrderedMapping{
-				{"?foo", "?foo_alias"},
-				{"?bar", "?bar_alias"},
+			cfg: SortConfig{
+				{"?foo", false},
+				{"?bar", false},
 			},
-			acc: map[string]Accumulator{"?bar": NewCountAccumulator()},
+			aap: []AliasAccPair{
+				{
+					InAlias:  "?foo",
+					OutAlias: "?foo_alias",
+				},
+				{
+					InAlias:  "?bar",
+					OutAlias: "?bar_alias",
+					Acc:      NewCountAccumulator(),
+				},
+			},
 			want: &Table{
 				bs: []string{"?foo_alias", "?bar_alias"},
 				mbs: map[string]bool{
@@ -839,11 +939,17 @@ func TestTableReduce(t *testing.T) {
 				},
 			},
 			cfg: SortConfig{{"?foo", false}},
-			alias: BindingOrderedMapping{
-				{"?foo", "?foo_alias"},
-				{"?bar", "?bar_alias"},
+			aap: []AliasAccPair{
+				{
+					InAlias:  "?foo",
+					OutAlias: "?foo_alias",
+				},
+				{
+					InAlias:  "?bar",
+					OutAlias: "?bar_alias",
+					Acc:      NewCountAccumulator(),
+				},
 			},
-			acc: map[string]Accumulator{"?bar": NewCountAccumulator()},
 			want: &Table{
 				bs: []string{"?foo_alias", "?bar_alias"},
 				mbs: map[string]bool{
@@ -901,11 +1007,17 @@ func TestTableReduce(t *testing.T) {
 				},
 			},
 			cfg: SortConfig{{"?foo", true}},
-			alias: BindingOrderedMapping{
-				{"?foo", "?foo_alias"},
-				{"?bar", "?bar_alias"},
+			aap: []AliasAccPair{
+				{
+					InAlias:  "?foo",
+					OutAlias: "?foo_alias",
+				},
+				{
+					InAlias:  "?bar",
+					OutAlias: "?bar_alias",
+					Acc:      NewCountAccumulator(),
+				},
 			},
-			acc: map[string]Accumulator{"?bar": NewCountAccumulator()},
 			want: &Table{
 				bs: []string{"?foo_alias", "?bar_alias"},
 				mbs: map[string]bool{
@@ -928,50 +1040,15 @@ func TestTableReduce(t *testing.T) {
 				},
 			},
 		},
-		// Proper rejection tests.
-		{
-			tbl: testTable(t),
-			cfg: SortConfig{{"?foo", false}},
-			alias: BindingOrderedMapping{
-				{"?bar", "?bar_alias"},
-			},
-			acc: map[string]Accumulator{"?bar": NewCountAccumulator()},
-		},
-		{
-			tbl: testTable(t),
-			cfg: SortConfig{{"?foo", false}},
-			alias: BindingOrderedMapping{
-				{"?bar", "?bar_alias"},
-			},
-			acc: map[string]Accumulator{"?bar": NewCountAccumulator()},
-		},
-		{
-			tbl: testTable(t),
-			cfg: SortConfig{{"?wrong_foo", false}},
-			alias: BindingOrderedMapping{
-				{"?foo", "?foo_alias"},
-				{"?bar", "?bar_alias"},
-			},
-			acc: map[string]Accumulator{"?bar": NewCountAccumulator()},
-		},
-		{
-			tbl: testTable(t),
-			cfg: SortConfig{{"?foo", false}},
-			alias: BindingOrderedMapping{
-				{"?foo", "?foo_alias"},
-				{"?bar", "?bar_alias"},
-			},
-			acc: map[string]Accumulator{"?unknown_bar": NewCountAccumulator()},
-		},
 	}
 	for _, entry := range testTable {
-		err := entry.tbl.Reduce(entry.cfg, entry.alias, entry.acc)
+		err := entry.tbl.Reduce(entry.cfg, entry.aap)
 		got, want := entry.tbl, entry.want
 		if want != nil && err != nil {
 			t.Errorf("table.Reduce failed to compute reduced row with error %v", err)
 		}
 		if want == nil && err == nil {
-			t.Errorf("table.Reduce(%v, %v, %v) should have failed to reduced table; instead it produced\n%v", entry.cfg, entry.alias, entry.acc, got)
+			t.Errorf("table.Reduce(%v, %v) should have failed to reduced table; instead it produced\n%v", entry.cfg, entry.aap, got)
 		}
 		if want != nil && !reflect.DeepEqual(got, want) {
 			t.Errorf("table.Reduce failed to produce correct reduce row; got\n%s, want\n%s", got, want)
