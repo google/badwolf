@@ -24,5 +24,5 @@ var (
 	// Release is the current release level of the master branch. Valid values
 	// are dev (developement unreleased), rcX (release candidate with current
 	// iteration), stable (indicates a final released version).
-	Release = "rc1"
+	Release = "rc2"
 )
