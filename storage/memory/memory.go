@@ -27,7 +27,7 @@ import (
 	"github.com/google/badwolf/triple/predicate"
 )
 
-// DefaultMemoryStore provides a volatile in memory store.
+// DefaultStore provides a volatile in memory store.
 var DefaultStore storage.Store
 
 func init() {

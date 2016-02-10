@@ -154,26 +154,26 @@ func (b *unboundBuilder) Build(t Type, v interface{}) (*Literal, error) {
 	switch v.(type) {
 	case bool:
 		if t != Bool {
-			return nil, fmt.Errorf("literal.Build: type %s does not match type of value %v", t, v)
+			return nil, fmt.Errorf("literal.Build: type %v does not match type of value %v", t, v)
 		}
 	case int64:
 		if t != Int64 {
-			return nil, fmt.Errorf("literal.Build: type %s does not match type of value %v", t, v)
+			return nil, fmt.Errorf("literal.Build: type %v does not match type of value %v", t, v)
 		}
 	case float64:
 		if t != Float64 {
-			return nil, fmt.Errorf("literal.Build: type %s does not match type of value %v", t, v)
+			return nil, fmt.Errorf("literal.Build: type %v does not match type of value %v", t, v)
 		}
 	case string:
 		if t != Text {
-			return nil, fmt.Errorf("literal.Build: type %s does not match type of value %v", t, v)
+			return nil, fmt.Errorf("literal.Build: type %v does not match type of value %v", t, v)
 		}
 	case []byte:
 		if t != Blob {
-			return nil, fmt.Errorf("literal.Build: type %s does not match type of value %v", t, v)
+			return nil, fmt.Errorf("literal.Build: type %v does not match type of value %v", t, v)
 		}
 	default:
-		return nil, fmt.Errorf("literal.Build: type %s is not supported when building literals", t)
+		return nil, fmt.Errorf("literal.Build: type %v is not supported when building literals", t)
 	}
 	return &Literal{
 		t: t,
