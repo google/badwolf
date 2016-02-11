@@ -101,6 +101,18 @@ func (s *memoryStore) DeleteGraph(id string) error {
 	return fmt.Errorf("memory.DeleteGraph(%q): graph does not exist", id)
 }
 
+// GraphNames returns the current available graph names in the store.
+func (s *memoryStore) GraphNames() (storage.GraphNames, error) {
+	s.rwmu.RLock()
+	defer s.rwmu.RUnlock()
+	c := make(chan string, len(s.graphs))
+	for k := range s.graphs {
+		c <- k
+	}
+	close(c)
+	return c, nil
+}
+
 // memory provides an imemory volatile implemention of the storage API.
 type memory struct {
 	id    string

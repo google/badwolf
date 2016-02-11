@@ -35,6 +35,9 @@ type Predicates <-chan *predicate.Predicate
 // Objects provides a read only channel of objects.
 type Objects <-chan *triple.Object
 
+// GraphNames provides a channel that returns graph binding names.
+type GraphNames <-chan string
+
 // LookupOptions allows to specify the behavior of the lookup operations.
 type LookupOptions struct {
 	// MaxElements list the maximum number of elements to return. If not
@@ -69,6 +72,9 @@ type Store interface {
 	// DeleteGraph with delete an existing graph. Deleting a non existing graph
 	// should return and error.
 	DeleteGraph(id string) error
+
+	// GraphNames returns the current available graph names in the store.
+	GraphNames() (GraphNames, error)
 }
 
 // Graph interface describes the low level API that storage drivers need

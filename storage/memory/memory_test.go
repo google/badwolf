@@ -48,6 +48,37 @@ func TestMemoryStore(t *testing.T) {
 	}
 }
 
+func TestGraphNames(t *testing.T) {
+	gs := []string{"?foo", "?bar", "?test"}
+	s := NewStore()
+	for _, g := range gs {
+		if _, err := s.NewGraph(g); err != nil {
+			t.Errorf("memoryStore.NewGraph: should never fail to crate a graph %s; %s", g, err)
+		}
+	}
+	gns, err := s.GraphNames()
+	if err != nil {
+		t.Errorf("memoryStore.GraphNames: failed with error %v", err)
+	}
+	cnt := 0
+	for g := range gns {
+		found := false
+		for _, gn := range gs {
+			if g == gn {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("memoryStore.GraphNames: failed to return the expected graph names; got %v", g)
+		}
+		cnt++
+	}
+	if got, want := cnt, len(gs); got != want {
+		t.Errorf("memoryStore.GraphNames: failed to return the expected number of graph names; got %d, want %d", got, want)
+	}
+}
+
 func TestDefaultLookupChecker(t *testing.T) {
 	dlu := storage.DefaultLookup
 	c := newChecker(dlu)
