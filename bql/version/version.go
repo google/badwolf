@@ -15,7 +15,7 @@
 package version
 
 var (
-	// Major is the current major version of master branch..
+	// Major is the current major version of master branch.
 	Major = 0
 	// Minor is the current minor version of master branch.
 	Minor = 1
