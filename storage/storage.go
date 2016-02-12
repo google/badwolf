@@ -62,15 +62,16 @@ type Store interface {
 	// Version returns the version of the driver implementation.
 	Version() string
 
-	// NewGraph creates a new graph.
+	// NewGraph creates a new graph. Creating and already exising graph
+	// should return an error.
 	NewGraph(id string) (Graph, error)
 
 	// Graph return an existing graph if available. Getting a non existing
-	// graph should return and error.
+	// graph should return an error.
 	Graph(id string) (Graph, error)
 
 	// DeleteGraph with delete an existing graph. Deleting a non existing graph
-	// should return and error.
+	// should return an error.
 	DeleteGraph(id string) error
 
 	// GraphNames returns the current available graph names in the store.
