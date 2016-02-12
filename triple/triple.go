@@ -146,17 +146,17 @@ func New(s *node.Node, p *predicate.Predicate, o *Object) (*Triple, error) {
 }
 
 // S returns the subject of the triple.
-func (t *Triple) S() *node.Node {
+func (t *Triple) Subject() *node.Node {
 	return t.s
 }
 
 // P returns the predicate of the triple.
-func (t *Triple) P() *predicate.Predicate {
+func (t *Triple) Predicate() *predicate.Predicate {
 	return t.p
 }
 
 // O returns the object of the tirple.
-func (t *Triple) O() *Object {
+func (t *Triple) Object() *Object {
 	return t.o
 }
 

@@ -276,11 +276,11 @@ func addTriples(ts storage.Triples, cls *semantic.GraphClause, tbl *table.Table)
 		}
 		if cls.PID != "" {
 			// The triples need to be filtered.
-			if t.P().ID() != predicate.ID(cls.PID) {
+			if t.Predicate().ID() != predicate.ID(cls.PID) {
 				continue
 			}
-			if cls.PTemporal && t.P().Type() == predicate.Temporal {
-				ta, err := t.P().TimeAnchor()
+			if cls.PTemporal && t.Predicate().Type() == predicate.Temporal {
+				ta, err := t.Predicate().TimeAnchor()
 				if err != nil {
 					return fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
 				}
@@ -294,7 +294,7 @@ func addTriples(ts storage.Triples, cls *semantic.GraphClause, tbl *table.Table)
 			}
 		}
 		if cls.OID != "" {
-			if p, err := t.O().Predicate(); err == nil {
+			if p, err := t.Object().Predicate(); err == nil {
 				// The triples need to be filtered.
 				if p.ID() != predicate.ID(cls.OID) {
 					continue
@@ -342,7 +342,7 @@ func objectToCell(o *triple.Object) (*table.Cell, error) {
 // tripleToRow converts a triple into a row using the binndings specidfied
 // on the graph clause.
 func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error) {
-	r, s, p, o := make(table.Row), t.S(), t.P(), t.O()
+	r, s, p, o := make(table.Row), t.Subject(), t.Predicate(), t.Object()
 
 	// Enforce binding validity inside te clause.
 	bnd := make(map[string]*table.Cell)

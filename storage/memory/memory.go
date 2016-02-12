@@ -135,9 +135,9 @@ func (m *memory) ID() string {
 func (m *memory) AddTriples(ts []*triple.Triple) error {
 	for _, t := range ts {
 		guid := t.GUID()
-		sGUID := t.S().GUID()
-		pGUID := t.P().GUID()
-		oGUID := t.O().GUID()
+		sGUID := t.Subject().GUID()
+		pGUID := t.Predicate().GUID()
+		oGUID := t.Object().GUID()
 		// Update master index
 		m.rwmu.Lock()
 		m.idx[guid] = t
@@ -184,9 +184,9 @@ func (m *memory) AddTriples(ts []*triple.Triple) error {
 func (m *memory) RemoveTriples(ts []*triple.Triple) error {
 	for _, t := range ts {
 		guid := t.GUID()
-		sGUID := t.S().GUID()
-		pGUID := t.P().GUID()
-		oGUID := t.O().GUID()
+		sGUID := t.Subject().GUID()
+		pGUID := t.Predicate().GUID()
+		oGUID := t.Object().GUID()
 		// Update master index
 		m.rwmu.Lock()
 		delete(m.idx, guid)
@@ -270,8 +270,8 @@ func (m *memory) Objects(s *node.Node, p *predicate.Predicate, lo *storage.Looku
 	go func() {
 		ckr := newChecker(lo)
 		for _, t := range m.idxSP[spIdx] {
-			if ckr.CheckAndUpdate(t.P()) {
-				objs <- t.O()
+			if ckr.CheckAndUpdate(t.Predicate()) {
+				objs <- t.Object()
 			}
 		}
 		m.rwmu.RUnlock()
@@ -290,8 +290,8 @@ func (m *memory) Subjects(p *predicate.Predicate, o *triple.Object, lo *storage.
 	go func() {
 		ckr := newChecker(lo)
 		for _, t := range m.idxPO[poIdx] {
-			if ckr.CheckAndUpdate(t.P()) {
-				subs <- t.S()
+			if ckr.CheckAndUpdate(t.Predicate()) {
+				subs <- t.Subject()
 			}
 		}
 		m.rwmu.RUnlock()
@@ -311,8 +311,8 @@ func (m *memory) PredicatesForSubjectAndObject(s *node.Node, o *triple.Object, l
 	go func() {
 		ckr := newChecker(lo)
 		for _, t := range m.idxSO[soIdx] {
-			if ckr.CheckAndUpdate(t.P()) {
-				preds <- t.P()
+			if ckr.CheckAndUpdate(t.Predicate()) {
+				preds <- t.Predicate()
 			}
 		}
 		m.rwmu.RUnlock()
@@ -330,8 +330,8 @@ func (m *memory) PredicatesForSubject(s *node.Node, lo *storage.LookupOptions) (
 	go func() {
 		ckr := newChecker(lo)
 		for _, t := range m.idxS[sGUID] {
-			if ckr.CheckAndUpdate(t.P()) {
-				preds <- t.P()
+			if ckr.CheckAndUpdate(t.Predicate()) {
+				preds <- t.Predicate()
 			}
 		}
 		m.rwmu.RUnlock()
@@ -349,8 +349,8 @@ func (m *memory) PredicatesForObject(o *triple.Object, lo *storage.LookupOptions
 	go func() {
 		ckr := newChecker(lo)
 		for _, t := range m.idxO[oGUID] {
-			if ckr.CheckAndUpdate(t.P()) {
-				preds <- t.P()
+			if ckr.CheckAndUpdate(t.Predicate()) {
+				preds <- t.Predicate()
 			}
 		}
 		m.rwmu.RUnlock()
@@ -367,7 +367,7 @@ func (m *memory) TriplesForSubject(s *node.Node, lo *storage.LookupOptions) (sto
 	go func() {
 		ckr := newChecker(lo)
 		for _, t := range m.idxS[sGUID] {
-			if ckr.CheckAndUpdate(t.P()) {
+			if ckr.CheckAndUpdate(t.Predicate()) {
 				triples <- t
 			}
 		}
@@ -385,7 +385,7 @@ func (m *memory) TriplesForPredicate(p *predicate.Predicate, lo *storage.LookupO
 	go func() {
 		ckr := newChecker(lo)
 		for _, t := range m.idxP[pGUID] {
-			if ckr.CheckAndUpdate(t.P()) {
+			if ckr.CheckAndUpdate(t.Predicate()) {
 				triples <- t
 			}
 		}
@@ -403,7 +403,7 @@ func (m *memory) TriplesForObject(o *triple.Object, lo *storage.LookupOptions) (
 	go func() {
 		ckr := newChecker(lo)
 		for _, t := range m.idxO[oGUID] {
-			if ckr.CheckAndUpdate(t.P()) {
+			if ckr.CheckAndUpdate(t.Predicate()) {
 				triples <- t
 			}
 		}
@@ -424,7 +424,7 @@ func (m *memory) TriplesForSubjectAndPredicate(s *node.Node, p *predicate.Predic
 	go func() {
 		ckr := newChecker(lo)
 		for _, t := range m.idxSP[spIdx] {
-			if ckr.CheckAndUpdate(t.P()) {
+			if ckr.CheckAndUpdate(t.Predicate()) {
 				triples <- t
 			}
 		}
@@ -445,7 +445,7 @@ func (m *memory) TriplesForPredicateAndObject(p *predicate.Predicate, o *triple.
 	go func() {
 		ckr := newChecker(lo)
 		for _, t := range m.idxPO[poIdx] {
-			if ckr.CheckAndUpdate(t.P()) {
+			if ckr.CheckAndUpdate(t.Predicate()) {
 				triples <- t
 			}
 		}
