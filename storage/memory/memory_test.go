@@ -194,9 +194,9 @@ func TestObjects(t *testing.T) {
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	os, err := g.Objects(ts[0].S(), ts[0].P(), storage.DefaultLookup)
+	os, err := g.Objects(ts[0].Subject(), ts[0].Predicate(), storage.DefaultLookup)
 	if err != nil {
-		t.Errorf("g.Objects(%s, %s) failed with error %v", ts[0].S(), ts[0].P(), err)
+		t.Errorf("g.Objects(%s, %s) failed with error %v", ts[0].Subject(), ts[0].Predicate(), err)
 	}
 	cnt := 0
 	for o := range os {
@@ -204,11 +204,11 @@ func TestObjects(t *testing.T) {
 		n, _ := o.Node()
 		ty, id := n.Type().String(), n.ID().String()
 		if ty != "/u" || (id != "mary" && id != "peter" && id != "alice") {
-			t.Errorf("g.Objects(%s, %s) failed to return a valid object; returned %s instead", ts[0].S(), ts[0].P(), n)
+			t.Errorf("g.Objects(%s, %s) failed to return a valid object; returned %s instead", ts[0].Subject(), ts[0].Predicate(), n)
 		}
 	}
 	if cnt != 3 {
-		t.Errorf("g.Objects(%s, %s) failed to retrieve 3 objects, got %d instead", ts[0].S(), ts[0].P(), cnt)
+		t.Errorf("g.Objects(%s, %s) failed to retrieve 3 objects, got %d instead", ts[0].Subject(), ts[0].Predicate(), cnt)
 	}
 }
 
@@ -218,20 +218,20 @@ func TestSubjects(t *testing.T) {
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	ss, err := g.Subjects(ts[0].P(), ts[0].O(), storage.DefaultLookup)
+	ss, err := g.Subjects(ts[0].Predicate(), ts[0].Object(), storage.DefaultLookup)
 	if err != nil {
-		t.Errorf("g.Subjects(%s, %s) failed with error %v", ts[0].P(), ts[0].O(), err)
+		t.Errorf("g.Subjects(%s, %s) failed with error %v", ts[0].Predicate(), ts[0].Object(), err)
 	}
 	cnt := 0
 	for s := range ss {
 		cnt++
 		ty, id := s.Type().String(), s.ID().String()
 		if ty != "/u" || id != "john" {
-			t.Errorf("g.Subjects(%s, %s) failed to return a valid subject; returned %s instead", ts[0].P(), ts[0].O(), s)
+			t.Errorf("g.Subjects(%s, %s) failed to return a valid subject; returned %s instead", ts[0].Predicate(), ts[0].Object(), s)
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.Objects(%s, %s) failed to retrieve 1 objects, got %d instead", ts[0].S(), ts[0].P(), cnt)
+		t.Errorf("g.Objects(%s, %s) failed to retrieve 1 objects, got %d instead", ts[0].Subject(), ts[0].Predicate(), cnt)
 	}
 }
 
@@ -241,19 +241,19 @@ func TestPredicatesForSubjectAndObject(t *testing.T) {
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	ps, err := g.PredicatesForSubjectAndObject(ts[0].S(), ts[0].O(), storage.DefaultLookup)
+	ps, err := g.PredicatesForSubjectAndObject(ts[0].Subject(), ts[0].Object(), storage.DefaultLookup)
 	if err != nil {
-		t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) failed with error %v", ts[0].S(), ts[0].O(), err)
+		t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) failed with error %v", ts[0].Subject(), ts[0].Object(), err)
 	}
 	cnt := 0
 	for p := range ps {
 		cnt++
 		if p.Type() != predicate.Immutable || p.ID() != "knows" {
-			t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) failed to return a valid subject; returned %s instead", ts[0].S(), ts[0].O(), p)
+			t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) failed to return a valid subject; returned %s instead", ts[0].Subject(), ts[0].Object(), p)
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) failed to retrieve 1 predicate, got %d instead", ts[0].S(), ts[0].O(), cnt)
+		t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) failed to retrieve 1 predicate, got %d instead", ts[0].Subject(), ts[0].Object(), cnt)
 	}
 }
 
@@ -263,19 +263,19 @@ func TestPredicatesForSubject(t *testing.T) {
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	ps, err := g.PredicatesForSubject(ts[0].S(), storage.DefaultLookup)
+	ps, err := g.PredicatesForSubject(ts[0].Subject(), storage.DefaultLookup)
 	if err != nil {
-		t.Errorf("g.PredicatesForSubject(%s) failed with error %v", ts[0].S(), err)
+		t.Errorf("g.PredicatesForSubject(%s) failed with error %v", ts[0].Subject(), err)
 	}
 	cnt := 0
 	for p := range ps {
 		cnt++
 		if p.Type() != predicate.Immutable || p.ID() != "knows" {
-			t.Errorf("g.PredicatesForSubject(%s) failed to return a valid predicate; returned %s instead", ts[0].S(), p)
+			t.Errorf("g.PredicatesForSubject(%s) failed to return a valid predicate; returned %s instead", ts[0].Subject(), p)
 		}
 	}
 	if cnt != 3 {
-		t.Errorf("g.PredicatesForSubjectAndObject(%s) failed to retrieve 3 predicates, got %d instead", ts[0].S(), cnt)
+		t.Errorf("g.PredicatesForSubjectAndObject(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), cnt)
 	}
 }
 
@@ -285,19 +285,19 @@ func TestPredicatesForObject(t *testing.T) {
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	ps, err := g.PredicatesForObject(ts[0].O(), storage.DefaultLookup)
+	ps, err := g.PredicatesForObject(ts[0].Object(), storage.DefaultLookup)
 	if err != nil {
-		t.Errorf("g.PredicatesForObject(%s) failed with error %v", ts[0].O(), err)
+		t.Errorf("g.PredicatesForObject(%s) failed with error %v", ts[0].Object(), err)
 	}
 	cnt := 0
 	for p := range ps {
 		cnt++
 		if p.Type() != predicate.Immutable || p.ID() != "knows" {
-			t.Errorf("g.PredicatesForObject(%s) failed to return a valid predicate; returned %s instead", ts[0].O(), p)
+			t.Errorf("g.PredicatesForObject(%s) failed to return a valid predicate; returned %s instead", ts[0].Object(), p)
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.PredicatesForObject(%s) failed to retrieve 1 predicate, got %d instead", ts[0].O(), cnt)
+		t.Errorf("g.PredicatesForObject(%s) failed to retrieve 1 predicate, got %d instead", ts[0].Object(), cnt)
 	}
 }
 
@@ -307,16 +307,16 @@ func TestTriplesForSubject(t *testing.T) {
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls, err := g.TriplesForSubject(ts[0].S(), storage.DefaultLookup)
+	trpls, err := g.TriplesForSubject(ts[0].Subject(), storage.DefaultLookup)
 	if err != nil {
-		t.Errorf("g.TriplesForSubject(%s) failed with error %v", ts[0].S(), err)
+		t.Errorf("g.TriplesForSubject(%s) failed with error %v", ts[0].Subject(), err)
 	}
 	cnt := 0
 	for _ = range trpls {
 		cnt++
 	}
 	if cnt != 3 {
-		t.Errorf("g.triplesForSubject(%s) failed to retrieve 3 predicates, got %d instead", ts[0].S(), cnt)
+		t.Errorf("g.triplesForSubject(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), cnt)
 	}
 }
 
@@ -326,16 +326,16 @@ func TestTriplesForPredicate(t *testing.T) {
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls, err := g.TriplesForPredicate(ts[0].P(), storage.DefaultLookup)
+	trpls, err := g.TriplesForPredicate(ts[0].Predicate(), storage.DefaultLookup)
 	if err != nil {
-		t.Errorf("g.TriplesForPredicate(%s) failed with error %v", ts[0].S(), err)
+		t.Errorf("g.TriplesForPredicate(%s) failed with error %v", ts[0].Subject(), err)
 	}
 	cnt := 0
 	for _ = range trpls {
 		cnt++
 	}
 	if cnt != 6 {
-		t.Errorf("g.triplesForPredicate(%s) failed to retrieve 3 predicates, got %d instead", ts[0].P(), cnt)
+		t.Errorf("g.triplesForPredicate(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Predicate(), cnt)
 	}
 }
 
@@ -345,16 +345,16 @@ func TestTriplesForObject(t *testing.T) {
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls, err := g.TriplesForObject(ts[0].O(), storage.DefaultLookup)
+	trpls, err := g.TriplesForObject(ts[0].Object(), storage.DefaultLookup)
 	if err != nil {
-		t.Errorf("g.TriplesForObject(%s) failed with error %v", ts[0].O(), err)
+		t.Errorf("g.TriplesForObject(%s) failed with error %v", ts[0].Object(), err)
 	}
 	cnt := 0
 	for _ = range trpls {
 		cnt++
 	}
 	if cnt != 1 {
-		t.Errorf("g.TriplesForObject(%s) failed to retrieve 1 predicates, got %d instead", ts[0].O(), cnt)
+		t.Errorf("g.TriplesForObject(%s) failed to retrieve 1 predicates, got %d instead", ts[0].Object(), cnt)
 	}
 }
 
@@ -364,16 +364,16 @@ func TestTriplesForSubjectAndPredicate(t *testing.T) {
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls, err := g.TriplesForSubjectAndPredicate(ts[0].S(), ts[0].P(), storage.DefaultLookup)
+	trpls, err := g.TriplesForSubjectAndPredicate(ts[0].Subject(), ts[0].Predicate(), storage.DefaultLookup)
 	if err != nil {
-		t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s) failed with error %v", ts[0].S(), ts[0].P(), err)
+		t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s) failed with error %v", ts[0].Subject(), ts[0].Predicate(), err)
 	}
 	cnt := 0
 	for _ = range trpls {
 		cnt++
 	}
 	if cnt != 3 {
-		t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s) failed to retrieve 3 predicates, got %d instead", ts[0].S(), ts[0].P(), cnt)
+		t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), ts[0].Predicate(), cnt)
 	}
 }
 
@@ -383,16 +383,16 @@ func TestTriplesForPredicateAndObject(t *testing.T) {
 	if err := g.AddTriples(ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls, err := g.TriplesForPredicateAndObject(ts[0].P(), ts[0].O(), storage.DefaultLookup)
+	trpls, err := g.TriplesForPredicateAndObject(ts[0].Predicate(), ts[0].Object(), storage.DefaultLookup)
 	if err != nil {
-		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed with error %v", ts[0].P(), ts[0].O(), err)
+		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed with error %v", ts[0].Predicate(), ts[0].Object(), err)
 	}
 	cnt := 0
 	for _ = range trpls {
 		cnt++
 	}
 	if cnt != 1 {
-		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed to retrieve 1 predicates, got %d instead", ts[0].P(), ts[0].O(), cnt)
+		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed to retrieve 1 predicates, got %d instead", ts[0].Predicate(), ts[0].Object(), cnt)
 	}
 }
 
@@ -428,6 +428,6 @@ func TestTriples(t *testing.T) {
 		cnt++
 	}
 	if cnt != 6 {
-		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed to retrieve 1 predicates, got %d instead", ts[0].P(), ts[0].O(), cnt)
+		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed to retrieve 1 predicates, got %d instead", ts[0].Predicate(), ts[0].Object(), cnt)
 	}
 }

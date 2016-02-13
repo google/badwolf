@@ -102,7 +102,7 @@ func TestFeasibleSimpleExist(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt := getTestTriples(t)
-	s, p, o := tt[0].S(), tt[0].P(), tt[0].O()
+	s, p, o := tt[0].Subject(), tt[0].Predicate(), tt[0].Object()
 	clsOK := &semantic.GraphClause{
 		S: s,
 		P: p,
@@ -130,7 +130,7 @@ func TestUnfeasibleSimpleExist(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt := getTestTriples(t)
-	s, p, o := unknown, tt[0].P(), tt[0].O()
+	s, p, o := unknown, tt[0].Predicate(), tt[0].Object()
 	clsNotOK := &semantic.GraphClause{
 		S: s,
 		P: p,

@@ -79,13 +79,13 @@ func TestDataAccumulatorHook(t *testing.T) {
 		t.Errorf("semantic.DataAccumulator hook should have produced 2 triples; instead produced %v", st.Data())
 	}
 	for _, trpl := range data {
-		if got, want := trpl.S().String(), "/_<s>"; got != want {
+		if got, want := trpl.Subject().String(), "/_<s>"; got != want {
 			t.Errorf("semantic.DataAccumulator hook failed to parse subject correctly; got %v, want %v", got, want)
 		}
-		if got, want := trpl.P().String(), `"p"@[]`; got != want {
+		if got, want := trpl.Predicate().String(), `"p"@[]`; got != want {
 			t.Errorf("semantic.DataAccumulator hook failed to parse prdicate correctly; got %v, want %v", got, want)
 		}
-		if got, want := trpl.O().String(), "/_<o>"; got != want {
+		if got, want := trpl.Object().String(), "/_<o>"; got != want {
 			t.Errorf("semantic.DataAccumulator hook failed to parse object correctly; got %v, want %v", got, want)
 		}
 	}
