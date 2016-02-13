@@ -31,7 +31,7 @@ import (
 	"github.com/google/badwolf/storage/memory"
 )
 
-// NewRunCommand create the help command.
+// NewRunCommand creates the help command.
 func NewRunCommand() *Command {
 	cmd := &Command{
 		UsageLine: "run file_path",

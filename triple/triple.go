@@ -26,7 +26,7 @@ import (
 	"github.com/google/badwolf/triple/predicate"
 )
 
-// Object is the box that either contains a literal or a node.
+// Object is the box that either contains a literal, a predicate or a node.
 type Object struct {
 	n *node.Node
 	p *predicate.Predicate
@@ -48,7 +48,7 @@ func (o *Object) String() string {
 }
 
 // GUID returns a global unique identifier for the given object. It is
-// implemented as the base64 encoded stringified version of the node.
+// implemented as the base64 encoded stringified version of the object.
 func (o *Object) GUID() string {
 	fo := "@@@INVALID_OBJECT@@@"
 	if o.n != nil {
@@ -63,7 +63,7 @@ func (o *Object) GUID() string {
 	return base64.StdEncoding.EncodeToString([]byte(strings.Join([]string{fo, o.String()}, ":")))
 }
 
-// Node attempts to the return the boxed node.
+// Node attempts to return the boxed node.
 func (o *Object) Node() (*node.Node, error) {
 	if o.n == nil {
 		return nil, fmt.Errorf("triple.Literal does not box a node in %s", o)
@@ -71,7 +71,7 @@ func (o *Object) Node() (*node.Node, error) {
 	return o.n, nil
 }
 
-// Predicate attempts to the return the boxed predicate.
+// Predicate attempts to return the boxed predicate.
 func (o *Object) Predicate() (*predicate.Predicate, error) {
 	if o.p == nil {
 		return nil, fmt.Errorf("triple.Literal does not box a predicate in %s", o)
@@ -79,7 +79,7 @@ func (o *Object) Predicate() (*predicate.Predicate, error) {
 	return o.p, nil
 }
 
-// Literal attempts to the return the boxed literal.
+// Literal attempts to return the boxed literal.
 func (o *Object) Literal() (*literal.Literal, error) {
 	if o.l == nil {
 		return nil, fmt.Errorf("triple.Literal does not box a literal in %s", o)
@@ -87,7 +87,7 @@ func (o *Object) Literal() (*literal.Literal, error) {
 	return o.l, nil
 }
 
-// ParseObject attempts to parse and object.
+// ParseObject attempts to parse an object.
 func ParseObject(s string, b literal.Builder) (*Object, error) {
 	n, err := node.Parse(s)
 	if err == nil {
@@ -126,7 +126,7 @@ func NewLiteralObject(l *literal.Literal) *Object {
 	}
 }
 
-// Triple describes a the <subject predicate object> used by BadWolf.
+// Triple describes a <subject predicate object> used by BadWolf.
 type Triple struct {
 	s *node.Node
 	p *predicate.Predicate
@@ -175,7 +175,7 @@ func init() {
 	oSplit = regexp.MustCompile("(]\\s+/)|(]\\s+\")")
 }
 
-// Parse process the provided text and tries to create a triple. It asumes
+// Parse process the provided text and tries to create a triple. It assumes
 // that the provided text contains only one triple.
 func Parse(line string, b literal.Builder) (*Triple, error) {
 	raw := strings.TrimSpace(line)

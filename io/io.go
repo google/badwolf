@@ -30,7 +30,7 @@ import (
 // reader is interpret as text. Each line represents one triple using the
 // standard serialized format. ReadIntoGraph will stop if fails to Parse
 // a triple on the stream. The triples read till then would have also been
-// added to the graph. The int value returns the number of triples added
+// added to the graph. The int value returns the number of triples added.
 func ReadIntoGraph(g storage.Graph, r io.Reader, b literal.Builder) (int, error) {
 	cnt, scanner := 0, bufio.NewScanner(r)
 	scanner.Split(bufio.ScanLines)
@@ -51,7 +51,7 @@ func ReadIntoGraph(g storage.Graph, r io.Reader, b literal.Builder) (int, error)
 
 // WriteGraph serializes the graph into the writer where each triple is
 // marshalled into a separate line. If there is an error writting the
-// serializatino will stop. It returns the number of triples serialized
+// serialization will stop. It returns the number of triples serialized
 // regardless if it succeded of it failed partialy.
 func WriteGraph(w io.Writer, g storage.Graph) (int, error) {
 	cnt := 0
@@ -60,8 +60,7 @@ func WriteGraph(w io.Writer, g storage.Graph) (int, error) {
 		return 0, err
 	}
 	for t := range ts {
-		_, err := io.WriteString(w, fmt.Sprintf("%s\n", t.String()))
-		if err != nil {
+		if _, err := io.WriteString(w, fmt.Sprintf("%s\n", t.String())); err != nil {
 			return cnt, err
 		}
 		cnt++

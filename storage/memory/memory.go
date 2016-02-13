@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package memory provide a volatile memory-based implementation of the
+// Package memory provides a volatile memory-based implementation of the
 // storage.Store and storage.Graph interfaces.
 package memory
 
@@ -72,14 +72,14 @@ func (s *memoryStore) NewGraph(id string) (storage.Graph, error) {
 	s.rwmu.Lock()
 	defer s.rwmu.Unlock()
 	if _, ok := s.graphs[id]; ok {
-		return nil, fmt.Errorf("memory.NewGraph(%q): graph alredy exists", id)
+		return nil, fmt.Errorf("memory.NewGraph(%q): graph already exists", id)
 	}
 	s.graphs[id] = g
 	return g, nil
 }
 
-// Graph return an existing graph if available. Getting a non existing
-// graph should return and error.
+// Graph returns an existing graph if available. Getting a non existing
+// graph should return an error.
 func (s *memoryStore) Graph(id string) (storage.Graph, error) {
 	s.rwmu.RLock()
 	defer s.rwmu.RUnlock()
@@ -89,8 +89,8 @@ func (s *memoryStore) Graph(id string) (storage.Graph, error) {
 	return nil, fmt.Errorf("memory.Graph(%q): graph does not exist", id)
 }
 
-// DeleteGraph with delete an existing graph. Deleting a non existing graph
-// should return and error.
+// DeleteGraph deletes an existing graph. Deleting a non existing graph
+// should return an error.
 func (s *memoryStore) DeleteGraph(id string) error {
 	s.rwmu.Lock()
 	defer s.rwmu.Unlock()
@@ -113,7 +113,7 @@ func (s *memoryStore) GraphNames() (storage.GraphNames, error) {
 	return c, nil
 }
 
-// memory provides an imemory volatile implemention of the storage API.
+// memory provides an memory-based volatile implementation of the graph API.
 type memory struct {
 	id    string
 	rwmu  sync.RWMutex
@@ -218,7 +218,7 @@ func (m *memory) RemoveTriples(ts []*triple.Triple) error {
 }
 
 // checker provides the mechanics to check if a predicate/triple should be
-// considered on a cerain operation.
+// considered on a certain operation.
 type checker struct {
 	max bool
 	c   int
@@ -227,12 +227,8 @@ type checker struct {
 
 // newChecer creates a new checker for a given LookupOptions configuration.
 func newChecker(o *storage.LookupOptions) *checker {
-	b := false
-	if o.MaxElements > 0 {
-		b = true
-	}
 	return &checker{
-		max: b,
+		max: o.MaxElements > 0,
 		c:   o.MaxElements,
 		o:   o,
 	}
@@ -245,6 +241,7 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 		if c.c <= 0 {
 			return false
 		}
+		// TODO: Should it be decremented if later function returns false?
 		c.c--
 	}
 	if p.Type() == predicate.Immutable {
@@ -321,8 +318,7 @@ func (m *memory) PredicatesForSubjectAndObject(s *node.Node, o *triple.Object, l
 	return preds, nil
 }
 
-// PredicatesForSubject returns all the predicats know for the given
-// subject.
+// PredicatesForSubject returns all the predicates known for the given subject.
 func (m *memory) PredicatesForSubject(s *node.Node, lo *storage.LookupOptions) (storage.Predicates, error) {
 	sGUID := s.GUID()
 	m.rwmu.RLock()
@@ -340,8 +336,7 @@ func (m *memory) PredicatesForSubject(s *node.Node, lo *storage.LookupOptions) (
 	return preds, nil
 }
 
-// PredicatesForObject returns all the predicats know for the given
-// object.
+// PredicatesForObject returns all the predicates known for the given object.
 func (m *memory) PredicatesForObject(o *triple.Object, lo *storage.LookupOptions) (storage.Predicates, error) {
 	oGUID := o.GUID()
 	m.rwmu.RLock()
@@ -359,7 +354,7 @@ func (m *memory) PredicatesForObject(o *triple.Object, lo *storage.LookupOptions
 	return preds, nil
 }
 
-// TriplesForSubject returns all triples available for a given subect.
+// TriplesForSubject returns all triples available for the given subect.
 func (m *memory) TriplesForSubject(s *node.Node, lo *storage.LookupOptions) (storage.Triples, error) {
 	sGUID := s.GUID()
 	m.rwmu.RLock()
@@ -377,7 +372,7 @@ func (m *memory) TriplesForSubject(s *node.Node, lo *storage.LookupOptions) (sto
 	return triples, nil
 }
 
-// TriplesForPredicate returns all triples available for a given predicate.
+// TriplesForPredicate returns all triples available for the given predicate.
 func (m *memory) TriplesForPredicate(p *predicate.Predicate, lo *storage.LookupOptions) (storage.Triples, error) {
 	pGUID := p.GUID()
 	m.rwmu.RLock()
@@ -395,7 +390,7 @@ func (m *memory) TriplesForPredicate(p *predicate.Predicate, lo *storage.LookupO
 	return triples, nil
 }
 
-// TriplesForObject returns all triples available for a given object.
+// TriplesForObject returns all triples available for the given object.
 func (m *memory) TriplesForObject(o *triple.Object, lo *storage.LookupOptions) (storage.Triples, error) {
 	oGUID := o.GUID()
 	m.rwmu.RLock()
@@ -455,7 +450,7 @@ func (m *memory) TriplesForPredicateAndObject(p *predicate.Predicate, o *triple.
 	return triples, nil
 }
 
-// Exists checks if the provided triple exist on the store.
+// Exist checks if the provided triple exists on the store.
 func (m *memory) Exist(t *triple.Triple) (bool, error) {
 	guid := t.GUID()
 	m.rwmu.RLock()

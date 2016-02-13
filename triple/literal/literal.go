@@ -105,7 +105,7 @@ func (l *Literal) Int64() (int64, error) {
 // Float64 returns the value of a literal as a float64.
 func (l *Literal) Float64() (float64, error) {
 	if l.t != Float64 {
-		return 0, fmt.Errorf("literal.Float64: literal is of type %v; cannot be converted to a flaot64", l.t)
+		return 0, fmt.Errorf("literal.Float64: literal is of type %v; cannot be converted to a float64", l.t)
 	}
 	return l.v.(float64), nil
 }
