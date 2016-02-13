@@ -19,6 +19,8 @@ import (
 	"reflect"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/google/badwolf/bql/semantic"
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/storage"
@@ -56,30 +58,30 @@ func getTestTriples(t *testing.T) []*triple.Triple {
 }
 
 func getTestStore(t *testing.T) storage.Store {
-	ts := getTestTriples(t)
+	ts, ctx := getTestTriples(t), context.Background()
 	s := memory.NewStore()
-	g, err := s.NewGraph("?test")
+	g, err := s.NewGraph(ctx, "?test")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := g.AddTriples(ts); err != nil {
+	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Fatalf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
 	return s
 }
 
 func TestSimpleFetch(t *testing.T) {
-	testBindings := []string{"?s", "?p", "?o"}
+	testBindings, ctx := []string{"?s", "?p", "?o"}, context.Background()
 	cls := &semantic.GraphClause{
 		SBinding: "?s",
 		PBinding: "?p",
 		OBinding: "?o",
 	}
-	g, err := getTestStore(t).Graph("?test")
+	g, err := getTestStore(t).Graph(ctx, "?test")
 	if err != nil {
 		t.Fatal(err)
 	}
-	tbl, err := simpleFetch([]storage.Graph{g}, cls, &storage.LookupOptions{})
+	tbl, err := simpleFetch(ctx, []storage.Graph{g}, cls, &storage.LookupOptions{})
 	if err != nil {
 		t.Errorf("addTriple failed with errorf %v", err)
 	}
@@ -97,7 +99,8 @@ func TestSimpleFetch(t *testing.T) {
 }
 
 func TestFeasibleSimpleExist(t *testing.T) {
-	g, err := getTestStore(t).Graph("?test")
+	ctx := context.Background()
+	g, err := getTestStore(t).Graph(ctx, "?test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +111,7 @@ func TestFeasibleSimpleExist(t *testing.T) {
 		P: p,
 		O: o,
 	}
-	unfeasible, tbl, err := simpleExist([]storage.Graph{g}, clsOK, tt[0])
+	unfeasible, tbl, err := simpleExist(ctx, []storage.Graph{g}, clsOK, tt[0])
 	if err != nil {
 		t.Errorf("simpleExist should have not failed with error %v", err)
 	}
@@ -121,7 +124,8 @@ func TestFeasibleSimpleExist(t *testing.T) {
 }
 
 func TestUnfeasibleSimpleExist(t *testing.T) {
-	g, err := getTestStore(t).Graph("?test")
+	ctx := context.Background()
+	g, err := getTestStore(t).Graph(ctx, "?test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,7 +144,7 @@ func TestUnfeasibleSimpleExist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	unfeasible, tbl, err := simpleExist([]storage.Graph{g}, clsNotOK, tplNotOK)
+	unfeasible, tbl, err := simpleExist(ctx, []storage.Graph{g}, clsNotOK, tplNotOK)
 	if err != nil {
 		t.Errorf("simpleExist should have not failed with error %v", err)
 	}
@@ -153,17 +157,18 @@ func TestUnfeasibleSimpleExist(t *testing.T) {
 }
 
 func TestAddTriples(t *testing.T) {
+	ctx := context.Background()
 	testBindings := []string{"?s", "?p", "?o"}
 	cls := &semantic.GraphClause{
 		SBinding: "?s",
 		PBinding: "?p",
 		OBinding: "?o",
 	}
-	g, err := getTestStore(t).Graph("?test")
+	g, err := getTestStore(t).Graph(ctx, "?test")
 	if err != nil {
 		t.Fatal(err)
 	}
-	ts, err := g.Triples()
+	ts, err := g.Triples(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

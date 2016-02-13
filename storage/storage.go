@@ -21,6 +21,7 @@ import (
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/node"
 	"github.com/google/badwolf/triple/predicate"
+	"golang.org/x/net/context"
 )
 
 // Triples provides a read only channel of triples.
@@ -57,25 +58,25 @@ var DefaultLookup = &LookupOptions{}
 // Store interface describes the low lever API that allows to create new graphs.
 type Store interface {
 	// Name returns the ID of the backend being used.
-	Name() string
+	Name(ctx context.Context) string
 
 	// Version returns the version of the driver implementation.
-	Version() string
+	Version(ctx context.Context) string
 
 	// NewGraph creates a new graph. Creating and already exising graph
 	// should return an error.
-	NewGraph(id string) (Graph, error)
+	NewGraph(ctx context.Context, id string) (Graph, error)
 
 	// Graph return an existing graph if available. Getting a non existing
 	// graph should return an error.
-	Graph(id string) (Graph, error)
+	Graph(ctx context.Context, id string) (Graph, error)
 
 	// DeleteGraph with delete an existing graph. Deleting a non existing graph
 	// should return an error.
-	DeleteGraph(id string) error
+	DeleteGraph(ctx context.Context, id string) error
 
 	// GraphNames returns the current available graph names in the store.
-	GraphNames() (GraphNames, error)
+	GraphNames(ctx context.Context) (GraphNames, error)
 }
 
 // Graph interface describes the low level API that storage drivers need
@@ -83,15 +84,15 @@ type Store interface {
 // BadWolf.
 type Graph interface {
 	// ID returns the id for this graph.
-	ID() string
+	ID(ctx context.Context) string
 
 	// AddTriples adds the triples to the storage. Adding a triple that already
 	// exist should not fail.
-	AddTriples(ts []*triple.Triple) error
+	AddTriples(ctx context.Context, ts []*triple.Triple) error
 
 	// RemoveTriples removes the trilpes from the storage. Removing triples that
 	// are not present on the store shot not fail.
-	RemoveTriples(ts []*triple.Triple) error
+	RemoveTriples(ctx context.Context, ts []*triple.Triple) error
 
 	// Objects returns the objects for the give object and predicate.
 	//
@@ -110,7 +111,7 @@ type Graph interface {
 	// provided time window. If max elements is also provided as part of the
 	// lookup options it will return the at most max elements. There is no
 	// specifications on how that sample should be conducted.
-	Objects(s *node.Node, p *predicate.Predicate, lo *LookupOptions) (Objects, error)
+	Objects(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *LookupOptions) (Objects, error)
 
 	// Subject returns the subjects for the give predicate and object.
 	//
@@ -129,7 +130,7 @@ type Graph interface {
 	// provided time window. If max elements is also provided as part of the
 	// lookup options it will return the at most max elements. There is no
 	// specifications on how that sample should be conducted.
-	Subjects(p *predicate.Predicate, o *triple.Object, lo *LookupOptions) (Nodes, error)
+	Subjects(ctx context.Context, p *predicate.Predicate, o *triple.Object, lo *LookupOptions) (Nodes, error)
 
 	// PredicatesForSubject returns all the predicats know for the given
 	// subject. If the lookup options provide a max number of elements the
@@ -137,7 +138,7 @@ type Graph interface {
 	// bounds are provided in the lookup options, only predicates matching the
 	// the provided type window would be return. Same sampling consideration
 	// apply if max element is provided.
-	PredicatesForSubject(s *node.Node, lo *LookupOptions) (Predicates, error)
+	PredicatesForSubject(ctx context.Context, s *node.Node, lo *LookupOptions) (Predicates, error)
 
 	// PredicatesForObject returns all the predicats know for the given
 	// object. If the lookup options provide a max number of elements the
@@ -145,7 +146,7 @@ type Graph interface {
 	// bounds are provided in the lookup options, only predicates matching the
 	// the provided type window would be return. Same sampling consideration
 	// apply if max element is provided.
-	PredicatesForObject(o *triple.Object, lo *LookupOptions) (Predicates, error)
+	PredicatesForObject(ctx context.Context, o *triple.Object, lo *LookupOptions) (Predicates, error)
 
 	// PredicatesForSubjecAndObject returns all predicates available for the
 	// given subject and object. If the lookup options provide a max number of
@@ -153,7 +154,7 @@ type Graph interface {
 	// If time anchor bounds are provided in the lookup options, only predicates
 	// matching the the provided type window would be return. Same sampling
 	// consideration apply if max element is provided.
-	PredicatesForSubjectAndObject(s *node.Node, o *triple.Object, lo *LookupOptions) (Predicates, error)
+	PredicatesForSubjectAndObject(ctx context.Context, s *node.Node, o *triple.Object, lo *LookupOptions) (Predicates, error)
 
 	// TriplesForSubject returns all triples available for a given subect.
 	// If the lookup options provide a max number of elements the function will
@@ -161,7 +162,7 @@ type Graph interface {
 	// provided in the lookup options, only predicates matching the the provided
 	// type window would be return. Same sampling consideration apply if max
 	// element is provided.
-	TriplesForSubject(s *node.Node, lo *LookupOptions) (Triples, error)
+	TriplesForSubject(ctx context.Context, s *node.Node, lo *LookupOptions) (Triples, error)
 
 	// TriplesForPredicate returns all triples available for a given predicate.
 	// If the lookup options provide a max number of elements the function will
@@ -169,7 +170,7 @@ type Graph interface {
 	// provided in the lookup options, only predicates matching the the provided
 	// type window would be return. Same sampling consideration apply if max
 	// element is provided.
-	TriplesForPredicate(p *predicate.Predicate, lo *LookupOptions) (Triples, error)
+	TriplesForPredicate(ctx context.Context, p *predicate.Predicate, lo *LookupOptions) (Triples, error)
 
 	// TriplesForObject returns all triples available for a given object.
 	// If the lookup options provide a max number of elements the function will
@@ -177,7 +178,7 @@ type Graph interface {
 	// provided in the lookup options, only predicates matching the the provided
 	// type window would be return. Same sampling consideration apply if max
 	// element is provided.
-	TriplesForObject(o *triple.Object, lo *LookupOptions) (Triples, error)
+	TriplesForObject(ctx context.Context, o *triple.Object, lo *LookupOptions) (Triples, error)
 
 	// TriplesForSubjectAndPredicate returns all triples available for the given
 	// subject and predicate. If the lookup options provide a max number of
@@ -185,7 +186,7 @@ type Graph interface {
 	// time anchor bounds are provided in the lookup options, only predicates
 	// matching the the provided type window would be return. Same sampling
 	// consideration apply if max element is provided.
-	TriplesForSubjectAndPredicate(s *node.Node, p *predicate.Predicate, lo *LookupOptions) (Triples, error)
+	TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *LookupOptions) (Triples, error)
 
 	// TriplesForPredicateAndObject returns all triples available for the given
 	// predicate and object. If the lookup options provide a max number of
@@ -193,11 +194,11 @@ type Graph interface {
 	// time anchor bounds are provided in the lookup options, only predicates
 	// matching the the provided type window would be return. Same sampling
 	// consideration apply if max element is provided.
-	TriplesForPredicateAndObject(p *predicate.Predicate, o *triple.Object, lo *LookupOptions) (Triples, error)
+	TriplesForPredicateAndObject(ctx context.Context, p *predicate.Predicate, o *triple.Object, lo *LookupOptions) (Triples, error)
 
 	// Exists checks if the provided triple exist on the store.
-	Exist(t *triple.Triple) (bool, error)
+	Exist(ctx context.Context, t *triple.Triple) (bool, error)
 
 	// Triples allows to iterate over all available triples.
-	Triples() (Triples, error)
+	Triples(ctx context.Context) (Triples, error)
 }

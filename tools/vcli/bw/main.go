@@ -19,6 +19,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"golang.org/x/net/context"
 )
 
 // Registration of the available commands. Please keep sorted.
@@ -29,6 +31,7 @@ var cmds = []*Command{
 }
 
 func main() {
+	ctx := context.Background()
 	args := os.Args
 	// Retrieve the provided command.
 	cmd := ""
@@ -42,7 +45,7 @@ func main() {
 	// Run the requested command.
 	for _, c := range cmds {
 		if c.Name() == cmd {
-			os.Exit(c.Run(args))
+			os.Exit(c.Run(ctx, args))
 		}
 	}
 	// The command was not found.

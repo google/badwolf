@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"github.com/google/badwolf/bql/grammar"
 	"github.com/google/badwolf/bql/planner"
 	"github.com/google/badwolf/bql/semantic"
@@ -28,19 +30,19 @@ import (
 )
 
 // getGraphFromStore returns a Graph. Will create it if it does not exist.
-func getGraphFromStore(st storage.Store, id string) (storage.Graph, error) {
-	g, err := st.Graph(id)
+func getGraphFromStore(ctx context.Context, st storage.Store, id string) (storage.Graph, error) {
+	g, err := st.Graph(ctx, id)
 	if err == nil {
 		return g, nil
 	}
-	return st.NewGraph(id)
+	return st.NewGraph(ctx, id)
 }
 
 // populateSources create all the graph required for the story and
 // populates it with the provided data.
-func (s *Story) populateSources(st storage.Store, b literal.Builder) error {
+func (s *Story) populateSources(ctx context.Context, st storage.Store, b literal.Builder) error {
 	for _, src := range s.Sources {
-		g, err := getGraphFromStore(st, src.ID)
+		g, err := getGraphFromStore(ctx, st, src.ID)
 		if err != nil {
 			return err
 		}
@@ -52,7 +54,7 @@ func (s *Story) populateSources(st storage.Store, b literal.Builder) error {
 			}
 			trps = append(trps, t)
 		}
-		if err := g.AddTriples(trps); err != nil {
+		if err := g.AddTriples(ctx, trps); err != nil {
 			return err
 		}
 	}
@@ -62,7 +64,7 @@ func (s *Story) populateSources(st storage.Store, b literal.Builder) error {
 // runAssertion runs the assertion and compares the outcome. Returns the outcome
 // of comparing the obtained result table with the assertion table if there is
 // no error during the assertion.
-func (a *Assertion) runAssertion(st storage.Store) (bool, *table.Table, *table.Table, error) {
+func (a *Assertion) runAssertion(ctx context.Context, st storage.Store) (bool, *table.Table, *table.Table, error) {
 	errorizer := func(e error) (bool, *table.Table, *table.Table, error) {
 		if a.WillFail && e != nil {
 			return true, nil, nil, nil
@@ -79,11 +81,11 @@ func (a *Assertion) runAssertion(st storage.Store) (bool, *table.Table, *table.T
 	if err := p.Parse(grammar.NewLLk(a.Statement, 1), stm); err != nil {
 		return errorizer(fmt.Errorf("Failed to parse BQL statement with error %v", err))
 	}
-	pln, err := planner.New(st, stm)
+	pln, err := planner.New(ctx, st, stm)
 	if err != nil {
 		return errorizer(fmt.Errorf("Should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err))
 	}
-	tbl, err := pln.Excecute()
+	tbl, err := pln.Excecute(ctx)
 	if err != nil {
 		return errorizer(fmt.Errorf("planner.Execute: failed to execute assertion %q with error %v", a.Requires, err))
 	}
@@ -103,15 +105,15 @@ func (a *Assertion) runAssertion(st storage.Store) (bool, *table.Table, *table.T
 // return an error if something wrong happen along the way. It is worth
 // mentioning that Run does not clear any data avaiable in the provided
 // storage.
-func (s *Story) Run(st storage.Store, b literal.Builder) (map[string]*AssertionOutcome, error) {
+func (s *Story) Run(ctx context.Context, st storage.Store, b literal.Builder) (map[string]*AssertionOutcome, error) {
 	// Populate the sources.
-	if err := s.populateSources(st, b); err != nil {
+	if err := s.populateSources(ctx, st, b); err != nil {
 		return nil, err
 	}
 	// Run assertions.
 	m := make(map[string]*AssertionOutcome)
 	for _, a := range s.Assertions {
-		b, got, want, err := a.runAssertion(st)
+		b, got, want, err := a.runAssertion(ctx, st)
 		if err != nil {
 			return nil, err
 		}

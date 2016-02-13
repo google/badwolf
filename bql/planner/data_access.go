@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"golang.org/x/net/context"
+
 	"github.com/google/badwolf/bql/semantic"
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/storage"
@@ -75,14 +77,14 @@ func updateTimeBoundsForRow(lo *storage.LookupOptions, cls *semantic.GraphClause
 
 // simpleExist returns true if the triple exist. Return the unfeasible state,
 // the table and the error if present.
-func simpleExist(gs []storage.Graph, cls *semantic.GraphClause, t *triple.Triple) (bool, *table.Table, error) {
+func simpleExist(ctx context.Context, gs []storage.Graph, cls *semantic.GraphClause, t *triple.Triple) (bool, *table.Table, error) {
 	unfeasible := true
 	tbl, err := table.New(cls.Bindings())
 	if err != nil {
 		return true, nil, err
 	}
 	for _, g := range gs {
-		b, err := g.Exist(t)
+		b, err := g.Exist(ctx, t)
 		if err != nil {
 			return true, nil, err
 		}
@@ -102,7 +104,7 @@ func simpleExist(gs []storage.Graph, cls *semantic.GraphClause, t *triple.Triple
 // simpleFetch returns a table containing the data specified by the graph
 // clause by querying the provided stora. Will return an error if it had poblems
 // retrieveing the data.
-func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.LookupOptions) (*table.Table, error) {
+func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphClause, lo *storage.LookupOptions) (*table.Table, error) {
 	s, p, o := cls.S, cls.P, cls.O
 	lo = updateTimeBounds(lo, cls)
 	tbl, err := table.New(cls.Bindings())
@@ -116,7 +118,7 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 			return nil, err
 		}
 		for _, g := range gs {
-			b, err := g.Exist(t)
+			b, err := g.Exist(ctx, t)
 			if err != nil {
 				return nil, err
 			}
@@ -134,7 +136,7 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 	if s != nil && p != nil && o == nil {
 		// SP request.
 		for _, g := range gs {
-			os, err := g.Objects(s, p, lo)
+			os, err := g.Objects(ctx, s, p, lo)
 			if err != nil {
 				return nil, err
 			}
@@ -160,7 +162,7 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 	if s != nil && p == nil && o != nil {
 		// SO request.
 		for _, g := range gs {
-			ps, err := g.PredicatesForSubjectAndObject(s, o, lo)
+			ps, err := g.PredicatesForSubjectAndObject(ctx, s, o, lo)
 			if err != nil {
 				return nil, err
 			}
@@ -186,7 +188,7 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 	if s == nil && p != nil && o != nil {
 		// PO request.
 		for _, g := range gs {
-			ss, err := g.Subjects(p, o, lo)
+			ss, err := g.Subjects(ctx, p, o, lo)
 			if err != nil {
 				return nil, err
 			}
@@ -212,7 +214,7 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 	if s != nil && p == nil && o == nil {
 		// S request.
 		for _, g := range gs {
-			ts, err := g.TriplesForSubject(s, lo)
+			ts, err := g.TriplesForSubject(ctx, s, lo)
 			if err != nil {
 				return nil, err
 			}
@@ -225,7 +227,7 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 	if s == nil && p != nil && o == nil {
 		// P request.
 		for _, g := range gs {
-			ts, err := g.TriplesForPredicate(p, lo)
+			ts, err := g.TriplesForPredicate(ctx, p, lo)
 			if err != nil {
 				return nil, err
 			}
@@ -238,7 +240,7 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 	if s == nil && p == nil && o != nil {
 		// O request.
 		for _, g := range gs {
-			ts, err := g.TriplesForObject(o, lo)
+			ts, err := g.TriplesForObject(ctx, o, lo)
 			if err != nil {
 				return nil, err
 			}
@@ -251,7 +253,7 @@ func simpleFetch(gs []storage.Graph, cls *semantic.GraphClause, lo *storage.Look
 	if s == nil && p == nil && o == nil {
 		// Full data request.
 		for _, g := range gs {
-			ts, err := g.Triples()
+			ts, err := g.Triples(ctx)
 			if err != nil {
 				return nil, err
 			}

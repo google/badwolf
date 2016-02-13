@@ -21,6 +21,8 @@ import (
 	"io"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/literal"
@@ -31,7 +33,7 @@ import (
 // standard serialized format. ReadIntoGraph will stop if fails to Parse
 // a triple on the stream. The triples read till then would have also been
 // added to the graph. The int value returns the number of triples added
-func ReadIntoGraph(g storage.Graph, r io.Reader, b literal.Builder) (int, error) {
+func ReadIntoGraph(ctx context.Context, g storage.Graph, r io.Reader, b literal.Builder) (int, error) {
 	cnt, scanner := 0, bufio.NewScanner(r)
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
@@ -44,7 +46,7 @@ func ReadIntoGraph(g storage.Graph, r io.Reader, b literal.Builder) (int, error)
 			return cnt, err
 		}
 		cnt++
-		g.AddTriples([]*triple.Triple{t})
+		g.AddTriples(ctx, []*triple.Triple{t})
 	}
 	return cnt, nil
 }
@@ -53,9 +55,9 @@ func ReadIntoGraph(g storage.Graph, r io.Reader, b literal.Builder) (int, error)
 // marshalled into a separate line. If there is an error writting the
 // serializatino will stop. It returns the number of triples serialized
 // regardless if it succeded of it failed partialy.
-func WriteGraph(w io.Writer, g storage.Graph) (int, error) {
+func WriteGraph(ctx context.Context, w io.Writer, g storage.Graph) (int, error) {
 	cnt := 0
-	ts, err := g.Triples()
+	ts, err := g.Triples(ctx)
 	if err != nil {
 		return 0, err
 	}

@@ -17,6 +17,8 @@ package compliance
 import (
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/google/badwolf/storage/memory"
 	"github.com/google/badwolf/triple/literal"
 )
@@ -89,8 +91,9 @@ func TestRun(t *testing.T) {
 			},
 		},
 	}
+	ctx := context.Background()
 	for _, s := range testStories {
-		m, err := s.Run(memory.NewStore(), literal.DefaultBuilder())
+		m, err := s.Run(ctx, memory.NewStore(), literal.DefaultBuilder())
 		if err != nil {
 			t.Error(err)
 		}
