@@ -81,6 +81,7 @@ func Parse(s string) (*Predicate, error) {
 		return nil, fmt.Errorf("predicate.Parse could not find anchor definition in %s", raw)
 	}
 	id, ta := raw[1:idx], raw[idx+3:len(raw)-1]
+	// TODO: if id has \" inside, it should be unquoted.
 	if ta == "" {
 		return &Predicate{
 			id: ID(id),

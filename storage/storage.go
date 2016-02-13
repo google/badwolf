@@ -62,15 +62,15 @@ type Store interface {
 	// Version returns the version of the driver implementation.
 	Version() string
 
-	// NewGraph creates a new graph. Creating and already exising graph
+	// NewGraph creates a new graph. Creating an already existing graph
 	// should return an error.
 	NewGraph(id string) (Graph, error)
 
-	// Graph return an existing graph if available. Getting a non existing
+	// Graph returns an existing graph if available. Getting a non existing
 	// graph should return an error.
 	Graph(id string) (Graph, error)
 
-	// DeleteGraph with delete an existing graph. Deleting a non existing graph
+	// DeleteGraph deletes an existing graph. Deleting a non existing graph
 	// should return an error.
 	DeleteGraph(id string) error
 
@@ -79,26 +79,26 @@ type Store interface {
 }
 
 // Graph interface describes the low level API that storage drivers need
-// to implment to provide a compliant graph storage that can be use with
+// to implement to provide a compliant graph storage that can be used with
 // BadWolf.
 type Graph interface {
 	// ID returns the id for this graph.
 	ID() string
 
 	// AddTriples adds the triples to the storage. Adding a triple that already
-	// exist should not fail.
+	// exists should not fail.
 	AddTriples(ts []*triple.Triple) error
 
 	// RemoveTriples removes the trilpes from the storage. Removing triples that
-	// are not present on the store shot not fail.
+	// are not present on the store should not fail.
 	RemoveTriples(ts []*triple.Triple) error
 
-	// Objects returns the objects for the give object and predicate.
+	// Objects returns the objects for the given object and predicate.
 	//
 	// Given a subject and a predicate, this method retrieves the objects of
-	// triples that matches them. By default, if does not limit the maximum number
-	// of possible objects returned, unless properly specified by in the lookup
-	// options provided.
+	// triples that match them. By default, if does not limit the maximum number
+	// of possible objects returned, unless properly specified by provided lookup
+	// options.
 	//
 	// If the provided predicate is immutable it will return all the possible
 	// subject values or the number of max elements specified. There is no
@@ -108,16 +108,16 @@ type Graph interface {
 	// provided in the lookup options, it will return all the available objects.
 	// If time anchors are provided, it will return all the values anchored in the
 	// provided time window. If max elements is also provided as part of the
-	// lookup options it will return the at most max elements. There is no
+	// lookup options it will return at most max elements. There is no
 	// specifications on how that sample should be conducted.
 	Objects(s *node.Node, p *predicate.Predicate, lo *LookupOptions) (Objects, error)
 
 	// Subject returns the subjects for the give predicate and object.
 	//
-	// Given a predicate and an object, this method retrieves the subbjects of
-	// triples that matches them. By default, if does not limit the maximum number
-	// of possible subjects returned, unless properly specified by in the lookup
-	// options provided.
+	// Given a predicate and an object, this method retrieves the subjects of
+	// triples that matches them. By default, it does not limit the maximum number
+	// of possible subjects returned, unless properly specified by provided lookup
+	// options.
 	//
 	// If the provided predicate is immutable it will return all the possible
 	// subject values or the number of max elements specified. There is no
@@ -131,7 +131,7 @@ type Graph interface {
 	// specifications on how that sample should be conducted.
 	Subjects(p *predicate.Predicate, o *triple.Object, lo *LookupOptions) (Nodes, error)
 
-	// PredicatesForSubject returns all the predicats know for the given
+	// PredicatesForSubject returns all the predicates known for the given
 	// subject. If the lookup options provide a max number of elements the
 	// function will return a sample of the available predicates. If time anchor
 	// bounds are provided in the lookup options, only predicates matching the
@@ -139,7 +139,7 @@ type Graph interface {
 	// apply if max element is provided.
 	PredicatesForSubject(s *node.Node, lo *LookupOptions) (Predicates, error)
 
-	// PredicatesForObject returns all the predicats know for the given
+	// PredicatesForObject returns all the predicates known for the given
 	// object. If the lookup options provide a max number of elements the
 	// function will return a sample of the available predicates. If time anchor
 	// bounds are provided in the lookup options, only predicates matching the
@@ -155,7 +155,7 @@ type Graph interface {
 	// consideration apply if max element is provided.
 	PredicatesForSubjectAndObject(s *node.Node, o *triple.Object, lo *LookupOptions) (Predicates, error)
 
-	// TriplesForSubject returns all triples available for a given subect.
+	// TriplesForSubject returns all triples available for the given subect.
 	// If the lookup options provide a max number of elements the function will
 	// return a sample of the available triples. If time anchor bounds are
 	// provided in the lookup options, only predicates matching the the provided
@@ -163,7 +163,7 @@ type Graph interface {
 	// element is provided.
 	TriplesForSubject(s *node.Node, lo *LookupOptions) (Triples, error)
 
-	// TriplesForPredicate returns all triples available for a given predicate.
+	// TriplesForPredicate returns all triples available for the given predicate.
 	// If the lookup options provide a max number of elements the function will
 	// return a sample of the available triples. If time anchor bounds are
 	// provided in the lookup options, only predicates matching the the provided
@@ -171,7 +171,7 @@ type Graph interface {
 	// element is provided.
 	TriplesForPredicate(p *predicate.Predicate, lo *LookupOptions) (Triples, error)
 
-	// TriplesForObject returns all triples available for a given object.
+	// TriplesForObject returns all triples available for the given object.
 	// If the lookup options provide a max number of elements the function will
 	// return a sample of the available triples. If time anchor bounds are
 	// provided in the lookup options, only predicates matching the the provided
@@ -195,7 +195,7 @@ type Graph interface {
 	// consideration apply if max element is provided.
 	TriplesForPredicateAndObject(p *predicate.Predicate, o *triple.Object, lo *LookupOptions) (Triples, error)
 
-	// Exists checks if the provided triple exist on the store.
+	// Exist checks if the provided triple exists on the store.
 	Exist(t *triple.Triple) (bool, error)
 
 	// Triples allows to iterate over all available triples.
