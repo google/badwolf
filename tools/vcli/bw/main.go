@@ -50,14 +50,14 @@ func main() {
 	}
 	// The command was not found.
 	if cmd == "" {
-		fmt.Fprintf(os.Stderr, "missing command. Usage:\n\n\t$ badwolf [command]\n\nPlease run\n\n\t$ badwolf help\n\n")
+		fmt.Fprintf(os.Stderr, "missing command. Usage:\n\n\t$ bw [command]\n\nPlease run\n\n\t$ bw help\n\n")
 	} else {
-		fmt.Fprintf(os.Stderr, "command %q not recognized. Usage:\n\n\t$ badwolf [command]\n\nPlease run\n\n\t$ badwolf help\n\n", cmd)
+		fmt.Fprintf(os.Stderr, "command %q not recognized. Usage:\n\n\t$ bw [command]\n\nPlease run\n\n\t$ bw help\n\n", cmd)
 	}
 	os.Exit(1)
 }
 
-// help prints the requested hy
+// help prints the requested help
 func help(args []string) int {
 	var (
 		cmd string
@@ -65,20 +65,20 @@ func help(args []string) int {
 	if len(args) >= 3 {
 		cmd = args[2]
 	}
-	// Prints the help if hhe command exist.
+	// Prints the help if the command exist.
 	for _, c := range cmds {
 		if c.Name() == cmd {
 			return c.Usage()
 		}
 	}
 	if cmd == "" {
-		fmt.Fprintf(os.Stderr, "missing help command. Usage:\n\n\t$ badwolf help [command]\n\nAvailable help commands\n\n")
+		fmt.Fprintf(os.Stderr, "missing help command. Usage:\n\n\t$ bw help [command]\n\nAvailable help commands\n\n")
 		for _, c := range cmds {
 			fmt.Fprintf(os.Stderr, "\t%s\t- %s\n", c.Name(), c.Short)
 		}
 		fmt.Fprintln(os.Stderr, "")
 		return 0
 	}
-	fmt.Fprintf(os.Stderr, "help command %q not recognized. Usage:\n\n\t$ badwolf help\n\n", cmd)
+	fmt.Fprintf(os.Stderr, "help command %q not recognized. Usage:\n\n\t$ bw help\n\n", cmd)
 	return 2
 }
