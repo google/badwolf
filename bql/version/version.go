@@ -18,9 +18,9 @@ var (
 	// Major is the current major version of master branch.
 	Major = 0
 	// Minor is the current minor version of master branch.
-	Minor = 1
+	Minor = 2
 	// Patch is the curernt patched version of the master branch.
-	Patch = 1
+	Patch = 0
 	// Release is the current release level of the master branch. Valid values
 	// are dev (developement unreleased), rcX (release candidate with current
 	// iteration), stable (indicates a final released version).
