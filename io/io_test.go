@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/google/badwolf/storage/memory"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/literal"
@@ -55,15 +57,15 @@ func TestReadIntoGraph(t *testing.T) {
 
 func TestWriteIntoGraph(t *testing.T) {
 	var buffer bytes.Buffer
-	ts := getTestTriples(t)
-	g, err := memory.NewStore().NewGraph("test")
+	ts, ctx := getTestTriples(t), context.Background()
+	g, err := memory.NewStore().NewGraph(ctx, "test")
 	if err != nil {
 		t.Fatalf("memory.NewStore().NewGraph should have never failed to create a graph")
 	}
-	if err := g.AddTriples(ts); err != nil {
+	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("storage.AddTriples should have not fail to add triples %v with error %v", ts, err)
 	}
-	cnt, err := WriteGraph(&buffer, g)
+	cnt, err := WriteGraph(ctx, &buffer, g)
 	if err != nil {
 		t.Errorf("io.WriteGraph failed to read %s with error %v", buffer.String(), err)
 	}
@@ -74,17 +76,17 @@ func TestWriteIntoGraph(t *testing.T) {
 
 func TestSerializationContents(t *testing.T) {
 	var buffer bytes.Buffer
-	ts := getTestTriples(t)
+	ts, ctx := getTestTriples(t), context.Background()
 
-	g, err := memory.NewStore().NewGraph("test")
+	g, err := memory.NewStore().NewGraph(ctx, "test")
 	if err != nil {
 		t.Fatalf("memory.NewStore().NewGraph should have never failed to create a graph")
 	}
-	if err := g.AddTriples(ts); err != nil {
+	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("storage.AddTriples should have not fail to add triples %v with error %v", ts, err)
 	}
 	// Serialize to a buffer.
-	cnt, err := WriteGraph(&buffer, g)
+	cnt, err := WriteGraph(ctx, &buffer, g)
 	if err != nil {
 		t.Errorf("io.WriteGraph failed to read %s with error %v", buffer.String(), err)
 	}
@@ -92,11 +94,11 @@ func TestSerializationContents(t *testing.T) {
 		t.Errorf("io.WriteGraph should have been able to write 6 triples not %d", cnt)
 	}
 	// Deserialize from a buffer.
-	g2, err := memory.DefaultStore.NewGraph("test2")
+	g2, err := memory.DefaultStore.NewGraph(ctx, "test2")
 	if err != nil {
 		t.Fatalf("memory.DefaultStore.NewGraph should have never failed to create a graph")
 	}
-	cnt2, err := ReadIntoGraph(g2, &buffer, literal.DefaultBuilder())
+	cnt2, err := ReadIntoGraph(ctx, g2, &buffer, literal.DefaultBuilder())
 	if err != nil {
 		t.Errorf("io.readIntoGraph failed to read %s with error %v", buffer.String(), err)
 	}
@@ -106,7 +108,7 @@ func TestSerializationContents(t *testing.T) {
 	// Check the graphs are equal
 	m := make(map[string]bool)
 	gs := 0
-	gtpls, err := g.Triples()
+	gtpls, err := g.Triples(ctx)
 	if err != nil {
 		t.Errorf("g.Triples failed to retrieve triples with error %v", err)
 	}
@@ -115,7 +117,7 @@ func TestSerializationContents(t *testing.T) {
 		gs++
 	}
 	gos := 0
-	g2tpls, err := g2.Triples()
+	g2tpls, err := g2.Triples(ctx)
 	if err != nil {
 		t.Errorf("g2.Triples failed to retrieve triples with error %v", err)
 	}

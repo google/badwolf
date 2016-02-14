@@ -19,6 +19,8 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/google/badwolf/bql/grammar"
 	"github.com/google/badwolf/bql/semantic"
 	"github.com/google/badwolf/io"
@@ -28,6 +30,7 @@ import (
 )
 
 func insertTest(t *testing.T) {
+	ctx := context.Background()
 	bql := `insert data into ?a {/_<foo> "bar"@[] /_<foo> .
                                /_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z] .
                                /_<foo> "bar"@[] "yeah"^^type:text};`
@@ -39,19 +42,19 @@ func insertTest(t *testing.T) {
 	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
-	pln, err := New(memory.DefaultStore, stm)
+	pln, err := New(ctx, memory.DefaultStore, stm)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
-	if _, err := pln.Excecute(); err != nil {
+	if _, err := pln.Excecute(ctx); err != nil {
 		t.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
 	}
-	g, err := memory.DefaultStore.Graph("?a")
+	g, err := memory.DefaultStore.Graph(ctx, "?a")
 	if err != nil {
 		t.Errorf("memory.DefaultStore.Graph(%q) should have not fail with error %v", "?a", err)
 	}
 	i := 0
-	ts, err := g.Triples()
+	ts, err := g.Triples(ctx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -64,6 +67,7 @@ func insertTest(t *testing.T) {
 }
 
 func deleteTest(t *testing.T) {
+	ctx := context.Background()
 	bql := `delete data from ?a {/_<foo> "bar"@[] /_<foo> .
                                /_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z] .
                                /_<foo> "bar"@[] "yeah"^^type:text};`
@@ -75,19 +79,19 @@ func deleteTest(t *testing.T) {
 	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
-	pln, err := New(memory.DefaultStore, stm)
+	pln, err := New(ctx, memory.DefaultStore, stm)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
-	if _, err := pln.Excecute(); err != nil {
+	if _, err := pln.Excecute(ctx); err != nil {
 		t.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
 	}
-	g, err := memory.DefaultStore.Graph("?a")
+	g, err := memory.DefaultStore.Graph(ctx, "?a")
 	if err != nil {
 		t.Errorf("memory.DefaultStore.Graph(%q) should have not fail with error %v", "?a", err)
 	}
 	i := 0
-	ts, err := g.Triples()
+	ts, err := g.Triples(ctx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -100,38 +104,42 @@ func deleteTest(t *testing.T) {
 }
 
 func TestInsertDoesNotFail(t *testing.T) {
-	if _, err := memory.DefaultStore.NewGraph("?a"); err != nil {
+	ctx := context.Background()
+	if _, err := memory.DefaultStore.NewGraph(ctx, "?a"); err != nil {
 		t.Errorf("memory.DefaultStore.NewGraph(%q) should have not failed with error %v", "?a", err)
 	}
 	insertTest(t)
-	if err := memory.DefaultStore.DeleteGraph("?a"); err != nil {
+	if err := memory.DefaultStore.DeleteGraph(ctx, "?a"); err != nil {
 		t.Errorf("memory.DefaultStore.DeleteGraph(%q) should have not failed with error %v", "?a", err)
 	}
 }
 
 func TestDeleteDoesNotFail(t *testing.T) {
-	if _, err := memory.DefaultStore.NewGraph("?a"); err != nil {
+	ctx := context.Background()
+	if _, err := memory.DefaultStore.NewGraph(ctx, "?a"); err != nil {
 		t.Errorf("memory.DefaultStore.NewGraph(%q) should have not failed with error %v", "?a", err)
 	}
 	deleteTest(t)
-	if err := memory.DefaultStore.DeleteGraph("?a"); err != nil {
+	if err := memory.DefaultStore.DeleteGraph(ctx, "?a"); err != nil {
 		t.Errorf("memory.DefaultStore.DeleteGraph(%q) should have not failed with error %v", "?a", err)
 	}
 }
 
 func TestInsertDeleteDoesNotFail(t *testing.T) {
-	if _, err := memory.DefaultStore.NewGraph("?a"); err != nil {
+	ctx := context.Background()
+	if _, err := memory.DefaultStore.NewGraph(ctx, "?a"); err != nil {
 		t.Errorf("memory.DefaultStore.NewGraph(%q) should have not failed with error %v", "?a", err)
 	}
 	deleteTest(t)
-	if err := memory.DefaultStore.DeleteGraph("?a"); err != nil {
+	if err := memory.DefaultStore.DeleteGraph(ctx, "?a"); err != nil {
 		t.Errorf("memory.DefaultStore.DeleteGraph(%q) should have not failed with error %v", "?a", err)
 	}
 }
 
 func TestCreateGraph(t *testing.T) {
-	memory.DefaultStore.DeleteGraph("?foo")
-	memory.DefaultStore.DeleteGraph("?bar")
+	ctx := context.Background()
+	memory.DefaultStore.DeleteGraph(ctx, "?foo")
+	memory.DefaultStore.DeleteGraph(ctx, "?bar")
 
 	bql := `create graph ?foo, ?bar;`
 	p, err := grammar.NewParser(grammar.SemanticBQL())
@@ -142,26 +150,27 @@ func TestCreateGraph(t *testing.T) {
 	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
-	pln, err := New(memory.DefaultStore, stm)
+	pln, err := New(ctx, memory.DefaultStore, stm)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
-	if _, err := pln.Excecute(); err != nil {
+	if _, err := pln.Excecute(ctx); err != nil {
 		t.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
 	}
-	if _, err := memory.DefaultStore.Graph("?foo"); err != nil {
+	if _, err := memory.DefaultStore.Graph(ctx, "?foo"); err != nil {
 		t.Errorf("planner.Execute: failed to create graph %q with error %v", "?foo", err)
 	}
-	if _, err := memory.DefaultStore.Graph("?bar"); err != nil {
+	if _, err := memory.DefaultStore.Graph(ctx, "?bar"); err != nil {
 		t.Errorf("planner.Execute: failed to create graph %q with error %v", "?bar", err)
 	}
 }
 
 func TestDropGraph(t *testing.T) {
-	memory.DefaultStore.DeleteGraph("?foo")
-	memory.DefaultStore.DeleteGraph("?bar")
-	memory.DefaultStore.NewGraph("?foo")
-	memory.DefaultStore.NewGraph("?bar")
+	ctx := context.Background()
+	memory.DefaultStore.DeleteGraph(ctx, "?foo")
+	memory.DefaultStore.DeleteGraph(ctx, "?bar")
+	memory.DefaultStore.NewGraph(ctx, "?foo")
+	memory.DefaultStore.NewGraph(ctx, "?bar")
 
 	bql := `drop graph ?foo, ?bar;`
 	p, err := grammar.NewParser(grammar.SemanticBQL())
@@ -172,17 +181,17 @@ func TestDropGraph(t *testing.T) {
 	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
-	pln, err := New(memory.DefaultStore, stm)
+	pln, err := New(ctx, memory.DefaultStore, stm)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
-	if _, err := pln.Excecute(); err != nil {
+	if _, err := pln.Excecute(ctx); err != nil {
 		t.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
 	}
-	if g, err := memory.DefaultStore.Graph("?foo"); err == nil {
+	if g, err := memory.DefaultStore.Graph(ctx, "?foo"); err == nil {
 		t.Errorf("planner.Execute: failed to drop graph %q; returned %v", "?foo", g)
 	}
-	if g, err := memory.DefaultStore.Graph("?bar"); err == nil {
+	if g, err := memory.DefaultStore.Graph(ctx, "?bar"); err == nil {
 		t.Errorf("planner.Execute: failed to drop graph %q; returned %v", "?bar", g)
 	}
 }
@@ -207,16 +216,16 @@ const testTriples = `
 `
 
 func populateTestStore(t *testing.T) storage.Store {
-	s := memory.NewStore()
-	g, err := s.NewGraph("?test")
+	s, ctx := memory.NewStore(), context.Background()
+	g, err := s.NewGraph(ctx, "?test")
 	if err != nil {
 		t.Fatalf("memory.NewGraph failed to create \"?test\" with error %v", err)
 	}
 	b := bytes.NewBufferString(testTriples)
-	if _, err := io.ReadIntoGraph(g, b, literal.DefaultBuilder()); err != nil {
+	if _, err := io.ReadIntoGraph(ctx, g, b, literal.DefaultBuilder()); err != nil {
 		t.Fatalf("io.ReadIntoGraph failed to read test graph with error %v", err)
 	}
-	tpls, err := g.Triples()
+	tpls, err := g.Triples(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,6 +240,7 @@ func populateTestStore(t *testing.T) storage.Store {
 }
 
 func TestQuery(t *testing.T) {
+	ctx := context.Background()
 	testTable := []struct {
 		q    string
 		nbs  int
@@ -418,11 +428,11 @@ func TestQuery(t *testing.T) {
 		if err := p.Parse(grammar.NewLLk(entry.q, 1), st); err != nil {
 			t.Errorf("Parser.consume: failed to parse query %q with error %v", entry.q, err)
 		}
-		plnr, err := New(s, st)
+		plnr, err := New(ctx, s, st)
 		if err != nil {
 			t.Errorf("planner.New failed to create a valid query plan with error %v", err)
 		}
-		tbl, err := plnr.Excecute()
+		tbl, err := plnr.Excecute(ctx)
 		if err != nil {
 			t.Errorf("planner.Excecute failed for query %q with error %v", entry.q, err)
 		}

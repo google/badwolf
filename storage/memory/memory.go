@@ -21,6 +21,8 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/net/context"
+
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/node"
@@ -47,17 +49,17 @@ func NewStore() storage.Store {
 }
 
 // Name returns the ID of the backend being used.
-func (s *memoryStore) Name() string {
+func (s *memoryStore) Name(ctx context.Context) string {
 	return "MEMORY_STORE"
 }
 
 // Version returns the version of the driver implementation.
-func (s *memoryStore) Version() string {
+func (s *memoryStore) Version(ctx context.Context) string {
 	return "0.1.vcli"
 }
 
 // NewGraph creates a new graph.
-func (s *memoryStore) NewGraph(id string) (storage.Graph, error) {
+func (s *memoryStore) NewGraph(ctx context.Context, id string) (storage.Graph, error) {
 	g := &memory{
 		id:    id,
 		idx:   make(map[string]*triple.Triple),
@@ -80,7 +82,7 @@ func (s *memoryStore) NewGraph(id string) (storage.Graph, error) {
 
 // Graph returns an existing graph if available. Getting a non existing
 // graph should return an error.
-func (s *memoryStore) Graph(id string) (storage.Graph, error) {
+func (s *memoryStore) Graph(ctx context.Context, id string) (storage.Graph, error) {
 	s.rwmu.RLock()
 	defer s.rwmu.RUnlock()
 	if g, ok := s.graphs[id]; ok {
@@ -91,7 +93,7 @@ func (s *memoryStore) Graph(id string) (storage.Graph, error) {
 
 // DeleteGraph deletes an existing graph. Deleting a non existing graph
 // should return an error.
-func (s *memoryStore) DeleteGraph(id string) error {
+func (s *memoryStore) DeleteGraph(ctx context.Context, id string) error {
 	s.rwmu.Lock()
 	defer s.rwmu.Unlock()
 	if _, ok := s.graphs[id]; ok {
@@ -102,7 +104,7 @@ func (s *memoryStore) DeleteGraph(id string) error {
 }
 
 // GraphNames returns the current available graph names in the store.
-func (s *memoryStore) GraphNames() (storage.GraphNames, error) {
+func (s *memoryStore) GraphNames(ctx context.Context) (storage.GraphNames, error) {
 	s.rwmu.RLock()
 	defer s.rwmu.RUnlock()
 	c := make(chan string, len(s.graphs))
@@ -127,12 +129,12 @@ type memory struct {
 }
 
 // ID returns the id for this graph.
-func (m *memory) ID() string {
+func (m *memory) ID(ctx context.Context) string {
 	return m.id
 }
 
 // AddTriples adds the triples to the storage.
-func (m *memory) AddTriples(ts []*triple.Triple) error {
+func (m *memory) AddTriples(ctx context.Context, ts []*triple.Triple) error {
 	for _, t := range ts {
 		guid := t.GUID()
 		sGUID := t.Subject().GUID()
@@ -181,7 +183,7 @@ func (m *memory) AddTriples(ts []*triple.Triple) error {
 }
 
 // RemoveTriples removes the trilpes from the storage.
-func (m *memory) RemoveTriples(ts []*triple.Triple) error {
+func (m *memory) RemoveTriples(ctx context.Context, ts []*triple.Triple) error {
 	for _, t := range ts {
 		guid := t.GUID()
 		sGUID := t.Subject().GUID()
@@ -258,7 +260,7 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 }
 
 // Objects returns the objects for the give object and predicate.
-func (m *memory) Objects(s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions) (storage.Objects, error) {
+func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions) (storage.Objects, error) {
 	sGUID := s.GUID()
 	pGUID := p.GUID()
 	spIdx := strings.Join([]string{sGUID, pGUID}, ":")
@@ -278,7 +280,7 @@ func (m *memory) Objects(s *node.Node, p *predicate.Predicate, lo *storage.Looku
 }
 
 // Subject returns the subjects for the give predicate and object.
-func (m *memory) Subjects(p *predicate.Predicate, o *triple.Object, lo *storage.LookupOptions) (storage.Nodes, error) {
+func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple.Object, lo *storage.LookupOptions) (storage.Nodes, error) {
 	pGUID := p.GUID()
 	oGUID := o.GUID()
 	poIdx := strings.Join([]string{pGUID, oGUID}, ":")
@@ -299,7 +301,7 @@ func (m *memory) Subjects(p *predicate.Predicate, o *triple.Object, lo *storage.
 
 // PredicatesForSubjecAndObject returns all predicates available for the
 // given subject and object.
-func (m *memory) PredicatesForSubjectAndObject(s *node.Node, o *triple.Object, lo *storage.LookupOptions) (storage.Predicates, error) {
+func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node, o *triple.Object, lo *storage.LookupOptions) (storage.Predicates, error) {
 	sGUID := s.GUID()
 	oGUID := o.GUID()
 	soIdx := strings.Join([]string{sGUID, oGUID}, ":")
@@ -319,7 +321,7 @@ func (m *memory) PredicatesForSubjectAndObject(s *node.Node, o *triple.Object, l
 }
 
 // PredicatesForSubject returns all the predicates known for the given subject.
-func (m *memory) PredicatesForSubject(s *node.Node, lo *storage.LookupOptions) (storage.Predicates, error) {
+func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *storage.LookupOptions) (storage.Predicates, error) {
 	sGUID := s.GUID()
 	m.rwmu.RLock()
 	preds := make(chan *predicate.Predicate, len(m.idxS[sGUID]))
@@ -337,7 +339,7 @@ func (m *memory) PredicatesForSubject(s *node.Node, lo *storage.LookupOptions) (
 }
 
 // PredicatesForObject returns all the predicates known for the given object.
-func (m *memory) PredicatesForObject(o *triple.Object, lo *storage.LookupOptions) (storage.Predicates, error) {
+func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *storage.LookupOptions) (storage.Predicates, error) {
 	oGUID := o.GUID()
 	m.rwmu.RLock()
 	preds := make(chan *predicate.Predicate, len(m.idxO[oGUID]))
@@ -355,7 +357,7 @@ func (m *memory) PredicatesForObject(o *triple.Object, lo *storage.LookupOptions
 }
 
 // TriplesForSubject returns all triples available for the given subect.
-func (m *memory) TriplesForSubject(s *node.Node, lo *storage.LookupOptions) (storage.Triples, error) {
+func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storage.LookupOptions) (storage.Triples, error) {
 	sGUID := s.GUID()
 	m.rwmu.RLock()
 	triples := make(chan *triple.Triple, len(m.idxS[sGUID]))
@@ -373,7 +375,7 @@ func (m *memory) TriplesForSubject(s *node.Node, lo *storage.LookupOptions) (sto
 }
 
 // TriplesForPredicate returns all triples available for the given predicate.
-func (m *memory) TriplesForPredicate(p *predicate.Predicate, lo *storage.LookupOptions) (storage.Triples, error) {
+func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate, lo *storage.LookupOptions) (storage.Triples, error) {
 	pGUID := p.GUID()
 	m.rwmu.RLock()
 	triples := make(chan *triple.Triple, len(m.idxP[pGUID]))
@@ -391,7 +393,7 @@ func (m *memory) TriplesForPredicate(p *predicate.Predicate, lo *storage.LookupO
 }
 
 // TriplesForObject returns all triples available for the given object.
-func (m *memory) TriplesForObject(o *triple.Object, lo *storage.LookupOptions) (storage.Triples, error) {
+func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *storage.LookupOptions) (storage.Triples, error) {
 	oGUID := o.GUID()
 	m.rwmu.RLock()
 	triples := make(chan *triple.Triple, len(m.idxO[oGUID]))
@@ -410,7 +412,7 @@ func (m *memory) TriplesForObject(o *triple.Object, lo *storage.LookupOptions) (
 
 // TriplesForSubjectAndPredicate returns all triples available for the given
 // subject and predicate.
-func (m *memory) TriplesForSubjectAndPredicate(s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions) (storage.Triples, error) {
+func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions) (storage.Triples, error) {
 	sGUID := s.GUID()
 	pGUID := p.GUID()
 	spIdx := strings.Join([]string{sGUID, pGUID}, ":")
@@ -431,7 +433,7 @@ func (m *memory) TriplesForSubjectAndPredicate(s *node.Node, p *predicate.Predic
 
 // TriplesForPredicateAndObject returns all triples available for the given
 // predicate and object.
-func (m *memory) TriplesForPredicateAndObject(p *predicate.Predicate, o *triple.Object, lo *storage.LookupOptions) (storage.Triples, error) {
+func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.Predicate, o *triple.Object, lo *storage.LookupOptions) (storage.Triples, error) {
 	pGUID := p.GUID()
 	oGUID := o.GUID()
 	poIdx := strings.Join([]string{pGUID, oGUID}, ":")
@@ -451,7 +453,7 @@ func (m *memory) TriplesForPredicateAndObject(p *predicate.Predicate, o *triple.
 }
 
 // Exist checks if the provided triple exists on the store.
-func (m *memory) Exist(t *triple.Triple) (bool, error) {
+func (m *memory) Exist(ctx context.Context, t *triple.Triple) (bool, error) {
 	guid := t.GUID()
 	m.rwmu.RLock()
 	_, ok := m.idx[guid]
@@ -460,7 +462,7 @@ func (m *memory) Exist(t *triple.Triple) (bool, error) {
 }
 
 // Triples allows to iterate over all available triples.
-func (m *memory) Triples() (storage.Triples, error) {
+func (m *memory) Triples(ctx context.Context) (storage.Triples, error) {
 	triples := make(chan *triple.Triple, len(m.idx))
 	go func() {
 		for _, t := range m.idx {

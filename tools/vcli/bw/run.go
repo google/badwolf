@@ -23,6 +23,8 @@ import (
 	"os"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"github.com/google/badwolf/bql/grammar"
 	"github.com/google/badwolf/bql/planner"
 	"github.com/google/badwolf/bql/semantic"
@@ -41,14 +43,14 @@ the file starting with # will be ignored. All statements will be run
 sequentially.
 `,
 	}
-	cmd.Run = func(args []string) int {
-		return runCommand(cmd, args)
+	cmd.Run = func(ctx context.Context, args []string) int {
+		return runCommand(ctx, cmd, args)
 	}
 	return cmd
 }
 
 // runCommand runs all the BQL statements available in the file.
-func runCommand(cmd *Command, args []string) int {
+func runCommand(ctx context.Context, cmd *Command, args []string) int {
 	if len(args) < 3 {
 		fmt.Fprintf(os.Stderr, "Missing required file path. ")
 		cmd.Usage()
@@ -63,7 +65,7 @@ func runCommand(cmd *Command, args []string) int {
 	s := memory.DefaultStore
 	for idx, stm := range lines {
 		fmt.Printf("Processing statement (%d/%d):\n%s\n\n", idx+1, len(lines), stm)
-		tbl, err := runBQL(stm, s)
+		tbl, err := runBQL(ctx, stm, s)
 		if err != nil {
 			fmt.Printf("[FAIL] %v\n\n", err)
 			continue
@@ -78,7 +80,7 @@ func runCommand(cmd *Command, args []string) int {
 }
 
 // runBQL attemps to excecute the provided query against the given store.
-func runBQL(bql string, s storage.Store) (*table.Table, error) {
+func runBQL(ctx context.Context, bql string, s storage.Store) (*table.Table, error) {
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		return nil, fmt.Errorf("Failed to initilize a valid BQL parser")
@@ -87,11 +89,11 @@ func runBQL(bql string, s storage.Store) (*table.Table, error) {
 	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		return nil, fmt.Errorf("Failed to parse BQL statement with error %v", err)
 	}
-	pln, err := planner.New(s, stm)
+	pln, err := planner.New(ctx, s, stm)
 	if err != nil {
 		return nil, fmt.Errorf("Should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
-	res, err := pln.Excecute()
+	res, err := pln.Excecute(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
 	}

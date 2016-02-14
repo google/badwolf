@@ -22,6 +22,8 @@ import (
 	"path"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"github.com/google/badwolf/storage/memory"
 	"github.com/google/badwolf/tools/compliance"
 	"github.com/google/badwolf/triple/literal"
@@ -36,14 +38,14 @@ func NewAssertCommand() *Command {
 file containing all the sources and all the assertions to run.
 `,
 	}
-	cmd.Run = func(args []string) int {
-		return assertCommand(cmd, args)
+	cmd.Run = func(ctx context.Context, args []string) int {
+		return assertCommand(ctx, cmd, args)
 	}
 	return cmd
 }
 
 // assertCommand runs all the BQL statements available in the file.
-func assertCommand(cmd *Command, args []string) int {
+func assertCommand(ctx context.Context, cmd *Command, args []string) int {
 	if len(args) < 3 {
 		fmt.Fprintf(os.Stderr, "Missing required folder path. ")
 		cmd.Usage()
@@ -79,7 +81,7 @@ func assertCommand(cmd *Command, args []string) int {
 			fmt.Fprintf(os.Stderr, "\n\n\tFailed to unmarshal story with error %v\n\n", err)
 			return 2
 		}
-		m, err := s.Run(memory.NewStore(), literal.DefaultBuilder())
+		m, err := s.Run(ctx, memory.NewStore(), literal.DefaultBuilder())
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "\n\n\tFailed to run story %q with error %v\n\n", s.Name, err)
 			return 2

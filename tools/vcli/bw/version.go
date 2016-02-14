@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"os"
 
+	"golang.org/x/net/context"
+
 	"github.com/google/badwolf/bql/version"
 )
 
@@ -29,7 +31,7 @@ var patch = "dev"
 // NewVersionCommand create the help command.
 func NewVersionCommand() *Command {
 	return &Command{
-		Run: func(args []string) int {
+		Run: func(ctx context.Context, args []string) int {
 			fmt.Fprintf(os.Stderr, "badwolf vCli (%d.%d.%d-%s)\n", version.Major, version.Minor, version.Patch, version.Release)
 			return 0
 		},

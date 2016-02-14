@@ -8,6 +8,8 @@ go:
   - 1.5
   - tip
 
-script:
-  - go test -v ./...
+install:
+  - go get golang.org/x/net/context
 
+script:
+  - go test -v -race ./...
