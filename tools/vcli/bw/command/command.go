@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+// Package command contains the basic definitions of a command for the command
+// line tool.
+package command
 
 import (
 	"fmt"

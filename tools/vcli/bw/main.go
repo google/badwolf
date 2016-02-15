@@ -20,14 +20,21 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/google/badwolf/storage/memory"
+	"github.com/google/badwolf/tools/vcli/bw/assert"
+	"github.com/google/badwolf/tools/vcli/bw/command"
+	"github.com/google/badwolf/tools/vcli/bw/run"
+	"github.com/google/badwolf/tools/vcli/bw/version"
+	"github.com/google/badwolf/triple/literal"
+
 	"golang.org/x/net/context"
 )
 
 // Registration of the available commands. Please keep sorted.
-var cmds = []*Command{
-	NewAssertCommand(),
-	NewRunCommand(),
-	NewVersionCommand(),
+var cmds = []*command.Command{
+	assert.New(memory.NewStore(), literal.DefaultBuilder()),
+	run.New(),
+	version.New(),
 }
 
 func main() {

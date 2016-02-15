@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+// Package version contains the implementation of the command that prints the
+// BQL version.
+package version
 
 import (
 	"fmt"
@@ -21,6 +23,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/google/badwolf/bql/version"
+	"github.com/google/badwolf/tools/vcli/bw/command"
 )
 
 var stage = "alpha"
@@ -28,9 +31,9 @@ var major = 0
 var minor = 1
 var patch = "dev"
 
-// NewVersionCommand create the help command.
-func NewVersionCommand() *Command {
-	return &Command{
+// New create the version command.
+func New() *command.Command {
+	return &command.Command{
 		Run: func(ctx context.Context, args []string) int {
 			fmt.Fprintf(os.Stderr, "badwolf vCli (%d.%d.%d-%s)\n", version.Major, version.Minor, version.Patch, version.Release)
 			return 0

@@ -12,16 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The run command allows to run a sequence of BQL commands from the provided
-// file.
-
-package main
+// Package run contains the command allowing to run a sequence of BQL commands
+// from the provided file.
+package run
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"strings"
 
 	"golang.org/x/net/context"
 
@@ -31,11 +28,13 @@ import (
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/storage/memory"
+	"github.com/google/badwolf/tools/vcli/bw/command"
+	"github.com/google/badwolf/tools/vcli/bw/common"
 )
 
-// NewRunCommand creates the help command.
-func NewRunCommand() *Command {
-	cmd := &Command{
+// New creates the help command.
+func New() *command.Command {
+	cmd := &command.Command{
 		UsageLine: "run file_path",
 		Short:     "runs BQL statements.",
 		Long: `Runs all the commands listed in the provided file. Lines in the
@@ -50,7 +49,7 @@ sequentially.
 }
 
 // runCommand runs all the BQL statements available in the file.
-func runCommand(ctx context.Context, cmd *Command, args []string) int {
+func runCommand(ctx context.Context, cmd *command.Command, args []string) int {
 	if len(args) < 3 {
 		fmt.Fprintf(os.Stderr, "Missing required file path. ")
 		cmd.Usage()
@@ -102,37 +101,9 @@ func runBQL(ctx context.Context, bql string, s storage.Store) (*table.Table, err
 
 // getStatementsFromFile returns the statements found in the provided file.
 func getStatementsFromFile(path string) ([]string, error) {
-	stms, err := readLines(path)
+	stms, err := common.ReadLines(path)
 	if err != nil {
 		return nil, err
 	}
 	return stms, nil
-}
-
-// readLines from a file into a string array.
-func readLines(path string) ([]string, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	var lines []string
-	scanner := bufio.NewScanner(f)
-	line := ""
-	for scanner.Scan() {
-		l := strings.TrimSpace(scanner.Text())
-		if len(l) == 0 || strings.Index(l, "#") == 0 {
-			continue
-		}
-		line += " " + l
-		if l[len(l)-1:] == ";" {
-			lines = append(lines, strings.TrimSpace(line))
-			line = ""
-		}
-	}
-	if line != "" {
-		lines = append(lines, strings.TrimSpace(line))
-	}
-	return lines, scanner.Err()
 }
