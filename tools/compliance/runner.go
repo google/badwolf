@@ -61,6 +61,17 @@ func (s *Story) populateSources(ctx context.Context, st storage.Store, b literal
 	return nil
 }
 
+// cleanSources create all the graph required for the story and
+// populates it with the provided data.
+func (s *Story) cleanSources(ctx context.Context, st storage.Store) error {
+	for _, src := range s.Sources {
+		if err := st.DeleteGraph(ctx, src.ID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // runAssertion runs the assertion and compares the outcome. Returns the outcome
 // of comparing the obtained result table with the assertion table if there is
 // no error during the assertion.
@@ -123,6 +134,10 @@ func (s *Story) Run(ctx context.Context, st storage.Store, b literal.Builder) (m
 			Got:   got,
 			Want:  want,
 		}
+	}
+	// Clean the sources.
+	if err := s.cleanSources(ctx, st); err != nil {
+		return nil, err
 	}
 	return m, nil
 }

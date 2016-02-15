@@ -99,8 +99,8 @@ func assertCommand(ctx context.Context, cmd *command.Command, args []string, sto
 	results := compliance.RunStories(ctx, store, builder, stories)
 	fmt.Println("done.")
 	fmt.Println("-------------------------------------------------------------")
-	for _, entry := range results.Entries {
-		fmt.Printf("Story %q...\n", entry.Story.Name)
+	for i, entry := range results.Entries {
+		fmt.Printf("(%d/%d) Story %q...\n", i+1, len(stories), entry.Story.Name)
 		if entry.Err != nil {
 			fmt.Fprintf(os.Stderr, "\tFailed to run story %q with error %v\n\n", entry.Story.Name, entry.Err)
 			return 2

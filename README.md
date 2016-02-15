@@ -30,11 +30,10 @@ You can find more detail information on each of the components of BadWolf below:
 * [BadWolf Query Language practical examples](./docs/bql_practical_examples.md).
 * [BadWolf command line tool](./docs/command_line_tool.md).
 
-Please keep in mind that this project is under active developement and there
-will be not guarantees on API stability till the first stable 1.0 release. 
+Please keep in mind that this project is under active development and there
+will be no guarantees on API stability till the first stable 1.0 release.
 
 You can reach us here or via
-[@badwolf_project](https://twitter.com/badwolf_project)
-on Twitter. 
+[@badwolf_project](https://twitter.com/badwolf_project) on Twitter.
 
 [![Build Status](https://travis-ci.org/google/badwolf.svg?branch=master)](https://travis-ci.org/google/badwolf)
