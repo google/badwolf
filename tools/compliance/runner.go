@@ -117,7 +117,7 @@ func (s *Story) Run(ctx context.Context, st storage.Store, b literal.Builder) (m
 		if err != nil {
 			return nil, err
 		}
-		aName := fmt.Sprintf("%s requires %s", strings.TrimSpace(s.Name), strings.TrimSpace(a.Requires))
+		aName := fmt.Sprintf("requires %s", strings.TrimSpace(a.Requires))
 		m[aName] = &AssertionOutcome{
 			Equal: b,
 			Got:   got,
@@ -125,4 +125,31 @@ func (s *Story) Run(ctx context.Context, st storage.Store, b literal.Builder) (m
 		}
 	}
 	return m, nil
+}
+
+// AssertionBattery contains the result of running a collection of stories.
+type AssertionBattery struct {
+	Entries []*AssertionBatteryEntry
+}
+
+//AssertionBatteryEntry contains teh result of running a story.
+type AssertionBatteryEntry struct {
+	Story   *Story
+	Outcome map[string]*AssertionOutcome
+	Err     error
+}
+
+// RunStories runs a the provided stories and returns the outcome of each of
+// them.
+func RunStories(ctx context.Context, st storage.Store, b literal.Builder, stories []*Story) *AssertionBattery {
+	results := &AssertionBattery{}
+	for _, s := range stories {
+		o, err := s.Run(ctx, st, b)
+		results.Entries = append(results.Entries, &AssertionBatteryEntry{
+			Story:   s,
+			Outcome: o,
+			Err:     err,
+		})
+	}
+	return results
 }

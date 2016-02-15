@@ -104,3 +104,85 @@ func TestRun(t *testing.T) {
 		}
 	}
 }
+
+func TestRunStories(t *testing.T) {
+	testStories := []*Story{
+		{
+			Name: "First Story",
+			Sources: []*Graph{
+				{
+					ID: "?g",
+					Facts: []string{
+						"/t<id> \"predicate\"@[] /foo<bar>",
+					},
+				},
+			},
+			Assertions: []*Assertion{
+				{
+					Requires:  "retriving the types",
+					Statement: "SELECT ?type FROM ?g WHERE {/t<id> \"predicate\"@[] /foo<bar> TYPE ?type};",
+					WillFail:  false,
+					MustReturn: []map[string]string{
+						{"?type": "/foo"},
+					},
+				},
+			},
+		},
+		{
+			Name: "Second Story",
+			Sources: []*Graph{
+				{
+					ID: "?g",
+					Facts: []string{
+						"/t<id> \"predicate\"@[] /foo<bar>",
+					},
+				},
+			},
+			Assertions: []*Assertion{
+				{
+					Requires:  "retrieving the object",
+					Statement: "SELECT ?o FROM ?g WHERE {/t<id> \"predicate\"@[] ?o};",
+					WillFail:  true,
+					MustReturn: []map[string]string{
+						{"?o": "/foo<bar>"},
+					},
+				},
+			},
+		},
+		{
+			Name: "Third Story",
+			Sources: []*Graph{
+				{
+					ID: "?g",
+					Facts: []string{
+						"/t<id> \"predicate\"@[] /foo<bar>",
+						"/t<id> \"predicate\"@[] /foo<bar2>",
+					},
+				},
+			},
+			Assertions: []*Assertion{
+				{
+					Requires:  "retrieving the objects",
+					Statement: "SELECT ?o FROM ?g WHERE {/t<id> \"predicate\"@[] ?o} ORDER BY ?o DESC;",
+					WillFail:  true,
+					MustReturn: []map[string]string{
+						{"?o": "/foo<bar>"},
+						{"?o": "/foo<bar2>"},
+					},
+				},
+			},
+		},
+	}
+	ctx := context.Background()
+	results := RunStories(ctx, memory.NewStore(), literal.DefaultBuilder(), testStories)
+	for _, entry := range results.Entries {
+		if entry.Err != nil {
+			t.Error(entry.Err)
+		}
+		for s, sao := range entry.Outcome {
+			if !sao.Equal {
+				t.Errorf("%q should have not returned false; got\n%s\nwant\n%s", s, sao.Got, sao.Want)
+			}
+		}
+	}
+}

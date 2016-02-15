@@ -65,13 +65,15 @@ func assertCommand(ctx context.Context, cmd *command.Command, args []string, sto
 		fmt.Fprintf(os.Stderr, "Failed to read folder %s\n\n\t%v\n\n", folder, err)
 		return 2
 	}
-	fmt.Printf("Processing folder %q...\n\n", folder)
+	fmt.Println("-------------------------------------------------------------")
+	fmt.Printf("Processing folder %q...\n", folder)
+	var stories []*compliance.Story
+	empty := true
 	for _, fi := range fis {
 		if !strings.Contains(fi.Name(), "json") {
 			continue
 		}
-		fmt.Println("-------------------------------------------------------------")
-		fmt.Printf("Processing file %q...\n\n", fi.Name())
+		fmt.Printf("\tProcessing file %q... ", fi.Name())
 		lns, err := common.ReadLines(path.Join(folder, fi.Name()))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "\n\n\tFailed to read file content with error %v\n\n", err)
@@ -83,18 +85,34 @@ func assertCommand(ctx context.Context, cmd *command.Command, args []string, sto
 			fmt.Fprintf(os.Stderr, "\n\n\tFailed to unmarshal story with error %v\n\n", err)
 			return 2
 		}
-		m, err := s.Run(ctx, store, builder)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "\n\n\tFailed to run story %q with error %v\n\n", s.Name, err)
+		empty = false
+		stories = append(stories, s)
+		fmt.Println("done.")
+	}
+	if empty {
+		fmt.Println("No stories found!")
+		fmt.Println("-------------------------------------------------------------")
+		return 2
+	}
+	fmt.Println("-------------------------------------------------------------")
+	fmt.Printf("Evaluating %d stories... ", len(stories))
+	results := compliance.RunStories(ctx, store, builder, stories)
+	fmt.Println("done.")
+	fmt.Println("-------------------------------------------------------------")
+	for _, entry := range results.Entries {
+		fmt.Printf("Story %q...\n", entry.Story.Name)
+		if entry.Err != nil {
+			fmt.Fprintf(os.Stderr, "\tFailed to run story %q with error %v\n\n", entry.Story.Name, entry.Err)
 			return 2
 		}
-		for aid, aido := range m {
+		for aid, aido := range entry.Outcome {
 			if aido.Equal {
-				fmt.Printf("%s [TRUE]\n", aid)
+				fmt.Printf("\t%s [Assertion=TRUE]\n", aid)
 			} else {
-				fmt.Printf("%s [FALSE]\n\nGot:\n\n%s\nWant:\n\n%s\n", aid, aido.Got, aido.Want)
+				fmt.Printf("\t%s [Assertion=FALSE]\n\nGot:\n\n%s\nWant:\n\n%s\n", aid, aido.Got, aido.Want)
 			}
 		}
+		fmt.Println()
 	}
 	fmt.Println("-------------------------------------------------------------")
 	fmt.Println("\ndone")
