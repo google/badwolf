@@ -24,21 +24,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Triples provides a read only channel of triples.
-type Triples <-chan *triple.Triple
-
-// Nodes provides a read only channel of nodes.
-type Nodes <-chan *node.Node
-
-// Predicates provides a read only channel of predicates.
-type Predicates <-chan *predicate.Predicate
-
-// Objects provides a read only channel of objects.
-type Objects <-chan *triple.Object
-
-// GraphNames provides a channel that returns graph binding names.
-type GraphNames <-chan string
-
 // LookupOptions allows to specify the behavior of the lookup operations.
 type LookupOptions struct {
 	// MaxElements list the maximum number of elements to return. If not
@@ -76,12 +61,16 @@ type Store interface {
 	DeleteGraph(ctx context.Context, id string) error
 
 	// GraphNames returns the current available graph names in the store.
-	GraphNames(ctx context.Context) (GraphNames, error)
+	GraphNames(ctx context.Context, names chan<- string) error
 }
 
 // Graph interface describes the low level API that storage drivers need
 // to implement to provide a compliant graph storage that can be used with
 // BadWolf.
+//
+// If you are implementing a driver or just using a low lever driver directly
+// it is important for you to keep in mind that you will need to drain the
+// provided channel. Otherwise you run the risk of leaking go routines.
 type Graph interface {
 	// ID returns the id for this graph.
 	ID(ctx context.Context) string
@@ -94,7 +83,9 @@ type Graph interface {
 	// are not present on the store should not fail.
 	RemoveTriples(ctx context.Context, ts []*triple.Triple) error
 
-	// Objects returns the objects for the given object and predicate.
+	// Objects pushes to the provided channel the objects for the given object and
+	// predicate. The function returns immediately and spawns a go routine to
+	// satisfy elements in the channel.
 	//
 	// Given a subject and a predicate, this method retrieves the objects of
 	// triples that match them. By default, if does not limit the maximum number
@@ -111,9 +102,11 @@ type Graph interface {
 	// provided time window. If max elements is also provided as part of the
 	// lookup options it will return at most max elements. There is no
 	// specifications on how that sample should be conducted.
-	Objects(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *LookupOptions) (Objects, error)
+	Objects(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *LookupOptions, objs chan<- *triple.Object) error
 
-	// Subject returns the subjects for the give predicate and object.
+	// Subject pushes to the provided channel the subjects for the give predicate
+	// and object. The function returns immediately and spawns a go routine to
+	// satisfy elements in the channel.
 	//
 	// Given a predicate and an object, this method retrieves the subjects of
 	// triples that matches them. By default, it does not limit the maximum number
@@ -130,75 +123,101 @@ type Graph interface {
 	// provided time window. If max elements is also provided as part of the
 	// lookup options it will return the at most max elements. There is no
 	// specifications on how that sample should be conducted.
-	Subjects(ctx context.Context, p *predicate.Predicate, o *triple.Object, lo *LookupOptions) (Nodes, error)
+	Subjects(ctx context.Context, p *predicate.Predicate, o *triple.Object, lo *LookupOptions, subs chan<- *node.Node) error
 
-	// PredicatesForSubject returns all the predicates known for the given
-	// subject. If the lookup options provide a max number of elements the
-	// function will return a sample of the available predicates. If time anchor
-	// bounds are provided in the lookup options, only predicates matching the
-	// the provided type window would be return. Same sampling consideration
-	// apply if max element is provided.
-	PredicatesForSubject(ctx context.Context, s *node.Node, lo *LookupOptions) (Predicates, error)
-
-	// PredicatesForObject returns all the predicates known for the given
-	// object. If the lookup options provide a max number of elements the
-	// function will return a sample of the available predicates. If time anchor
-	// bounds are provided in the lookup options, only predicates matching the
-	// the provided type window would be return. Same sampling consideration
-	// apply if max element is provided.
-	PredicatesForObject(ctx context.Context, o *triple.Object, lo *LookupOptions) (Predicates, error)
-
-	// PredicatesForSubjecAndObject returns all predicates available for the
-	// given subject and object. If the lookup options provide a max number of
-	// elements the function will return a sample of the available predicates.
-	// If time anchor bounds are provided in the lookup options, only predicates
-	// matching the the provided type window would be return. Same sampling
-	// consideration apply if max element is provided.
-	PredicatesForSubjectAndObject(ctx context.Context, s *node.Node, o *triple.Object, lo *LookupOptions) (Predicates, error)
-
-	// TriplesForSubject returns all triples available for the given subect.
+	// PredicatesForSubject pushes to the provided channel all the predicates
+	// known for the given subject. The function returns immediately and spawns a
+	// go routine to satisfy elements in the channel.
+	//
 	// If the lookup options provide a max number of elements the function will
-	// return a sample of the available triples. If time anchor bounds are
-	// provided in the lookup options, only predicates matching the the provided
+	// return a sample of the available predicates. If time anchor bounds are
+	// provided in the lookup options, only predicates matching the provided
 	// type window would be return. Same sampling consideration apply if max
 	// element is provided.
-	TriplesForSubject(ctx context.Context, s *node.Node, lo *LookupOptions) (Triples, error)
+	PredicatesForSubject(ctx context.Context, s *node.Node, lo *LookupOptions, prds chan<- *predicate.Predicate) error
 
-	// TriplesForPredicate returns all triples available for the given predicate.
+	// PredicatesForObject pushes to the provided channel all the predicates known
+	// for the given object. The function returns immediately and spawns a go
+	// routine to satisfy elements in the channel.
+	//
+	// If the lookup options provide a max number of elements the function will
+	// return a sample of the available predicates. If time anchor bounds are
+	// provided in the lookup options, only predicates matching the provided type
+	// window would be return. Same sampling consideration apply if max element
+	// is provided.
+	PredicatesForObject(ctx context.Context, o *triple.Object, lo *LookupOptions, prds chan<- *predicate.Predicate) error
+
+	// PredicatesForSubjecAndObject pushes to the provided channel all predicates
+	// available for the given subject and object. The function returns
+	// immediately and spawns a go routine to satisfy elements in the channel.
+	//
+	// If the lookup options provide a max number of elements the function will
+	// return a sample of the available predicates. If time anchor bounds are
+	// provided in the lookup options, only predicates matching the provided type
+	// window would be return. Same sampling consideration apply if max element is
+	// provided.
+	PredicatesForSubjectAndObject(ctx context.Context, s *node.Node, o *triple.Object, lo *LookupOptions, prds chan<- *predicate.Predicate) error
+
+	// TriplesForSubject pushes to the provided channel all triples available for
+	// the given subect. The function returns immediately and spawns a go routine
+	// to satisfy elements in the channel.
+	//
 	// If the lookup options provide a max number of elements the function will
 	// return a sample of the available triples. If time anchor bounds are
-	// provided in the lookup options, only predicates matching the the provided
-	// type window would be return. Same sampling consideration apply if max
-	// element is provided.
-	TriplesForPredicate(ctx context.Context, p *predicate.Predicate, lo *LookupOptions) (Triples, error)
+	// provided in the lookup options, only predicates matching the provided type
+	// window would be return. Same sampling consideration apply if max element is
+	// provided.
+	TriplesForSubject(ctx context.Context, s *node.Node, lo *LookupOptions, trpls chan<- *triple.Triple) error
 
-	// TriplesForObject returns all triples available for the given object.
+	// TriplesForPredicate pushes to the provided channel all triples available
+	// for the given predicate. The function returns immediately and spawns a go
+	// routine to satisfy elements in the channel.
+	//
 	// If the lookup options provide a max number of elements the function will
 	// return a sample of the available triples. If time anchor bounds are
-	// provided in the lookup options, only predicates matching the the provided
-	// type window would be return. Same sampling consideration apply if max
-	// element is provided.
-	TriplesForObject(ctx context.Context, o *triple.Object, lo *LookupOptions) (Triples, error)
+	// provided in the lookup options, only predicates matching the provided type
+	// window would be return. Same sampling consideration apply if max element is
+	// provided.
+	TriplesForPredicate(ctx context.Context, p *predicate.Predicate, lo *LookupOptions, trpls chan<- *triple.Triple) error
 
-	// TriplesForSubjectAndPredicate returns all triples available for the given
-	// subject and predicate. If the lookup options provide a max number of
-	// elements the function will return a sample of the available triples. If
-	// time anchor bounds are provided in the lookup options, only predicates
-	// matching the the provided type window would be return. Same sampling
-	// consideration apply if max element is provided.
-	TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *LookupOptions) (Triples, error)
+	// TriplesForObject pushes to the provided channel all triples available for
+	// the given object. he function returns immediately and spawns a go routine
+	// to satisfy elements in the channel.
+	//
+	// If the lookup options provide a max number of elements the function will
+	// return a sample of the available triples. If time anchor bounds are
+	// provided in the lookup options, only predicates matching the provided type
+	// window would be return. Same sampling consideration apply if max element is
+	// provided.
+	TriplesForObject(ctx context.Context, o *triple.Object, lo *LookupOptions, trpls chan<- *triple.Triple) error
 
-	// TriplesForPredicateAndObject returns all triples available for the given
-	// predicate and object. If the lookup options provide a max number of
-	// elements the function will return a sample of the available triples. If
-	// time anchor bounds are provided in the lookup options, only predicates
-	// matching the the provided type window would be return. Same sampling
-	// consideration apply if max element is provided.
-	TriplesForPredicateAndObject(ctx context.Context, p *predicate.Predicate, o *triple.Object, lo *LookupOptions) (Triples, error)
+	// TriplesForSubjectAndPredicate pushes to the provided channel all triples
+	// available for the given subject and predicate. The function returns
+	// immediately and spawns a go routine to satisfy elements in the channel.
+	//
+	// If the lookup options provide a max number of elements the function will
+	// return a sample of the available triples. If time anchor bounds are
+	// provided in the lookup options, only predicates matching the provided type
+	// window would be return. Same sampling consideration apply if max element is
+	// provided.
+	TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *LookupOptions, trpls chan<- *triple.Triple) error
+
+	// TriplesForPredicateAndObject pushes to the provided channel all triples
+	// available for the given predicate and object. The function returns
+	// immediately and spawns a go routine to satisfy elements in the channel.
+	//
+	// If the lookup options provide a max number of elements the function will
+	// return a sample of the available triples. If time anchor bounds are
+	// provided in the lookup options, only predicates matching the provided type
+	// window would be return. Same sampling consideration apply if max element is
+	// provided.
+	TriplesForPredicateAndObject(ctx context.Context, p *predicate.Predicate, o *triple.Object, lo *LookupOptions, trpls chan<- *triple.Triple) error
 
 	// Exist checks if the provided triple exists on the store.
 	Exist(ctx context.Context, t *triple.Triple) (bool, error)
 
-	// Triples allows to iterate over all available triples.
-	Triples(ctx context.Context) (Triples, error)
+	// Triples pushes to the provided channel all available triples in the graph.
+	// The function returns immediately and spawns a go routine to satisfy
+	// elements in the channel.
+	Triples(ctx context.Context, trpls chan<- *triple.Triple) error
 }

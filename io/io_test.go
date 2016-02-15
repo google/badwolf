@@ -108,20 +108,20 @@ func TestSerializationContents(t *testing.T) {
 	// Check the graphs are equal
 	m := make(map[string]bool)
 	gs := 0
-	gtpls, err := g.Triples(ctx)
-	if err != nil {
+	gtrpls := make(chan *triple.Triple)
+	if err := g.Triples(ctx, gtrpls); err != nil {
 		t.Errorf("g.Triples failed to retrieve triples with error %v", err)
 	}
-	for trpl := range gtpls {
+	for trpl := range gtrpls {
 		m[trpl.GUID()] = true
 		gs++
 	}
 	gos := 0
-	g2tpls, err := g2.Triples(ctx)
-	if err != nil {
+	g2trpls := make(chan *triple.Triple)
+	if err := g2.Triples(ctx, g2trpls); err != nil {
 		t.Errorf("g2.Triples failed to retrieve triples with error %v", err)
 	}
-	for trpl := range g2tpls {
+	for trpl := range g2trpls {
 		if _, ok := m[trpl.GUID()]; !ok {
 			t.Errorf("Failed to unmarshal marshaled triple; could not find triple %s", trpl.String())
 		}

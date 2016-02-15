@@ -23,6 +23,7 @@ import (
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/literal"
+	"github.com/google/badwolf/triple/node"
 	"github.com/google/badwolf/triple/predicate"
 )
 
@@ -58,8 +59,8 @@ func TestGraphNames(t *testing.T) {
 			t.Errorf("memoryStore.NewGraph: should never fail to crate a graph %s; %s", g, err)
 		}
 	}
-	gns, err := s.GraphNames(ctx)
-	if err != nil {
+	gns := make(chan string)
+	if err := s.GraphNames(ctx, gns); err != nil {
 		t.Errorf("memoryStore.GraphNames: failed with error %v", err)
 	}
 	cnt := 0
@@ -196,8 +197,8 @@ func TestObjects(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	os, err := g.Objects(ctx, ts[0].Subject(), ts[0].Predicate(), storage.DefaultLookup)
-	if err != nil {
+	os := make(chan *triple.Object)
+	if err := g.Objects(ctx, ts[0].Subject(), ts[0].Predicate(), storage.DefaultLookup, os); err != nil {
 		t.Errorf("g.Objects(%s, %s) failed with error %v", ts[0].Subject(), ts[0].Predicate(), err)
 	}
 	cnt := 0
@@ -220,8 +221,8 @@ func TestSubjects(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	ss, err := g.Subjects(ctx, ts[0].Predicate(), ts[0].Object(), storage.DefaultLookup)
-	if err != nil {
+	ss := make(chan *node.Node)
+	if err := g.Subjects(ctx, ts[0].Predicate(), ts[0].Object(), storage.DefaultLookup, ss); err != nil {
 		t.Errorf("g.Subjects(%s, %s) failed with error %v", ts[0].Predicate(), ts[0].Object(), err)
 	}
 	cnt := 0
@@ -243,8 +244,8 @@ func TestPredicatesForSubjectAndObject(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	ps, err := g.PredicatesForSubjectAndObject(ctx, ts[0].Subject(), ts[0].Object(), storage.DefaultLookup)
-	if err != nil {
+	ps := make(chan *predicate.Predicate)
+	if err := g.PredicatesForSubjectAndObject(ctx, ts[0].Subject(), ts[0].Object(), storage.DefaultLookup, ps); err != nil {
 		t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) failed with error %v", ts[0].Subject(), ts[0].Object(), err)
 	}
 	cnt := 0
@@ -265,8 +266,8 @@ func TestPredicatesForSubject(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	ps, err := g.PredicatesForSubject(ctx, ts[0].Subject(), storage.DefaultLookup)
-	if err != nil {
+	ps := make(chan *predicate.Predicate)
+	if err := g.PredicatesForSubject(ctx, ts[0].Subject(), storage.DefaultLookup, ps); err != nil {
 		t.Errorf("g.PredicatesForSubject(%s) failed with error %v", ts[0].Subject(), err)
 	}
 	cnt := 0
@@ -287,8 +288,8 @@ func TestPredicatesForObject(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	ps, err := g.PredicatesForObject(ctx, ts[0].Object(), storage.DefaultLookup)
-	if err != nil {
+	ps := make(chan *predicate.Predicate)
+	if err := g.PredicatesForObject(ctx, ts[0].Object(), storage.DefaultLookup, ps); err != nil {
 		t.Errorf("g.PredicatesForObject(%s) failed with error %v", ts[0].Object(), err)
 	}
 	cnt := 0
@@ -309,8 +310,8 @@ func TestTriplesForSubject(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls, err := g.TriplesForSubject(ctx, ts[0].Subject(), storage.DefaultLookup)
-	if err != nil {
+	trpls := make(chan *triple.Triple)
+	if err := g.TriplesForSubject(ctx, ts[0].Subject(), storage.DefaultLookup, trpls); err != nil {
 		t.Errorf("g.TriplesForSubject(%s) failed with error %v", ts[0].Subject(), err)
 	}
 	cnt := 0
@@ -328,8 +329,8 @@ func TestTriplesForPredicate(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls, err := g.TriplesForPredicate(ctx, ts[0].Predicate(), storage.DefaultLookup)
-	if err != nil {
+	trpls := make(chan *triple.Triple)
+	if err := g.TriplesForPredicate(ctx, ts[0].Predicate(), storage.DefaultLookup, trpls); err != nil {
 		t.Errorf("g.TriplesForPredicate(%s) failed with error %v", ts[0].Subject(), err)
 	}
 	cnt := 0
@@ -347,8 +348,8 @@ func TestTriplesForObject(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls, err := g.TriplesForObject(ctx, ts[0].Object(), storage.DefaultLookup)
-	if err != nil {
+	trpls := make(chan *triple.Triple)
+	if err := g.TriplesForObject(ctx, ts[0].Object(), storage.DefaultLookup, trpls); err != nil {
 		t.Errorf("g.TriplesForObject(%s) failed with error %v", ts[0].Object(), err)
 	}
 	cnt := 0
@@ -366,8 +367,8 @@ func TestTriplesForSubjectAndPredicate(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls, err := g.TriplesForSubjectAndPredicate(ctx, ts[0].Subject(), ts[0].Predicate(), storage.DefaultLookup)
-	if err != nil {
+	trpls := make(chan *triple.Triple)
+	if err := g.TriplesForSubjectAndPredicate(ctx, ts[0].Subject(), ts[0].Predicate(), storage.DefaultLookup, trpls); err != nil {
 		t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s) failed with error %v", ts[0].Subject(), ts[0].Predicate(), err)
 	}
 	cnt := 0
@@ -385,8 +386,8 @@ func TestTriplesForPredicateAndObject(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls, err := g.TriplesForPredicateAndObject(ctx, ts[0].Predicate(), ts[0].Object(), storage.DefaultLookup)
-	if err != nil {
+	trpls := make(chan *triple.Triple)
+	if err := g.TriplesForPredicateAndObject(ctx, ts[0].Predicate(), ts[0].Object(), storage.DefaultLookup, trpls); err != nil {
 		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed with error %v", ts[0].Predicate(), ts[0].Object(), err)
 	}
 	cnt := 0
@@ -421,8 +422,8 @@ func TestTriples(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls, err := g.Triples(ctx)
-	if err != nil {
+	trpls := make(chan *triple.Triple)
+	if err := g.Triples(ctx, trpls); err != nil {
 		t.Fatal(err)
 	}
 	cnt := 0

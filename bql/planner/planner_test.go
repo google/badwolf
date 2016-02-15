@@ -26,6 +26,7 @@ import (
 	"github.com/google/badwolf/io"
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/storage/memory"
+	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/literal"
 )
 
@@ -54,8 +55,8 @@ func insertTest(t *testing.T) {
 		t.Errorf("memory.DefaultStore.Graph(%q) should have not fail with error %v", "?a", err)
 	}
 	i := 0
-	ts, err := g.Triples(ctx)
-	if err != nil {
+	ts := make(chan *triple.Triple)
+	if err := g.Triples(ctx, ts); err != nil {
 		t.Error(err)
 	}
 	for _ = range ts {
@@ -91,8 +92,8 @@ func deleteTest(t *testing.T) {
 		t.Errorf("memory.DefaultStore.Graph(%q) should have not fail with error %v", "?a", err)
 	}
 	i := 0
-	ts, err := g.Triples(ctx)
-	if err != nil {
+	ts := make(chan *triple.Triple)
+	if err := g.Triples(ctx, ts); err != nil {
 		t.Error(err)
 	}
 	for _ = range ts {
@@ -225,12 +226,12 @@ func populateTestStore(t *testing.T) storage.Store {
 	if _, err := io.ReadIntoGraph(ctx, g, b, literal.DefaultBuilder()); err != nil {
 		t.Fatalf("io.ReadIntoGraph failed to read test graph with error %v", err)
 	}
-	tpls, err := g.Triples(ctx)
-	if err != nil {
+	trpls := make(chan *triple.Triple)
+	if err := g.Triples(ctx, trpls); err != nil {
 		t.Fatal(err)
 	}
 	cnt := 0
-	for _ = range tpls {
+	for _ = range trpls {
 		cnt++
 	}
 	if got, want := cnt, len(strings.Split(testTriples, "\n"))-2; got != want {

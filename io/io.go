@@ -57,8 +57,8 @@ func ReadIntoGraph(ctx context.Context, g storage.Graph, r io.Reader, b literal.
 // regardless if it succeded of it failed partialy.
 func WriteGraph(ctx context.Context, w io.Writer, g storage.Graph) (int, error) {
 	cnt := 0
-	ts, err := g.Triples(ctx)
-	if err != nil {
+	ts := make(chan *triple.Triple)
+	if err := g.Triples(ctx, ts); err != nil {
 		return 0, err
 	}
 	for t := range ts {

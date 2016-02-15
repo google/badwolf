@@ -136,8 +136,8 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	if s != nil && p != nil && o == nil {
 		// SP request.
 		for _, g := range gs {
-			os, err := g.Objects(ctx, s, p, lo)
-			if err != nil {
+			os := make(chan *triple.Object)
+			if err := g.Objects(ctx, s, p, lo, os); err != nil {
 				return nil, err
 			}
 			var ros []*triple.Object
@@ -162,8 +162,8 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	if s != nil && p == nil && o != nil {
 		// SO request.
 		for _, g := range gs {
-			ps, err := g.PredicatesForSubjectAndObject(ctx, s, o, lo)
-			if err != nil {
+			ps := make(chan *predicate.Predicate)
+			if err := g.PredicatesForSubjectAndObject(ctx, s, o, lo, ps); err != nil {
 				return nil, err
 			}
 			var rps []*predicate.Predicate
@@ -188,8 +188,8 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	if s == nil && p != nil && o != nil {
 		// PO request.
 		for _, g := range gs {
-			ss, err := g.Subjects(ctx, p, o, lo)
-			if err != nil {
+			ss := make(chan *node.Node)
+			if err := g.Subjects(ctx, p, o, lo, ss); err != nil {
 				return nil, err
 			}
 			var rss []*node.Node
@@ -214,8 +214,8 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	if s != nil && p == nil && o == nil {
 		// S request.
 		for _, g := range gs {
-			ts, err := g.TriplesForSubject(ctx, s, lo)
-			if err != nil {
+			ts := make(chan *triple.Triple)
+			if err := g.TriplesForSubject(ctx, s, lo, ts); err != nil {
 				return nil, err
 			}
 			if err := addTriples(ts, cls, tbl); err != nil {
@@ -227,8 +227,8 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	if s == nil && p != nil && o == nil {
 		// P request.
 		for _, g := range gs {
-			ts, err := g.TriplesForPredicate(ctx, p, lo)
-			if err != nil {
+			ts := make(chan *triple.Triple)
+			if err := g.TriplesForPredicate(ctx, p, lo, ts); err != nil {
 				return nil, err
 			}
 			if err := addTriples(ts, cls, tbl); err != nil {
@@ -240,8 +240,8 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	if s == nil && p == nil && o != nil {
 		// O request.
 		for _, g := range gs {
-			ts, err := g.TriplesForObject(ctx, o, lo)
-			if err != nil {
+			ts := make(chan *triple.Triple)
+			if err := g.TriplesForObject(ctx, o, lo, ts); err != nil {
 				return nil, err
 			}
 			if err := addTriples(ts, cls, tbl); err != nil {
@@ -253,8 +253,8 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	if s == nil && p == nil && o == nil {
 		// Full data request.
 		for _, g := range gs {
-			ts, err := g.Triples(ctx)
-			if err != nil {
+			ts := make(chan *triple.Triple)
+			if err := g.Triples(ctx, ts); err != nil {
 				return nil, err
 			}
 			if err := addTriples(ts, cls, tbl); err != nil {
@@ -270,7 +270,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 // addTriples add all the retrieved triples from the graphs into the results
 // table. The semantic graph clause is also passed to be able to identify what
 // bindings to set.
-func addTriples(ts storage.Triples, cls *semantic.GraphClause, tbl *table.Table) error {
+func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.Table) error {
 	for t := range ts {
 		r, err := tripleToRow(t, cls)
 		if err != nil {

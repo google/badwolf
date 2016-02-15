@@ -104,15 +104,16 @@ func (s *memoryStore) DeleteGraph(ctx context.Context, id string) error {
 }
 
 // GraphNames returns the current available graph names in the store.
-func (s *memoryStore) GraphNames(ctx context.Context) (storage.GraphNames, error) {
-	s.rwmu.RLock()
-	defer s.rwmu.RUnlock()
-	c := make(chan string, len(s.graphs))
-	for k := range s.graphs {
-		c <- k
-	}
-	close(c)
-	return c, nil
+func (s *memoryStore) GraphNames(ctx context.Context, names chan<- string) error {
+	go func() {
+		s.rwmu.RLock()
+		defer s.rwmu.RUnlock()
+		for k := range s.graphs {
+			names <- k
+		}
+		close(names)
+	}()
+	return nil
 }
 
 // memory provides an memory-based volatile implementation of the graph API.
@@ -243,7 +244,6 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 		if c.c <= 0 {
 			return false
 		}
-		// TODO: Should it be decremented if later function returns false?
 		c.c--
 	}
 	if p.Type() == predicate.Immutable {
@@ -259,197 +259,252 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 	return true
 }
 
-// Objects returns the objects for the give object and predicate.
-func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions) (storage.Objects, error) {
+// Objects published the objects for the give object and predicate to the
+// provided channel.
+func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions, objs chan<- *triple.Object) error {
 	sGUID := s.GUID()
 	pGUID := p.GUID()
 	spIdx := strings.Join([]string{sGUID, pGUID}, ":")
-	m.rwmu.RLock()
-	objs := make(chan *triple.Object, len(m.idxSP[spIdx]))
+	if objs == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			m.rwmu.RUnlock()
+			close(objs)
+		}()
+
 		ckr := newChecker(lo)
 		for _, t := range m.idxSP[spIdx] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
 				objs <- t.Object()
 			}
 		}
-		m.rwmu.RUnlock()
-		close(objs)
 	}()
-	return objs, nil
+	return nil
 }
 
-// Subject returns the subjects for the give predicate and object.
-func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple.Object, lo *storage.LookupOptions) (storage.Nodes, error) {
+// Subject publishes the subjects for the give predicate and object to the
+// provided channel.
+func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple.Object, lo *storage.LookupOptions, subjs chan<- *node.Node) error {
 	pGUID := p.GUID()
 	oGUID := o.GUID()
 	poIdx := strings.Join([]string{pGUID, oGUID}, ":")
-	m.rwmu.RLock()
-	subs := make(chan *node.Node, len(m.idxPO[poIdx]))
+	if subjs == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			m.rwmu.RUnlock()
+			close(subjs)
+		}()
+
 		ckr := newChecker(lo)
 		for _, t := range m.idxPO[poIdx] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				subs <- t.Subject()
+				subjs <- t.Subject()
 			}
 		}
-		m.rwmu.RUnlock()
-		close(subs)
 	}()
-	return subs, nil
+	return nil
 }
 
-// PredicatesForSubjecAndObject returns all predicates available for the
-// given subject and object.
-func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node, o *triple.Object, lo *storage.LookupOptions) (storage.Predicates, error) {
+// PredicatesForSubjecAndObject publishes all predicates available for the
+// given subject and object to the provided channel.
+func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node, o *triple.Object, lo *storage.LookupOptions, prds chan<- *predicate.Predicate) error {
 	sGUID := s.GUID()
 	oGUID := o.GUID()
 	soIdx := strings.Join([]string{sGUID, oGUID}, ":")
-	m.rwmu.RLock()
-	preds := make(chan *predicate.Predicate, len(m.idxSO[soIdx]))
+	if prds == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			m.rwmu.RUnlock()
+			close(prds)
+		}()
+
 		ckr := newChecker(lo)
 		for _, t := range m.idxSO[soIdx] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				preds <- t.Predicate()
+				prds <- t.Predicate()
 			}
 		}
-		m.rwmu.RUnlock()
-		close(preds)
 	}()
-	return preds, nil
+	return nil
 }
 
-// PredicatesForSubject returns all the predicates known for the given subject.
-func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *storage.LookupOptions) (storage.Predicates, error) {
+// PredicatesForSubject publishes all the predicates known for the given
+// subject to the provided channel.
+func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *storage.LookupOptions, prds chan<- *predicate.Predicate) error {
 	sGUID := s.GUID()
-	m.rwmu.RLock()
-	preds := make(chan *predicate.Predicate, len(m.idxS[sGUID]))
+	if prds == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			m.rwmu.RUnlock()
+			close(prds)
+		}()
 		ckr := newChecker(lo)
 		for _, t := range m.idxS[sGUID] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				preds <- t.Predicate()
+				prds <- t.Predicate()
 			}
 		}
-		m.rwmu.RUnlock()
-		close(preds)
 	}()
-	return preds, nil
+	return nil
 }
 
-// PredicatesForObject returns all the predicates known for the given object.
-func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *storage.LookupOptions) (storage.Predicates, error) {
+// PredicatesForObject publishes all the predicates known for the given object
+// to the provided channel.
+func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *storage.LookupOptions, prds chan<- *predicate.Predicate) error {
 	oGUID := o.GUID()
-	m.rwmu.RLock()
-	preds := make(chan *predicate.Predicate, len(m.idxO[oGUID]))
+	if prds == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			m.rwmu.RUnlock()
+			close(prds)
+		}()
 		ckr := newChecker(lo)
 		for _, t := range m.idxO[oGUID] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				preds <- t.Predicate()
+				prds <- t.Predicate()
 			}
 		}
-		m.rwmu.RUnlock()
-		close(preds)
 	}()
-	return preds, nil
+	return nil
 }
 
-// TriplesForSubject returns all triples available for the given subect.
-func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storage.LookupOptions) (storage.Triples, error) {
+// TriplesForSubject publishes all triples available for the given subect to
+// the provided channel.
+func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storage.LookupOptions, trpls chan<- *triple.Triple) error {
 	sGUID := s.GUID()
-	m.rwmu.RLock()
-	triples := make(chan *triple.Triple, len(m.idxS[sGUID]))
+	if trpls == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			m.rwmu.RUnlock()
+			close(trpls)
+		}()
+
 		ckr := newChecker(lo)
 		for _, t := range m.idxS[sGUID] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				triples <- t
+				trpls <- t
 			}
 		}
-		m.rwmu.RUnlock()
-		close(triples)
 	}()
-	return triples, nil
+	return nil
 }
 
-// TriplesForPredicate returns all triples available for the given predicate.
-func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate, lo *storage.LookupOptions) (storage.Triples, error) {
+// TriplesForPredicate publishes all triples available for the given predicate
+// to the provided channel.
+func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate, lo *storage.LookupOptions, trpls chan<- *triple.Triple) error {
 	pGUID := p.GUID()
-	m.rwmu.RLock()
-	triples := make(chan *triple.Triple, len(m.idxP[pGUID]))
+	if trpls == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			m.rwmu.RUnlock()
+			close(trpls)
+		}()
+
 		ckr := newChecker(lo)
 		for _, t := range m.idxP[pGUID] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				triples <- t
+				trpls <- t
 			}
 		}
-		m.rwmu.RUnlock()
-		close(triples)
 	}()
-	return triples, nil
+	return nil
 }
 
-// TriplesForObject returns all triples available for the given object.
-func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *storage.LookupOptions) (storage.Triples, error) {
+// TriplesForObject publishes all triples available for the given object to the
+// provided channel.
+func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *storage.LookupOptions, trpls chan<- *triple.Triple) error {
 	oGUID := o.GUID()
-	m.rwmu.RLock()
-	triples := make(chan *triple.Triple, len(m.idxO[oGUID]))
+	if trpls == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			m.rwmu.RUnlock()
+			close(trpls)
+		}()
+
 		ckr := newChecker(lo)
 		for _, t := range m.idxO[oGUID] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				triples <- t
+				trpls <- t
 			}
 		}
-		m.rwmu.RUnlock()
-		close(triples)
 	}()
-	return triples, nil
+	return nil
 }
 
-// TriplesForSubjectAndPredicate returns all triples available for the given
-// subject and predicate.
-func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions) (storage.Triples, error) {
+// TriplesForSubjectAndPredicate publishes all triples available for the given
+// subject and predicate to the provided channel.
+func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions, trpls chan<- *triple.Triple) error {
 	sGUID := s.GUID()
 	pGUID := p.GUID()
 	spIdx := strings.Join([]string{sGUID, pGUID}, ":")
-	m.rwmu.RLock()
-	triples := make(chan *triple.Triple, len(m.idxSP[spIdx]))
+	if trpls == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			m.rwmu.RUnlock()
+			close(trpls)
+		}()
+
 		ckr := newChecker(lo)
 		for _, t := range m.idxSP[spIdx] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				triples <- t
+				trpls <- t
 			}
 		}
-		m.rwmu.RUnlock()
-		close(triples)
 	}()
-	return triples, nil
+	return nil
 }
 
-// TriplesForPredicateAndObject returns all triples available for the given
-// predicate and object.
-func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.Predicate, o *triple.Object, lo *storage.LookupOptions) (storage.Triples, error) {
+// TriplesForPredicateAndObject publishes all triples available for the given
+// predicate and object to the provided channel.
+func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.Predicate, o *triple.Object, lo *storage.LookupOptions, trpls chan<- *triple.Triple) error {
 	pGUID := p.GUID()
 	oGUID := o.GUID()
 	poIdx := strings.Join([]string{pGUID, oGUID}, ":")
-	m.rwmu.RLock()
-	triples := make(chan *triple.Triple, len(m.idxPO[poIdx]))
+	if trpls == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			m.rwmu.RUnlock()
+			close(trpls)
+		}()
+
 		ckr := newChecker(lo)
 		for _, t := range m.idxPO[poIdx] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				triples <- t
+				trpls <- t
 			}
 		}
-		m.rwmu.RUnlock()
-		close(triples)
 	}()
-	return triples, nil
+	return nil
 }
 
 // Exist checks if the provided triple exists on the store.
@@ -461,14 +516,22 @@ func (m *memory) Exist(ctx context.Context, t *triple.Triple) (bool, error) {
 	return ok, nil
 }
 
-// Triples allows to iterate over all available triples.
-func (m *memory) Triples(ctx context.Context) (storage.Triples, error) {
-	triples := make(chan *triple.Triple, len(m.idx))
+// Triples allows to iterate over all available triples by pubhsing them to the
+// provided channel.
+func (m *memory) Triples(ctx context.Context, trpls chan<- *triple.Triple) error {
+	if trpls == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			m.rwmu.RUnlock()
+			close(trpls)
+		}()
+
 		for _, t := range m.idx {
-			triples <- t
+			trpls <- t
 		}
-		close(triples)
 	}()
-	return triples, nil
+	return nil
 }

@@ -168,8 +168,8 @@ func TestAddTriples(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ts, err := g.Triples(ctx)
-	if err != nil {
+	ts := make(chan *triple.Triple)
+	if err := g.Triples(ctx, ts); err != nil {
 		t.Fatal(err)
 	}
 	tbl, err := table.New([]string{})
