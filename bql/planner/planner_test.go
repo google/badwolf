@@ -56,9 +56,11 @@ func insertTest(t *testing.T) {
 	}
 	i := 0
 	ts := make(chan *triple.Triple)
-	if err := g.Triples(ctx, ts); err != nil {
-		t.Error(err)
-	}
+	go func() {
+		if err := g.Triples(ctx, ts); err != nil {
+			t.Error(err)
+		}
+	}()
 	for _ = range ts {
 		i++
 	}
@@ -104,7 +106,7 @@ func deleteTest(t *testing.T) {
 	}
 }
 
-func TestInsertDoesNotFail(t *testing.T) {
+func TestPlannerInsertDoesNotFail(t *testing.T) {
 	ctx := context.Background()
 	if _, err := memory.DefaultStore.NewGraph(ctx, "?a"); err != nil {
 		t.Errorf("memory.DefaultStore.NewGraph(%q) should have not failed with error %v", "?a", err)
@@ -115,7 +117,7 @@ func TestInsertDoesNotFail(t *testing.T) {
 	}
 }
 
-func TestDeleteDoesNotFail(t *testing.T) {
+func TestPlannerDeleteDoesNotFail(t *testing.T) {
 	ctx := context.Background()
 	if _, err := memory.DefaultStore.NewGraph(ctx, "?a"); err != nil {
 		t.Errorf("memory.DefaultStore.NewGraph(%q) should have not failed with error %v", "?a", err)
@@ -126,7 +128,7 @@ func TestDeleteDoesNotFail(t *testing.T) {
 	}
 }
 
-func TestInsertDeleteDoesNotFail(t *testing.T) {
+func TestPlannerInsertDeleteDoesNotFail(t *testing.T) {
 	ctx := context.Background()
 	if _, err := memory.DefaultStore.NewGraph(ctx, "?a"); err != nil {
 		t.Errorf("memory.DefaultStore.NewGraph(%q) should have not failed with error %v", "?a", err)
@@ -137,7 +139,7 @@ func TestInsertDeleteDoesNotFail(t *testing.T) {
 	}
 }
 
-func TestCreateGraph(t *testing.T) {
+func TestPlannerCreateGraph(t *testing.T) {
 	ctx := context.Background()
 	memory.DefaultStore.DeleteGraph(ctx, "?foo")
 	memory.DefaultStore.DeleteGraph(ctx, "?bar")
@@ -166,7 +168,7 @@ func TestCreateGraph(t *testing.T) {
 	}
 }
 
-func TestDropGraph(t *testing.T) {
+func TestPlannerDropGraph(t *testing.T) {
 	ctx := context.Background()
 	memory.DefaultStore.DeleteGraph(ctx, "?foo")
 	memory.DefaultStore.DeleteGraph(ctx, "?bar")
@@ -227,9 +229,11 @@ func populateTestStore(t *testing.T) storage.Store {
 		t.Fatalf("io.ReadIntoGraph failed to read test graph with error %v", err)
 	}
 	trpls := make(chan *triple.Triple)
-	if err := g.Triples(ctx, trpls); err != nil {
-		t.Fatal(err)
-	}
+	go func() {
+		if err := g.Triples(ctx, trpls); err != nil {
+			t.Fatal(err)
+		}
+	}()
 	cnt := 0
 	for _ = range trpls {
 		cnt++
@@ -240,7 +244,7 @@ func populateTestStore(t *testing.T) storage.Store {
 	return s
 }
 
-func TestQuery(t *testing.T) {
+func TestPlannerQuery(t *testing.T) {
 	ctx := context.Background()
 	testTable := []struct {
 		q    string

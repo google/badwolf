@@ -59,7 +59,10 @@ func TestGraphNames(t *testing.T) {
 			t.Errorf("memoryStore.NewGraph: should never fail to crate a graph %s; %s", g, err)
 		}
 	}
-	gns := make(chan string)
+	// To avoid blocking on the test. On a real usage of the driver you woul like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventualy.
+	gns := make(chan string, len(gs))
 	if err := s.GraphNames(ctx, gns); err != nil {
 		t.Errorf("memoryStore.GraphNames: failed with error %v", err)
 	}
@@ -197,7 +200,10 @@ func TestObjects(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	os := make(chan *triple.Object)
+	// To avoid blocking on the test. On a real usage of the driver you woul like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventualy.
+	os := make(chan *triple.Object, 100)
 	if err := g.Objects(ctx, ts[0].Subject(), ts[0].Predicate(), storage.DefaultLookup, os); err != nil {
 		t.Errorf("g.Objects(%s, %s) failed with error %v", ts[0].Subject(), ts[0].Predicate(), err)
 	}
@@ -221,7 +227,10 @@ func TestSubjects(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	ss := make(chan *node.Node)
+	// To avoid blocking on the test. On a real usage of the driver you woul like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventualy.
+	ss := make(chan *node.Node, 100)
 	if err := g.Subjects(ctx, ts[0].Predicate(), ts[0].Object(), storage.DefaultLookup, ss); err != nil {
 		t.Errorf("g.Subjects(%s, %s) failed with error %v", ts[0].Predicate(), ts[0].Object(), err)
 	}
@@ -244,7 +253,10 @@ func TestPredicatesForSubjectAndObject(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	ps := make(chan *predicate.Predicate)
+	// To avoid blocking on the test. On a real usage of the driver you woul like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventualy.
+	ps := make(chan *predicate.Predicate, 100)
 	if err := g.PredicatesForSubjectAndObject(ctx, ts[0].Subject(), ts[0].Object(), storage.DefaultLookup, ps); err != nil {
 		t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) failed with error %v", ts[0].Subject(), ts[0].Object(), err)
 	}
@@ -266,7 +278,10 @@ func TestPredicatesForSubject(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	ps := make(chan *predicate.Predicate)
+	// To avoid blocking on the test. On a real usage of the driver you woul like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventualy.
+	ps := make(chan *predicate.Predicate, 100)
 	if err := g.PredicatesForSubject(ctx, ts[0].Subject(), storage.DefaultLookup, ps); err != nil {
 		t.Errorf("g.PredicatesForSubject(%s) failed with error %v", ts[0].Subject(), err)
 	}
@@ -288,7 +303,10 @@ func TestPredicatesForObject(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	ps := make(chan *predicate.Predicate)
+	// To avoid blocking on the test. On a real usage of the driver you woul like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventualy.
+	ps := make(chan *predicate.Predicate, 100)
 	if err := g.PredicatesForObject(ctx, ts[0].Object(), storage.DefaultLookup, ps); err != nil {
 		t.Errorf("g.PredicatesForObject(%s) failed with error %v", ts[0].Object(), err)
 	}
@@ -310,7 +328,10 @@ func TestTriplesForSubject(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls := make(chan *triple.Triple)
+	// To avoid blocking on the test. On a real usage of the driver you woul like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventualy.
+	trpls := make(chan *triple.Triple, 100)
 	if err := g.TriplesForSubject(ctx, ts[0].Subject(), storage.DefaultLookup, trpls); err != nil {
 		t.Errorf("g.TriplesForSubject(%s) failed with error %v", ts[0].Subject(), err)
 	}
@@ -329,7 +350,10 @@ func TestTriplesForPredicate(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls := make(chan *triple.Triple)
+	// To avoid blocking on the test. On a real usage of the driver you woul like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventualy.
+	trpls := make(chan *triple.Triple, 100)
 	if err := g.TriplesForPredicate(ctx, ts[0].Predicate(), storage.DefaultLookup, trpls); err != nil {
 		t.Errorf("g.TriplesForPredicate(%s) failed with error %v", ts[0].Subject(), err)
 	}
@@ -348,7 +372,10 @@ func TestTriplesForObject(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls := make(chan *triple.Triple)
+	// To avoid blocking on the test. On a real usage of the driver you woul like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventualy.
+	trpls := make(chan *triple.Triple, 100)
 	if err := g.TriplesForObject(ctx, ts[0].Object(), storage.DefaultLookup, trpls); err != nil {
 		t.Errorf("g.TriplesForObject(%s) failed with error %v", ts[0].Object(), err)
 	}
@@ -367,7 +394,10 @@ func TestTriplesForSubjectAndPredicate(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls := make(chan *triple.Triple)
+	// To avoid blocking on the test. On a real usage of the driver you woul like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventualy.
+	trpls := make(chan *triple.Triple, 100)
 	if err := g.TriplesForSubjectAndPredicate(ctx, ts[0].Subject(), ts[0].Predicate(), storage.DefaultLookup, trpls); err != nil {
 		t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s) failed with error %v", ts[0].Subject(), ts[0].Predicate(), err)
 	}
@@ -386,7 +416,10 @@ func TestTriplesForPredicateAndObject(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls := make(chan *triple.Triple)
+	// To avoid blocking on the test. On a real usage of the driver you woul like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventualy.
+	trpls := make(chan *triple.Triple, 100)
 	if err := g.TriplesForPredicateAndObject(ctx, ts[0].Predicate(), ts[0].Object(), storage.DefaultLookup, trpls); err != nil {
 		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed with error %v", ts[0].Predicate(), ts[0].Object(), err)
 	}
@@ -422,7 +455,10 @@ func TestTriples(t *testing.T) {
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
-	trpls := make(chan *triple.Triple)
+	// To avoid blocking on the test. On a real usage of the driver you woul like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventualy.
+	trpls := make(chan *triple.Triple, 100)
 	if err := g.Triples(ctx, trpls); err != nil {
 		t.Fatal(err)
 	}

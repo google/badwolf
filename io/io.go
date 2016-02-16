@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 
 	"golang.org/x/net/context"
 
@@ -56,16 +57,33 @@ func ReadIntoGraph(ctx context.Context, g storage.Graph, r io.Reader, b literal.
 // serialization will stop. It returns the number of triples serialized
 // regardless if it succeded of it failed partialy.
 func WriteGraph(ctx context.Context, w io.Writer, g storage.Graph) (int, error) {
-	cnt := 0
-	ts := make(chan *triple.Triple)
-	if err := g.Triples(ctx, ts); err != nil {
-		return 0, err
-	}
+	var (
+		wg   sync.WaitGroup
+		tErr error
+		wErr error
+	)
+	cnt, ts := 0, make(chan *triple.Triple)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		tErr = g.Triples(ctx, ts)
+	}()
 	for t := range ts {
+		if wErr != nil {
+			continue
+		}
 		if _, err := io.WriteString(w, fmt.Sprintf("%s\n", t.String())); err != nil {
-			return cnt, err
+			wErr = err
+			continue
 		}
 		cnt++
+	}
+	wg.Wait()
+	if tErr != nil {
+		return 0, tErr
+	}
+	if wErr != nil {
+		return 0, wErr
 	}
 	return cnt, nil
 }
