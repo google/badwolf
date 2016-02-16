@@ -173,10 +173,11 @@ type queryPlan struct {
 	grfs      []storage.Graph
 	cls       []*semantic.GraphClause
 	tbl       *table.Table
+	chanSize  int
 }
 
 // newQueryPlan returns a new query plan ready to be excecuted.
-func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statement) (*queryPlan, error) {
+func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statement, chanSize int) (*queryPlan, error) {
 	bs := []string{}
 	for _, b := range stm.Bindings() {
 		bs = append(bs, b)
@@ -201,6 +202,7 @@ func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statem
 		grfsNames: stm.Graphs(),
 		cls:       stm.SortedGraphPatternClauses(),
 		tbl:       t,
+		chanSize:  chanSize,
 	}, nil
 }
 
@@ -232,7 +234,7 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 	}
 	if exist == 0 {
 		// Data is new.
-		tbl, err := simpleFetch(ctx, p.grfs, cls, lo)
+		tbl, err := simpleFetch(ctx, p.grfs, cls, lo, p.chanSize)
 		if err != nil {
 			return false, err
 		}
@@ -309,7 +311,7 @@ func (p *queryPlan) addSpecifiedData(ctx context.Context, r table.Row, cls *sema
 		}
 		lo = nlo
 	}
-	tbl, err := simpleFetch(ctx, p.grfs, cls, lo)
+	tbl, err := simpleFetch(ctx, p.grfs, cls, lo, p.chanSize)
 	if err != nil {
 		return err
 	}
@@ -608,10 +610,10 @@ func (p *queryPlan) Excecute(ctx context.Context) (*table.Table, error) {
 }
 
 // New create a new executable plan given a semantic BQL statement.
-func New(ctx context.Context, store storage.Store, stm *semantic.Statement) (Excecutor, error) {
+func New(ctx context.Context, store storage.Store, stm *semantic.Statement, chanSize int) (Excecutor, error) {
 	switch stm.Type() {
 	case semantic.Query:
-		return newQueryPlan(ctx, store, stm)
+		return newQueryPlan(ctx, store, stm, chanSize)
 	case semantic.Insert:
 		return &insertPlan{
 			stm:   stm,

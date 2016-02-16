@@ -43,7 +43,7 @@ func insertTest(t *testing.T) {
 	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
-	pln, err := New(ctx, memory.DefaultStore, stm)
+	pln, err := New(ctx, memory.DefaultStore, stm, 0)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
@@ -82,7 +82,7 @@ func deleteTest(t *testing.T) {
 	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
-	pln, err := New(ctx, memory.DefaultStore, stm)
+	pln, err := New(ctx, memory.DefaultStore, stm, 0)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
@@ -153,7 +153,7 @@ func TestPlannerCreateGraph(t *testing.T) {
 	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
-	pln, err := New(ctx, memory.DefaultStore, stm)
+	pln, err := New(ctx, memory.DefaultStore, stm, 0)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
@@ -184,7 +184,7 @@ func TestPlannerDropGraph(t *testing.T) {
 	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
-	pln, err := New(ctx, memory.DefaultStore, stm)
+	pln, err := New(ctx, memory.DefaultStore, stm, 0)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
@@ -433,7 +433,7 @@ func TestPlannerQuery(t *testing.T) {
 		if err := p.Parse(grammar.NewLLk(entry.q, 1), st); err != nil {
 			t.Errorf("Parser.consume: failed to parse query %q with error %v", entry.q, err)
 		}
-		plnr, err := New(ctx, s, st)
+		plnr, err := New(ctx, s, st, 0)
 		if err != nil {
 			t.Errorf("planner.New failed to create a valid query plan with error %v", err)
 		}

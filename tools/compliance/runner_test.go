@@ -93,13 +93,15 @@ func TestRun(t *testing.T) {
 	}
 	ctx := context.Background()
 	for _, s := range testStories {
-		m, err := s.Run(ctx, memory.NewStore(), literal.DefaultBuilder())
-		if err != nil {
-			t.Error(err)
-		}
-		for s, sao := range m {
-			if !sao.Equal {
-				t.Errorf("%q should have not returned false; got\n%s\nwant\n%s", s, sao.Got, sao.Want)
+		for cs := 0; cs < 10; cs++ {
+			m, err := s.Run(ctx, memory.NewStore(), literal.DefaultBuilder(), cs)
+			if err != nil {
+				t.Error(err)
+			}
+			for s, sao := range m {
+				if !sao.Equal {
+					t.Errorf("%q should have not returned false; got\n%s\nwant\n%s", s, sao.Got, sao.Want)
+				}
 			}
 		}
 	}
@@ -174,14 +176,16 @@ func TestRunStories(t *testing.T) {
 		},
 	}
 	ctx := context.Background()
-	results := RunStories(ctx, memory.NewStore(), literal.DefaultBuilder(), testStories)
-	for _, entry := range results.Entries {
-		if entry.Err != nil {
-			t.Error(entry.Err)
-		}
-		for s, sao := range entry.Outcome {
-			if !sao.Equal {
-				t.Errorf("%q should have not returned false; got\n%s\nwant\n%s", s, sao.Got, sao.Want)
+	for cs := 0; cs < 10; cs++ {
+		results := RunStories(ctx, memory.NewStore(), literal.DefaultBuilder(), testStories, cs)
+		for _, entry := range results.Entries {
+			if entry.Err != nil {
+				t.Error(entry.Err)
+			}
+			for s, sao := range entry.Outcome {
+				if !sao.Equal {
+					t.Errorf("%q should have not returned false; got\n%s\nwant\n%s", s, sao.Got, sao.Want)
+				}
 			}
 		}
 	}

@@ -19,6 +19,7 @@ package run
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"golang.org/x/net/context"
 
@@ -35,7 +36,7 @@ import (
 // New creates the help command.
 func New() *command.Command {
 	cmd := &command.Command{
-		UsageLine: "run file_path",
+		UsageLine: "run [--channel_size=123] file_path",
 		Short:     "runs BQL statements.",
 		Long: `Runs all the commands listed in the provided file. Lines in the
 the file starting with # will be ignored. All statements will be run
@@ -55,16 +56,26 @@ func runCommand(ctx context.Context, cmd *command.Command, args []string) int {
 		cmd.Usage()
 		return 2
 	}
-	lines, err := getStatementsFromFile(args[2])
+	chanSize := 0
+	if len(args) >= 4 {
+		c, err := common.ParseChannelSizeFlag(args[2])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Fail to parse flag %s with error %v\n", args[2], err)
+			return 2
+		}
+		chanSize = c
+	}
+	file := strings.TrimSpace(args[len(args)-1])
+	lines, err := getStatementsFromFile(file)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to read file %s\n\n\t%v\n\n", args[2], err)
+		fmt.Fprintf(os.Stderr, "Failed to read file %s\n\n\t%v\n\n", file, err)
 		return 2
 	}
 	fmt.Printf("Processing file %s\n\n", args[2])
 	s := memory.DefaultStore
 	for idx, stm := range lines {
 		fmt.Printf("Processing statement (%d/%d):\n%s\n\n", idx+1, len(lines), stm)
-		tbl, err := runBQL(ctx, stm, s)
+		tbl, err := runBQL(ctx, stm, s, chanSize)
 		if err != nil {
 			fmt.Printf("[FAIL] %v\n\n", err)
 			continue
@@ -79,7 +90,7 @@ func runCommand(ctx context.Context, cmd *command.Command, args []string) int {
 }
 
 // runBQL attemps to excecute the provided query against the given store.
-func runBQL(ctx context.Context, bql string, s storage.Store) (*table.Table, error) {
+func runBQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*table.Table, error) {
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		return nil, fmt.Errorf("Failed to initilize a valid BQL parser")
@@ -88,7 +99,7 @@ func runBQL(ctx context.Context, bql string, s storage.Store) (*table.Table, err
 	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		return nil, fmt.Errorf("Failed to parse BQL statement with error %v", err)
 	}
-	pln, err := planner.New(ctx, s, stm)
+	pln, err := planner.New(ctx, s, stm, chanSize)
 	if err != nil {
 		return nil, fmt.Errorf("Should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}

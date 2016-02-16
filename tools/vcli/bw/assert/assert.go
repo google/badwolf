@@ -34,7 +34,7 @@ import (
 // New creates the help command.
 func New(store storage.Store, builder literal.Builder) *command.Command {
 	cmd := &command.Command{
-		UsageLine: "assert folder_path",
+		UsageLine: "assert [--channel_size=123] folder_path",
 		Short:     "asserts all the stories in the indicated folder.",
 		Long: `Asserts all the stories in the folder. Each story is stored in a JSON
 file containing all the sources and all the assertions to run.
@@ -53,8 +53,17 @@ func assertCommand(ctx context.Context, cmd *command.Command, args []string, sto
 		cmd.Usage()
 		return 2
 	}
+	chanSize := 0
+	if len(args) >= 4 {
+		c, err := common.ParseChannelSizeFlag(args[2])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Fail to parse flag %s with error %v\n", args[2], err)
+			return 2
+		}
+		chanSize = c
+	}
 	// Open the folder.
-	folder := strings.TrimSpace(args[2])
+	folder := strings.TrimSpace(args[len(args)-1])
 	f, err := os.Open(folder)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to open folder %s\n\n\t%v\n\n", folder, err)
@@ -96,7 +105,7 @@ func assertCommand(ctx context.Context, cmd *command.Command, args []string, sto
 	}
 	fmt.Println("-------------------------------------------------------------")
 	fmt.Printf("Evaluating %d stories... ", len(stories))
-	results := compliance.RunStories(ctx, store, builder, stories)
+	results := compliance.RunStories(ctx, store, builder, stories, chanSize)
 	fmt.Println("done.")
 	fmt.Println("-------------------------------------------------------------")
 	for i, entry := range results.Entries {

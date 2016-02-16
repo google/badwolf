@@ -18,7 +18,9 @@ package common
 
 import (
 	"bufio"
+	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -48,4 +50,16 @@ func ReadLines(path string) ([]string, error) {
 		lines = append(lines, strings.TrimSpace(line))
 	}
 	return lines, scanner.Err()
+}
+
+// ParseChannelSizeFlag attempts to parse the "channel_size" flag.
+func ParseChannelSizeFlag(flag string) (int, error) {
+	ss := strings.Split(flag, "=")
+	if len(ss) != 2 {
+		return 0, fmt.Errorf("Failed split flag %s", flag)
+	}
+	if ss[0] != "--channel_size" {
+		return 0, fmt.Errorf("Unknown flag %s", flag)
+	}
+	return strconv.Atoi(ss[1])
 }
