@@ -18,6 +18,7 @@ package predicate
 import (
 	"encoding/base64"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -80,7 +81,11 @@ func Parse(s string) (*Predicate, error) {
 	if idx < 0 {
 		return nil, fmt.Errorf("predicate.Parse could not find anchor definition in %s", raw)
 	}
-	id, ta := raw[1:idx], raw[idx+3:len(raw)-1]
+	id, ta := raw[0:idx+1], raw[idx+3:len(raw)-1]
+	id, err := strconv.Unquote(id)
+	if err != nil {
+		return nil, fmt.Errorf("predicate.Parse can't unquote id in %s: %v", raw, err)
+	}
 	// TODO: if id has \" inside, it should be unquoted.
 	if ta == "" {
 		return &Predicate{
