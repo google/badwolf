@@ -336,6 +336,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				aErr error
 				wg   sync.WaitGroup
 			)
+
 			wg.Add(2)
 			ts := make(chan *triple.Triple, chanSize)
 			go func() {

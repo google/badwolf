@@ -93,3 +93,29 @@ func TestReify(t *testing.T) {
 		t.Errorf("triple.Reify failed to create 4 valid triples and a valid blank node; returned %v, %s instead", rts, bn)
 	}
 }
+
+func TestGUID(t *testing.T) {
+	testTable := []struct {
+		t1 string
+		t2 string
+	}{
+		{
+			"/some/type<some id>\t\"foo\"@[]\t/some/type<some id>",
+			"/some/type<some id>\t\"foo\"@[]\t\"bar\"@[]",
+		},
+	}
+	for _, entry := range testTable {
+		// Parse the triples.
+		t1, err := Parse(entry.t1, literal.DefaultBuilder())
+		if err != nil {
+			t.Fatalf("triple.Parse failed to parse valid triple %s with error %v", entry.t1, err)
+		}
+		t2, err := Parse(entry.t2, literal.DefaultBuilder())
+		if err != nil {
+			t.Fatalf("triple.Parse failed to parse valid triple %s with error %v", entry.t2, err)
+		}
+		if !t1.Equal(t2) {
+			t.Errorf("Failed to equal %s(%s) == %s(%s)", t1, t1.GUID(), t2, t2.GUID())
+		}
+	}
+}

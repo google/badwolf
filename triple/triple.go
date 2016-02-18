@@ -16,6 +16,7 @@
 package triple
 
 import (
+	"bytes"
 	"encoding/base64"
 	"fmt"
 	"regexp"
@@ -160,6 +161,11 @@ func (t *Triple) Object() *Object {
 	return t.o
 }
 
+// Equal checks if two triples are identical.
+func (t *Triple) Equal(t2 *Triple) bool {
+	return t.GUID() == t2.GUID()
+}
+
 // String marshals the triple into pretty string.
 func (t *Triple) String() string {
 	return fmt.Sprintf("%s\t%s\t%s", t.s, t.p, t.o)
@@ -251,5 +257,36 @@ func (t *Triple) Reify() ([]*Triple, *node.Node, error) {
 // GUID returns a global unique identifier for the given triple. It is
 // implemented as the base64 encoded stringified version of the triple.
 func (t *Triple) GUID() string {
-	return base64.StdEncoding.EncodeToString([]byte(t.String()))
+	var buffer bytes.Buffer
+
+	// Subject.
+	buffer.WriteString(t.s.String())
+	buffer.WriteString(":")
+
+	// Predicate.
+	ta, err := t.p.TimeAnchor()
+	if err != nil {
+		// Immutable predicate.
+		buffer.WriteString(t.p.String())
+	} else {
+		// Temporal predicate.
+		buffer.WriteString(fmt.Sprintf("%q/%x", t.p.ID(), ta.UnixNano()))
+	}
+	buffer.WriteString(":")
+
+	// Object.
+	if t.o.p == nil {
+		buffer.WriteString(t.o.p.String())
+	} else {
+		ta, err := t.o.p.TimeAnchor()
+		if err != nil {
+			// Immutable predicate.
+			buffer.WriteString(t.o.p.String())
+		} else {
+			// Temporal predicate.
+			buffer.WriteString(fmt.Sprintf("%q/%x", t.o.p.ID(), ta.UnixNano()))
+		}
+	}
+
+	return base64.StdEncoding.EncodeToString(buffer.Bytes())
 }
