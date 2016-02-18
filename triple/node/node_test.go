@@ -65,11 +65,18 @@ func TestNewTypeString(t *testing.T) {
 	if err != nil {
 		t.Errorf("node.NewType(\"/some/type/a\") should never fail with error %v", err)
 	}
+	tAB, err := NewType("/some/type/ab")
+	if err != nil {
+		t.Errorf("node.NewType(\"/some/type/ab\") should never fail with error %v", err)
+	}
 	if tA.Covariant(tB) {
 		t.Errorf("node.Covariant: %q should not be market as covariant of %q", tA, tB)
 	}
 	if !tB.Covariant(tA) {
 		t.Errorf("node.Covariant: %q should not be market as covariant of %q", tB, tA)
+	}
+	if tAB.Covariant(tB) {
+		t.Errorf("node.Covariant: %q should not be market as covariant of %q", tAB, tB)
 	}
 }
 

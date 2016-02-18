@@ -106,7 +106,7 @@ func TestParse(t *testing.T) {
 	pretty := fmt.Sprintf("\"bar\"@[%s]", date)
 	got, err := Parse(pretty)
 	if err != nil {
-		t.Errorf("predicate.Parse could not create a predicate for %s with error %v", pretty, err)
+		t.Fatalf("predicate.Parse could not create a predicate for %s with error %v", pretty, err)
 	}
 	if got.Type() != Temporal {
 		t.Errorf("predicate.Parse should have returned a temporal predicate, instead returned %s", got)
@@ -121,9 +121,29 @@ func TestParse(t *testing.T) {
 
 	imm, err := Parse("\"foo\"@[]")
 	if err != nil {
-		t.Errorf("predicate.Parse failed to immutable predicate \"foo\"@[] with error %v", err)
+		t.Errorf("predicate.Parse failed to parse immutable predicate \"foo\"@[] with error %v", err)
 	}
 	if imm.Type() != Immutable || imm.ID() != "foo" {
-		t.Errorf("predicate.Parse failed to immutable predicate \"foo\"@[]; got %v instead", imm)
+		t.Errorf("predicate.Parse failed to parse immutable predicate \"foo\"@[]; got %v instead", imm)
+	}
+}
+
+func TestQuotedID(t *testing.T) {
+	const id = "ba\"r"
+	const pretty = "\"ba\\\"r\"@[]"
+	immut, err := NewImmutable(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := immut.String(), pretty; got != want {
+		t.Fatalf("predicate.String() = %v; want %v", got, want)
+	}
+
+	immut, err = Parse(pretty)
+	if err != nil {
+		t.Fatalf("predicate.Parse failed to parse immutable predicate \"foo\"@[] with error %v", err)
+	}
+	if immut.Type() != Immutable || immut.ID() != id {
+		t.Errorf("predicate.Parse failed to parse immutable predicate %v; got %v instead", pretty, immut)
 	}
 }

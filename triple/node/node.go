@@ -36,8 +36,11 @@ func (t *Type) String() string {
 // Covariant checks for given two types A and B, A covariant B if B _is a_ A.
 // In other word, A _covariant_ B if B is a prefix of A.
 func (t *Type) Covariant(ot *Type) bool {
-	// TODO: is /ab covariant of /a ?
-	return strings.HasPrefix(t.String(), ot.String())
+	if !strings.HasPrefix(t.String(), ot.String()) {
+		return false
+	}
+	// /type/foo is covarian of /type, but /typefoo is not covatiant of /type.
+	return len(t.String()) == len(ot.String()) || t.String()[len(ot.String())] == '/'
 }
 
 // ID represents a node ID.
