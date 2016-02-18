@@ -142,7 +142,7 @@ func (t *Table) Rows() []Row {
 // AddBindings add the new binings provided to the table.
 func (t *Table) AddBindings(bs []string) {
 	for _, b := range bs {
-		if _, ok := t.mbs[b]; !ok {
+		if !t.mbs[b] {
 			t.mbs[b] = true
 			t.bs = append(t.bs, b)
 		}
@@ -216,7 +216,7 @@ func equalBindings(b1, b2 map[string]bool) bool {
 		return false
 	}
 	for k := range b1 {
-		if _, ok := b2[k]; !ok {
+		if !b2[k] {
 			return false
 		}
 	}
@@ -242,22 +242,15 @@ func (t *Table) AppendTable(t2 *Table) error {
 // disjointBinding returns true if they are not overlapping bindings, false
 // otherwise.
 func disjointBinding(b1, b2 map[string]bool) bool {
-	m := make(map[string]int)
 	for k := range b1 {
-		m[k]++
-	}
-	for k := range b2 {
-		m[k]++
-	}
-	for _, cnt := range m {
-		if cnt != 1 {
+		if b2[k] {
 			return false
 		}
 	}
 	return true
 }
 
-// MergeRows takes a list of rors and returns a new map containing both.
+// MergeRows takes a list of rows and returns a new map containing both.
 func MergeRows(ms []Row) Row {
 	res := make(map[string]*Cell)
 	for _, om := range ms {
@@ -750,13 +743,13 @@ func (t *Table) Reduce(cfg SortConfig, aaps []AliasAccPair) error {
 	return nil
 }
 
-// Filter removes all the rows were the provided function returns true.
+// Filter removes all the rows where the provided function returns true.
 func (t *Table) Filter(f func(Row) bool) {
-	for idx, processed := 0, len(t.data); processed > 0; processed-- {
-		if f(t.data[idx]) {
-			t.data = append(t.data[:idx], t.data[idx+1:]...)
-			idx--
+	var newData []Row
+	for _, r := range t.data {
+		if !f(r) {
+			newData = append(newData, r)
 		}
-		idx++
 	}
+	t.data = newData
 }

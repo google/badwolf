@@ -45,17 +45,11 @@ func NewLLk(input string, k int) *LLk {
 // appendNextToken tries to append a new token. If not tokens are available
 // it appends ItemEOF token.
 func appendNextToken(l *LLk) {
-	i := 0
 	for t := range l.c {
 		l.tkns = append(l.tkns, t)
-		i++
-		break
+		return
 	}
-	for ; i < 1; i++ {
-		l.tkns = append(l.tkns, lexer.Token{
-			Type: lexer.ItemEOF,
-		})
-	}
+	l.tkns = append(l.tkns, lexer.Token{Type: lexer.ItemEOF})
 }
 
 // Current returns the current token being processed.
