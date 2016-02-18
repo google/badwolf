@@ -21,6 +21,8 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/net/context"
+
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/node"
@@ -47,17 +49,17 @@ func NewStore() storage.Store {
 }
 
 // Name returns the ID of the backend being used.
-func (s *memoryStore) Name() string {
+func (s *memoryStore) Name(ctx context.Context) string {
 	return "MEMORY_STORE"
 }
 
 // Version returns the version of the driver implementation.
-func (s *memoryStore) Version() string {
+func (s *memoryStore) Version(ctx context.Context) string {
 	return "0.1.vcli"
 }
 
 // NewGraph creates a new graph.
-func (s *memoryStore) NewGraph(id string) (storage.Graph, error) {
+func (s *memoryStore) NewGraph(ctx context.Context, id string) (storage.Graph, error) {
 	g := &memory{
 		id:    id,
 		idx:   make(map[string]*triple.Triple),
@@ -80,7 +82,7 @@ func (s *memoryStore) NewGraph(id string) (storage.Graph, error) {
 
 // Graph returns an existing graph if available. Getting a non existing
 // graph should return an error.
-func (s *memoryStore) Graph(id string) (storage.Graph, error) {
+func (s *memoryStore) Graph(ctx context.Context, id string) (storage.Graph, error) {
 	s.rwmu.RLock()
 	defer s.rwmu.RUnlock()
 	if g, ok := s.graphs[id]; ok {
@@ -91,7 +93,7 @@ func (s *memoryStore) Graph(id string) (storage.Graph, error) {
 
 // DeleteGraph deletes an existing graph. Deleting a non existing graph
 // should return an error.
-func (s *memoryStore) DeleteGraph(id string) error {
+func (s *memoryStore) DeleteGraph(ctx context.Context, id string) error {
 	s.rwmu.Lock()
 	defer s.rwmu.Unlock()
 	if _, ok := s.graphs[id]; ok {
@@ -102,15 +104,23 @@ func (s *memoryStore) DeleteGraph(id string) error {
 }
 
 // GraphNames returns the current available graph names in the store.
-func (s *memoryStore) GraphNames() (storage.GraphNames, error) {
-	s.rwmu.RLock()
-	defer s.rwmu.RUnlock()
-	c := make(chan string, len(s.graphs))
-	for k := range s.graphs {
-		c <- k
+func (s *memoryStore) GraphNames(ctx context.Context, names chan<- string) error {
+	if names == nil {
+		return fmt.Errorf("cannot provide an empty channel")
 	}
-	close(c)
-	return c, nil
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		s.rwmu.RLock()
+		defer s.rwmu.RUnlock()
+		defer wg.Done()
+		for k := range s.graphs {
+			names <- k
+		}
+		close(names)
+	}()
+	wg.Wait()
+	return nil
 }
 
 // memory provides an memory-based volatile implementation of the graph API.
@@ -127,19 +137,20 @@ type memory struct {
 }
 
 // ID returns the id for this graph.
-func (m *memory) ID() string {
+func (m *memory) ID(ctx context.Context) string {
 	return m.id
 }
 
 // AddTriples adds the triples to the storage.
-func (m *memory) AddTriples(ts []*triple.Triple) error {
+func (m *memory) AddTriples(ctx context.Context, ts []*triple.Triple) error {
+	m.rwmu.Lock()
+	defer m.rwmu.Unlock()
 	for _, t := range ts {
 		guid := t.GUID()
 		sGUID := t.Subject().GUID()
 		pGUID := t.Predicate().GUID()
 		oGUID := t.Object().GUID()
 		// Update master index
-		m.rwmu.Lock()
 		m.idx[guid] = t
 
 		if _, ok := m.idxS[sGUID]; !ok {
@@ -174,14 +185,12 @@ func (m *memory) AddTriples(ts []*triple.Triple) error {
 			m.idxSO[key] = make(map[string]*triple.Triple)
 		}
 		m.idxSO[key][guid] = t
-
-		m.rwmu.Unlock()
 	}
 	return nil
 }
 
 // RemoveTriples removes the trilpes from the storage.
-func (m *memory) RemoveTriples(ts []*triple.Triple) error {
+func (m *memory) RemoveTriples(ctx context.Context, ts []*triple.Triple) error {
 	for _, t := range ts {
 		guid := t.GUID()
 		sGUID := t.Subject().GUID()
@@ -241,7 +250,6 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 		if c.c <= 0 {
 			return false
 		}
-		// TODO: Should it be decremented if later function returns false?
 		c.c--
 	}
 	if p.Type() == predicate.Immutable {
@@ -257,216 +265,321 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 	return true
 }
 
-// Objects returns the objects for the give object and predicate.
-func (m *memory) Objects(s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions) (storage.Objects, error) {
+// Objects published the objects for the give object and predicate to the
+// provided channel.
+func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions, objs chan<- *triple.Object) error {
+
+	var wg sync.WaitGroup
+	wg.Add(1)
 	sGUID := s.GUID()
 	pGUID := p.GUID()
 	spIdx := strings.Join([]string{sGUID, pGUID}, ":")
-	m.rwmu.RLock()
-	objs := make(chan *triple.Object, len(m.idxSP[spIdx]))
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			wg.Done()
+			m.rwmu.RUnlock()
+			close(objs)
+		}()
+
 		ckr := newChecker(lo)
 		for _, t := range m.idxSP[spIdx] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
 				objs <- t.Object()
 			}
 		}
-		m.rwmu.RUnlock()
-		close(objs)
 	}()
-	return objs, nil
+	wg.Wait()
+	return nil
 }
 
-// Subject returns the subjects for the give predicate and object.
-func (m *memory) Subjects(p *predicate.Predicate, o *triple.Object, lo *storage.LookupOptions) (storage.Nodes, error) {
+// Subject publishes the subjects for the give predicate and object to the
+// provided channel.
+func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple.Object, lo *storage.LookupOptions, subjs chan<- *node.Node) error {
+	if subjs == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
+	var wg sync.WaitGroup
+	wg.Add(1)
 	pGUID := p.GUID()
 	oGUID := o.GUID()
 	poIdx := strings.Join([]string{pGUID, oGUID}, ":")
-	m.rwmu.RLock()
-	subs := make(chan *node.Node, len(m.idxPO[poIdx]))
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			wg.Done()
+			m.rwmu.RUnlock()
+			close(subjs)
+		}()
+
 		ckr := newChecker(lo)
 		for _, t := range m.idxPO[poIdx] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				subs <- t.Subject()
+				subjs <- t.Subject()
 			}
 		}
-		m.rwmu.RUnlock()
-		close(subs)
 	}()
-	return subs, nil
+	wg.Wait()
+	return nil
 }
 
-// PredicatesForSubjecAndObject returns all predicates available for the
-// given subject and object.
-func (m *memory) PredicatesForSubjectAndObject(s *node.Node, o *triple.Object, lo *storage.LookupOptions) (storage.Predicates, error) {
+// PredicatesForSubjecAndObject publishes all predicates available for the
+// given subject and object to the provided channel.
+func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node, o *triple.Object, lo *storage.LookupOptions, prds chan<- *predicate.Predicate) error {
+	if prds == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
+	var wg sync.WaitGroup
+	wg.Add(1)
 	sGUID := s.GUID()
 	oGUID := o.GUID()
 	soIdx := strings.Join([]string{sGUID, oGUID}, ":")
-	m.rwmu.RLock()
-	preds := make(chan *predicate.Predicate, len(m.idxSO[soIdx]))
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			wg.Done()
+			m.rwmu.RUnlock()
+			close(prds)
+		}()
+
 		ckr := newChecker(lo)
 		for _, t := range m.idxSO[soIdx] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				preds <- t.Predicate()
+				prds <- t.Predicate()
 			}
 		}
-		m.rwmu.RUnlock()
-		close(preds)
 	}()
-	return preds, nil
+	wg.Wait()
+	return nil
 }
 
-// PredicatesForSubject returns all the predicates known for the given subject.
-func (m *memory) PredicatesForSubject(s *node.Node, lo *storage.LookupOptions) (storage.Predicates, error) {
+// PredicatesForSubject publishes all the predicates known for the given
+// subject to the provided channel.
+func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *storage.LookupOptions, prds chan<- *predicate.Predicate) error {
+	if prds == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
+	var wg sync.WaitGroup
+	wg.Add(1)
 	sGUID := s.GUID()
-	m.rwmu.RLock()
-	preds := make(chan *predicate.Predicate, len(m.idxS[sGUID]))
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			wg.Done()
+			m.rwmu.RUnlock()
+			close(prds)
+		}()
 		ckr := newChecker(lo)
 		for _, t := range m.idxS[sGUID] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				preds <- t.Predicate()
+				prds <- t.Predicate()
 			}
 		}
-		m.rwmu.RUnlock()
-		close(preds)
 	}()
-	return preds, nil
+	wg.Wait()
+	return nil
 }
 
-// PredicatesForObject returns all the predicates known for the given object.
-func (m *memory) PredicatesForObject(o *triple.Object, lo *storage.LookupOptions) (storage.Predicates, error) {
+// PredicatesForObject publishes all the predicates known for the given object
+// to the provided channel.
+func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *storage.LookupOptions, prds chan<- *predicate.Predicate) error {
+	if prds == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
+	var wg sync.WaitGroup
+	wg.Add(1)
 	oGUID := o.GUID()
-	m.rwmu.RLock()
-	preds := make(chan *predicate.Predicate, len(m.idxO[oGUID]))
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			wg.Done()
+			m.rwmu.RUnlock()
+			close(prds)
+		}()
 		ckr := newChecker(lo)
 		for _, t := range m.idxO[oGUID] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				preds <- t.Predicate()
+				prds <- t.Predicate()
 			}
 		}
-		m.rwmu.RUnlock()
-		close(preds)
 	}()
-	return preds, nil
+	wg.Wait()
+	return nil
 }
 
-// TriplesForSubject returns all triples available for the given subect.
-func (m *memory) TriplesForSubject(s *node.Node, lo *storage.LookupOptions) (storage.Triples, error) {
+// TriplesForSubject publishes all triples available for the given subect to
+// the provided channel.
+func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storage.LookupOptions, trpls chan<- *triple.Triple) error {
+	if trpls == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
+	var wg sync.WaitGroup
+	wg.Add(1)
 	sGUID := s.GUID()
-	m.rwmu.RLock()
-	triples := make(chan *triple.Triple, len(m.idxS[sGUID]))
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			wg.Done()
+			m.rwmu.RUnlock()
+			close(trpls)
+		}()
+
 		ckr := newChecker(lo)
 		for _, t := range m.idxS[sGUID] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				triples <- t
+				trpls <- t
 			}
 		}
-		m.rwmu.RUnlock()
-		close(triples)
 	}()
-	return triples, nil
+	wg.Wait()
+	return nil
 }
 
-// TriplesForPredicate returns all triples available for the given predicate.
-func (m *memory) TriplesForPredicate(p *predicate.Predicate, lo *storage.LookupOptions) (storage.Triples, error) {
+// TriplesForPredicate publishes all triples available for the given predicate
+// to the provided channel.
+func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate, lo *storage.LookupOptions, trpls chan<- *triple.Triple) error {
+	if trpls == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
+	var wg sync.WaitGroup
+	wg.Add(1)
 	pGUID := p.GUID()
-	m.rwmu.RLock()
-	triples := make(chan *triple.Triple, len(m.idxP[pGUID]))
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			wg.Done()
+			m.rwmu.RUnlock()
+			close(trpls)
+		}()
+
 		ckr := newChecker(lo)
 		for _, t := range m.idxP[pGUID] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				triples <- t
+				trpls <- t
 			}
 		}
-		m.rwmu.RUnlock()
-		close(triples)
 	}()
-	return triples, nil
+	wg.Wait()
+	return nil
 }
 
-// TriplesForObject returns all triples available for the given object.
-func (m *memory) TriplesForObject(o *triple.Object, lo *storage.LookupOptions) (storage.Triples, error) {
+// TriplesForObject publishes all triples available for the given object to the
+// provided channel.
+func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *storage.LookupOptions, trpls chan<- *triple.Triple) error {
+	if trpls == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
+	var wg sync.WaitGroup
+	wg.Add(1)
 	oGUID := o.GUID()
-	m.rwmu.RLock()
-	triples := make(chan *triple.Triple, len(m.idxO[oGUID]))
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			wg.Done()
+			m.rwmu.RUnlock()
+			close(trpls)
+		}()
+
 		ckr := newChecker(lo)
 		for _, t := range m.idxO[oGUID] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				triples <- t
+				trpls <- t
 			}
 		}
-		m.rwmu.RUnlock()
-		close(triples)
 	}()
-	return triples, nil
+	wg.Wait()
+	return nil
 }
 
-// TriplesForSubjectAndPredicate returns all triples available for the given
-// subject and predicate.
-func (m *memory) TriplesForSubjectAndPredicate(s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions) (storage.Triples, error) {
+// TriplesForSubjectAndPredicate publishes all triples available for the given
+// subject and predicate to the provided channel.
+func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions, trpls chan<- *triple.Triple) error {
+	if trpls == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
+	var wg sync.WaitGroup
+	wg.Add(1)
 	sGUID := s.GUID()
 	pGUID := p.GUID()
 	spIdx := strings.Join([]string{sGUID, pGUID}, ":")
-	m.rwmu.RLock()
-	triples := make(chan *triple.Triple, len(m.idxSP[spIdx]))
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			wg.Done()
+			m.rwmu.RUnlock()
+			close(trpls)
+		}()
+
 		ckr := newChecker(lo)
 		for _, t := range m.idxSP[spIdx] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				triples <- t
+				trpls <- t
 			}
 		}
-		m.rwmu.RUnlock()
-		close(triples)
 	}()
-	return triples, nil
+	wg.Wait()
+	return nil
 }
 
-// TriplesForPredicateAndObject returns all triples available for the given
-// predicate and object.
-func (m *memory) TriplesForPredicateAndObject(p *predicate.Predicate, o *triple.Object, lo *storage.LookupOptions) (storage.Triples, error) {
+// TriplesForPredicateAndObject publishes all triples available for the given
+// predicate and object to the provided channel.
+func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.Predicate, o *triple.Object, lo *storage.LookupOptions, trpls chan<- *triple.Triple) error {
+	if trpls == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
+	var wg sync.WaitGroup
+	wg.Add(1)
 	pGUID := p.GUID()
 	oGUID := o.GUID()
 	poIdx := strings.Join([]string{pGUID, oGUID}, ":")
-	m.rwmu.RLock()
-	triples := make(chan *triple.Triple, len(m.idxPO[poIdx]))
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			wg.Done()
+			m.rwmu.RUnlock()
+			close(trpls)
+		}()
+
 		ckr := newChecker(lo)
 		for _, t := range m.idxPO[poIdx] {
 			if ckr.CheckAndUpdate(t.Predicate()) {
-				triples <- t
+				trpls <- t
 			}
 		}
-		m.rwmu.RUnlock()
-		close(triples)
 	}()
-	return triples, nil
+	wg.Wait()
+	return nil
 }
 
 // Exist checks if the provided triple exists on the store.
-func (m *memory) Exist(t *triple.Triple) (bool, error) {
+func (m *memory) Exist(ctx context.Context, t *triple.Triple) (bool, error) {
 	guid := t.GUID()
 	m.rwmu.RLock()
+	defer m.rwmu.RUnlock()
 	_, ok := m.idx[guid]
-	m.rwmu.RUnlock()
 	return ok, nil
 }
 
-// Triples allows to iterate over all available triples.
-func (m *memory) Triples() (storage.Triples, error) {
-	triples := make(chan *triple.Triple, len(m.idx))
+// Triples allows to iterate over all available triples by pubhsing them to the
+// provided channel.
+func (m *memory) Triples(ctx context.Context, trpls chan<- *triple.Triple) error {
+	if trpls == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
+		m.rwmu.RLock()
+		defer func() {
+			wg.Done()
+			m.rwmu.RUnlock()
+			close(trpls)
+		}()
+
 		for _, t := range m.idx {
-			triples <- t
+			trpls <- t
 		}
-		close(triples)
 	}()
-	return triples, nil
+	wg.Wait()
+	return nil
 }

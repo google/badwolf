@@ -23,6 +23,8 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/net/context"
+
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/bql/semantic"
 	"github.com/google/badwolf/bql/table"
@@ -34,7 +36,7 @@ import (
 // Excecutor interface unifies the execution of statements.
 type Excecutor interface {
 	// Execute runs the proposed plan for a given statement.
-	Excecute() (*table.Table, error)
+	Excecute(ctx context.Context) (*table.Table, error)
 }
 
 // createPlan encapsulates the sequence of instructions that need to be
@@ -45,14 +47,14 @@ type createPlan struct {
 }
 
 // Execute creates the indicated graphs.
-func (p *createPlan) Excecute() (*table.Table, error) {
+func (p *createPlan) Excecute(ctx context.Context) (*table.Table, error) {
 	t, err := table.New([]string{})
 	if err != nil {
 		return nil, err
 	}
 	errs := []string{}
 	for _, g := range p.stm.Graphs() {
-		if _, err := p.store.NewGraph(g); err != nil {
+		if _, err := p.store.NewGraph(ctx, g); err != nil {
 			errs = append(errs, err.Error())
 		}
 	}
@@ -70,14 +72,14 @@ type dropPlan struct {
 }
 
 // Execute drops the indicated graphs.
-func (p *dropPlan) Excecute() (*table.Table, error) {
+func (p *dropPlan) Excecute(ctx context.Context) (*table.Table, error) {
 	t, err := table.New([]string{})
 	if err != nil {
 		return nil, err
 	}
 	errs := []string{}
 	for _, g := range p.stm.Graphs() {
-		if err := p.store.DeleteGraph(g); err != nil {
+		if err := p.store.DeleteGraph(ctx, g); err != nil {
 			errs = append(errs, err.Error())
 		}
 	}
@@ -96,7 +98,7 @@ type insertPlan struct {
 
 type updater func(storage.Graph, []*triple.Triple) error
 
-func update(stm *semantic.Statement, store storage.Store, f updater) error {
+func update(ctx context.Context, stm *semantic.Statement, store storage.Store, f updater) error {
 	var (
 		mu   sync.Mutex
 		wg   sync.WaitGroup
@@ -112,7 +114,7 @@ func update(stm *semantic.Statement, store storage.Store, f updater) error {
 		wg.Add(1)
 		go func(graph string) {
 			defer wg.Done()
-			g, err := store.Graph(graph)
+			g, err := store.Graph(ctx, graph)
 			if err != nil {
 				appendError(err)
 				return
@@ -131,13 +133,13 @@ func update(stm *semantic.Statement, store storage.Store, f updater) error {
 }
 
 // Execute inserts the provided data into the indicated graphs.
-func (p *insertPlan) Excecute() (*table.Table, error) {
+func (p *insertPlan) Excecute(ctx context.Context) (*table.Table, error) {
 	t, err := table.New([]string{})
 	if err != nil {
 		return nil, err
 	}
-	return t, update(p.stm, p.store, func(g storage.Graph, d []*triple.Triple) error {
-		return g.AddTriples(d)
+	return t, update(ctx, p.stm, p.store, func(g storage.Graph, d []*triple.Triple) error {
+		return g.AddTriples(ctx, d)
 	})
 }
 
@@ -149,13 +151,13 @@ type deletePlan struct {
 }
 
 // Execute deletes the provided data into the indicated graphs.
-func (p *deletePlan) Excecute() (*table.Table, error) {
+func (p *deletePlan) Excecute(ctx context.Context) (*table.Table, error) {
 	t, err := table.New([]string{})
 	if err != nil {
 		return nil, err
 	}
-	return t, update(p.stm, p.store, func(g storage.Graph, d []*triple.Triple) error {
-		return g.RemoveTriples(d)
+	return t, update(ctx, p.stm, p.store, func(g storage.Graph, d []*triple.Triple) error {
+		return g.RemoveTriples(ctx, d)
 	})
 }
 
@@ -171,10 +173,11 @@ type queryPlan struct {
 	grfs      []storage.Graph
 	cls       []*semantic.GraphClause
 	tbl       *table.Table
+	chanSize  int
 }
 
 // newQueryPlan returns a new query plan ready to be excecuted.
-func newQueryPlan(store storage.Store, stm *semantic.Statement) (*queryPlan, error) {
+func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statement, chanSize int) (*queryPlan, error) {
 	bs := []string{}
 	for _, b := range stm.Bindings() {
 		bs = append(bs, b)
@@ -185,7 +188,7 @@ func newQueryPlan(store storage.Store, stm *semantic.Statement) (*queryPlan, err
 	}
 	var gs []storage.Graph
 	for _, g := range stm.Graphs() {
-		ng, err := store.Graph(g)
+		ng, err := store.Graph(ctx, g)
 		if err != nil {
 			return nil, err
 		}
@@ -199,12 +202,13 @@ func newQueryPlan(store storage.Store, stm *semantic.Statement) (*queryPlan, err
 		grfsNames: stm.Graphs(),
 		cls:       stm.SortedGraphPatternClauses(),
 		tbl:       t,
+		chanSize:  chanSize,
 	}, nil
 }
 
 // processClause retrives the triples for the provided triple given the
 // information available.
-func (p *queryPlan) processClause(cls *semantic.GraphClause, lo *storage.LookupOptions) (bool, error) {
+func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause, lo *storage.LookupOptions) (bool, error) {
 	// This method decides how to process the clause based on the current
 	// list of bindings solved and data available.
 	if cls.Specificity() == 3 {
@@ -212,7 +216,7 @@ func (p *queryPlan) processClause(cls *semantic.GraphClause, lo *storage.LookupO
 		if err != nil {
 			return false, err
 		}
-		b, tbl, err := simpleExist(p.grfs, cls, t)
+		b, tbl, err := simpleExist(ctx, p.grfs, cls, t)
 		if err != nil {
 			return false, err
 		}
@@ -230,7 +234,7 @@ func (p *queryPlan) processClause(cls *semantic.GraphClause, lo *storage.LookupO
 	}
 	if exist == 0 {
 		// Data is new.
-		tbl, err := simpleFetch(p.grfs, cls, lo)
+		tbl, err := simpleFetch(ctx, p.grfs, cls, lo, p.chanSize)
 		if err != nil {
 			return false, err
 		}
@@ -242,13 +246,13 @@ func (p *queryPlan) processClause(cls *semantic.GraphClause, lo *storage.LookupO
 	if exist > 0 && exist < total {
 		// Data is partially binded, retrieve data either extends the row with the
 		// new bindings or filters it out if now new bindings are available.
-		return false, p.specifyClauseWithTable(cls, lo)
+		return false, p.specifyClauseWithTable(ctx, cls, lo)
 	}
 	if exist > 0 && exist == total {
 		// Since all bindings in the clause are already solved, the clause becomes a
 		// fully specified triple. If the triple does not exist the row will be
 		// deleted.
-		return false, p.filterOnExistance(cls, lo)
+		return false, p.filterOnExistance(ctx, cls, lo)
 	}
 	// Somethign is wrong with the code.
 	return false, fmt.Errorf("queryPlan.processClause(%v) should have never failed to resolve the clause", cls)
@@ -271,7 +275,7 @@ func getBindedValueForComponent(r table.Row, bs []string) *table.Cell {
 
 // addSpecifiedData specializes the clause given the row provided and attemp to
 // retrieve the correspoinding clause data.
-func (p *queryPlan) addSpecifiedData(r table.Row, cls *semantic.GraphClause, lo *storage.LookupOptions) error {
+func (p *queryPlan) addSpecifiedData(ctx context.Context, r table.Row, cls *semantic.GraphClause, lo *storage.LookupOptions) error {
 	if cls.S == nil {
 		v := getBindedValueForComponent(r, []string{cls.SBinding, cls.SAlias})
 		if v != nil {
@@ -307,7 +311,7 @@ func (p *queryPlan) addSpecifiedData(r table.Row, cls *semantic.GraphClause, lo 
 		}
 		lo = nlo
 	}
-	tbl, err := simpleFetch(p.grfs, cls, lo)
+	tbl, err := simpleFetch(ctx, p.grfs, cls, lo, p.chanSize)
 	if err != nil {
 		return err
 	}
@@ -320,13 +324,13 @@ func (p *queryPlan) addSpecifiedData(r table.Row, cls *semantic.GraphClause, lo 
 
 // specifyClauseWithTable runs the clause, but it specifies it further based on
 // the current row being processed.
-func (p *queryPlan) specifyClauseWithTable(cls *semantic.GraphClause, lo *storage.LookupOptions) error {
+func (p *queryPlan) specifyClauseWithTable(ctx context.Context, cls *semantic.GraphClause, lo *storage.LookupOptions) error {
 	rws := p.tbl.Rows()
 	p.tbl.Truncate()
 	for _, r := range rws {
 		tmpCls := &semantic.GraphClause{}
 		*tmpCls = *cls
-		if err := p.addSpecifiedData(r, tmpCls, lo); err != nil {
+		if err := p.addSpecifiedData(ctx, r, tmpCls, lo); err != nil {
 			return err
 		}
 	}
@@ -359,7 +363,7 @@ func cellToObject(c *table.Cell) (*triple.Object, error) {
 
 // filterOnExistance removes rows based on the existance of the fully qualified
 // triple after the biding of the clause.
-func (p *queryPlan) filterOnExistance(cls *semantic.GraphClause, lo *storage.LookupOptions) error {
+func (p *queryPlan) filterOnExistance(ctx context.Context, cls *semantic.GraphClause, lo *storage.LookupOptions) error {
 	rows := p.tbl.Rows()
 	for idx, pending := 0, len(rows); pending > 0; pending-- {
 		r := rows[idx]
@@ -441,11 +445,11 @@ func (p *queryPlan) filterOnExistance(cls *semantic.GraphClause, lo *storage.Loo
 			if err != nil {
 				return err
 			}
-			gph, err := p.store.Graph(g)
+			gph, err := p.store.Graph(ctx, g)
 			if err != nil {
 				return err
 			}
-			b, err := gph.Exist(t)
+			b, err := gph.Exist(ctx, t)
 			if err != nil {
 				return err
 			}
@@ -461,11 +465,11 @@ func (p *queryPlan) filterOnExistance(cls *semantic.GraphClause, lo *storage.Loo
 
 // processGraphPattern proces the query graph pattern to retrieve the
 // data from the specified graphs.
-func (p *queryPlan) processGraphPattern(lo *storage.LookupOptions) error {
+func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupOptions) error {
 	for _, cls := range p.cls {
 		// The current planner is based on naively excecuting clauses by
 		// specificity.
-		unresolvable, err := p.processClause(cls, lo)
+		unresolvable, err := p.processClause(ctx, cls, lo)
 		if err != nil {
 			return err
 		}
@@ -579,10 +583,10 @@ func (p *queryPlan) limit() {
 }
 
 // Execute queries the indicated graphs.
-func (p *queryPlan) Excecute() (*table.Table, error) {
+func (p *queryPlan) Excecute(ctx context.Context) (*table.Table, error) {
 	// Retrieve the data.
 	lo := p.stm.GlobalLookupOptions()
-	if err := p.processGraphPattern(lo); err != nil {
+	if err := p.processGraphPattern(ctx, lo); err != nil {
 		return nil, err
 	}
 	if err := p.projectAndGroupBy(); err != nil {
@@ -606,10 +610,10 @@ func (p *queryPlan) Excecute() (*table.Table, error) {
 }
 
 // New create a new executable plan given a semantic BQL statement.
-func New(store storage.Store, stm *semantic.Statement) (Excecutor, error) {
+func New(ctx context.Context, store storage.Store, stm *semantic.Statement, chanSize int) (Excecutor, error) {
 	switch stm.Type() {
 	case semantic.Query:
-		return newQueryPlan(store, stm)
+		return newQueryPlan(ctx, store, stm, chanSize)
 	case semantic.Insert:
 		return &insertPlan{
 			stm:   stm,

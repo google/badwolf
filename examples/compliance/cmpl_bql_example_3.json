@@ -1,5 +1,5 @@
 {
-  "Name": "Family and car graph data",
+  "Name": "Family and car graph data example 4",
   "Sources": [
     {
       "ID": "?family",
@@ -34,7 +34,7 @@
       ]
     },
     {
-      "Requires": "finding who are Joe's grandchildren that do not have the same name of his parent",
+      "Requires": "finding who are Joe's grandchildren that do *not* have the same name of his parent",
       "Statement": "
       SELECT ?offspring, ?grandchildren
       FROM ?family

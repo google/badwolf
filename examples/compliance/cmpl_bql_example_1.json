@@ -1,5 +1,5 @@
 {
-  "Name": "Family graph data",
+  "Name": "Family graph data example 1",
   "Sources": [
     {
       "ID": "?family",
@@ -29,7 +29,7 @@
   ],
   "Assertions": [
     {
-      "Requires": "finding all Joe's offspring name",
+      "Requires": "finding how many offsprings Joe's has",
       "Statement": "
       SELECT ?grandparent, COUNT(?grandchildren) AS ?number_of_grandchildren
       FROM ?family
@@ -43,6 +43,37 @@
         {
           "?grandparent":	"/u<joe>",
           "?number_of_grandchildren":	"\"4\"^^type:int64"
+        }
+      ]
+    },
+    {
+      "Requires": "finding all Joe's offspring names",
+      "Statement": "
+      SELECT ?grandparent, ?grandchildren
+      FROM ?family
+      WHERE {
+        /u<joe> ID ?grandparent \"parent_of\"@[] ?offspring .
+        ?offspring              \"parent_of\"@[] ?gc ID ?grandchildren
+      }
+      GROUP BY ?grandparent, ?grandchildren
+      ORDER BY ?grandparent ASC, ?grandchildren ASC;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?grandparent":	"joe",
+          "?grandchildren":	"amy"
+        },
+        {
+          "?grandparent":	"joe",
+          "?grandchildren":	"anne"
+        },
+        {
+          "?grandparent":	"joe",
+          "?grandchildren":	"eve"
+        },
+        {
+          "?grandparent":	"joe",
+          "?grandchildren":	"john"
         }
       ]
     },

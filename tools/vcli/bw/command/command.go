@@ -12,12 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+// Package command contains the basic definitions of a command for the command
+// line tool.
+package command
 
 import (
 	"fmt"
 	"os"
 	"strings"
+
+	"golang.org/x/net/context"
 )
 
 // Command is an implementation of a BadWolf command. It is model after the
@@ -25,7 +29,7 @@ import (
 type Command struct {
 	// Run runs the command. The args are the arguments after the command name.
 	// Run returns the exit code to be used.
-	Run func(args []string) int
+	Run func(ctx context.Context, args []string) int
 
 	// UsageLine is the one-line usage message.
 	// The first word in the line is taken to be the command name.

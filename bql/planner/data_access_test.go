@@ -17,7 +17,10 @@ package planner
 import (
 	"errors"
 	"reflect"
+	"sync"
 	"testing"
+
+	"golang.org/x/net/context"
 
 	"github.com/google/badwolf/bql/semantic"
 	"github.com/google/badwolf/bql/table"
@@ -56,30 +59,30 @@ func getTestTriples(t *testing.T) []*triple.Triple {
 }
 
 func getTestStore(t *testing.T) storage.Store {
-	ts := getTestTriples(t)
+	ts, ctx := getTestTriples(t), context.Background()
 	s := memory.NewStore()
-	g, err := s.NewGraph("?test")
+	g, err := s.NewGraph(ctx, "?test")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := g.AddTriples(ts); err != nil {
+	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Fatalf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
 	return s
 }
 
-func TestSimpleFetch(t *testing.T) {
-	testBindings := []string{"?s", "?p", "?o"}
+func TestDataAccessSimpleFetch(t *testing.T) {
+	testBindings, ctx := []string{"?s", "?p", "?o"}, context.Background()
 	cls := &semantic.GraphClause{
 		SBinding: "?s",
 		PBinding: "?p",
 		OBinding: "?o",
 	}
-	g, err := getTestStore(t).Graph("?test")
+	g, err := getTestStore(t).Graph(ctx, "?test")
 	if err != nil {
 		t.Fatal(err)
 	}
-	tbl, err := simpleFetch([]storage.Graph{g}, cls, &storage.LookupOptions{})
+	tbl, err := simpleFetch(ctx, []storage.Graph{g}, cls, &storage.LookupOptions{}, 0)
 	if err != nil {
 		t.Errorf("addTriple failed with errorf %v", err)
 	}
@@ -96,8 +99,9 @@ func TestSimpleFetch(t *testing.T) {
 	}
 }
 
-func TestFeasibleSimpleExist(t *testing.T) {
-	g, err := getTestStore(t).Graph("?test")
+func TestDataAccessFeasibleSimpleExist(t *testing.T) {
+	ctx := context.Background()
+	g, err := getTestStore(t).Graph(ctx, "?test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +112,7 @@ func TestFeasibleSimpleExist(t *testing.T) {
 		P: p,
 		O: o,
 	}
-	unfeasible, tbl, err := simpleExist([]storage.Graph{g}, clsOK, tt[0])
+	unfeasible, tbl, err := simpleExist(ctx, []storage.Graph{g}, clsOK, tt[0])
 	if err != nil {
 		t.Errorf("simpleExist should have not failed with error %v", err)
 	}
@@ -120,8 +124,9 @@ func TestFeasibleSimpleExist(t *testing.T) {
 	}
 }
 
-func TestUnfeasibleSimpleExist(t *testing.T) {
-	g, err := getTestStore(t).Graph("?test")
+func TestDataAccessUnfeasibleSimpleExist(t *testing.T) {
+	ctx := context.Background()
+	g, err := getTestStore(t).Graph(ctx, "?test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,7 +145,7 @@ func TestUnfeasibleSimpleExist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	unfeasible, tbl, err := simpleExist([]storage.Graph{g}, clsNotOK, tplNotOK)
+	unfeasible, tbl, err := simpleExist(ctx, []storage.Graph{g}, clsNotOK, tplNotOK)
 	if err != nil {
 		t.Errorf("simpleExist should have not failed with error %v", err)
 	}
@@ -152,18 +157,15 @@ func TestUnfeasibleSimpleExist(t *testing.T) {
 	}
 }
 
-func TestAddTriples(t *testing.T) {
+func TestDataAccessAddTriples(t *testing.T) {
+	ctx := context.Background()
 	testBindings := []string{"?s", "?p", "?o"}
 	cls := &semantic.GraphClause{
 		SBinding: "?s",
 		PBinding: "?p",
 		OBinding: "?o",
 	}
-	g, err := getTestStore(t).Graph("?test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	ts, err := g.Triples()
+	g, err := getTestStore(t).Graph(ctx, "?test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,9 +173,22 @@ func TestAddTriples(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := addTriples(ts, cls, tbl); err != nil {
-		t.Errorf("addTriple failed with errorf %v", err)
-	}
+	var wg sync.WaitGroup
+	wg.Add(2)
+	ts := make(chan *triple.Triple)
+	go func() {
+		defer wg.Done()
+		if err := g.Triples(ctx, ts); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		if err := addTriples(ts, cls, tbl); err != nil {
+			t.Errorf("addTriple failed with errorf %v", err)
+		}
+	}()
+	wg.Wait()
 	if got, want := tbl.NumRows(), len(testTextTriples); got != want {
 		t.Errorf("addTriples returned the wrong number of rows; got %d, want %d", got, want)
 	}
@@ -216,7 +231,7 @@ func testNodeTemporalPredicateLiteral(t *testing.T) (*node.Node, *predicate.Pred
 	return n, p, l
 }
 
-func TestObjeToCell(t *testing.T) {
+func TestDataAccessObjeToCell(t *testing.T) {
 	n, p, l := testNodePredicateLiteral(t)
 	testTable := []struct {
 		o *triple.Object
@@ -246,7 +261,7 @@ func TestObjeToCell(t *testing.T) {
 	}
 }
 
-func TestFBasicBindings(t *testing.T) {
+func TestDataAccessBasicBindings(t *testing.T) {
 	n, p, l := testNodePredicateLiteral(t)
 	cls := &semantic.GraphClause{
 		SBinding: "?s",
@@ -299,7 +314,7 @@ func TestFBasicBindings(t *testing.T) {
 	}
 }
 
-func TestTripleToRowSubjectBindings(t *testing.T) {
+func TestDataAccessTripleToRowSubjectBindings(t *testing.T) {
 	n, p, _ := testNodePredicateLiteral(t)
 	testTable := []struct {
 		t   string
@@ -347,7 +362,7 @@ func TestTripleToRowSubjectBindings(t *testing.T) {
 	}
 }
 
-func TestTripleToRowPredicateBindings(t *testing.T) {
+func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
 	n, p, _ := testNodeTemporalPredicateLiteral(t)
 	ts, err := p.TimeAnchor()
 	if err != nil {
@@ -405,7 +420,7 @@ func TestTripleToRowPredicateBindings(t *testing.T) {
 	}
 }
 
-func TestTripleToRowObjectBindings(t *testing.T) {
+func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 	n, p, _ := testNodeTemporalPredicateLiteral(t)
 	ts, err := p.TimeAnchor()
 	if err != nil {
@@ -480,7 +495,7 @@ func TestTripleToRowObjectBindings(t *testing.T) {
 	}
 }
 
-func TestTripleToRowObjectBindingsDroping(t *testing.T) {
+func TestDataAccessTripleToRowObjectBindingsDroping(t *testing.T) {
 	n, p, _ := testNodeTemporalPredicateLiteral(t)
 	ts, err := p.TimeAnchor()
 	if err != nil {
