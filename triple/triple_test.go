@@ -101,7 +101,43 @@ func TestGUID(t *testing.T) {
 	}{
 		{
 			"/some/type<some id>\t\"foo\"@[]\t/some/type<some id>",
-			"/some/type<some id>\t\"foo\"@[]\t\"bar\"@[]",
+			"/some/type<some id>\t\"foo\"@[]\t/some/type<some id>",
+		},
+		{
+			"/some/type<some id>\t\"foo\"@[2015-01-01T00:00:00-09:00]\t/some/type<some id>",
+			"/some/type<some id>\t\"foo\"@[2015-01-01T00:00:00-09:00]\t/some/type<some id>",
+		},
+		{
+			"/some/type<some id>\t\"foo\"@[2015-01-01T00:00:00-09:00]\t/some/type<some id>",
+			"/some/type<some id>\t\"foo\"@[2015-01-01T01:00:00-08:00]\t/some/type<some id>",
+		},
+		{
+			"/some/type<some id>\t\"foo\"@[]\t\"bar\"@[2015-01-01T00:00:00-09:00]",
+			"/some/type<some id>\t\"foo\"@[]\t\"bar\"@[2015-01-01T00:00:00-09:00]",
+		},
+		{
+			"/some/type<some id>\t\"foo\"@[]\t\"bar\"@[2015-01-01T00:00:00-09:00]",
+			"/some/type<some id>\t\"foo\"@[]\t\"bar\"@[2015-01-01T01:00:00-08:00]",
+		},
+		{
+			"/some/type<some id>\t\"foo\"@[]\t\"true\"^^type:bool",
+			"/some/type<some id>\t\"foo\"@[]\t\"true\"^^type:bool",
+		},
+		{
+			"/some/type<some id>\t\"foo\"@[]\t\"1\"^^type:int64",
+			"/some/type<some id>\t\"foo\"@[]\t\"1\"^^type:int64",
+		},
+		{
+			"/some/type<some id>\t\"foo\"@[]\t\"1\"^^type:float64",
+			"/some/type<some id>\t\"foo\"@[]\t\"1\"^^type:float64",
+		},
+		{
+			"/some/type<some id>\t\"foo\"@[]\t\"text\"^^type:text",
+			"/some/type<some id>\t\"foo\"@[]\t\"text\"^^type:text",
+		},
+		{
+			"/some/type<some id>\t\"foo\"@[]\t\"[0 0 0]\"^^type:blob",
+			"/some/type<some id>\t\"foo\"@[]\t\"[0 0 0]\"^^type:blob",
 		},
 	}
 	for _, entry := range testTable {

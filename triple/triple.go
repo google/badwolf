@@ -276,7 +276,7 @@ func (t *Triple) GUID() string {
 
 	// Object.
 	if t.o.p == nil {
-		buffer.WriteString(t.o.p.String())
+		buffer.WriteString(t.o.String())
 	} else {
 		ta, err := t.o.p.TimeAnchor()
 		if err != nil {
