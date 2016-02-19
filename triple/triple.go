@@ -51,17 +51,22 @@ func (o *Object) String() string {
 // GUID returns a global unique identifier for the given object. It is
 // implemented as the base64 encoded stringified version of the object.
 func (o *Object) GUID() string {
-	fo := "@@@INVALID_OBJECT@@@"
-	if o.n != nil {
-		fo = "node"
+	buffer := bytes.NewBufferString("")
+	// Object.
+	if o.p == nil {
+		buffer.WriteString(o.String())
+	} else {
+		ta, err := o.p.TimeAnchor()
+		if err != nil {
+			// Immutable predicate.
+			buffer.WriteString(o.p.String())
+		} else {
+			// Temporal predicate.
+			buffer.WriteString(fmt.Sprintf("%q/%x", o.p.ID(), ta.UnixNano()))
+		}
 	}
-	if o.l != nil {
-		fo = "literal"
-	}
-	if o.p != nil {
-		fo = "predicate"
-	}
-	return base64.StdEncoding.EncodeToString([]byte(strings.Join([]string{fo, o.String()}, ":")))
+
+	return base64.StdEncoding.EncodeToString([]byte(buffer.Bytes()))
 }
 
 // Node attempts to return the boxed node.
@@ -275,18 +280,7 @@ func (t *Triple) GUID() string {
 	buffer.WriteString(":")
 
 	// Object.
-	if t.o.p == nil {
-		buffer.WriteString(t.o.String())
-	} else {
-		ta, err := t.o.p.TimeAnchor()
-		if err != nil {
-			// Immutable predicate.
-			buffer.WriteString(t.o.p.String())
-		} else {
-			// Temporal predicate.
-			buffer.WriteString(fmt.Sprintf("%q/%x", t.o.p.ID(), ta.UnixNano()))
-		}
-	}
+	buffer.WriteString(t.o.GUID())
 
 	return base64.StdEncoding.EncodeToString(buffer.Bytes())
 }
