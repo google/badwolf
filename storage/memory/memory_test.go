@@ -162,16 +162,8 @@ func TestTemporalBoundedLookupChecker(t *testing.T) {
 	}
 }
 
-func getTestTriples(t *testing.T) []*triple.Triple {
+func createTriples(t *testing.T, ss []string) []*triple.Triple {
 	ts := []*triple.Triple{}
-	ss := []string{
-		"/u<john>\t\"knows\"@[]\t/u<mary>",
-		"/u<john>\t\"knows\"@[]\t/u<peter>",
-		"/u<john>\t\"knows\"@[]\t/u<alice>",
-		"/u<mary>\t\"knows\"@[]\t/u<andrew>",
-		"/u<mary>\t\"knows\"@[]\t/u<kim>",
-		"/u<mary>\t\"knows\"@[]\t/u<alice>",
-	}
 	for _, s := range ss {
 		trpl, err := triple.Parse(s, literal.DefaultBuilder())
 		if err != nil {
@@ -181,6 +173,17 @@ func getTestTriples(t *testing.T) []*triple.Triple {
 		ts = append(ts, trpl)
 	}
 	return ts
+}
+
+func getTestTriples(t *testing.T) []*triple.Triple {
+	return createTriples(t, []string{
+		"/u<john>\t\"knows\"@[]\t/u<mary>",
+		"/u<john>\t\"knows\"@[]\t/u<peter>",
+		"/u<john>\t\"knows\"@[]\t/u<alice>",
+		"/u<mary>\t\"knows\"@[]\t/u<andrew>",
+		"/u<mary>\t\"knows\"@[]\t/u<kim>",
+		"/u<mary>\t\"knows\"@[]\t/u<alice>",
+	})
 }
 
 func TestAddRemoveTriples(t *testing.T) {
@@ -385,6 +388,57 @@ func TestTriplesForObject(t *testing.T) {
 	}
 	if cnt != 1 {
 		t.Errorf("g.TriplesForObject(%s) failed to retrieve 1 predicates, got %d instead", ts[0].Object(), cnt)
+	}
+}
+
+func mustParse(t string) *time.Time {
+	r, err := time.Parse(time.RFC3339Nano, t)
+	if err != nil {
+		panic(err)
+	}
+	return &r
+}
+
+func TestTriplesForObjectWithLimit(t *testing.T) {
+	ts := createTriples(t, []string{
+		"/u<bob>\t\"kissed\"@[2015-01-01T00:00:00-09:00]\t/u<mary>",
+		"/u<bob>\t\"kissed\"@[2015-02-01T00:00:00-09:00]\t/u<mary>",
+		"/u<bob>\t\"kissed\"@[2015-03-01T00:00:00-09:00]\t/u<mary>",
+		"/u<bob>\t\"kissed\"@[2015-04-01T00:00:00-09:00]\t/u<mary>",
+		"/u<bob>\t\"kissed\"@[2015-05-01T00:00:00-09:00]\t/u<mary>",
+		"/u<bob>\t\"kissed\"@[2015-06-01T00:00:00-09:00]\t/u<mary>",
+	})
+	ctx := context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+	// To avoid blocking on the test. On a real usage of the driver you woul like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventualy.
+	trpls := make(chan *triple.Triple, 100)
+	lo := &storage.LookupOptions{
+		MaxElements: 2,
+		LowerAnchor: mustParse("2015-04-01T00:00:00-08:00"),
+		UpperAnchor: mustParse("2015-06-01T00:00:00-10:00"),
+	}
+	if err := g.TriplesForObject(ctx, ts[0].Object(), lo, trpls); err != nil {
+		t.Errorf("g.TriplesForObject(%s) failed with error %v", ts[0].Object(), err)
+	}
+	cnt := 0
+	for tr := range trpls {
+		ta, err := tr.Predicate().TimeAnchor()
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+		if ta.Before(*lo.LowerAnchor) || ta.After(*lo.UpperAnchor) {
+			t.Errorf("g.TriplesForObject(%s) unexpected triple receved: %s", ts[0].Object(), tr)
+		}
+		cnt++
+	}
+	if cnt != lo.MaxElements {
+		t.Errorf("g.TriplesForObject(%s) failed to retrieve 2 triples, got %d instead", ts[0].Object(), cnt)
 	}
 }
 

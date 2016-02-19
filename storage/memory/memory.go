@@ -246,13 +246,11 @@ func newChecker(o *storage.LookupOptions) *checker {
 // CheckAndUpdate checks if a predicate should be considered and it also updates
 // the internal state in case counts are needed.
 func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
-	if c.max {
-		if c.c <= 0 {
-			return false
-		}
-		c.c--
+	if c.max && c.c <= 0 {
+		return false
 	}
 	if p.Type() == predicate.Immutable {
+		c.c--
 		return true
 	}
 	t, _ := p.TimeAnchor()
@@ -262,6 +260,7 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 	if c.o.UpperAnchor != nil && t.After(*c.o.UpperAnchor) {
 		return false
 	}
+	c.c--
 	return true
 }
 
