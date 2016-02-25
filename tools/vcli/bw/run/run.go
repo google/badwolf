@@ -28,13 +28,12 @@ import (
 	"github.com/google/badwolf/bql/semantic"
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/storage"
-	"github.com/google/badwolf/storage/memory"
 	"github.com/google/badwolf/tools/vcli/bw/command"
 	"github.com/google/badwolf/tools/vcli/bw/common"
 )
 
 // New creates the help command.
-func New() *command.Command {
+func New(store storage.Store) *command.Command {
 	cmd := &command.Command{
 		UsageLine: "run [--channel_size=123] file_path",
 		Short:     "runs BQL statements.",
@@ -44,13 +43,13 @@ sequentially.
 `,
 	}
 	cmd.Run = func(ctx context.Context, args []string) int {
-		return runCommand(ctx, cmd, args)
+		return runCommand(ctx, cmd, args, store)
 	}
 	return cmd
 }
 
 // runCommand runs all the BQL statements available in the file.
-func runCommand(ctx context.Context, cmd *command.Command, args []string) int {
+func runCommand(ctx context.Context, cmd *command.Command, args []string, store storage.Store) int {
 	if len(args) < 3 {
 		fmt.Fprintf(os.Stderr, "Missing required file path. ")
 		cmd.Usage()
@@ -72,10 +71,9 @@ func runCommand(ctx context.Context, cmd *command.Command, args []string) int {
 		return 2
 	}
 	fmt.Printf("Processing file %s\n\n", args[2])
-	s := memory.DefaultStore
 	for idx, stm := range lines {
 		fmt.Printf("Processing statement (%d/%d):\n%s\n\n", idx+1, len(lines), stm)
-		tbl, err := runBQL(ctx, stm, s, chanSize)
+		tbl, err := runBQL(ctx, stm, store, chanSize)
 		if err != nil {
 			fmt.Printf("[FAIL] %v\n\n", err)
 			continue

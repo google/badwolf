@@ -33,7 +33,7 @@ import (
 // Registration of the available commands. Please keep sorted.
 var cmds = []*command.Command{
 	assert.New(memory.NewStore(), literal.DefaultBuilder()),
-	run.New(),
+	run.New(memory.NewStore()),
 	version.New(),
 }
 
