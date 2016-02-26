@@ -20,8 +20,11 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/google/badwolf/tools/vcli/bw/command"
 )
 
 // ReadLines from a file into a string array.
@@ -62,4 +65,35 @@ func ParseChannelSizeFlag(flag string) (int, error) {
 		return 0, fmt.Errorf("Unknown flag %s", flag)
 	}
 	return strconv.Atoi(ss[1])
+}
+
+// Help prints the requested help
+func Help(args []string, cmds []*command.Command) int {
+	var (
+		cmd string
+	)
+	if len(args) >= 3 {
+		cmd = args[2]
+	}
+	// Prints the help if the command exist.
+	for _, c := range cmds {
+		if c.Name() == cmd {
+			return c.Usage()
+		}
+	}
+	if cmd == "" {
+		fmt.Fprintf(os.Stderr, "missing help command. Usage:\n\n\t$ bw help [command]\n\nAvailable help commands\n\n")
+		var usage []string
+		for _, c := range cmds {
+			usage = append(usage, fmt.Sprintf("\t%s\t- %s\n", c.Name(), c.Short))
+		}
+		sort.Strings(usage)
+		for _, u := range usage {
+			fmt.Fprint(os.Stderr, u)
+		}
+		fmt.Fprintln(os.Stderr, "")
+		return 0
+	}
+	fmt.Fprintf(os.Stderr, "help command %q not recognized. Usage:\n\n\t$ bw help\n\n", cmd)
+	return 2
 }

@@ -23,6 +23,7 @@ import (
 	"github.com/google/badwolf/storage/memory"
 	"github.com/google/badwolf/tools/vcli/bw/assert"
 	"github.com/google/badwolf/tools/vcli/bw/command"
+	"github.com/google/badwolf/tools/vcli/bw/common"
 	"github.com/google/badwolf/tools/vcli/bw/run"
 	"github.com/google/badwolf/tools/vcli/bw/version"
 	"github.com/google/badwolf/triple/literal"
@@ -47,7 +48,7 @@ func main() {
 	}
 	// Check for help request.
 	if cmd == "help" {
-		os.Exit(help(args))
+		os.Exit(common.Help(args, cmds))
 	}
 	// Run the requested command.
 	for _, c := range cmds {
@@ -62,30 +63,4 @@ func main() {
 		fmt.Fprintf(os.Stderr, "command %q not recognized. Usage:\n\n\t$ bw [command]\n\nPlease run\n\n\t$ bw help\n\n", cmd)
 	}
 	os.Exit(1)
-}
-
-// help prints the requested help
-func help(args []string) int {
-	var (
-		cmd string
-	)
-	if len(args) >= 3 {
-		cmd = args[2]
-	}
-	// Prints the help if the command exist.
-	for _, c := range cmds {
-		if c.Name() == cmd {
-			return c.Usage()
-		}
-	}
-	if cmd == "" {
-		fmt.Fprintf(os.Stderr, "missing help command. Usage:\n\n\t$ bw help [command]\n\nAvailable help commands\n\n")
-		for _, c := range cmds {
-			fmt.Fprintf(os.Stderr, "\t%s\t- %s\n", c.Name(), c.Short)
-		}
-		fmt.Fprintln(os.Stderr, "")
-		return 0
-	}
-	fmt.Fprintf(os.Stderr, "help command %q not recognized. Usage:\n\n\t$ bw help\n\n", cmd)
-	return 2
 }
