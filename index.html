@@ -6,16 +6,27 @@
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <meta name="description" content="Badwolf : Temporal graph store abstraction layer">
 
+    <link href='https://fonts.googleapis.com/css?family=Roboto:300' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
     <title>Badwolf</title>
   </head>
 
   <body>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-74410219-1', 'auto');
+      ga('send', 'pageview');
+    </script>
 
     <!-- HEADER -->
     <div id="header_wrap" class="outer">
         <header class="inner">
+        <img class="badwolf_logo" src="./images/badwolf_logo.png"/>
           <a id="forkme_banner" href="https://github.com/google/badwolf">View on GitHub</a>
 
           <h1 id="project_title">Badwolf</h1>
@@ -44,30 +55,23 @@ reasoning. Because BadWolf is designed for generalized relationship storage,
 most of the web-related idiosyncrasies of RDF are not used and have been toned
 down or directly removed and focuses on its time reasoning aspects.</p>
 
-<p>In case you are curious about the name, BadWolf is named after the
-<a href="http://tardis.wikia.com/wiki/Bad_Wolf_(entity)">BadWolf entity</a> as it appeared
-in Dr. Who series episode <em>"The Parting Of Ways"</em> after Rose Tyler looked into
-the Time Vortex itself. The BadWolf entity scattered events in time as self
-encode messages, creating a looped ontological paradox. Hence, naming a temporal
-graph store after the entity seemed appropriate.</p>
-
 <p>You can find more detail information on each of the components of BadWolf below:</p>
 
 <ul>
 <li>
-<a href="./docs/temporal_graph_modeling.md">Data Abstractions for Temporal Graph Modeling</a>.</li>
+<a href="https://github.com/google/badwolf/blob/master/docs/temporal_graph_modeling.md">Data Abstractions for Temporal Graph Modeling</a>.</li>
 <li>
-<a href="./docs/storage_abstraction_layer.md">Storage Abstraction Layer</a>.</li>
+<a href="https://github.com/google/badwolf/blob/master/docs/storage_abstraction_layer.md">Storage Abstraction Layer</a>.</li>
 <li>
-<a href="./docs/graph_serialization.md">Graph Marshaling/Unmarshaling</a>.</li>
+<a href="https://github.com/google/badwolf/blob/master/docs/graph_serialization.md">Graph Marshaling/Unmarshaling</a>.</li>
 <li>
-<a href="./docs/bql.md">BadWolf Query Language overview</a>.</li>
+<a href="https://github.com/google/badwolf/blob/master/docs/bql.md">BadWolf Query Language overview</a>.</li>
 <li>
-<a href="./docs/bql_query_planner.md">BadWolf Query Language planner</a>.</li>
+<a href="https://github.com/google/badwolf/blob/master/docs/bql_query_planner.md">BadWolf Query Language planner</a>.</li>
 <li>
-<a href="./docs/bql_practical_examples.md">BadWolf Query Language practical examples</a>.</li>
+<a href="https://github.com/google/badwolf/blob/master/docs/bql_practical_examples.md">BadWolf Query Language practical examples</a>.</li>
 <li>
-<a href="./docs/command_line_tool.md">BadWolf command line tool</a>.</li>
+<a href="https://github.com/google/badwolf/blob/master/docs/command_line_tool.md">BadWolf command line tool</a>.</li>
 </ul>
 
 <p>Please keep in mind that this project is under active development and there
@@ -83,7 +87,7 @@ will be no guarantees on API stability till the first stable 1.0 release.</p>
     <!-- FOOTER  -->
     <div id="footer_wrap" class="outer">
       <footer class="inner">
-        <p class="copyright">Badwolf maintained by <a href="https://github.com/google">google</a></p>
+        <p class="copyright">Badwolf maintained by <a href="https://github.com/google">Google</a></p>
         <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
       </footer>
     </div>

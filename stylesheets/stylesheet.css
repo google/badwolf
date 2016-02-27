@@ -53,7 +53,7 @@ body {
   color:#373737;
   background: #212121;
   font-size: 16px;
-  font-family: 'Myriad Pro', Calibri, Helvetica, Arial, sans-serif;
+  font-family: 'Roboto', Helvetica, Arial, sans-serif;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -62,7 +62,7 @@ h1, h2, h3, h4, h5, h6 {
   margin: 10px 0;
   font-weight: 700;
   color:#222222;
-  font-family: 'Lucida Grande', 'Calibri', Helvetica, Arial, sans-serif;
+  font-family: 'Roboto', Helvetica, Arial, sans-serif;
   letter-spacing: -1px;
 }
 
@@ -279,7 +279,7 @@ Full-Width Styles
   z-index: 10;
   padding: 10px 50px 10px 10px;
   color: #fff;
-  background: url('../images/blacktocat.png') #0090ff no-repeat 95% 50%;
+  background: url('../images/blacktocat.png') #3c65a7 no-repeat 95% 50%;
   font-weight: 700;
   box-shadow: 0 0 10px rgba(0,0,0,.5);
   border-bottom-left-radius: 2px;
@@ -287,12 +287,7 @@ Full-Width Styles
 }
 
 #header_wrap {
-  background: #212121;
-  background: -moz-linear-gradient(top, #373737, #212121);
-  background: -webkit-linear-gradient(top, #373737, #212121);
-  background: -ms-linear-gradient(top, #373737, #212121);
-  background: -o-linear-gradient(top, #373737, #212121);
-  background: linear-gradient(top, #373737, #212121);
+  background: #1c4587;
 }
 
 #header_wrap .inner {
@@ -346,6 +341,18 @@ Full-Width Styles
   margin-left: 10px;
 }
 
+.badwolf_logo {
+  border: 1px solid #1c4587;
+  box-shadow: 0 0 0px #1c4587;
+  -webkit-box-shadow: 0 0 0px #1c4587;
+  -moz-box-shadow: 0 0 0px #1c4587;
+  -o-box-shadow: 0 0 0px #1c4587;
+  -ms-box-shadow: 0 0 0px #1c4587;
+  float: left;
+  height: 90px;
+  margin-right: 20px;
+}
+
 .zip_download_link:hover {
   background: url(../images/sprite_download.png) no-repeat top left;
 }
@@ -365,7 +372,7 @@ Full-Width Styles
 }
 
 #footer_wrap {
-  background: #212121;
+  background: #1c4587;
 }
 
 
