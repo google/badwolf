@@ -33,7 +33,7 @@ find and example of the command output.
 
 ```
 $ bw version
-badwolf vCli (alpha-0.2.dev)
+badwolf vCli (0.2.2-dev)
 ```
 
 ## Command: Run
