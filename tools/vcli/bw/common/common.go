@@ -24,6 +24,8 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"github.com/google/badwolf/tools/vcli/bw/command"
 )
 
@@ -96,4 +98,31 @@ func Help(args []string, cmds []*command.Command) int {
 	}
 	fmt.Fprintf(os.Stderr, "help command %q not recognized. Usage:\n\n\t$ bw help\n\n", cmd)
 	return 2
+}
+
+// Eval of the command line version tool. This allows injecting multiple
+// drivers.
+func Eval(ctx context.Context, args []string, cmds []*command.Command) int {
+	// Retrieve the provided command.
+	cmd := ""
+	if len(args) >= 2 {
+		cmd = args[1]
+	}
+	// Check for help request.
+	if cmd == "help" {
+		return Help(args, cmds)
+	}
+	// Run the requested command.
+	for _, c := range cmds {
+		if c.Name() == cmd {
+			return c.Run(ctx, args)
+		}
+	}
+	// The command was not found.
+	if cmd == "" {
+		fmt.Fprintf(os.Stderr, "missing command. Usage:\n\n\t$ bw [command]\n\nPlease run\n\n\t$ bw help\n\n")
+	} else {
+		fmt.Fprintf(os.Stderr, "command %q not recognized. Usage:\n\n\t$ bw [command]\n\nPlease run\n\n\t$ bw help\n\n", cmd)
+	}
+	return 1
 }

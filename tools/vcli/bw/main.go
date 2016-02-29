@@ -17,7 +17,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/google/badwolf/storage/memory"
@@ -39,28 +38,6 @@ var cmds = []*command.Command{
 }
 
 func main() {
-	ctx := context.Background()
-	args := os.Args
-	// Retrieve the provided command.
-	cmd := ""
-	if len(args) >= 2 {
-		cmd = args[1]
-	}
-	// Check for help request.
-	if cmd == "help" {
-		os.Exit(common.Help(args, cmds))
-	}
-	// Run the requested command.
-	for _, c := range cmds {
-		if c.Name() == cmd {
-			os.Exit(c.Run(ctx, args))
-		}
-	}
-	// The command was not found.
-	if cmd == "" {
-		fmt.Fprintf(os.Stderr, "missing command. Usage:\n\n\t$ bw [command]\n\nPlease run\n\n\t$ bw help\n\n")
-	} else {
-		fmt.Fprintf(os.Stderr, "command %q not recognized. Usage:\n\n\t$ bw [command]\n\nPlease run\n\n\t$ bw help\n\n", cmd)
-	}
-	os.Exit(1)
+	ctx, args := context.Background(), os.Args
+	os.Exit(common.Eval(ctx, args, cmds))
 }
