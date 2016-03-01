@@ -1,5 +1,7 @@
 # BadWolf
 
+[![Build Status](https://travis-ci.org/google/badwolf.svg?branch=master)](https://travis-ci.org/google/badwolf)  [![GoDoc](https://godoc.org/github.com/google/badwolf?status.svg)](https://godoc.org/github.com/google/badwolf)
+
 BadWolf is a temporal graph store loosely modeled after the concepts introduced
 by the
 [Resource Description Framework (RDF)](https://en.wikipedia.org/wiki/Resource_Description_Framework).
@@ -37,5 +39,3 @@ You can reach us here or via
 [@badwolf_project](https://twitter.com/badwolf_project) on Twitter. For
 more information or to find other related projects that using BadWolf check the
 [project website](http://google.github.io/badwolf/).
-
-[![Build Status](https://travis-ci.org/google/badwolf.svg?branch=master)](https://travis-ci.org/google/badwolf)
