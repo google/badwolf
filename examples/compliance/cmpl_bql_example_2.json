@@ -175,7 +175,7 @@
         ?owner_node ID ?owner \"drives\"@[] ?car ID ?manufacturer
       }
       GROUP BY ?manufacturer
-      ORDER BY ?owners DESC;",
+      ORDER BY ?owners DESC, ?manufacturer DESC;",
       "WillFail": false,
       "MustReturn": [
         {
@@ -183,23 +183,7 @@
           "?owners":	"\"2\"^^type:int64"
         },
         {
-          "?manufacturer": "honda",
-          "?owners": "\"1\"^^type:int64"
-        },
-        {
-          "?manufacturer": "lexus",
-          "?owners": "\"1\"^^type:int64"
-        },
-        {
-          "?manufacturer": "mazda",
-          "?owners": "\"1\"^^type:int64"
-        },
-        {
-          "?manufacturer": "mini",
-          "?owners": "\"1\"^^type:int64"
-        },
-        {
-          "?manufacturer": "tesla",
+          "?manufacturer": "volvo",
           "?owners": "\"1\"^^type:int64"
         },
         {
@@ -207,7 +191,23 @@
           "?owners":	"\"1\"^^type:int64"
         },
         {
-          "?manufacturer": "volvo",
+          "?manufacturer": "tesla",
+          "?owners": "\"1\"^^type:int64"
+        },
+        {
+          "?manufacturer": "mini",
+          "?owners": "\"1\"^^type:int64"
+        },
+        {
+          "?manufacturer": "mazda",
+          "?owners": "\"1\"^^type:int64"
+        },
+        {
+          "?manufacturer": "lexus",
+          "?owners": "\"1\"^^type:int64"
+        },
+        {
+          "?manufacturer": "honda",
           "?owners": "\"1\"^^type:int64"
         },
         {
