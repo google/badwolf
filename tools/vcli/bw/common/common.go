@@ -17,7 +17,6 @@
 package common
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"sort"
@@ -26,36 +25,13 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/google/badwolf/storage"
+	"github.com/google/badwolf/tools/vcli/bw/assert"
 	"github.com/google/badwolf/tools/vcli/bw/command"
+	"github.com/google/badwolf/tools/vcli/bw/run"
+	"github.com/google/badwolf/tools/vcli/bw/version"
+	"github.com/google/badwolf/triple/literal"
 )
-
-// ReadLines from a file into a string array.
-func ReadLines(path string) ([]string, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	var lines []string
-	scanner := bufio.NewScanner(f)
-	line := ""
-	for scanner.Scan() {
-		l := strings.TrimSpace(scanner.Text())
-		if len(l) == 0 || strings.Index(l, "#") == 0 {
-			continue
-		}
-		line += " " + l
-		if l[len(l)-1:] == ";" {
-			lines = append(lines, strings.TrimSpace(line))
-			line = ""
-		}
-	}
-	if line != "" {
-		lines = append(lines, strings.TrimSpace(line))
-	}
-	return lines, scanner.Err()
-}
 
 // ParseChannelSizeFlag attempts to parse the "channel_size" flag.
 func ParseChannelSizeFlag(flag string) (int, error) {
@@ -100,6 +76,32 @@ func Help(args []string, cmds []*command.Command) int {
 	return 2
 }
 
+// StoreGenerator is a function that generate a new valid storage.Store.
+type StoreGenerator func() (storage.Store, error)
+
+// InitializeDriver attemps to initalize the driver.
+func InitializeDriver(driverName string, drivers map[string]StoreGenerator) (storage.Store, error) {
+	f, ok := drivers[driverName]
+	if !ok {
+		var ds []string
+		for k := range drivers {
+			ds = append(ds, k)
+		}
+		return nil, fmt.Errorf("unkown driver name %q; valid drivers [%q]", driverName, strings.Join(ds, ", "))
+	}
+	return f()
+}
+
+// InitializeCommands intializes the avaialbe commands with the given storage
+// instance.
+func InitializeCommands(driver storage.Store, chanSize int) []*command.Command {
+	return []*command.Command{
+		assert.New(driver, literal.DefaultBuilder(), chanSize),
+		run.New(driver, chanSize),
+		version.New(),
+	}
+}
+
 // Eval of the command line version tool. This allows injecting multiple
 // drivers.
 func Eval(ctx context.Context, args []string, cmds []*command.Command) int {
@@ -125,4 +127,14 @@ func Eval(ctx context.Context, args []string, cmds []*command.Command) int {
 		fmt.Fprintf(os.Stderr, "command %q not recognized. Usage:\n\n\t$ bw [command]\n\nPlease run\n\n\t$ bw help\n\n", cmd)
 	}
 	return 1
+}
+
+// Run executes the main of the command line tool.
+func Run(driverName string, drivers map[string]StoreGenerator, chanSize int) {
+	driver, err := InitializeDriver(driverName, drivers)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	os.Exit(Eval(context.Background(), os.Args, InitializeCommands(driver, chanSize)))
 }

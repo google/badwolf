@@ -27,40 +27,31 @@ import (
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/tools/compliance"
 	"github.com/google/badwolf/tools/vcli/bw/command"
-	"github.com/google/badwolf/tools/vcli/bw/common"
+	"github.com/google/badwolf/tools/vcli/bw/io"
 	"github.com/google/badwolf/triple/literal"
 )
 
 // New creates the help command.
-func New(store storage.Store, builder literal.Builder) *command.Command {
+func New(store storage.Store, builder literal.Builder, chanSize int) *command.Command {
 	cmd := &command.Command{
-		UsageLine: "assert [--channel_size=123] folder_path",
+		UsageLine: "assert folder_path",
 		Short:     "asserts all the stories in the indicated folder.",
 		Long: `Asserts all the stories in the folder. Each story is stored in a JSON
 file containing all the sources and all the assertions to run.
 `,
 	}
 	cmd.Run = func(ctx context.Context, args []string) int {
-		return assertCommand(ctx, cmd, args, store, builder)
+		return assertCommand(ctx, cmd, args, store, builder, chanSize)
 	}
 	return cmd
 }
 
 // assertCommand runs all the BQL statements available in the file.
-func assertCommand(ctx context.Context, cmd *command.Command, args []string, store storage.Store, builder literal.Builder) int {
+func assertCommand(ctx context.Context, cmd *command.Command, args []string, store storage.Store, builder literal.Builder, chanSize int) int {
 	if len(args) < 3 {
 		fmt.Fprintf(os.Stderr, "Missing required folder path. ")
 		cmd.Usage()
 		return 2
-	}
-	chanSize := 0
-	if len(args) >= 4 {
-		c, err := common.ParseChannelSizeFlag(args[2])
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Fail to parse flag %s with error %v\n", args[2], err)
-			return 2
-		}
-		chanSize = c
 	}
 	// Open the folder.
 	folder := strings.TrimSpace(args[len(args)-1])
@@ -83,7 +74,7 @@ func assertCommand(ctx context.Context, cmd *command.Command, args []string, sto
 			continue
 		}
 		fmt.Printf("\tProcessing file %q... ", fi.Name())
-		lns, err := common.ReadLines(path.Join(folder, fi.Name()))
+		lns, err := io.ReadLines(path.Join(folder, fi.Name()))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "\n\n\tFailed to read file content with error %v\n\n", err)
 			return 2

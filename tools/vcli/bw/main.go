@@ -13,31 +13,41 @@
 // limitations under the License.
 
 // BadWolf command line tools allows you to interact with graphs via BQL.
-
+// This file is a template for creating your own bw tool with custom backend
+// storage drivers. Just *copy* this file to your project, add the required
+// flags that you need to initialize your driver and register your diver on
+// the registeredDriver map in the registerDrivers function.
 package main
 
 import (
-	"os"
+	"flag"
 
+	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/storage/memory"
-	"github.com/google/badwolf/tools/vcli/bw/assert"
-	"github.com/google/badwolf/tools/vcli/bw/command"
 	"github.com/google/badwolf/tools/vcli/bw/common"
-	"github.com/google/badwolf/tools/vcli/bw/run"
-	"github.com/google/badwolf/tools/vcli/bw/version"
-	"github.com/google/badwolf/triple/literal"
-
-	"golang.org/x/net/context"
 )
 
-// Registration of the available commands. Please keep sorted.
-var cmds = []*command.Command{
-	assert.New(memory.NewStore(), literal.DefaultBuilder()),
-	run.New(memory.NewStore()),
-	version.New(),
+var (
+	// drivers contains the registed drivers available for this command line tool.
+	registeredDrivers map[string]common.StoreGenerator
+	// Available flags.
+	driver         = flag.String("driver", "VOLATILE", "The storage driver to use {VOLATILE}.")
+	bqlChannelSize = flag.Int("bql_channel_size", 0, "Internal channel size to use on BQL queries.")
+	// Add your driver flags below.
+)
+
+// Registers the available drivers.
+func registerDrivers() {
+	registeredDrivers = map[string]common.StoreGenerator{
+		// Memory only storage driver.
+		"VOLATILE": func() (storage.Store, error) {
+			return memory.NewStore(), nil
+		},
+	}
 }
 
 func main() {
-	ctx, args := context.Background(), os.Args
-	os.Exit(common.Eval(ctx, args, cmds))
+	flag.Parse()
+	registerDrivers()
+	common.Run(*driver, registeredDrivers, *bqlChannelSize)
 }

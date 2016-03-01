@@ -29,13 +29,13 @@ import (
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/tools/vcli/bw/command"
-	"github.com/google/badwolf/tools/vcli/bw/common"
+	"github.com/google/badwolf/tools/vcli/bw/io"
 )
 
 // New creates the help command.
-func New(store storage.Store) *command.Command {
+func New(store storage.Store, chanSize int) *command.Command {
 	cmd := &command.Command{
-		UsageLine: "run [--channel_size=123] file_path",
+		UsageLine: "run file_path",
 		Short:     "runs BQL statements.",
 		Long: `Runs all the commands listed in the provided file. Lines in the
 the file starting with # will be ignored. All statements will be run
@@ -43,26 +43,17 @@ sequentially.
 `,
 	}
 	cmd.Run = func(ctx context.Context, args []string) int {
-		return runCommand(ctx, cmd, args, store)
+		return runCommand(ctx, cmd, args, store, chanSize)
 	}
 	return cmd
 }
 
 // runCommand runs all the BQL statements available in the file.
-func runCommand(ctx context.Context, cmd *command.Command, args []string, store storage.Store) int {
+func runCommand(ctx context.Context, cmd *command.Command, args []string, store storage.Store, chanSize int) int {
 	if len(args) < 3 {
 		fmt.Fprintf(os.Stderr, "Missing required file path. ")
 		cmd.Usage()
 		return 2
-	}
-	chanSize := 0
-	if len(args) >= 4 {
-		c, err := common.ParseChannelSizeFlag(args[2])
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Fail to parse flag %s with error %v\n", args[2], err)
-			return 2
-		}
-		chanSize = c
 	}
 	file := strings.TrimSpace(args[len(args)-1])
 	lines, err := getStatementsFromFile(file)
@@ -70,7 +61,7 @@ func runCommand(ctx context.Context, cmd *command.Command, args []string, store 
 		fmt.Fprintf(os.Stderr, "Failed to read file %s\n\n\t%v\n\n", file, err)
 		return 2
 	}
-	fmt.Printf("Processing file %s\n\n", args[2])
+	fmt.Printf("Processing file %s\n\n", args[len(args)-1])
 	for idx, stm := range lines {
 		fmt.Printf("Processing statement (%d/%d):\n%s\n\n", idx+1, len(lines), stm)
 		tbl, err := runBQL(ctx, stm, store, chanSize)
@@ -110,7 +101,7 @@ func runBQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*ta
 
 // getStatementsFromFile returns the statements found in the provided file.
 func getStatementsFromFile(path string) ([]string, error) {
-	stms, err := common.ReadLines(path)
+	stms, err := io.ReadLines(path)
 	if err != nil {
 		return nil, err
 	}
