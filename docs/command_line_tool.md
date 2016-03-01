@@ -24,7 +24,15 @@ This command will list of available options already. Also, you can always type
 $ bw help COMMAND
 ```
 
-To list the help related to the provided command.
+To list the help related to the provided command. There are a set of flags
+available for the `bw` tool. To list them just type:
+
+```
+$ bw -h
+```
+
+Keep in mind that all flags should be listed before you enter the command
+you want to run.
 
 ## Command: Version
 
