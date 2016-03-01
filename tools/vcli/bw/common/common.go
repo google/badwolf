@@ -130,11 +130,11 @@ func Eval(ctx context.Context, args []string, cmds []*command.Command) int {
 }
 
 // Run executes the main of the command line tool.
-func Run(driverName string, drivers map[string]StoreGenerator, chanSize int) {
+func Run(driverName string, drivers map[string]StoreGenerator, chanSize int) int {
 	driver, err := InitializeDriver(driverName, drivers)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(2)
+		return 2
 	}
-	os.Exit(Eval(context.Background(), os.Args, InitializeCommands(driver, chanSize)))
+	return Eval(context.Background(), os.Args, InitializeCommands(driver, chanSize))
 }

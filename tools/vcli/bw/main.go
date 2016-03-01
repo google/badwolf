@@ -21,6 +21,7 @@ package main
 
 import (
 	"flag"
+	"os"
 
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/storage/memory"
@@ -49,5 +50,5 @@ func registerDrivers() {
 func main() {
 	flag.Parse()
 	registerDrivers()
-	common.Run(*driver, registeredDrivers, *bqlChannelSize)
+	os.Exit(common.Run(*driver, registeredDrivers, *bqlChannelSize))
 }
