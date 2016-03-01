@@ -136,5 +136,12 @@ func Run(driverName string, drivers map[string]StoreGenerator, chanSize int) int
 		fmt.Fprintln(os.Stderr, err)
 		return 2
 	}
-	return Eval(context.Background(), os.Args, InitializeCommands(driver, chanSize))
+	var args []string
+	for _, s := range os.Args {
+		if strings.HasPrefix(s, "-") {
+			continue
+		}
+		args = append(args, s)
+	}
+	return Eval(context.Background(), args, InitializeCommands(driver, chanSize))
 }
