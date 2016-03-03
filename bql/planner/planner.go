@@ -351,8 +351,8 @@ func cellToObject(c *table.Cell) (*triple.Object, error) {
 	if c.L != nil {
 		return triple.NewLiteralObject(c.L), nil
 	}
-	if c.S != "" {
-		l, err := literal.DefaultBuilder().Parse(fmt.Sprintf(`"%s"^^type:string`, c.S))
+	if c.S != nil {
+		l, err := literal.DefaultBuilder().Parse(fmt.Sprintf(`"%s"^^type:string`, *c.S))
 		if err != nil {
 			return nil, err
 		}

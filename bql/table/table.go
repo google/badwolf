@@ -56,7 +56,7 @@ func New(bs []string) (*Table, error) {
 
 // Cell contains one of the possible values that form rows.
 type Cell struct {
-	S string
+	S *string
 	N *node.Node
 	P *predicate.Predicate
 	L *literal.Literal
@@ -65,8 +65,8 @@ type Cell struct {
 
 // String returns a readable representation of a cell.
 func (c *Cell) String() string {
-	if c.S != "" {
-		return c.S
+	if c.S != nil {
+		return *c.S
 	}
 	if c.N != nil {
 		return c.N.String()
@@ -348,6 +348,10 @@ func stringLess(rsi, rsj string, desc bool) int {
 	return b
 }
 
+// CellString create a pointer for the provided string.
+func CellString(s string) *string {
+	return &s
+}
 func rowLess(ri, rj Row, c SortConfig) bool {
 	if c == nil {
 		return false
@@ -363,8 +367,8 @@ func rowLess(ri, rj Row, c SortConfig) bool {
 	}
 	si, sj := "", ""
 	// Check if it has a string.
-	if ci.S != "" && cj.S != "" {
-		si, sj = ci.S, cj.S
+	if ci.S != nil && cj.S != nil {
+		si, sj = *ci.S, *cj.S
 	}
 	// Check if it has a nodes.
 	if ci.N != nil && cj.N != nil {

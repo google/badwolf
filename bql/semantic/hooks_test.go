@@ -1643,8 +1643,8 @@ func TestHavingExpressionBuilder(t *testing.T) {
 				},
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: "foo"},
-				"?bar": &table.Cell{S: "bar"},
+				"?foo": &table.Cell{S: table.CellString("foo")},
+				"?bar": &table.Cell{S: table.CellString("bar")},
 			},
 			want: true,
 		},
@@ -1701,8 +1701,8 @@ func TestHavingExpressionBuilder(t *testing.T) {
 				},
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: "foo"},
-				"?bar": &table.Cell{S: "bar"},
+				"?foo": &table.Cell{S: table.CellString("foo")},
+				"?bar": &table.Cell{S: table.CellString("bar")},
 			},
 			want: false,
 		},

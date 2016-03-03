@@ -74,7 +74,7 @@ func TestOutputTableAssertion(t *testing.T) {
 	if !ok {
 		t.Fatalf("failed to retrieve the first row with error")
 	}
-	if got, want := "foo", r["?foo"].S; got != want {
+	if got, want := "foo", r["?foo"].String(); got != want {
 		t.Errorf("failed to provide the right value; got %v, want %v", got, want)
 	}
 }

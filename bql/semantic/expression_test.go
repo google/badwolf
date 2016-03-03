@@ -31,8 +31,8 @@ func TestEvaluationNode(t *testing.T) {
 		{
 			eval: &evaluationNode{EQ, "?foo", "?wrong_binding"},
 			r: table.Row{
-				"?foo": &table.Cell{S: "foo"},
-				"?bar": &table.Cell{S: "foo"},
+				"?foo": &table.Cell{S: table.CellString("foo")},
+				"?bar": &table.Cell{S: table.CellString("foo")},
 			},
 			want: false,
 			err:  true,
@@ -40,8 +40,8 @@ func TestEvaluationNode(t *testing.T) {
 		{
 			eval: &evaluationNode{EQ, "?foo", "?bar"},
 			r: table.Row{
-				"?foo": &table.Cell{S: "foo"},
-				"?bar": &table.Cell{S: "bar"},
+				"?foo": &table.Cell{S: table.CellString("foo")},
+				"?bar": &table.Cell{S: table.CellString("bar")},
 			},
 			want: false,
 			err:  false,
@@ -49,8 +49,8 @@ func TestEvaluationNode(t *testing.T) {
 		{
 			eval: &evaluationNode{EQ, "", "?bar"},
 			r: table.Row{
-				"?foo": &table.Cell{S: "foo"},
-				"?bar": &table.Cell{S: "bar"},
+				"?foo": &table.Cell{S: table.CellString("foo")},
+				"?bar": &table.Cell{S: table.CellString("bar")},
 			},
 			want: false,
 			err:  true,
@@ -58,8 +58,8 @@ func TestEvaluationNode(t *testing.T) {
 		{
 			eval: &evaluationNode{EQ, "?foo", ""},
 			r: table.Row{
-				"?foo": &table.Cell{S: "foo"},
-				"?bar": &table.Cell{S: "bar"},
+				"?foo": &table.Cell{S: table.CellString("foo")},
+				"?bar": &table.Cell{S: table.CellString("bar")},
 			},
 			want: false,
 			err:  true,
@@ -67,8 +67,8 @@ func TestEvaluationNode(t *testing.T) {
 		{
 			eval: &evaluationNode{EQ, "?foo", "?bar"},
 			r: table.Row{
-				"?foo": &table.Cell{S: "foo"},
-				"?bar": &table.Cell{S: "foo"},
+				"?foo": &table.Cell{S: table.CellString("foo")},
+				"?bar": &table.Cell{S: table.CellString("foo")},
 			},
 			want: true,
 			err:  false,
@@ -76,8 +76,8 @@ func TestEvaluationNode(t *testing.T) {
 		{
 			eval: &evaluationNode{LT, "?foo", "?bar"},
 			r: table.Row{
-				"?foo": &table.Cell{S: "foo"},
-				"?bar": &table.Cell{S: "bar"},
+				"?foo": &table.Cell{S: table.CellString("foo")},
+				"?bar": &table.Cell{S: table.CellString("bar")},
 			},
 			want: false,
 			err:  false,
@@ -85,8 +85,8 @@ func TestEvaluationNode(t *testing.T) {
 		{
 			eval: &evaluationNode{GT, "?foo", "?bar"},
 			r: table.Row{
-				"?foo": &table.Cell{S: "foo"},
-				"?bar": &table.Cell{S: "bar"},
+				"?foo": &table.Cell{S: table.CellString("foo")},
+				"?bar": &table.Cell{S: table.CellString("bar")},
 			},
 			want: true,
 			err:  false,
@@ -210,8 +210,8 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: "VALUE"},
-				"?bar": &table.Cell{S: "VALUE"},
+				"?foo": &table.Cell{S: table.CellString("VALUE")},
+				"?bar": &table.Cell{S: table.CellString("VALUE")},
 			},
 			err:  false,
 			want: true,
@@ -232,8 +232,8 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: "foo"},
-				"?bar": &table.Cell{S: "bar"},
+				"?foo": &table.Cell{S: table.CellString("foo")},
+				"?bar": &table.Cell{S: table.CellString("bar")},
 			},
 			err:  false,
 			want: false,
@@ -254,8 +254,8 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: "foo"},
-				"?bar": &table.Cell{S: "bar"},
+				"?foo": &table.Cell{S: table.CellString("foo")},
+				"?bar": &table.Cell{S: table.CellString("bar")},
 			},
 			err:  false,
 			want: true,
@@ -285,8 +285,8 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: "VALUE"},
-				"?bar": &table.Cell{S: "VALUE"},
+				"?foo": &table.Cell{S: table.CellString("VALUE")},
+				"?bar": &table.Cell{S: table.CellString("VALUE")},
 			},
 			err:  false,
 			want: false,
@@ -333,8 +333,8 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: "foo"},
-				"?bar": &table.Cell{S: "bar"},
+				"?foo": &table.Cell{S: table.CellString("foo")},
+				"?bar": &table.Cell{S: table.CellString("bar")},
 			},
 			err:  false,
 			want: true,
@@ -381,8 +381,8 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: "foo"},
-				"?bar": &table.Cell{S: "bar"},
+				"?foo": &table.Cell{S: table.CellString("foo")},
+				"?bar": &table.Cell{S: table.CellString("bar")},
 			},
 			err:  false,
 			want: false,

@@ -61,7 +61,7 @@ func TestCellString(t *testing.T) {
 		c    *Cell
 		want string
 	}{
-		{c: &Cell{S: "foo"}, want: `foo`},
+		{c: &Cell{S: CellString("foo")}, want: `foo`},
 		{c: &Cell{N: n}, want: n.String()},
 		{c: &Cell{P: p}, want: p.String()},
 		{c: &Cell{L: l}, want: l.String()},
@@ -76,8 +76,8 @@ func TestCellString(t *testing.T) {
 
 func TestRowToTextLine(t *testing.T) {
 	r, b := make(Row), &bytes.Buffer{}
-	r["?foo"] = &Cell{S: "foo"}
-	r["?bar"] = &Cell{S: "bar"}
+	r["?foo"] = &Cell{S: CellString("foo")}
+	r["?bar"] = &Cell{S: CellString("bar")}
 	err := r.ToTextLine(b, []string{"?foo", "?bar"}, "")
 	if err != nil {
 		t.Errorf("row.ToTextLine failed to serialize the row with error %v", err)
@@ -90,8 +90,8 @@ func TestRowToTextLine(t *testing.T) {
 func TestTableManipulation(t *testing.T) {
 	newRow := func() Row {
 		r := make(Row)
-		r["?foo"] = &Cell{S: "foo"}
-		r["?bar"] = &Cell{S: "bar"}
+		r["?foo"] = &Cell{S: CellString("foo")}
+		r["?bar"] = &Cell{S: CellString("bar")}
 		return r
 	}
 	tbl, err := New([]string{"?foo", "?bar"})
@@ -153,8 +153,8 @@ func TestBindingExtensions(t *testing.T) {
 func TestTableToText(t *testing.T) {
 	newRow := func() Row {
 		r := make(Row)
-		r["?foo"] = &Cell{S: "foo"}
-		r["?bar"] = &Cell{S: "bar"}
+		r["?foo"] = &Cell{S: CellString("foo")}
+		r["?bar"] = &Cell{S: CellString("bar")}
 		return r
 	}
 	tbl, err := New([]string{"?foo", "?bar"})
@@ -220,8 +220,8 @@ func TestEqualBindings(t *testing.T) {
 func testTable(t *testing.T) *Table {
 	newRow := func() Row {
 		r := make(Row)
-		r["?foo"] = &Cell{S: "foo"}
-		r["?bar"] = &Cell{S: "bar"}
+		r["?foo"] = &Cell{S: CellString("foo")}
+		r["?bar"] = &Cell{S: CellString("bar")}
 		return r
 	}
 	tbl, err := New([]string{"?foo", "?bar"})
@@ -386,8 +386,8 @@ func testDotTable(t *testing.T, bindings []string, size int) *Table {
 	newRow := func(n int) Row {
 		r := make(Row)
 		for _, b := range bindings {
-			r[b] = &Cell{S: fmt.Sprintf("%s_%d", b, n)}
-			r[b] = &Cell{S: fmt.Sprintf("%s_%d", b, n)}
+			r[b] = &Cell{S: CellString(fmt.Sprintf("%s_%d", b, n))}
+			r[b] = &Cell{S: CellString(fmt.Sprintf("%s_%d", b, n))}
 		}
 		return r
 	}
@@ -443,10 +443,10 @@ func TestDotProductContent(t *testing.T) {
 		t.Errorf("DotProduct returned the wrong number of bindings (%d)", len(t1.Bindings()))
 	}
 	fn := func(idx int) *Cell {
-		return &Cell{S: fmt.Sprintf("?foo_%d", idx/3)}
+		return &Cell{S: CellString(fmt.Sprintf("?foo_%d", idx/3))}
 	}
 	bn := func(idx int) *Cell {
-		return &Cell{S: fmt.Sprintf("?bar_%d", idx%3)}
+		return &Cell{S: CellString(fmt.Sprintf("?bar_%d", idx%3))}
 	}
 	for idx, r := range t1.Rows() {
 		if gf, wf, gb, wb := r["?foo"], fn(idx), r["?bar"], bn(idx); !reflect.DeepEqual(gf, wf) || !reflect.DeepEqual(gb, wb) {
@@ -559,12 +559,12 @@ func TestStringLess(t *testing.T) {
 
 func TestRowLess(t *testing.T) {
 	r1 := Row{
-		"?s": &Cell{S: "1"},
-		"?t": &Cell{S: "1"},
+		"?s": &Cell{S: CellString("1")},
+		"?t": &Cell{S: CellString("1")},
 	}
 	r2 := Row{
-		"?s": &Cell{S: "2"},
-		"?t": &Cell{S: "1"},
+		"?s": &Cell{S: CellString("2")},
+		"?t": &Cell{S: CellString("1")},
 	}
 	testTable := []struct {
 		ri   Row
@@ -601,12 +601,12 @@ func TestSort(t *testing.T) {
 			},
 			data: []Row{
 				{
-					"?s": &Cell{S: "1"},
-					"?t": &Cell{S: "1"},
+					"?s": &Cell{S: CellString("1")},
+					"?t": &Cell{S: CellString("1")},
 				},
 				{
-					"?s": &Cell{S: "2"},
-					"?t": &Cell{S: "1"},
+					"?s": &Cell{S: CellString("2")},
+					"?t": &Cell{S: CellString("1")},
 				},
 			},
 		}
@@ -627,7 +627,7 @@ func TestSort(t *testing.T) {
 	for _, entry := range testTable {
 		entry.t.Sort(entry.cfg)
 		s1, s2 := entry.t.data[0]["?s"].S, entry.t.data[1]["?s"].S
-		b := s1 < s2
+		b := *s1 < *s2
 		if !entry.desc && !b || entry.desc && b {
 			t.Errorf("table.Sort failed to sort table DESC=%v; returned\n%s", entry.desc, entry.t)
 		}
@@ -703,7 +703,7 @@ func TestGroupRangeReduce(t *testing.T) {
 			alias: map[string]string{"?bar": "?bar_alias"},
 			acc:   map[string]Accumulator{"?bar": NewCountAccumulator()},
 			want: Row{
-				"?foo":       &Cell{S: "foo"},
+				"?foo":       &Cell{S: CellString("foo")},
 				"?bar_alias": int64LiteralCell(int64(3)),
 			},
 		},
@@ -712,7 +712,7 @@ func TestGroupRangeReduce(t *testing.T) {
 			alias: map[string]string{"?foo": "?foo_alias"},
 			acc:   map[string]Accumulator{"?foo": NewCountAccumulator()},
 			want: Row{
-				"?bar":       &Cell{S: "bar"},
+				"?bar":       &Cell{S: CellString("bar")},
 				"?foo_alias": int64LiteralCell(int64(3)),
 			},
 		},
@@ -724,7 +724,7 @@ func TestGroupRangeReduce(t *testing.T) {
 			},
 			acc: map[string]Accumulator{"?foo": NewCountAccumulator()},
 			want: Row{
-				"?bar_alias": &Cell{S: "bar"},
+				"?bar_alias": &Cell{S: CellString("bar")},
 				"?foo_alias": int64LiteralCell(int64(3)),
 			},
 		},
@@ -780,7 +780,7 @@ func TestFullGroupRangeReduce(t *testing.T) {
 				},
 			},
 			want: Row{
-				"?bar_alias": &Cell{S: "bar"},
+				"?bar_alias": &Cell{S: CellString("bar")},
 				"?foo_alias": int64LiteralCell(int64(3)),
 			},
 		},
@@ -807,8 +807,8 @@ func TestFullGroupRangeReduce(t *testing.T) {
 				},
 			},
 			want: Row{
-				"?foo_alias": &Cell{S: "foo"},
-				"?bar_alias": &Cell{S: "bar"},
+				"?foo_alias": &Cell{S: CellString("foo")},
+				"?bar_alias": &Cell{S: CellString("bar")},
 				"?foo_count": int64LiteralCell(int64(3)),
 			},
 		},
@@ -862,16 +862,16 @@ func TestTableReduce(t *testing.T) {
 				},
 				data: []Row{
 					{
-						"?foo": &Cell{S: "foo"},
-						"?bar": &Cell{S: "bar"},
+						"?foo": &Cell{S: CellString("foo")},
+						"?bar": &Cell{S: CellString("bar")},
 					},
 					{
-						"?foo": &Cell{S: "foo"},
-						"?bar": &Cell{S: "bar"},
+						"?foo": &Cell{S: CellString("foo")},
+						"?bar": &Cell{S: CellString("bar")},
 					},
 					{
-						"?foo": &Cell{S: "foo"},
-						"?bar": &Cell{S: "bar"},
+						"?foo": &Cell{S: CellString("foo")},
+						"?bar": &Cell{S: CellString("bar")},
 					},
 				},
 			},
@@ -898,7 +898,7 @@ func TestTableReduce(t *testing.T) {
 				},
 				data: []Row{
 					{
-						"?foo_alias": &Cell{S: "foo"},
+						"?foo_alias": &Cell{S: CellString("foo")},
 						"?bar_alias": int64LiteralCell(int64(3)),
 					},
 				},
@@ -913,28 +913,28 @@ func TestTableReduce(t *testing.T) {
 				},
 				data: []Row{
 					{
-						"?foo": &Cell{S: "foo"},
-						"?bar": &Cell{S: "bar"},
+						"?foo": &Cell{S: CellString("foo")},
+						"?bar": &Cell{S: CellString("bar")},
 					},
 					{
-						"?foo": &Cell{S: "foo"},
-						"?bar": &Cell{S: "bar"},
+						"?foo": &Cell{S: CellString("foo")},
+						"?bar": &Cell{S: CellString("bar")},
 					},
 					{
-						"?foo": &Cell{S: "foo"},
-						"?bar": &Cell{S: "bar"},
+						"?foo": &Cell{S: CellString("foo")},
+						"?bar": &Cell{S: CellString("bar")},
 					},
 					{
-						"?foo": &Cell{S: "foo2"},
-						"?bar": &Cell{S: "bar2"},
+						"?foo": &Cell{S: CellString("foo2")},
+						"?bar": &Cell{S: CellString("bar2")},
 					},
 					{
-						"?foo": &Cell{S: "foo2"},
-						"?bar": &Cell{S: "bar2"},
+						"?foo": &Cell{S: CellString("foo2")},
+						"?bar": &Cell{S: CellString("bar2")},
 					},
 					{
-						"?foo": &Cell{S: "foo3"},
-						"?bar": &Cell{S: "bar3"},
+						"?foo": &Cell{S: CellString("foo3")},
+						"?bar": &Cell{S: CellString("bar3")},
 					},
 				},
 			},
@@ -958,15 +958,15 @@ func TestTableReduce(t *testing.T) {
 				},
 				data: []Row{
 					{
-						"?foo_alias": &Cell{S: "foo"},
+						"?foo_alias": &Cell{S: CellString("foo")},
 						"?bar_alias": int64LiteralCell(int64(3)),
 					},
 					{
-						"?foo_alias": &Cell{S: "foo2"},
+						"?foo_alias": &Cell{S: CellString("foo2")},
 						"?bar_alias": int64LiteralCell(int64(2)),
 					},
 					{
-						"?foo_alias": &Cell{S: "foo3"},
+						"?foo_alias": &Cell{S: CellString("foo3")},
 						"?bar_alias": int64LiteralCell(int64(1)),
 					},
 				},
@@ -981,28 +981,28 @@ func TestTableReduce(t *testing.T) {
 				},
 				data: []Row{
 					{
-						"?foo": &Cell{S: "foo"},
-						"?bar": &Cell{S: "bar"},
+						"?foo": &Cell{S: CellString("foo")},
+						"?bar": &Cell{S: CellString("bar")},
 					},
 					{
-						"?foo": &Cell{S: "foo"},
-						"?bar": &Cell{S: "bar"},
+						"?foo": &Cell{S: CellString("foo")},
+						"?bar": &Cell{S: CellString("bar")},
 					},
 					{
-						"?foo": &Cell{S: "foo"},
-						"?bar": &Cell{S: "bar"},
+						"?foo": &Cell{S: CellString("foo")},
+						"?bar": &Cell{S: CellString("bar")},
 					},
 					{
-						"?foo": &Cell{S: "foo2"},
-						"?bar": &Cell{S: "bar2"},
+						"?foo": &Cell{S: CellString("foo2")},
+						"?bar": &Cell{S: CellString("bar2")},
 					},
 					{
-						"?foo": &Cell{S: "foo2"},
-						"?bar": &Cell{S: "bar2"},
+						"?foo": &Cell{S: CellString("foo2")},
+						"?bar": &Cell{S: CellString("bar2")},
 					},
 					{
-						"?foo": &Cell{S: "foo3"},
-						"?bar": &Cell{S: "bar3"},
+						"?foo": &Cell{S: CellString("foo3")},
+						"?bar": &Cell{S: CellString("bar3")},
 					},
 				},
 			},
@@ -1026,15 +1026,15 @@ func TestTableReduce(t *testing.T) {
 				},
 				data: []Row{
 					{
-						"?foo_alias": &Cell{S: "foo3"},
+						"?foo_alias": &Cell{S: CellString("foo3")},
 						"?bar_alias": int64LiteralCell(int64(1)),
 					},
 					{
-						"?foo_alias": &Cell{S: "foo2"},
+						"?foo_alias": &Cell{S: CellString("foo2")},
 						"?bar_alias": int64LiteralCell(int64(2)),
 					},
 					{
-						"?foo_alias": &Cell{S: "foo"},
+						"?foo_alias": &Cell{S: CellString("foo")},
 						"?bar_alias": int64LiteralCell(int64(3)),
 					},
 				},
@@ -1066,16 +1066,16 @@ func TestFilter(t *testing.T) {
 			},
 			data: []Row{
 				{
-					"?s": &Cell{S: "1s"},
-					"?t": &Cell{S: "1t"},
+					"?s": &Cell{S: CellString("1s")},
+					"?t": &Cell{S: CellString("1t")},
 				},
 				{
-					"?s": &Cell{S: "2s"},
-					"?t": &Cell{S: "2t"},
+					"?s": &Cell{S: CellString("2s")},
+					"?t": &Cell{S: CellString("2t")},
 				},
 				{
-					"?s": &Cell{S: "3s"},
-					"?t": &Cell{S: "3t"},
+					"?s": &Cell{S: CellString("3s")},
+					"?t": &Cell{S: CellString("3t")},
 				},
 			},
 		}
@@ -1102,28 +1102,28 @@ func TestFilter(t *testing.T) {
 		{
 			t: table(),
 			f: func(r Row) bool {
-				return r["?s"].S == "1s"
+				return r["?s"].String() == "1s"
 			},
 			want: 2,
 		},
 		{
 			t: table(),
 			f: func(r Row) bool {
-				return strings.Index(r["?s"].S, "1s") != -1
+				return strings.Index(r["?s"].String(), "1s") != -1
 			},
 			want: 2,
 		},
 		{
 			t: table(),
 			f: func(r Row) bool {
-				return strings.Index(r["?s"].S, "t") != -1
+				return strings.Index(r["?s"].String(), "t") != -1
 			},
 			want: 3,
 		},
 		{
 			t: table(),
 			f: func(r Row) bool {
-				return strings.Index(r["?t"].S, "t") != -1
+				return strings.Index(r["?t"].String(), "t") != -1
 			},
 			want: 0,
 		},

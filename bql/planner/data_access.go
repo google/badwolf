@@ -497,14 +497,14 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 		}
 	}
 	if cls.STypeAlias != "" {
-		c := &table.Cell{S: s.Type().String()}
+		c := &table.Cell{S: table.CellString(s.Type().String())}
 		r[cls.STypeAlias] = c
 		if !validBinding(cls.STypeAlias, c) {
 			return nil, nil
 		}
 	}
 	if cls.SIDAlias != "" {
-		c := &table.Cell{S: s.ID().String()}
+		c := &table.Cell{S: table.CellString(s.ID().String())}
 		r[cls.SIDAlias] = c
 		if !validBinding(cls.SIDAlias, c) {
 			return nil, nil
@@ -527,7 +527,7 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 		}
 	}
 	if cls.PIDAlias != "" {
-		c := &table.Cell{S: string(p.ID())}
+		c := &table.Cell{S: table.CellString(string(p.ID()))}
 		r[cls.PIDAlias] = c
 		if !validBinding(cls.PIDAlias, c) {
 			return nil, nil
@@ -591,7 +591,7 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 		if err != nil {
 			return nil, err
 		}
-		c := &table.Cell{S: n.Type().String()}
+		c := &table.Cell{S: table.CellString(n.Type().String())}
 		r[cls.OTypeAlias] = c
 		if !validBinding(cls.OTypeAlias, c) {
 			return nil, nil
@@ -600,13 +600,13 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 	if cls.OIDAlias != "" {
 		n, err := o.Node()
 		if err == nil {
-			r[cls.OIDAlias] = &table.Cell{S: n.ID().String()}
+			r[cls.OIDAlias] = &table.Cell{S: table.CellString(n.ID().String())}
 		} else {
 			p, err := o.Predicate()
 			if err != nil {
 				return nil, err
 			}
-			c := &table.Cell{S: string(p.ID())}
+			c := &table.Cell{S: table.CellString(string(p.ID()))}
 			r[cls.OIDAlias] = c
 			if !validBinding(cls.OIDAlias, c) {
 				return nil, nil

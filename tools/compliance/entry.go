@@ -113,7 +113,7 @@ func inferCell(s string) *table.Cell {
 	if err == nil {
 		return &table.Cell{T: &t}
 	}
-	return &table.Cell{S: s}
+	return &table.Cell{S: table.CellString(s)}
 }
 
 // OutputTable returns the expected result table for the must result table
