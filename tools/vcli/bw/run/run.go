@@ -56,7 +56,7 @@ func runCommand(ctx context.Context, cmd *command.Command, args []string, store 
 		return 2
 	}
 	file := strings.TrimSpace(args[len(args)-1])
-	lines, err := getStatementsFromFile(file)
+	lines, err := io.GetStatementsFromFile(file)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to read file %s\n\n\t%v\n\n", file, err)
 		return 2
@@ -97,13 +97,4 @@ func runBQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*ta
 		return nil, fmt.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
 	}
 	return res, nil
-}
-
-// getStatementsFromFile returns the statements found in the provided file.
-func getStatementsFromFile(path string) ([]string, error) {
-	stms, err := io.ReadLines(path)
-	if err != nil {
-		return nil, err
-	}
-	return stms, nil
 }

@@ -26,11 +26,6 @@ import (
 	"github.com/google/badwolf/tools/vcli/bw/command"
 )
 
-var stage = "alpha"
-var major = 0
-var minor = 1
-var patch = "dev"
-
 // New create the version command.
 func New() *command.Command {
 	return &command.Command{

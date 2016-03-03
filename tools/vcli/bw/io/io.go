@@ -22,6 +22,15 @@ import (
 	"strings"
 )
 
+// GetStatementsFromFile returns the statements found in the provided file.
+func GetStatementsFromFile(path string) ([]string, error) {
+	stms, err := ReadLines(path)
+	if err != nil {
+		return nil, err
+	}
+	return stms, nil
+}
+
 // ReadLines from a file into a string array.
 func ReadLines(path string) ([]string, error) {
 	f, err := os.Open(path)

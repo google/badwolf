@@ -28,6 +28,7 @@ import (
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/tools/vcli/bw/assert"
 	"github.com/google/badwolf/tools/vcli/bw/command"
+	"github.com/google/badwolf/tools/vcli/bw/repl"
 	"github.com/google/badwolf/tools/vcli/bw/run"
 	"github.com/google/badwolf/tools/vcli/bw/version"
 	"github.com/google/badwolf/triple/literal"
@@ -98,6 +99,7 @@ func InitializeCommands(driver storage.Store, chanSize int) []*command.Command {
 	return []*command.Command{
 		assert.New(driver, literal.DefaultBuilder(), chanSize),
 		run.New(driver, chanSize),
+		repl.New(driver, chanSize),
 		version.New(),
 	}
 }

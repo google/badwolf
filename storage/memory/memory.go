@@ -50,7 +50,7 @@ func NewStore() storage.Store {
 
 // Name returns the ID of the backend being used.
 func (s *memoryStore) Name(ctx context.Context) string {
-	return "MEMORY_STORE"
+	return "VOLATILE"
 }
 
 // Version returns the version of the driver implementation.
