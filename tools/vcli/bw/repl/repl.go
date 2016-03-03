@@ -89,7 +89,7 @@ func REPL(driver storage.Store, input *os.File, rl readLiner, chanSize int) int 
 			continue
 		}
 		if strings.HasPrefix(l, "run") {
-			path, cmds, err := loadData(ctx, driver, chanSize, l)
+			path, cmds, err := runBQLFromFile(ctx, driver, chanSize, l)
 			if err != nil {
 				fmt.Printf("[ERROR] %s\n\n", err)
 			} else {
@@ -117,8 +117,8 @@ func printHelp() {
 	fmt.Println()
 }
 
-// loadData loads all the triples in the file into the current driver.
-func loadData(ctx context.Context, driver storage.Store, chanSize int, line string) (string, int, error) {
+// runBQLFromFile loads all the statements in the file and runs them.
+func runBQLFromFile(ctx context.Context, driver storage.Store, chanSize int, line string) (string, int, error) {
 	ss := strings.Split(strings.TrimSpace(line), " ")
 	if len(ss) != 2 {
 		return "", 0, fmt.Errorf("wrong syntax: run <file_with_bql_statements>")
