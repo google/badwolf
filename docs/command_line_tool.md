@@ -227,3 +227,22 @@ done
 
 If any of the assertions of a story fails, it will be proper indicated and the
 obtained result table and the expected one will both be displayed.
+
+## Command: BQL
+
+The `bql` starts a REPL that allows running BQL commands. The REPL can provide
+basic help on usage as shown below.
+
+```
+$ bw bql
+Welcome to BadWolf vCli (0.2.2-dev)
+Using driver "VOLATILE". Type quit; to exit
+Session started at 2016-03-02 16:53:21.955285168 -0800 PST
+
+bql> help
+help                              - prints help for the bw console.
+run <file_with_bql_statements>    - quits the console.
+quit                              - quits the console.
+
+bql>
+```
