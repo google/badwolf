@@ -231,7 +231,9 @@ obtained result table and the expected one will both be displayed.
 ## Command: BQL
 
 The `bql` starts a REPL that allows running BQL commands. The REPL can provide
-basic help on usage as shown below.
+basic help on usage as shown below. Currently the REPL has limited support
+for terminal input. BQL statements need to be in a single line and there is
+currently not support for cursor keys neither history of past bql statments.
 
 ```
 $ bw bql
