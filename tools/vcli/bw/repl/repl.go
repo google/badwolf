@@ -32,6 +32,7 @@ import (
 	"github.com/google/badwolf/bql/version"
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/tools/vcli/bw/command"
+	"github.com/google/badwolf/tools/vcli/bw/export"
 	"github.com/google/badwolf/tools/vcli/bw/io"
 	"github.com/google/badwolf/tools/vcli/bw/load"
 )
@@ -94,13 +95,10 @@ func REPL(driver storage.Store, input *os.File, rl readLiner, chanSize, bulkSize
 			fmt.Print(prompt)
 			continue
 		}
-		if strings.HasPrefix(l, "run") {
-			path, cmds, err := runBQLFromFile(ctx, driver, chanSize, l)
-			if err != nil {
-				fmt.Printf("[ERROR] %s\n\n", err)
-			} else {
-				fmt.Printf("Loaded %q and run %d BQL commands successfully\n\n", path, cmds)
-			}
+		if strings.HasPrefix(l, "export") {
+			args := strings.Split("bw "+l, " ")
+			usage := "Wrong syntax\n\n\tload <graph_names_separated_by_commas> <file_path>\n"
+			export.Eval(ctx, usage, args, driver)
 			fmt.Print(prompt)
 			continue
 		}
@@ -108,6 +106,16 @@ func REPL(driver storage.Store, input *os.File, rl readLiner, chanSize, bulkSize
 			args := strings.Split("bw "+l, " ")
 			usage := "Wrong syntax\n\n\tload <file_path> <graph_names_separated_by_commas>\n"
 			load.Eval(ctx, usage, args, driver, bulkSize, builderSize)
+			fmt.Print(prompt)
+			continue
+		}
+		if strings.HasPrefix(l, "run") {
+			path, cmds, err := runBQLFromFile(ctx, driver, chanSize, l)
+			if err != nil {
+				fmt.Printf("[ERROR] %s\n\n", err)
+			} else {
+				fmt.Printf("Loaded %q and run %d BQL commands successfully\n\n", path, cmds)
+			}
 			fmt.Print(prompt)
 			continue
 		}
