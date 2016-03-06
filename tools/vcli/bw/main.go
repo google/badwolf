@@ -32,8 +32,10 @@ var (
 	// drivers contains the registed drivers available for this command line tool.
 	registeredDrivers map[string]common.StoreGenerator
 	// Available flags.
-	driver         = flag.String("driver", "VOLATILE", "The storage driver to use {VOLATILE}.")
-	bqlChannelSize = flag.Int("bql_channel_size", 0, "Internal channel size to use on BQL queries.")
+	driver               = flag.String("driver", "VOLATILE", "The storage driver to use {VOLATILE}.")
+	bqlChannelSize       = flag.Int("bql_channel_size", 0, "Internal channel size to use on BQL queries.")
+	bulkTripleOpSize     = flag.Int("bulk_triple_op_size", 1000, "Number of triples to use in bulk load operations.")
+	bulkTriplBuildersize = flag.Int("bulk_triple_builder_size_in_bytes", 1000, "Maximum size of literals when parsing a triple.")
 	// Add your driver flags below.
 )
 
@@ -50,5 +52,5 @@ func registerDrivers() {
 func main() {
 	flag.Parse()
 	registerDrivers()
-	os.Exit(common.Run(*driver, registeredDrivers, *bqlChannelSize))
+	os.Exit(common.Run(*driver, registeredDrivers, *bqlChannelSize, *bulkTripleOpSize, *bulkTriplBuildersize))
 }

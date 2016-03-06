@@ -58,3 +58,29 @@ func ReadLines(path string) ([]string, error) {
 	}
 	return lines, scanner.Err()
 }
+
+// ProcessLines from a file using the provied call back. The error of the
+// callback will be passed through. Returns the number of processed errors
+// before the error. Returns the line where the error occurred or the total
+// numbers of lines processed.
+func ProcessLines(path string, fp func(line string) error) (int, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return 0, err
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	cnt := 0
+	for scanner.Scan() {
+		l := strings.TrimSpace(scanner.Text())
+		cnt++
+		if len(l) == 0 || strings.Index(l, "#") == 0 {
+			continue
+		}
+		if err := fp(l); err != nil {
+			return cnt, err
+		}
+	}
+	return cnt, scanner.Err()
+}

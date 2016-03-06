@@ -28,6 +28,7 @@ import (
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/tools/vcli/bw/assert"
 	"github.com/google/badwolf/tools/vcli/bw/command"
+	"github.com/google/badwolf/tools/vcli/bw/load"
 	"github.com/google/badwolf/tools/vcli/bw/repl"
 	"github.com/google/badwolf/tools/vcli/bw/run"
 	"github.com/google/badwolf/tools/vcli/bw/version"
@@ -95,9 +96,10 @@ func InitializeDriver(driverName string, drivers map[string]StoreGenerator) (sto
 
 // InitializeCommands intializes the avaialbe commands with the given storage
 // instance.
-func InitializeCommands(driver storage.Store, chanSize int) []*command.Command {
+func InitializeCommands(driver storage.Store, chanSize, bulkTripleOpSize, builderSize int) []*command.Command {
 	return []*command.Command{
 		assert.New(driver, literal.DefaultBuilder(), chanSize),
+		load.New(driver, bulkTripleOpSize, builderSize),
 		run.New(driver, chanSize),
 		repl.New(driver, chanSize),
 		version.New(),
@@ -132,7 +134,7 @@ func Eval(ctx context.Context, args []string, cmds []*command.Command) int {
 }
 
 // Run executes the main of the command line tool.
-func Run(driverName string, drivers map[string]StoreGenerator, chanSize int) int {
+func Run(driverName string, drivers map[string]StoreGenerator, chanSize, bulkTripleOpSize, builderSize int) int {
 	driver, err := InitializeDriver(driverName, drivers)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -145,5 +147,5 @@ func Run(driverName string, drivers map[string]StoreGenerator, chanSize int) int
 		}
 		args = append(args, s)
 	}
-	return Eval(context.Background(), args, InitializeCommands(driver, chanSize))
+	return Eval(context.Background(), args, InitializeCommands(driver, chanSize, bulkTripleOpSize, builderSize))
 }
