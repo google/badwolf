@@ -33,15 +33,16 @@ import (
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/tools/vcli/bw/command"
 	"github.com/google/badwolf/tools/vcli/bw/io"
+	"github.com/google/badwolf/tools/vcli/bw/load"
 )
 
 const prompt = "bql> "
 
 // New create the version command.
-func New(driver storage.Store, chanSize int) *command.Command {
+func New(driver storage.Store, chanSize, bulkSize, builderSize int) *command.Command {
 	return &command.Command{
 		Run: func(ctx context.Context, args []string) int {
-			REPL(driver, os.Stdin, simpleReadLine, chanSize)
+			REPL(driver, os.Stdin, simpleReadLine, chanSize, bulkSize, builderSize)
 			return 0
 		},
 		UsageLine: "bql",
@@ -70,16 +71,21 @@ func simpleReadLine(f *os.File) <-chan string {
 }
 
 // REPL starts a read-evaluation-print-loop to run BQL commands.
-func REPL(driver storage.Store, input *os.File, rl readLiner, chanSize int) int {
+func REPL(driver storage.Store, input *os.File, rl readLiner, chanSize, bulkSize, builderSize int) int {
 	ctx := context.Background()
 	fmt.Printf("Welcome to BadWolf vCli (%d.%d.%d-%s)\n", version.Major, version.Minor, version.Patch, version.Release)
 	fmt.Printf("Using driver %q. Type quit; to exit\n", driver.Name(ctx))
 	fmt.Printf("Session started at %v\n\n", time.Now())
 	defer func() {
-		fmt.Printf("\nThanks for all those BQL queries!\n\n")
+		fmt.Printf("\n\nThanks for all those BQL queries!\n\n")
 	}()
 	fmt.Print(prompt)
-	for l := range rl(input) {
+	for line := range rl(input) {
+		l := strings.TrimSpace(line)
+		if l == "" {
+			fmt.Print(prompt)
+			continue
+		}
 		if strings.HasPrefix(l, "quit") {
 			break
 		}
@@ -98,11 +104,21 @@ func REPL(driver storage.Store, input *os.File, rl readLiner, chanSize int) int 
 			fmt.Print(prompt)
 			continue
 		}
+		if strings.HasPrefix(l, "load") {
+			args := strings.Split("bw "+l, " ")
+			usage := "Wrong syntax\n\n\tload <file_path> <graph_names_separated_by_commas>\n"
+			load.Eval(ctx, usage, args, driver, bulkSize, builderSize)
+			fmt.Print(prompt)
+			continue
+		}
 		table, err := runBQL(ctx, l, driver, chanSize)
 		if err != nil {
 			fmt.Printf("[ERROR] %s\n\n", err)
 		} else {
-			fmt.Println(table.String())
+			if len(table.Bindings()) > 0 {
+				fmt.Println(table.String())
+			}
+			fmt.Println("[OK]")
 		}
 		fmt.Print(prompt)
 	}

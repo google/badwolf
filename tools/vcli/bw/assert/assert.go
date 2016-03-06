@@ -57,12 +57,12 @@ func assertCommand(ctx context.Context, cmd *command.Command, args []string, sto
 	folder := strings.TrimSpace(args[len(args)-1])
 	f, err := os.Open(folder)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to open folder %s\n\n\t%v\n\n", folder, err)
+		fmt.Fprintf(os.Stderr, "[ERROR] Failed to open folder %s\n\n\t%v\n\n", folder, err)
 		return 2
 	}
 	fis, err := f.Readdir(0)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to read folder %s\n\n\t%v\n\n", folder, err)
+		fmt.Fprintf(os.Stderr, "[ERROR] Failed to read folder %s\n\n\t%v\n\n", folder, err)
 		return 2
 	}
 	fmt.Println("-------------------------------------------------------------")

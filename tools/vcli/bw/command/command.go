@@ -52,10 +52,14 @@ func (c *Command) Name() string {
 	return name
 }
 
+// UsageString returns the command usage string..
+func (c *Command) UsageString() string {
+	return fmt.Sprintf("usage:\n\n\t$ badwolf %s\n\n%s\n", c.UsageLine, strings.TrimSpace(c.Long))
+}
+
 // Usage prints the command usage.
 func (c *Command) Usage() int {
-	fmt.Fprintf(os.Stderr, "usage:\n\n\t$ badwolf %s\n\n", c.UsageLine)
-	fmt.Fprintf(os.Stderr, "%s\n", strings.TrimSpace(c.Long))
+	fmt.Fprintf(os.Stderr, c.UsageString())
 	return 0
 }
 

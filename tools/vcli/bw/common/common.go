@@ -101,7 +101,7 @@ func InitializeCommands(driver storage.Store, chanSize, bulkTripleOpSize, builde
 		assert.New(driver, literal.DefaultBuilder(), chanSize),
 		load.New(driver, bulkTripleOpSize, builderSize),
 		run.New(driver, chanSize),
-		repl.New(driver, chanSize),
+		repl.New(driver, chanSize, bulkTripleOpSize, builderSize),
 		version.New(),
 	}
 }

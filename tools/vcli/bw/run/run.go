@@ -51,14 +51,14 @@ sequentially.
 // runCommand runs all the BQL statements available in the file.
 func runCommand(ctx context.Context, cmd *command.Command, args []string, store storage.Store, chanSize int) int {
 	if len(args) < 3 {
-		fmt.Fprintf(os.Stderr, "Missing required file path. ")
+		fmt.Fprintf(os.Stderr, "[ERROR] Missing required file path. ")
 		cmd.Usage()
 		return 2
 	}
 	file := strings.TrimSpace(args[len(args)-1])
 	lines, err := io.GetStatementsFromFile(file)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to read file %s\n\n\t%v\n\n", file, err)
+		fmt.Fprintf(os.Stderr, "[ERROR] Failed to read file %s\n\n\t%v\n\n", file, err)
 		return 2
 	}
 	fmt.Printf("Processing file %s\n\n", args[len(args)-1])
@@ -82,19 +82,19 @@ func runCommand(ctx context.Context, cmd *command.Command, args []string, store 
 func runBQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*table.Table, error) {
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
-		return nil, fmt.Errorf("Failed to initilize a valid BQL parser")
+		return nil, fmt.Errorf("[ERROR] Failed to initilize a valid BQL parser")
 	}
 	stm := &semantic.Statement{}
 	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
-		return nil, fmt.Errorf("Failed to parse BQL statement with error %v", err)
+		return nil, fmt.Errorf("[ERROR] Failed to parse BQL statement with error %v", err)
 	}
 	pln, err := planner.New(ctx, s, stm, chanSize)
 	if err != nil {
-		return nil, fmt.Errorf("Should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
+		return nil, fmt.Errorf("[ERROR] Should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
 	res, err := pln.Excecute(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
+		return nil, fmt.Errorf("[ERROR] Failed to execute BQL statement with error %v", err)
 	}
 	return res, nil
 }

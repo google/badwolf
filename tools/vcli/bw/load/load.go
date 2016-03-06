@@ -45,19 +45,25 @@ loaded data.
 `,
 	}
 	cmd.Run = func(ctx context.Context, args []string) int {
-		return loadCommand(ctx, cmd, args, store, bulkSize, builderSize)
+		return Eval(ctx, cmd.UsageLine+"\n\n"+cmd.Long, args, store, bulkSize, builderSize)
 	}
 	return cmd
 }
 
-func loadCommand(ctx context.Context, cmd *command.Command, args []string, store storage.Store, bulkSize, builderSize int) int {
+// Eval loads the triples in the file against as indicated by the command.
+func Eval(ctx context.Context, usage string, args []string, store storage.Store, bulkSize, builderSize int) int {
 	if len(args) <= 3 {
-		fmt.Fprintf(os.Stderr, "Missing required file path and/or graph names.\n\n")
-		cmd.Usage()
+		fmt.Fprintf(os.Stderr, "[ERROR] Missing required file path and/or graph names.\n\n%s", usage)
 		return 2
 	}
 	graphs, lb := strings.Split(args[len(args)-1], ","), literal.NewBoundedBuilder(builderSize)
 	trplsChan, errChan, doneChan := make(chan *triple.Triple), make(chan error), make(chan bool)
+	defer func() {
+		close(trplsChan)
+		close(errChan)
+		close(doneChan)
+	}()
+
 	path := args[len(args)-2]
 	go storeTriple(ctx, store, graphs, bulkSize, trplsChan, errChan, doneChan)
 	cnt, err := io.ProcessLines(path, func(line string) error {
@@ -68,11 +74,13 @@ func loadCommand(ctx context.Context, cmd *command.Command, args []string, store
 		trplsChan <- t
 		return <-errChan
 	})
-	flush(ctx, graphs, store)
-	close(trplsChan)
-	close(errChan)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to process file %q. Ivalid triple on line %d.", path, cnt)
+		fmt.Fprintf(os.Stderr, "[ERROR] Failed to process file %q. Ivalid triple on line %d. %v\n", path, cnt, err)
+		return 2
+	}
+	doneChan <- true
+	if err := <-errChan; err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] Failed to process file %q. Ivalid triple on line %d. %v\n", path, cnt, err)
 		return 2
 	}
 	fmt.Printf("Successfully processed %d lines from file %q.\nTriples loaded into graphs:\n\t- %s\n", cnt, path, strings.Join(graphs, "\n\t- "))
@@ -102,8 +110,6 @@ func flush(ctx context.Context, graphs []string, store storage.Store) error {
 func storeTriple(ctx context.Context, store storage.Store, graphs []string, bulkSize int, trplChan <-chan *triple.Triple, errChan chan<- error, doneChan <-chan bool) {
 	for {
 		select {
-		case <-doneChan:
-			return
 		case trpl := <-trplChan:
 			if len(workingTrpls) < bulkSize {
 				workingTrpls = append(workingTrpls, trpl)
@@ -113,6 +119,10 @@ func storeTriple(ctx context.Context, store storage.Store, graphs []string, bulk
 				workingTrpls = append(workingTrpls, trpl)
 				errChan <- err
 			}
+		case <-doneChan:
+			err := flush(ctx, graphs, store)
+			errChan <- err
+			return
 		}
 	}
 }
