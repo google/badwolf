@@ -98,7 +98,7 @@ func REPL(driver storage.Store, input *os.File, rl readLiner, chanSize, bulkSize
 		if strings.HasPrefix(l, "export") {
 			args := strings.Split("bw "+l, " ")
 			usage := "Wrong syntax\n\n\tload <graph_names_separated_by_commas> <file_path>\n"
-			export.Eval(ctx, usage, args, driver)
+			export.Eval(ctx, usage, args, driver, bulkSize)
 			fmt.Print(prompt)
 			continue
 		}

@@ -30,7 +30,7 @@ import (
 )
 
 // New creates the help command.
-func New(store storage.Store) *command.Command {
+func New(store storage.Store, bulkSize int) *command.Command {
 	cmd := &command.Command{
 		UsageLine: "export <graph_names_separated_by_commas> <file_path>",
 		Short:     "export triples in bulk from graphs into a file.",
@@ -38,13 +38,13 @@ func New(store storage.Store) *command.Command {
 text file.`,
 	}
 	cmd.Run = func(ctx context.Context, args []string) int {
-		return Eval(ctx, cmd.UsageLine+"\n\n"+cmd.Long, args, store)
+		return Eval(ctx, cmd.UsageLine+"\n\n"+cmd.Long, args, store, bulkSize)
 	}
 	return cmd
 }
 
 // Eval loads the triples in the file against as indicated by the command.
-func Eval(ctx context.Context, usage string, args []string, store storage.Store) int {
+func Eval(ctx context.Context, usage string, args []string, store storage.Store, bulkSize int) int {
 	if len(args) <= 3 {
 		fmt.Fprintf(os.Stderr, "[ERROR] Missing required file path and/or graph names.\n\n%s", usage)
 		return 2
@@ -69,7 +69,7 @@ func Eval(ctx context.Context, usage string, args []string, store storage.Store)
 	cnt := 0
 	var errs []error
 	var mu sync.Mutex
-	chn := make(chan *triple.Triple, 1000)
+	chn := make(chan *triple.Triple, bulkSize)
 	for _, vg := range sgs {
 		go func(g storage.Graph) {
 			err := g.Triples(ctx, chn)

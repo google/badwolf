@@ -100,7 +100,7 @@ func InitializeDriver(driverName string, drivers map[string]StoreGenerator) (sto
 func InitializeCommands(driver storage.Store, chanSize, bulkTripleOpSize, builderSize int) []*command.Command {
 	return []*command.Command{
 		assert.New(driver, literal.DefaultBuilder(), chanSize),
-		export.New(driver),
+		export.New(driver, bulkTripleOpSize),
 		load.New(driver, bulkTripleOpSize, builderSize),
 		run.New(driver, chanSize),
 		repl.New(driver, chanSize, bulkTripleOpSize, builderSize),
