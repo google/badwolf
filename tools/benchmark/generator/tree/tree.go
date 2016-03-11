@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package tree contains the data generator to build the tree bench mark data.
+// Package tree contains the data generator to build the tree benchmark data.
 package tree
 
 import (
