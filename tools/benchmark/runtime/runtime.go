@@ -68,17 +68,19 @@ func RepetitionDurationStats(reps int, f func() error) (time.Duration, int64, er
 // BenchEntry cotains the bench entry id, the function to run, and the number
 // of repetitions to run.
 type BenchEntry struct {
-	ID   string
-	Reps int
-	F    func() error
+	BatteryID string
+	ID        string
+	Reps      int
+	F         func() error
 }
 
 // BenchResult contains the results of running a bench mark.
 type BenchResult struct {
-	ID     string
-	Err    error
-	Mean   time.Duration
-	StdDev int64
+	BatteryID string
+	ID        string
+	Err       error
+	Mean      time.Duration
+	StdDev    int64
 }
 
 // RunBenchmarkBatterySequentially runs all the bench entries and returns the
@@ -88,10 +90,11 @@ func RunBenchmarkBatterySequentially(entries []*BenchEntry) []*BenchResult {
 	for _, entry := range entries {
 		m, d, err := RepetitionDurationStats(entry.Reps, entry.F)
 		res = append(res, &BenchResult{
-			ID:     entry.ID,
-			Err:    err,
-			Mean:   m,
-			StdDev: d,
+			BatteryID: entry.BatteryID,
+			ID:        entry.ID,
+			Err:       err,
+			Mean:      m,
+			StdDev:    d,
 		})
 	}
 	return res
@@ -113,10 +116,11 @@ func RunBenchmarkBatteryConcurrently(entries []*BenchEntry) []*BenchResult {
 			defer mu.Unlock()
 			defer wg.Done()
 			res = append(res, &BenchResult{
-				ID:     entry.ID,
-				Err:    err,
-				Mean:   m,
-				StdDev: d,
+				BatteryID: entry.BatteryID,
+				ID:        entry.ID,
+				Err:       err,
+				Mean:      m,
+				StdDev:    d,
 			})
 		}(entry)
 	}
