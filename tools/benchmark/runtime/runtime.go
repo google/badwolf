@@ -35,11 +35,11 @@ func TrackDuration(f func() error) (time.Duration, error) {
 	return d, err
 }
 
-// DurationStats extracts some duration stats by repeateadly execution and
-// measuring runtime. Retuns the mean and deviation of the run duration of the
-// provided function. If an error is return by the function it will shortcut
+// RepetitionDurationStats extracts some duration stats by repeateadly execution
+// and measuring runtime. Retuns the mean and deviation of the run duration of
+// the provided function. If an error is return by the function it will shortcut
 // the execution and return just the error.
-func DurationStats(reps int, f func() error) (time.Duration, int64, error) {
+func RepetitionDurationStats(reps int, f func() error) (time.Duration, int64, error) {
 	if reps < 1 {
 		return time.Duration(0), 0, fmt.Errorf("repetions need to be %d >= 1", reps)
 	}

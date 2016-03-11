@@ -61,28 +61,28 @@ func TestTrackDuration(t *testing.T) {
 }
 
 func TestDurationStats(t *testing.T) {
-	if _, _, err := DurationStats(0, func() error {
+	if _, _, err := RepetitionDurationStats(0, func() error {
 		return nil
 	}); err == nil {
-		t.Fatalf("DurationStats(0, _) should have failed with invalid repetitions count")
+		t.Fatalf("RepetitionDurationStats(0, _) should have failed with invalid repetitions count")
 	}
 
-	if _, _, err := DurationStats(10, func() error {
+	if _, _, err := RepetitionDurationStats(10, func() error {
 		return errors.New("some random error")
 	}); err == nil {
-		t.Fatalf("DurationStats(_, _) should have failed and propagate the error")
+		t.Fatalf("RepetitionDurationStats(_, _) should have failed and propagate the error")
 	}
 
-	d, dev, err := DurationStats(10, func() error {
+	d, dev, err := RepetitionDurationStats(10, func() error {
 		return nil
 	})
 	if err != nil {
-		t.Fatalf("DurationStats(_, _) should have failed with %v", err)
+		t.Fatalf("RepetitionDurationStats(_, _) should have failed with %v", err)
 	}
 	if got, want := d, time.Second; got != want {
-		t.Fatalf("DurationStats(_, _) faild to compute the right mean; got %d, want %d", got, want)
+		t.Fatalf("RepetitionDurationStats(_, _) faild to compute the right mean; got %d, want %d", got, want)
 	}
 	if got, want := dev, int64(0); got != want {
-		t.Fatalf("DurationStats(_, _) faild to compute the right deviation; got %d, want %d", got, want)
+		t.Fatalf("RepetitionDurationStats(_, _) faild to compute the right deviation; got %d, want %d", got, want)
 	}
 }
