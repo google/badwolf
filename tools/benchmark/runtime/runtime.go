@@ -16,6 +16,7 @@
 package runtime
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"sync"
@@ -40,17 +41,32 @@ func TrackDuration(f func() error) (time.Duration, error) {
 // and measuring runtime. Retuns the mean and deviation of the run duration of
 // the provided function. If an error is return by the function it will shortcut
 // the execution and return just the error.
-func RepetitionDurationStats(reps int, f func() error) (time.Duration, int64, error) {
+func RepetitionDurationStats(reps int, setup, f, teardown func() error) (time.Duration, int64, error) {
 	if reps < 1 {
 		return time.Duration(0), 0, fmt.Errorf("repetions need to be %d >= 1", reps)
 	}
+	if setup == nil {
+		return time.Duration(0), 0, errors.New("setup function is required")
+	}
+	if f == nil {
+		return time.Duration(0), 0, errors.New("benchmark function is required")
+	}
+	if teardown == nil {
+		return time.Duration(0), 0, errors.New("teardown function is required")
+	}
 	var durations []time.Duration
 	for i := 0; i < reps; i++ {
+		if err := setup(); err != nil {
+			return time.Duration(0), 0, err
+		}
 		d, err := TrackDuration(f)
 		if err != nil {
 			return 0, 0, err
 		}
 		durations = append(durations, d)
+		if err := teardown(); err != nil {
+			return time.Duration(0), 0, err
+		}
 	}
 	mean := int64(0)
 	for _, d := range durations {
@@ -71,7 +87,9 @@ type BenchEntry struct {
 	BatteryID string
 	ID        string
 	Reps      int
+	Setup     func() error
 	F         func() error
+	TearDown  func() error
 }
 
 // BenchResult contains the results of running a bench mark.
@@ -88,7 +106,7 @@ type BenchResult struct {
 func RunBenchmarkBatterySequentially(entries []*BenchEntry) []*BenchResult {
 	var res []*BenchResult
 	for _, entry := range entries {
-		m, d, err := RepetitionDurationStats(entry.Reps, entry.F)
+		m, d, err := RepetitionDurationStats(entry.Reps, entry.Setup, entry.F, entry.TearDown)
 		res = append(res, &BenchResult{
 			BatteryID: entry.BatteryID,
 			ID:        entry.ID,
@@ -111,7 +129,7 @@ func RunBenchmarkBatteryConcurrently(entries []*BenchEntry) []*BenchResult {
 	for _, entry := range entries {
 		wg.Add(1)
 		go func(entry *BenchEntry) {
-			m, d, err := RepetitionDurationStats(entry.Reps, entry.F)
+			m, d, err := RepetitionDurationStats(entry.Reps, entry.Setup, entry.F, entry.TearDown)
 			mu.Lock()
 			defer mu.Unlock()
 			defer wg.Done()

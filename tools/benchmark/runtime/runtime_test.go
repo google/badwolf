@@ -61,21 +61,20 @@ func TestTrackDuration(t *testing.T) {
 }
 
 func TestDurationStats(t *testing.T) {
-	if _, _, err := RepetitionDurationStats(0, func() error {
+	nop := func() error {
 		return nil
-	}); err == nil {
+	}
+	if _, _, err := RepetitionDurationStats(0, nop, nop, nop); err == nil {
 		t.Fatalf("RepetitionDurationStats(0, _) should have failed with invalid repetitions count")
 	}
 
-	if _, _, err := RepetitionDurationStats(10, func() error {
+	if _, _, err := RepetitionDurationStats(10, nop, func() error {
 		return errors.New("some random error")
-	}); err == nil {
+	}, nop); err == nil {
 		t.Fatalf("RepetitionDurationStats(_, _) should have failed and propagate the error")
 	}
 
-	d, dev, err := RepetitionDurationStats(10, func() error {
-		return nil
-	})
+	d, dev, err := RepetitionDurationStats(10, nop, nop, nop)
 	if err != nil {
 		t.Fatalf("RepetitionDurationStats(_, _) should have failed with %v", err)
 	}
