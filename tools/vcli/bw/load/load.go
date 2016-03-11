@@ -58,12 +58,6 @@ func Eval(ctx context.Context, usage string, args []string, store storage.Store,
 	}
 	graphs, lb := strings.Split(args[len(args)-1], ","), literal.NewBoundedBuilder(builderSize)
 	trplsChan, errChan, doneChan := make(chan *triple.Triple), make(chan error), make(chan bool)
-	defer func() {
-		close(trplsChan)
-		close(errChan)
-		close(doneChan)
-	}()
-
 	path := args[len(args)-2]
 	go storeTriple(ctx, store, graphs, bulkSize, trplsChan, errChan, doneChan)
 	cnt, err := io.ProcessLines(path, func(line string) error {
