@@ -86,3 +86,24 @@ func TestDurationStats(t *testing.T) {
 		t.Fatalf("RepetitionDurationStats(_, _) faild to compute the right deviation; got %d, want %d", got, want)
 	}
 }
+
+func TestRuncBenchmarkBattery(t *testing.T) {
+	var testData []*BenchEntry
+	for i := 0; i < 1000; i++ {
+		testData = append(testData, &BenchEntry{
+			ID:   "foo",
+			Reps: 10,
+			F: func() error {
+				return nil
+			},
+		})
+	}
+	bes := RunBenchmarkBatterySequentially(testData)
+	if got, want := len(bes), len(testData); got != want {
+		t.Errorf("RunBenchmarkBatterySequentially(_) failed to return the right number of results; got %d, want %d", got, want)
+	}
+	bec := RunBenchmarkBatteryConcurrently(testData)
+	if got, want := len(bec), len(testData); got != want {
+		t.Errorf("RunBenchmarkBatteryConcurrently(_) failed to return the right number of results; got %d, want %d", got, want)
+	}
+}

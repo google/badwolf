@@ -18,6 +18,7 @@ package runtime
 import (
 	"fmt"
 	"math"
+	"sync"
 	"time"
 )
 
@@ -62,4 +63,63 @@ func RepetitionDurationStats(reps int, f func() error) (time.Duration, int64, er
 	}
 	dev = int64(math.Sqrt(float64(dev)))
 	return time.Duration(mean), dev, nil
+}
+
+// BenchEntry cotains the bench entry id, the function to run, and the number
+// of repetitions to run.
+type BenchEntry struct {
+	ID   string
+	Reps int
+	F    func() error
+}
+
+// BenchResult contains the results of running a bench mark.
+type BenchResult struct {
+	ID     string
+	Err    error
+	Mean   time.Duration
+	StdDev int64
+}
+
+// RunBenchmarkBatterySequentially runs all the bench entries and returns the
+// timing results.
+func RunBenchmarkBatterySequentially(entries []*BenchEntry) []*BenchResult {
+	var res []*BenchResult
+	for _, entry := range entries {
+		m, d, err := RepetitionDurationStats(entry.Reps, entry.F)
+		res = append(res, &BenchResult{
+			ID:     entry.ID,
+			Err:    err,
+			Mean:   m,
+			StdDev: d,
+		})
+	}
+	return res
+}
+
+// RunBenchmarkBatteryConcurrently runs all the bench entries and returns the
+// timing results concurrently. The benchmarks will all be run concurrently.
+func RunBenchmarkBatteryConcurrently(entries []*BenchEntry) []*BenchResult {
+	var (
+		mu  sync.Mutex
+		wg  sync.WaitGroup
+		res []*BenchResult
+	)
+	for _, entry := range entries {
+		wg.Add(1)
+		go func(entry *BenchEntry) {
+			m, d, err := RepetitionDurationStats(entry.Reps, entry.F)
+			mu.Lock()
+			defer mu.Unlock()
+			defer wg.Done()
+			res = append(res, &BenchResult{
+				ID:     entry.ID,
+				Err:    err,
+				Mean:   m,
+				StdDev: d,
+			})
+		}(entry)
+	}
+	wg.Wait()
+	return res
 }
