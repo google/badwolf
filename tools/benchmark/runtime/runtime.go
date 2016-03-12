@@ -41,7 +41,7 @@ func TrackDuration(f func() error) (time.Duration, error) {
 // and measuring runtime. Retuns the mean and deviation of the run duration of
 // the provided function. If an error is return by the function it will shortcut
 // the execution and return just the error.
-func RepetitionDurationStats(reps int, setup, f, teardown func() error) (time.Duration, int64, error) {
+func RepetitionDurationStats(reps int, setup, f, teardown func() error) (time.Duration, time.Duration, error) {
 	if reps < 1 {
 		return time.Duration(0), 0, fmt.Errorf("repetions need to be %d >= 1", reps)
 	}
@@ -77,8 +77,8 @@ func RepetitionDurationStats(reps int, setup, f, teardown func() error) (time.Du
 	for _, d := range durations {
 		dev = int64(d)*int64(d) - expSquare
 	}
-	dev = int64(math.Sqrt(float64(dev)))
-	return time.Duration(mean), dev, nil
+	dev = int64(math.Sqrt(math.Abs(float64(dev))))
+	return time.Duration(mean), time.Duration(dev), nil
 }
 
 // BenchEntry cotains the bench entry id, the function to run, and the number
@@ -98,7 +98,7 @@ type BenchResult struct {
 	ID        string
 	Err       error
 	Mean      time.Duration
-	StdDev    int64
+	StdDev    time.Duration
 }
 
 // RunBenchmarkBatterySequentially runs all the bench entries and returns the

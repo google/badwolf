@@ -27,6 +27,7 @@ import (
 
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/tools/vcli/bw/assert"
+	"github.com/google/badwolf/tools/vcli/bw/benchmark"
 	"github.com/google/badwolf/tools/vcli/bw/command"
 	"github.com/google/badwolf/tools/vcli/bw/export"
 	"github.com/google/badwolf/tools/vcli/bw/load"
@@ -66,7 +67,11 @@ func Help(args []string, cmds []*command.Command) int {
 		fmt.Fprintf(os.Stderr, "missing help command. Usage:\n\n\t$ bw help [command]\n\nAvailable help commands\n\n")
 		var usage []string
 		for _, c := range cmds {
-			usage = append(usage, fmt.Sprintf("\t%s\t- %s\n", c.Name(), c.Short))
+			name := c.Name()
+			for i := len(name); i < 12; i++ {
+				name += " "
+			}
+			usage = append(usage, fmt.Sprintf("\t%s\t- %s\n", name, c.Short))
 		}
 		sort.Strings(usage)
 		for _, u := range usage {
@@ -100,6 +105,7 @@ func InitializeDriver(driverName string, drivers map[string]StoreGenerator) (sto
 func InitializeCommands(driver storage.Store, chanSize, bulkTripleOpSize, builderSize int) []*command.Command {
 	return []*command.Command{
 		assert.New(driver, literal.DefaultBuilder(), chanSize),
+		benchmark.New(driver),
 		export.New(driver, bulkTripleOpSize),
 		load.New(driver, bulkTripleOpSize, builderSize),
 		run.New(driver, chanSize),

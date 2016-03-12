@@ -81,7 +81,7 @@ func TestDurationStats(t *testing.T) {
 	if got, want := d, time.Second; got != want {
 		t.Fatalf("RepetitionDurationStats(_, _) faild to compute the right mean; got %d, want %d", got, want)
 	}
-	if got, want := dev, int64(0); got != want {
+	if got, want := dev, time.Duration(0); got != want {
 		t.Fatalf("RepetitionDurationStats(_, _) faild to compute the right deviation; got %d, want %d", got, want)
 	}
 }
