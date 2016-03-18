@@ -47,6 +47,17 @@ a tree or a random graph generator.`,
 
 // runAll executes all the canned benchmarks and prints out the stats.
 func runAll(ctx context.Context, st storage.Store) int {
+	//   - Add non existing triples.        (done)
+	//   - Add triples that already exist.  (todo)
+	//   - Remove non existing triples.     (todo)
+	//   - Remove existing triples.         (todo)
+	//   - BQL tree walking from root.      (todo)
+	//   - BQL random graph hopping.        (todo)
+	//   - BQL sorting.                     (todo)
+	//   - BQL grouping.                    (todo)
+	//   - BQL counting.                    (todo)
+	//   - BQL filter existent              (todo)
+	//   - BQL filter non existent          (todo)
 	return runAddTriples(ctx, st)
 }
 
