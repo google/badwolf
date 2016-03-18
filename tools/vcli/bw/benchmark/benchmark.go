@@ -53,13 +53,22 @@ func runAll(ctx context.Context, st storage.Store) int {
 // runAddTriples executes all the canned benchmarks and prints out the stats.
 func runAddTriples(ctx context.Context, st storage.Store) int {
 	// Add triples.
-	fmt.Print("Creating add triples benchmark... ")
-	bes, err := batteries.AddTriplesBenchmark(ctx, st)
+	fmt.Print("Creating add tree triples benchmark... ")
+	bes, err := batteries.AddTreeTriplesBenchmark(ctx, st)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] %v\n", err)
 		return 2
 	}
-	fmt.Printf("%d entries created\n\n", len(bes))
+	fmt.Printf("%d entries created\n", len(bes))
+
+	fmt.Print("Creating add graph triples benchmark... ")
+	gbes, err := batteries.AddGraphTriplesBenchmark(ctx, st)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] %v\n", err)
+		return 2
+	}
+	bes = append(bes, gbes...)
+	fmt.Printf("%d entries created\n\n", len(gbes))
 
 	fmt.Print("Run add triple benchmark sequentially... ")
 	ts := time.Now()
@@ -72,8 +81,6 @@ func runAddTriples(ctx context.Context, st storage.Store) int {
 	brc := runtime.RunBenchmarkBatteryConcurrently(bes)
 	dc := time.Now().Sub(tc)
 	fmt.Printf("(%v) done\n\n", dc)
-
-	fmt.Printf("Speedup ratio %v\n\n", float64(ds)/float64(dc))
 
 	format := func(br *runtime.BenchResult) string {
 		if br.Err != nil {
