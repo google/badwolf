@@ -49,7 +49,7 @@ a tree or a random graph generator.`,
 func runAll(ctx context.Context, st storage.Store) int {
 	//   - Add non existing triples.        (done)
 	//   - Add triples that already exist.  (todo)
-	//   - Remove non existing triples.     (todo)
+	//   - Remove non existing triples.     (done)
 	//   - Remove existing triples.         (todo)
 	//   - BQL tree walking from root.      (todo)
 	//   - BQL random graph hopping.        (todo)
@@ -58,36 +58,36 @@ func runAll(ctx context.Context, st storage.Store) int {
 	//   - BQL counting.                    (todo)
 	//   - BQL filter existent              (todo)
 	//   - BQL filter non existent          (todo)
-	return runAddTriples(ctx, st)
+
+	var out int
+
+	out += runBattery(ctx, st, "adding unexistent tree triples", batteries.AddTreeTriplesBenchmark)
+	out += runBattery(ctx, st, "adding unexistent graph triples", batteries.AddGraphTriplesBenchmark)
+
+	out += runBattery(ctx, st, "removing unexistent tree triples", batteries.RemoveTreeTriplesBenchmark)
+	out += runBattery(ctx, st, "removing unexistent graph triples", batteries.RemoveGraphTriplesBenchmark)
+
+	return out
 }
 
-// runAddTriples executes all the canned benchmarks and prints out the stats.
-func runAddTriples(ctx context.Context, st storage.Store) int {
+// runBattery executes all the canned benchmarks and prints out the stats.
+func runBattery(ctx context.Context, st storage.Store, name string, f func(context.Context, storage.Store) ([]*runtime.BenchEntry, error)) int {
 	// Add triples.
-	fmt.Print("Creating add tree triples benchmark... ")
-	bes, err := batteries.AddTreeTriplesBenchmark(ctx, st)
+	fmt.Printf("Creating %s triples benchmark... ", name)
+	bes, err := f(ctx, st)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] %v\n", err)
 		return 2
 	}
 	fmt.Printf("%d entries created\n", len(bes))
 
-	fmt.Print("Creating add graph triples benchmark... ")
-	gbes, err := batteries.AddGraphTriplesBenchmark(ctx, st)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] %v\n", err)
-		return 2
-	}
-	bes = append(bes, gbes...)
-	fmt.Printf("%d entries created\n\n", len(gbes))
-
-	fmt.Print("Run add triple benchmark sequentially... ")
+	fmt.Printf("Run %s benchmark sequentially... ", name)
 	ts := time.Now()
 	brs := runtime.RunBenchmarkBatterySequentially(bes)
 	ds := time.Now().Sub(ts)
 	fmt.Printf("(%v) done\n", ds)
 
-	fmt.Print("Run add triple benchmark concurrently... ")
+	fmt.Printf("Run %s benchmark concurrently... ", name)
 	tc := time.Now()
 	brc := runtime.RunBenchmarkBatteryConcurrently(bes)
 	dc := time.Now().Sub(tc)
@@ -97,7 +97,8 @@ func runAddTriples(ctx context.Context, st storage.Store) int {
 		if br.Err != nil {
 			return fmt.Sprintf("%20s - %20s -[ERROR] %v", br.BatteryID, br.ID, br.Err)
 		}
-		return fmt.Sprintf("%20s - %20s - %v/%v", br.BatteryID, br.ID, br.Mean, br.StdDev)
+		tps := float64(br.Triples) / (float64(br.Mean) / float64(time.Second))
+		return fmt.Sprintf("%20s - %20s - %05.2f triples/sec - %v/%v", br.BatteryID, br.ID, tps, br.Mean, br.StdDev)
 	}
 
 	sortAndPrint := func(ss []string) {
@@ -107,7 +108,7 @@ func runAddTriples(ctx context.Context, st storage.Store) int {
 		}
 	}
 
-	fmt.Println("Stats for sequentially run add triple benchmark")
+	fmt.Printf("Stats for sequentially run %s benchmark\n", name)
 	var ress []string
 	for _, br := range brs {
 		ress = append(ress, format(br))
@@ -115,7 +116,7 @@ func runAddTriples(ctx context.Context, st storage.Store) int {
 	sortAndPrint(ress)
 	fmt.Println()
 
-	fmt.Println("Stats for concurrently run add triple benchmark")
+	fmt.Printf("Stats for concurrently run %s benchmark\n", name)
 	var resc []string
 	for _, br := range brc {
 		resc = append(resc, format(br))

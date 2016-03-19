@@ -86,6 +86,7 @@ func RepetitionDurationStats(reps int, setup, f, teardown func() error) (time.Du
 type BenchEntry struct {
 	BatteryID string
 	ID        string
+	Triples   int
 	Reps      int
 	Setup     func() error
 	F         func() error
@@ -96,6 +97,7 @@ type BenchEntry struct {
 type BenchResult struct {
 	BatteryID string
 	ID        string
+	Triples   int
 	Err       error
 	Mean      time.Duration
 	StdDev    time.Duration
@@ -110,6 +112,7 @@ func RunBenchmarkBatterySequentially(entries []*BenchEntry) []*BenchResult {
 		res = append(res, &BenchResult{
 			BatteryID: entry.BatteryID,
 			ID:        entry.ID,
+			Triples:   entry.Triples,
 			Err:       err,
 			Mean:      m,
 			StdDev:    d,
@@ -136,6 +139,7 @@ func RunBenchmarkBatteryConcurrently(entries []*BenchEntry) []*BenchResult {
 			res = append(res, &BenchResult{
 				BatteryID: entry.BatteryID,
 				ID:        entry.ID,
+				Triples:   entry.Triples,
 				Err:       err,
 				Mean:      m,
 				StdDev:    d,
