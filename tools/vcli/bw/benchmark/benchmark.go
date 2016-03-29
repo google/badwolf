@@ -48,9 +48,9 @@ a tree or a random graph generator.`,
 // runAll executes all the canned benchmarks and prints out the stats.
 func runAll(ctx context.Context, st storage.Store) int {
 	//   - Add non existing triples.        (done)
-	//   - Add triples that already exist.  (todo)
+	//   - Add triples that already exist.  (done)
 	//   - Remove non existing triples.     (done)
-	//   - Remove existing triples.         (todo)
+	//   - Remove existing triples.         (done)
 	//   - BQL tree walking from root.      (todo)
 	//   - BQL random graph hopping.        (todo)
 	//   - BQL sorting.                     (todo)
@@ -61,11 +61,21 @@ func runAll(ctx context.Context, st storage.Store) int {
 
 	var out int
 
-	out += runBattery(ctx, st, "adding unexistent tree triples", batteries.AddTreeTriplesBenchmark)
-	out += runBattery(ctx, st, "adding unexistent graph triples", batteries.AddGraphTriplesBenchmark)
+	// Add non existing triples.
+	out += runBattery(ctx, st, "adding unexisting tree triples", batteries.AddTreeTriplesBenchmark)
+	out += runBattery(ctx, st, "adding unexisting graph triples", batteries.AddGraphTriplesBenchmark)
 
-	out += runBattery(ctx, st, "removing unexistent tree triples", batteries.RemoveTreeTriplesBenchmark)
-	out += runBattery(ctx, st, "removing unexistent graph triples", batteries.RemoveGraphTriplesBenchmark)
+	// Add existing triples.
+	out += runBattery(ctx, st, "adding existing tree triples", batteries.AddExistingTreeTriplesBenchmark)
+	out += runBattery(ctx, st, "adding existing graph triples", batteries.AddExistingGraphTriplesBenchmark)
+
+	// Remove non existing triples.
+	out += runBattery(ctx, st, "removing unexisting tree triples", batteries.RemoveTreeTriplesBenchmark)
+	out += runBattery(ctx, st, "removing unexisting graph triples", batteries.RemoveGraphTriplesBenchmark)
+
+	// Remove existing triples.
+	out += runBattery(ctx, st, "removing existing tree triples", batteries.RemoveExistingTreeTriplesBenchmark)
+	out += runBattery(ctx, st, "removing existing graph triples", batteries.RemoveExistingGraphTriplesBenchmark)
 
 	return out
 }
