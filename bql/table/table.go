@@ -155,7 +155,7 @@ func (t *Table) AddBindings(bs []string) {
 // fail, leave the table unmodified, and return an error. The projection only
 // modify the bindings, but does not drop non projected data.
 func (t *Table) ProjectBindings(bs []string) error {
-	if len(t.mbs) == 0 {
+	if len(t.data) == 0 || len(t.mbs) == 0 {
 		return nil
 	}
 	for _, b := range bs {
