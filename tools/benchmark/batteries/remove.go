@@ -165,7 +165,7 @@ func RemoveGraphTriplesBenchmark(ctx context.Context, st storage.Store) ([]*runt
 			gID := fmt.Sprintf("remove_graph_%s_r%d_i%d", gids[i], i, idxReps)
 			data := trplSets[i]
 			bes = append(bes, &runtime.BenchEntry{
-				BatteryID: "Remove non-existent triples",
+				BatteryID: "Remove non existing triples",
 				ID:        fmt.Sprintf("%s, reps=%02d", ids[i], r),
 				Triples:   gSizes[i],
 				Reps:      r,

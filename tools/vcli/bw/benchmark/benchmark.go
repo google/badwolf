@@ -62,16 +62,16 @@ func runAll(ctx context.Context, st storage.Store) int {
 	var out int
 
 	// Add non existing triples.
-	out += runBattery(ctx, st, "adding unexisting tree triples", batteries.AddTreeTriplesBenchmark)
-	out += runBattery(ctx, st, "adding unexisting graph triples", batteries.AddGraphTriplesBenchmark)
+	out += runBattery(ctx, st, "adding non existing tree triples", batteries.AddTreeTriplesBenchmark)
+	out += runBattery(ctx, st, "adding non existing graph triples", batteries.AddGraphTriplesBenchmark)
 
 	// Add existing triples.
 	out += runBattery(ctx, st, "adding existing tree triples", batteries.AddExistingTreeTriplesBenchmark)
 	out += runBattery(ctx, st, "adding existing graph triples", batteries.AddExistingGraphTriplesBenchmark)
 
 	// Remove non existing triples.
-	out += runBattery(ctx, st, "removing unexisting tree triples", batteries.RemoveTreeTriplesBenchmark)
-	out += runBattery(ctx, st, "removing unexisting graph triples", batteries.RemoveGraphTriplesBenchmark)
+	out += runBattery(ctx, st, "removing non existing tree triples", batteries.RemoveTreeTriplesBenchmark)
+	out += runBattery(ctx, st, "removing non existing graph triples", batteries.RemoveGraphTriplesBenchmark)
 
 	// Remove existing triples.
 	out += runBattery(ctx, st, "removing existing tree triples", batteries.RemoveExistingTreeTriplesBenchmark)
