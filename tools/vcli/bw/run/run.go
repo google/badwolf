@@ -64,7 +64,7 @@ func runCommand(ctx context.Context, cmd *command.Command, args []string, store 
 	fmt.Printf("Processing file %s\n\n", args[len(args)-1])
 	for idx, stm := range lines {
 		fmt.Printf("Processing statement (%d/%d):\n%s\n\n", idx+1, len(lines), stm)
-		tbl, err := RunBQL(ctx, stm, store, chanSize)
+		tbl, err := BQL(ctx, stm, store, chanSize)
 		if err != nil {
 			fmt.Printf("[FAIL] %v\n\n", err)
 			continue
@@ -78,8 +78,8 @@ func runCommand(ctx context.Context, cmd *command.Command, args []string, store 
 	return 0
 }
 
-// RunBQL attemps to excecute the provided query against the given store.
-func RunBQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*table.Table, error) {
+// BQL attemps to excecute the provided query against the given store.
+func BQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*table.Table, error) {
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		return nil, fmt.Errorf("[ERROR] Failed to initilize a valid BQL parser")

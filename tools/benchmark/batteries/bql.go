@@ -309,7 +309,7 @@ func BQLTreeGraphWalking(ctx context.Context, st storage.Store, chanSize int) ([
 					},
 					F: func() error {
 						query := fmt.Sprintf(bql, gID)
-						_, err := run.RunBQL(ctx, query, st, chanSize)
+						_, err := run.BQL(ctx, query, st, chanSize)
 						return err
 					},
 					TearDown: func() error {
@@ -370,7 +370,7 @@ func BQLRandomGraphWalking(ctx context.Context, st storage.Store, chanSize int) 
 					},
 					F: func() error {
 						query := fmt.Sprintf(bql, gID)
-						_, err := run.RunBQL(ctx, query, st, chanSize)
+						_, err := run.BQL(ctx, query, st, chanSize)
 						return err
 					},
 					TearDown: func() error {
