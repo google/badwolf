@@ -51,36 +51,35 @@ func runAll(ctx context.Context, st storage.Store, chanSize int) int {
 	//   - Add triples that already exist.  (done)
 	//   - Remove non existing triples.     (done)
 	//   - Remove existing triples.         (done)
-	//   - BQL tree walking from root.      (todo)
-	//   - BQL random graph hopping.        (todo)
-	//   - BQL sorting.                     (todo)
-	//   - BQL grouping.                    (todo)
-	//   - BQL counting.                    (todo)
-	//   - BQL filter existent              (todo)
-	//   - BQL filter non existent          (todo)
+	//   - BQL tree walking from root.      (done)
+	//   - BQL random graph hopping.        (done)
+	//   - BQL sorting.                     (done)
+	//   - BQL grouping.                    (done)
+	//   - BQL counting.                    (bounded by sort and grouping)
+	//   - BQL filter existent              (bounded by sort and grouping)
+	//   - BQL filter non existent          (bounded by sort and grouping)
+	fmt.Printf("DISCLAIMER: Running this benchmarks is expensive. Consider using a machine with at least 3G of RAM.\n\n")
 
 	var out int
+	// Add non existing triples.
+	out += runBattery(ctx, st, "adding non existing tree triples", chanSize, batteries.AddTreeTriplesBenchmark)
+	out += runBattery(ctx, st, "adding non existing graph triples", chanSize, batteries.AddGraphTriplesBenchmark)
 
-	/*
-		// Add non existing triples.
-		out += runBattery(ctx, st, "adding non existing tree triples", batteries.AddTreeTriplesBenchmark)
-		out += runBattery(ctx, st, "adding non existing graph triples", batteries.AddGraphTriplesBenchmark)
+	// Add existing triples.
+	out += runBattery(ctx, st, "adding existing tree triples", chanSize, batteries.AddExistingTreeTriplesBenchmark)
+	out += runBattery(ctx, st, "adding existing graph triples", chanSize, batteries.AddExistingGraphTriplesBenchmark)
 
-		// Add existing triples.
-		out += runBattery(ctx, st, "adding existing tree triples", batteries.AddExistingTreeTriplesBenchmark)
-		out += runBattery(ctx, st, "adding existing graph triples", batteries.AddExistingGraphTriplesBenchmark)
+	// Remove non existing triples.
+	out += runBattery(ctx, st, "removing non existing tree triples", chanSize, batteries.RemoveTreeTriplesBenchmark)
+	out += runBattery(ctx, st, "removing non existing graph triples", chanSize, batteries.RemoveGraphTriplesBenchmark)
 
-		// Remove non existing triples.
-		out += runBattery(ctx, st, "removing non existing tree triples", batteries.RemoveTreeTriplesBenchmark)
-		out += runBattery(ctx, st, "removing non existing graph triples", batteries.RemoveGraphTriplesBenchmark)
-
-		// Remove existing triples.
-		out += runBattery(ctx, st, "removing existing tree triples", batteries.RemoveExistingTreeTriplesBenchmark)
-		out += runBattery(ctx, st, "removing existing graph triples", batteries.RemoveExistingGraphTriplesBenchmark)
-	*/
+	// Remove existing triples.
+	out += runBattery(ctx, st, "removing existing tree triples", chanSize, batteries.RemoveExistingTreeTriplesBenchmark)
+	out += runBattery(ctx, st, "removing existing graph triples", chanSize, batteries.RemoveExistingGraphTriplesBenchmark)
 
 	// BQL graph walking.
 	out += runBattery(ctx, st, "walking the tree graph with BQL", chanSize, batteries.BQLTreeGraphWalking)
+	out += runBattery(ctx, st, "walking the random graph with BQL", chanSize, batteries.BQLRandomGraphWalking)
 	return out
 }
 

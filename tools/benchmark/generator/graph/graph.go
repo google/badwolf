@@ -79,7 +79,7 @@ func (r *randomGraph) newTriple(i, j int) (*triple.Triple, error) {
 func (r *randomGraph) Generate(n int) ([]*triple.Triple, error) {
 	maxEdges := r.nodes * r.nodes
 	if n > maxEdges {
-		return nil, fmt.Errorf("current configuration only allow a max of %d triples", maxEdges)
+		return nil, fmt.Errorf("current configuration only allow a max of %d triples (%d requested)", maxEdges, n)
 	}
 	var trpls []*triple.Triple
 	for _, idx := range rand.Perm(maxEdges)[:n] {
