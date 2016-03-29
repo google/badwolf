@@ -31,10 +31,10 @@ import (
 )
 
 // New create the version command.
-func New(store storage.Store) *command.Command {
+func New(store storage.Store, chanSize int) *command.Command {
 	return &command.Command{
 		Run: func(ctx context.Context, args []string) int {
-			return runAll(ctx, store)
+			return runAll(ctx, store, chanSize)
 		},
 		UsageLine: "benchmark",
 		Short:     "runs a set of precan benchmarks.",
@@ -46,7 +46,7 @@ a tree or a random graph generator.`,
 }
 
 // runAll executes all the canned benchmarks and prints out the stats.
-func runAll(ctx context.Context, st storage.Store) int {
+func runAll(ctx context.Context, st storage.Store, chanSize int) int {
 	//   - Add non existing triples.        (done)
 	//   - Add triples that already exist.  (done)
 	//   - Remove non existing triples.     (done)
@@ -61,30 +61,34 @@ func runAll(ctx context.Context, st storage.Store) int {
 
 	var out int
 
-	// Add non existing triples.
-	out += runBattery(ctx, st, "adding non existing tree triples", batteries.AddTreeTriplesBenchmark)
-	out += runBattery(ctx, st, "adding non existing graph triples", batteries.AddGraphTriplesBenchmark)
+	/*
+		// Add non existing triples.
+		out += runBattery(ctx, st, "adding non existing tree triples", batteries.AddTreeTriplesBenchmark)
+		out += runBattery(ctx, st, "adding non existing graph triples", batteries.AddGraphTriplesBenchmark)
 
-	// Add existing triples.
-	out += runBattery(ctx, st, "adding existing tree triples", batteries.AddExistingTreeTriplesBenchmark)
-	out += runBattery(ctx, st, "adding existing graph triples", batteries.AddExistingGraphTriplesBenchmark)
+		// Add existing triples.
+		out += runBattery(ctx, st, "adding existing tree triples", batteries.AddExistingTreeTriplesBenchmark)
+		out += runBattery(ctx, st, "adding existing graph triples", batteries.AddExistingGraphTriplesBenchmark)
 
-	// Remove non existing triples.
-	out += runBattery(ctx, st, "removing non existing tree triples", batteries.RemoveTreeTriplesBenchmark)
-	out += runBattery(ctx, st, "removing non existing graph triples", batteries.RemoveGraphTriplesBenchmark)
+		// Remove non existing triples.
+		out += runBattery(ctx, st, "removing non existing tree triples", batteries.RemoveTreeTriplesBenchmark)
+		out += runBattery(ctx, st, "removing non existing graph triples", batteries.RemoveGraphTriplesBenchmark)
 
-	// Remove existing triples.
-	out += runBattery(ctx, st, "removing existing tree triples", batteries.RemoveExistingTreeTriplesBenchmark)
-	out += runBattery(ctx, st, "removing existing graph triples", batteries.RemoveExistingGraphTriplesBenchmark)
+		// Remove existing triples.
+		out += runBattery(ctx, st, "removing existing tree triples", batteries.RemoveExistingTreeTriplesBenchmark)
+		out += runBattery(ctx, st, "removing existing graph triples", batteries.RemoveExistingGraphTriplesBenchmark)
+	*/
 
+	// BQL graph walking.
+	out += runBattery(ctx, st, "walking the tree graph with BQL", chanSize, batteries.BQLTreeGraphWalking)
 	return out
 }
 
 // runBattery executes all the canned benchmarks and prints out the stats.
-func runBattery(ctx context.Context, st storage.Store, name string, f func(context.Context, storage.Store) ([]*runtime.BenchEntry, error)) int {
+func runBattery(ctx context.Context, st storage.Store, name string, chanSize int, f func(context.Context, storage.Store, int) ([]*runtime.BenchEntry, error)) int {
 	// Add triples.
 	fmt.Printf("Creating %s triples benchmark... ", name)
-	bes, err := f(ctx, st)
+	bes, err := f(ctx, st, chanSize)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] %v\n", err)
 		return 2

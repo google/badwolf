@@ -24,8 +24,8 @@ import (
 	"golang.org/x/net/context"
 )
 
-// AddTreeTriplesBenchmark creates the benchmark
-func AddTreeTriplesBenchmark(ctx context.Context, st storage.Store) ([]*runtime.BenchEntry, error) {
+// AddTreeTriplesBenchmark creates the benchmark.
+func AddTreeTriplesBenchmark(ctx context.Context, st storage.Store, chanSize int) ([]*runtime.BenchEntry, error) {
 	bFactors := []int{2, 200}
 	sizes := []int{10, 1000, 100000}
 	var trplSets [][]*triple.Triple
@@ -56,7 +56,7 @@ func AddTreeTriplesBenchmark(ctx context.Context, st storage.Store) ([]*runtime.
 			gID := fmt.Sprintf("add_tree_%s_r%d_i%d", gids[i], i, idxReps)
 			data := trplSets[i]
 			bes = append(bes, &runtime.BenchEntry{
-				BatteryID: "Add non-existing triples",
+				BatteryID: "Add non existing triples",
 				ID:        fmt.Sprintf("%s, reps=%02d", ids[i], r),
 				Triples:   gSizes[i],
 				Reps:      r,
@@ -77,8 +77,8 @@ func AddTreeTriplesBenchmark(ctx context.Context, st storage.Store) ([]*runtime.
 	return bes, nil
 }
 
-// AddExistingTreeTriplesBenchmark creates the benchmark
-func AddExistingTreeTriplesBenchmark(ctx context.Context, st storage.Store) ([]*runtime.BenchEntry, error) {
+// AddExistingTreeTriplesBenchmark creates the benchmark.
+func AddExistingTreeTriplesBenchmark(ctx context.Context, st storage.Store, chanSize int) ([]*runtime.BenchEntry, error) {
 	bFactors := []int{2, 200}
 	sizes := []int{10, 1000, 100000}
 	var trplSets [][]*triple.Triple
@@ -133,8 +133,8 @@ func AddExistingTreeTriplesBenchmark(ctx context.Context, st storage.Store) ([]*
 	return bes, nil
 }
 
-// AddGraphTriplesBenchmark creates the benchmark
-func AddGraphTriplesBenchmark(ctx context.Context, st storage.Store) ([]*runtime.BenchEntry, error) {
+// AddGraphTriplesBenchmark creates the benchmark.
+func AddGraphTriplesBenchmark(ctx context.Context, st storage.Store, chanSize int) ([]*runtime.BenchEntry, error) {
 	nodes := []int{317, 1000}
 	sizes := []int{10, 1000, 100000}
 	var trplSets [][]*triple.Triple
@@ -165,7 +165,7 @@ func AddGraphTriplesBenchmark(ctx context.Context, st storage.Store) ([]*runtime
 			gID := fmt.Sprintf("add_graph_%s_r%d_i%d", gids[i], i, idxReps)
 			data := trplSets[i]
 			bes = append(bes, &runtime.BenchEntry{
-				BatteryID: "Add non-existing triples",
+				BatteryID: "Add non existing triples",
 				ID:        fmt.Sprintf("%s, reps=%02d", ids[i], r),
 				Triples:   gSizes[i],
 				Reps:      r,
@@ -186,8 +186,8 @@ func AddGraphTriplesBenchmark(ctx context.Context, st storage.Store) ([]*runtime
 	return bes, nil
 }
 
-// AddExistingGraphTriplesBenchmark creates the benchmark
-func AddExistingGraphTriplesBenchmark(ctx context.Context, st storage.Store) ([]*runtime.BenchEntry, error) {
+// AddExistingGraphTriplesBenchmark creates the benchmark.
+func AddExistingGraphTriplesBenchmark(ctx context.Context, st storage.Store, chanSize int) ([]*runtime.BenchEntry, error) {
 	nodes := []int{317, 1000}
 	sizes := []int{10, 1000, 100000}
 	var trplSets [][]*triple.Triple
