@@ -278,6 +278,10 @@ run 10 times and the the average and standard deviation of the time spend to
 run the operation is computed. Also, the benchmark runner computes an
 approximation of how many triples per second were processed.
 
+Each benchmark battery is run twice, sequentially and concurrently. The goal is
+to also measure the impact of concurrent operations on the driver. Currently
+the command does not allow you to choose any of the parameters used.
+
 Below there is an example of how to run the benchmarks against the default
 in memory driver.
 
