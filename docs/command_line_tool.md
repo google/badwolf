@@ -252,10 +252,10 @@ bql>
 ## Command: Benchmark
 
 The `benchmark` commands will run a battery of tests to collect timing measures
-against the chosen backend. The benchmarks focus on:
+against the chosen backend. The benchmarks focus on performance of:
 
-1. performance of triples addition to a graph
-2. removal of triples from a graph
+1. Adding triples to a graph.
+2. Removing triples from a graph.
 3. BQL statements to bound backend performance.
 
 All this benchmarks run against synthetic data using two graph generators:
