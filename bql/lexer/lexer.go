@@ -601,14 +601,16 @@ func lexNode(l *lexer) stateFn {
 // lexPredicateOrLiteral tries to lex a predicate or a literal out of the input.
 func lexPredicateOrLiteral(l *lexer) stateFn {
 	text := l.input[l.pos:]
-	if strings.Contains(text, anchor) {
+	// Fix issue 39 (https://github.com/google/badwolf/issues/39)
+	pIdx, lIdx := strings.Index(text, "\"@["), strings.Index(text, "\"^^type:")
+	if pIdx < 0 && lIdx < 0 {
+		l.emitError("failed to parse predicate or literal for opening \" delimiter")
+		return nil
+	}
+	if pIdx > 0 && (lIdx < 0 || pIdx < lIdx) {
 		return lexPredicate
 	}
-	if strings.Contains(text, literalType) {
-		return lexLiteral
-	}
-	l.emitError("failed to parse predicate or literal for opening \" delimiter")
-	return nil
+	return lexLiteral
 }
 
 // lexPredicate lexes a predicicate of out of the input.

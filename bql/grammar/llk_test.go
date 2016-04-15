@@ -66,3 +66,112 @@ func TestNonEmptyInputLLk(t *testing.T) {
 		t.Errorf("LLk.Peek(1): should return ItemEOF at the end of input instead of %s", tkn.Type)
 	}
 }
+
+// Issue 39 (https://github.com/google/badwolf/issues/39)
+func TestTripleInputLLK(t *testing.T) {
+	triple := `/room<000> "named"@[] "Hallway"^^type:text`
+	l := NewLLk(triple, 1)
+	if tkn := l.Current(); tkn.Type != lexer.ItemNode || tkn.Text != "/room<000>" {
+		t.Errorf("LLk.Current: should always return ItemNode token with text /room<000> but got %v", tkn)
+	}
+	l.Consume(l.Current().Type)
+	if tkn := l.Current(); tkn.Type != lexer.ItemPredicate || tkn.Text != `"named"@[]` {
+		t.Errorf(`LLk.Current: should always return ItemPredicate token with text "named"@[] but got %v`, tkn)
+	}
+	l.Consume(l.Current().Type)
+	if tkn := l.Current(); tkn.Type != lexer.ItemLiteral || tkn.Text != `"Hallway"^^type:text` {
+		t.Errorf(`LLk.Current: should always return ItemNode token with text Hallway"^^type:text but got %v`, tkn)
+	}
+}
+
+// Issue 39 (https://github.com/google/badwolf/issues/39)
+func TestStatementInputLLK(t *testing.T) {
+	statement := `
+		create graph ?world;
+
+		insert data into ?world {
+		  /room<000> "named"@[] "Hallway"^^type:text.
+		  /room<000> "connects_to"@[] /room<001>
+		};`
+	wantTokens := []lexer.Token{
+		{
+			Type: lexer.ItemCreate,
+			Text: "create",
+		},
+		{
+			Type: lexer.ItemGraph,
+			Text: "graph",
+		},
+		{
+			Type: lexer.ItemBinding,
+			Text: "?world",
+		},
+		{
+			Type: lexer.ItemSemicolon,
+			Text: ";",
+		},
+		{
+			Type: lexer.ItemInsert,
+			Text: "insert",
+		},
+		{
+			Type: lexer.ItemData,
+			Text: "data",
+		},
+		{
+			Type: lexer.ItemInto,
+			Text: "into",
+		},
+		{
+			Type: lexer.ItemBinding,
+			Text: "?world",
+		},
+		{
+			Type: lexer.ItemLBracket,
+			Text: "{",
+		},
+		{
+			Type: lexer.ItemNode,
+			Text: "/room<000>",
+		},
+		{
+			Type: lexer.ItemPredicate,
+			Text: `"named"@[]`,
+		},
+		{
+			Type: lexer.ItemLiteral,
+			Text: `"Hallway"^^type:text`,
+		},
+		{
+			Type: lexer.ItemDot,
+			Text: ".",
+		},
+		{
+			Type: lexer.ItemNode,
+			Text: "/room<000>",
+		},
+		{
+			Type: lexer.ItemPredicate,
+			Text: `"connects_to"@[]`,
+		},
+		{
+			Type: lexer.ItemNode,
+			Text: "/room<001>",
+		},
+		{
+			Type: lexer.ItemRBracket,
+			Text: "}",
+		},
+		{
+			Type: lexer.ItemSemicolon,
+			Text: ";",
+		},
+	}
+	l := NewLLk(statement, 1)
+	for _, want := range wantTokens {
+		if tkn := l.Current(); tkn.Type != want.Type || tkn.Text != want.Text {
+			t.Errorf("LLk.Current: Found the wrong tokent; want %v, got %v", tkn, want)
+		}
+		l.Consume(l.Current().Type)
+	}
+}

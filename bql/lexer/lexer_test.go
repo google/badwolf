@@ -145,6 +145,16 @@ func TestIndividualTokens(t *testing.T) {
 					Text:         `"p1"@[,,]`,
 					ErrorMessage: "[lexer:0:9] predicate bounds should only have one , to separate bounds"},
 				{Type: ItemEOF}}},
+		{`/room<000> "named"@[] "Hallway"^^type:text. /room<000> "connects_to"@[] /room<001>`,
+			[]Token{
+				{Type: ItemNode, Text: `/room<000>`},
+				{Type: ItemPredicate, Text: `"named"@[]`},
+				{Type: ItemLiteral, Text: `"Hallway"^^type:text`},
+				{Type: ItemDot, Text: `.`},
+				{Type: ItemNode, Text: `/room<000>`},
+				{Type: ItemPredicate, Text: `"connects_to"@[]`},
+				{Type: ItemNode, Text: `/room<001>`},
+				{Type: ItemEOF}}},
 	}
 
 	for _, test := range table {

@@ -108,6 +108,11 @@ func TestAcceptByParse(t *testing.T) {
 		// Drop graphs.
 		`drop graph ?a;`,
 		`drop graph ?a, ?b, ?c;`,
+		// Issue 39 (https://github.com/google/badwolf/issues/39)
+		`insert data into ?world {/room<000> "named"@[] "Hallway"^^type:text.
+		                          /room<000> "connects_to"@[] /room<001>};`,
+		`delete data from ?world {/room<000> "named"@[] "Hallway"^^type:text.
+		                          /room<000> "connects_to"@[] /room<001>};`,
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
