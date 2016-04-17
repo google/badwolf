@@ -32,10 +32,14 @@ import (
 	"github.com/google/badwolf/triple/predicate"
 )
 
-var testTextTriples []string
+var (
+	testImmutatbleTriples []string
+	// Added to test Issue 40 (https://github.com/google/badwolf/issues/40)
+	testTemporalTriples []string
+)
 
 func init() {
-	testTextTriples = []string{
+	testImmutatbleTriples = []string{
 		"/u<john>\t\"knows\"@[]\t/u<mary>",
 		"/u<john>\t\"knows\"@[]\t/u<peter>",
 		"/u<john>\t\"knows\"@[]\t/u<alice>",
@@ -43,11 +47,17 @@ func init() {
 		"/u<mary>\t\"knows\"@[]\t/u<kim>",
 		"/u<mary>\t\"knows\"@[]\t/u<alice>",
 	}
+	testTemporalTriples = []string{
+		// Issue 40 triples.
+		"/item/book<000>\t\"in\"@[2016-04-10T4:21:00.000000000Z]\t/room<Hallway>",
+		"/item/book<000>\t\"in\"@[2016-04-10T4:23:00.000000000Z]\t/room<Kitchen>",
+		"/item/book<000>\t\"in\"@[2016-04-10T4:25:00.000000000Z]\t/room<Bedroom>",
+	}
 }
 
-func getTestTriples(t *testing.T) []*triple.Triple {
+func getTestTriples(t *testing.T, trpls []string) []*triple.Triple {
 	var ts []*triple.Triple
-	for _, s := range testTextTriples {
+	for _, s := range trpls {
 		trpl, err := triple.Parse(s, literal.DefaultBuilder())
 		if err != nil {
 			t.Fatalf("triple.Parse failed to parse valid triple %s with error %v", s, err)
@@ -58,8 +68,8 @@ func getTestTriples(t *testing.T) []*triple.Triple {
 	return ts
 }
 
-func getTestStore(t *testing.T) storage.Store {
-	ts, ctx := getTestTriples(t), context.Background()
+func getTestStore(t *testing.T, trpls []string) storage.Store {
+	ts, ctx := getTestTriples(t, trpls), context.Background()
 	s := memory.NewStore()
 	g, err := s.NewGraph(ctx, "?test")
 	if err != nil {
@@ -78,34 +88,68 @@ func TestDataAccessSimpleFetch(t *testing.T) {
 		PBinding: "?p",
 		OBinding: "?o",
 	}
-	g, err := getTestStore(t).Graph(ctx, "?test")
+	g, err := getTestStore(t, testImmutatbleTriples).Graph(ctx, "?test")
 	if err != nil {
 		t.Fatal(err)
 	}
 	tbl, err := simpleFetch(ctx, []storage.Graph{g}, cls, &storage.LookupOptions{}, 0)
 	if err != nil {
-		t.Errorf("addTriple failed with errorf %v", err)
+		t.Errorf("simpleFetch failed with errorf %v", err)
 	}
 	if got, want := len(tbl.Bindings()), len(testBindings); got != want {
-		t.Errorf("addTriples returned a table with wrong bindings set; got %v, want %v", got, want)
+		t.Errorf("simpleFetch returned a table with wrong bindings set; got %v, want %v", got, want)
 	}
-	if got, want := tbl.NumRows(), len(testTextTriples); got != want {
-		t.Errorf("addTriples returned the wrong number of rows; got %d, want %d", got, want)
+	if got, want := tbl.NumRows(), len(testImmutatbleTriples); got != want {
+		t.Errorf("simpleFetch returned the wrong number of rows; got %d, want %d", got, want)
 	}
 	for _, r := range tbl.Rows() {
 		if got, want := len(r), len(testBindings); got != want {
-			t.Errorf("addTriples returned row %v with the incorrect number of bindings; got %d, want %d", r, got, want)
+			t.Errorf("simpleFetch returned row %v with the incorrect number of bindings; got %d, want %d", r, got, want)
 		}
 	}
 }
 
-func TestDataAccessFeasibleSimpleExist(t *testing.T) {
-	ctx := context.Background()
-	g, err := getTestStore(t).Graph(ctx, "?test")
+// Issue 40 (https://github.com/google/badwolf/issues/40)
+func TestDataAccessSimpleFetchIssue40(t *testing.T) {
+	testBindings, ctx := []string{"?itme", "?t"}, context.Background()
+	n, err := node.Parse("/room<Bedroom>")
+	if err != nil {
+		t.Fatalf("node.Parse failed to parse \"/room<Bedroom>\", %v", err)
+	}
+	cls := &semantic.GraphClause{
+		SBinding:       "?item",
+		PID:            "in",
+		PAnchorBinding: "?t",
+		O:              triple.NewNodeObject(n),
+	}
+	g, err := getTestStore(t, testTemporalTriples).Graph(ctx, "?test")
 	if err != nil {
 		t.Fatal(err)
 	}
-	tt := getTestTriples(t)
+
+	tbl, err := simpleFetch(ctx, []storage.Graph{g}, cls, &storage.LookupOptions{}, 0)
+	if err != nil {
+		t.Errorf("simpleFetch failed with errorf %v", err)
+	}
+	if got, want := len(tbl.Bindings()), len(testBindings); got != want {
+		t.Errorf("simpleFetch returned a table with wrong bindings set; got %v, want %v", got, want)
+	}
+	if got, want := tbl.NumRows(), 1; got != want {
+		t.Errorf("simpleFetch returned the wrong number of rows; got %d, want %d\n%s", got, want, tbl)
+	}
+	for _, r := range tbl.Rows() {
+		if got, want := len(r), len(testBindings); got != want {
+			t.Errorf("simpleFetch returned row %v with the incorrect number of bindings; got %d, want %d", r, got, want)
+		}
+	}
+}
+func TestDataAccessFeasibleSimpleExist(t *testing.T) {
+	ctx := context.Background()
+	g, err := getTestStore(t, testImmutatbleTriples).Graph(ctx, "?test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tt := getTestTriples(t, testImmutatbleTriples)
 	s, p, o := tt[0].Subject(), tt[0].Predicate(), tt[0].Object()
 	clsOK := &semantic.GraphClause{
 		S: s,
@@ -126,7 +170,7 @@ func TestDataAccessFeasibleSimpleExist(t *testing.T) {
 
 func TestDataAccessUnfeasibleSimpleExist(t *testing.T) {
 	ctx := context.Background()
-	g, err := getTestStore(t).Graph(ctx, "?test")
+	g, err := getTestStore(t, testImmutatbleTriples).Graph(ctx, "?test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +178,7 @@ func TestDataAccessUnfeasibleSimpleExist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tt := getTestTriples(t)
+	tt := getTestTriples(t, testImmutatbleTriples)
 	s, p, o := unknown, tt[0].Predicate(), tt[0].Object()
 	clsNotOK := &semantic.GraphClause{
 		S: s,
@@ -165,7 +209,7 @@ func TestDataAccessAddTriples(t *testing.T) {
 		PBinding: "?p",
 		OBinding: "?o",
 	}
-	g, err := getTestStore(t).Graph(ctx, "?test")
+	g, err := getTestStore(t, testImmutatbleTriples).Graph(ctx, "?test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -189,7 +233,7 @@ func TestDataAccessAddTriples(t *testing.T) {
 		}
 	}()
 	wg.Wait()
-	if got, want := tbl.NumRows(), len(testTextTriples); got != want {
+	if got, want := tbl.NumRows(), len(testImmutatbleTriples); got != want {
 		t.Errorf("addTriples returned the wrong number of rows; got %d, want %d", got, want)
 	}
 	for _, r := range tbl.Rows() {

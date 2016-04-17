@@ -37,17 +37,17 @@ func insertTest(t *testing.T) {
                                /_<foo> "bar"@[] "yeah"^^type:text};`
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
 	}
 	stm := &semantic.Statement{}
-	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
+	if err = p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
 	pln, err := New(ctx, memory.DefaultStore, stm, 0)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
-	if _, err := pln.Excecute(ctx); err != nil {
+	if _, err = pln.Excecute(ctx); err != nil {
 		t.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
 	}
 	g, err := memory.DefaultStore.Graph(ctx, "?a")
@@ -76,17 +76,17 @@ func deleteTest(t *testing.T) {
                                /_<foo> "bar"@[] "yeah"^^type:text};`
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
 	}
 	stm := &semantic.Statement{}
-	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
+	if err = p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
 	pln, err := New(ctx, memory.DefaultStore, stm, 0)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
-	if _, err := pln.Excecute(ctx); err != nil {
+	if _, err = pln.Excecute(ctx); err != nil {
 		t.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
 	}
 	g, err := memory.DefaultStore.Graph(ctx, "?a")
@@ -147,10 +147,10 @@ func TestPlannerCreateGraph(t *testing.T) {
 	bql := `create graph ?foo, ?bar;`
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
 	}
 	stm := &semantic.Statement{}
-	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
+	if err = p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
 	pln, err := New(ctx, memory.DefaultStore, stm, 0)
@@ -181,7 +181,7 @@ func TestPlannerDropGraph(t *testing.T) {
 		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
 	}
 	stm := &semantic.Statement{}
-	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
+	if err = p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
 	pln, err := New(ctx, memory.DefaultStore, stm, 0)
@@ -199,24 +199,40 @@ func TestPlannerDropGraph(t *testing.T) {
 	}
 }
 
-const testTriples = `
-	/u<joe> "parent_of"@[] /u<mary>
-  /u<joe> "parent_of"@[] /u<peter>
-  /u<peter> "parent_of"@[] /u<john>
-  /u<peter> "parent_of"@[] /u<eve>
-	/u<peter> "bought"@[2016-01-01T00:00:00-08:00] /c<mini>
-	/u<peter> "bought"@[2016-02-01T00:00:00-08:00] /c<model s>
-	/u<peter> "bought"@[2016-03-01T00:00:00-08:00] /c<model x>
-	/u<peter> "bought"@[2016-04-01T00:00:00-08:00] /c<model y>
-	/c<mini> "is_a"@[] /t<car>
-	/c<model s> "is_a"@[] /t<car>
-	/c<model x> "is_a"@[] /t<car>
-	/c<model y> "is_a"@[] /t<car>
-	/l<barcelona> "predicate"@[] "turned"@[2016-01-01T00:00:00-08:00]
-	/l<barcelona> "predicate"@[] "turned"@[2016-02-01T00:00:00-08:00]
-	/l<barcelona> "predicate"@[] "turned"@[2016-03-01T00:00:00-08:00]
-	/l<barcelona> "predicate"@[] "turned"@[2016-04-01T00:00:00-08:00]
-`
+const (
+	originalTriples = `/u<joe> "parent_of"@[] /u<mary>
+  	 /u<joe> "parent_of"@[] /u<peter>
+	   /u<peter> "parent_of"@[] /u<john>
+	   /u<peter> "parent_of"@[] /u<eve>
+		 /u<peter> "bought"@[2016-01-01T00:00:00-08:00] /c<mini>
+		 /u<peter> "bought"@[2016-02-01T00:00:00-08:00] /c<model s>
+		 /u<peter> "bought"@[2016-03-01T00:00:00-08:00] /c<model x>
+		 /u<peter> "bought"@[2016-04-01T00:00:00-08:00] /c<model y>
+		 /c<mini> "is_a"@[] /t<car>
+		 /c<model s> "is_a"@[] /t<car>
+		 /c<model x> "is_a"@[] /t<car>
+		 /c<model y> "is_a"@[] /t<car>
+		 /l<barcelona> "predicate"@[] "turned"@[2016-01-01T00:00:00-08:00]
+		 /l<barcelona> "predicate"@[] "turned"@[2016-02-01T00:00:00-08:00]
+		 /l<barcelona> "predicate"@[] "turned"@[2016-03-01T00:00:00-08:00]
+		 /l<barcelona> "predicate"@[] "turned"@[2016-04-01T00:00:00-08:00]
+	`
+
+	tripleFromIssue40 = `/room<Hallway> "connects_to"@[] /room<Kitchen>
+	   /room<Kitchen> "connects_to"@[] /room<Hallway>
+		 /room<Kitchen> "connects_to"@[] /room<Bathroom>
+		 /room<Kitchen> "connects_to"@[] /room<Bedroom>
+		 /room<Bathroom> "connects_to"@[] /room<Kitchen>
+		 /room<Bedroom> "connects_to"@[] /room<Kitchen>
+		 /room<Bedroom> "connects_to"@[] /room<Fire Escape>
+		 /room<Fire Escape> "connects_to"@[] /room<Kitchen>
+		 /item/book<000> "in"@[2016-04-10T4:21:00.000000000Z] /room<Hallway>
+		 /item/book<000> "in"@[2016-04-10T4:23:00.000000000Z] /room<Kitchen>
+		 /item/book<000> "in"@[2016-04-10T4:25:00.000000000Z] /room<Bedroom>
+	`
+
+	testTriples = originalTriples + tripleFromIssue40
+)
 
 func populateTestStore(t *testing.T) storage.Store {
 	s, ctx := memory.NewStore(), context.Background()
@@ -238,7 +254,7 @@ func populateTestStore(t *testing.T) storage.Store {
 	for _ = range trpls {
 		cnt++
 	}
-	if got, want := cnt, len(strings.Split(testTriples, "\n"))-2; got != want {
+	if got, want := cnt, len(strings.Split(testTriples, "\n"))-1; got != want {
 		t.Fatalf("Failed to import all test triples; got %v, want %v", got, want)
 	}
 	return s
@@ -254,7 +270,7 @@ func TestPlannerQuery(t *testing.T) {
 		{
 			q:    `select ?s, ?p, ?o from ?test where {?s ?p ?o};`,
 			nbs:  3,
-			nrws: len(strings.Split(testTriples, "\n")) - 2,
+			nrws: len(strings.Split(testTriples, "\n")) - 1,
 		},
 		{
 			q:    `select ?p, ?o from ?test where {/u<joe> ?p ?o};`,
@@ -309,32 +325,32 @@ func TestPlannerQuery(t *testing.T) {
 		{
 			q:    `select ?s, ?p, ?o, ?k, ?l, ?m from ?test where {?s ?p ?o. ?k ?l ?m};`,
 			nbs:  6,
-			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
+			nrws: (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
 		},
 		{
 			q:    `select ?s, ?p, ?o, ?k, ?l from ?test where {?s ?p ?o. ?k ?l ?m};`,
 			nbs:  5,
-			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
+			nrws: (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
 		},
 		{
 			q:    `select ?s, ?p, ?o, ?k from ?test where {?s ?p ?o. ?k ?l ?m};`,
 			nbs:  4,
-			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
+			nrws: (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
 		},
 		{
 			q:    `select ?s, ?p, ?o from ?test where {?s ?p ?o. ?k ?l ?m};`,
 			nbs:  3,
-			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
+			nrws: (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
 		},
 		{
 			q:    `select ?s, ?p from ?test where {?s ?p ?o. ?k ?l ?m};`,
 			nbs:  2,
-			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
+			nrws: (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
 		},
 		{
 			q:    `select ?s from ?test where {?s ?p ?o. ?k ?l ?m};`,
 			nbs:  1,
-			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
+			nrws: (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
 		},
 		{
 			q:    `select ?o from ?test where {/u<peter> "bought"@[,] ?o};`,
@@ -389,7 +405,7 @@ func TestPlannerQuery(t *testing.T) {
 		{
 			q:    `select ?s, ?p, ?o, ?k, ?l, ?m from ?test where {?s ?p ?o. ?k ?l ?m} order by ?s, ?p, ?o, ?k, ?l, ?m;`,
 			nbs:  6,
-			nrws: (len(strings.Split(testTriples, "\n")) - 2) * (len(strings.Split(testTriples, "\n")) - 2),
+			nrws: (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
 		},
 		{
 			q:    `select ?s, ?p, ?o, ?k, ?l, ?m from ?test where {?s ?p ?o. ?k ?l ?m} order by ?s, ?p, ?o, ?k, ?l, ?m  having not(?s = ?s);`,
@@ -418,6 +434,11 @@ func TestPlannerQuery(t *testing.T) {
 		},
 		{
 			q:    `SELECT ?grandparent, COUNT(?grandparent) AS ?number_of_grandchildren FROM ?test WHERE{ ?gp ID ?grandparent "parent_of"@[] ?c . ?c "parent_of"@[] ?gc ID ?gc } GROUP BY ?grandparent;`,
+			nbs:  2,
+			nrws: 1,
+		},
+		{ // Issue 40 (https://github.com/google/badwolf/issues/40)
+			q:    `SELECT ?item, ?t FROM ?test WHERE {?item "in"@[?t] /room<Bedroom>};`,
 			nbs:  2,
 			nrws: 1,
 		},

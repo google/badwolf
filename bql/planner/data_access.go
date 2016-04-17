@@ -278,19 +278,12 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 			var (
 				tErr error
 				aErr error
-				wg   sync.WaitGroup
 			)
-			wg.Add(2)
 			ts := make(chan *triple.Triple, chanSize)
 			go func() {
-				defer wg.Done()
 				tErr = g.TriplesForSubject(ctx, s, lo, ts)
 			}()
-			go func() {
-				defer wg.Done()
-				aErr = addTriples(ts, cls, tbl)
-			}()
-			wg.Wait()
+			aErr = addTriples(ts, cls, tbl)
 			if tErr != nil {
 				return nil, tErr
 			}
@@ -306,19 +299,12 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 			var (
 				tErr error
 				aErr error
-				wg   sync.WaitGroup
 			)
-			wg.Add(2)
 			ts := make(chan *triple.Triple, chanSize)
 			go func() {
-				defer wg.Done()
 				tErr = g.TriplesForPredicate(ctx, p, lo, ts)
 			}()
-			go func() {
-				defer wg.Done()
-				aErr = addTriples(ts, cls, tbl)
-			}()
-			wg.Wait()
+			aErr = addTriples(ts, cls, tbl)
 			if tErr != nil {
 				return nil, tErr
 			}
@@ -331,22 +317,12 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	if s == nil && p == nil && o != nil {
 		// O request.
 		for _, g := range gs {
-			var (
-				tErr error
-				aErr error
-				wg   sync.WaitGroup
-			)
-			wg.Add(2)
+			var tErr error
 			ts := make(chan *triple.Triple, chanSize)
 			go func() {
-				defer wg.Done()
 				tErr = g.TriplesForObject(ctx, o, lo, ts)
 			}()
-			go func() {
-				defer wg.Done()
-				aErr = addTriples(ts, cls, tbl)
-			}()
-			wg.Wait()
+			aErr := addTriples(ts, cls, tbl)
 			if tErr != nil {
 				return nil, tErr
 			}
@@ -362,19 +338,12 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 			var (
 				tErr error
 				aErr error
-				wg   sync.WaitGroup
 			)
-			wg.Add(2)
 			ts := make(chan *triple.Triple, chanSize)
 			go func() {
-				defer wg.Done()
 				tErr = g.Triples(ctx, ts)
 			}()
-			go func() {
-				defer wg.Done()
-				aErr = addTriples(ts, cls, tbl)
-			}()
-			wg.Wait()
+			aErr = addTriples(ts, cls, tbl)
 			if tErr != nil {
 				return nil, tErr
 			}
@@ -393,16 +362,15 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 // bindings to set.
 func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.Table) error {
 	for t := range ts {
-		r, err := tripleToRow(t, cls)
-		if err != nil {
-			return err
-		}
 		if cls.PID != "" {
 			// The triples need to be filtered.
-			if t.Predicate().ID() != predicate.ID(cls.PID) {
+			if string(t.Predicate().ID()) != cls.PID {
 				continue
 			}
-			if cls.PTemporal && t.Predicate().Type() == predicate.Temporal {
+			if cls.PTemporal {
+				if t.Predicate().Type() != predicate.Temporal {
+					continue
+				}
 				ta, err := t.Predicate().TimeAnchor()
 				if err != nil {
 					return fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
@@ -419,10 +387,13 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 		if cls.OID != "" {
 			if p, err := t.Object().Predicate(); err == nil {
 				// The triples need to be filtered.
-				if p.ID() != predicate.ID(cls.OID) {
+				if string(p.ID()) != cls.OID {
 					continue
 				}
-				if cls.OTemporal && p.Type() == predicate.Temporal {
+				if cls.OTemporal {
+					if p.Type() != predicate.Temporal {
+						continue
+					}
 					ta, err := p.TimeAnchor()
 					if err != nil {
 						return fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
@@ -436,6 +407,10 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 					}
 				}
 			}
+		}
+		r, err := tripleToRow(t, cls)
+		if err != nil {
+			return err
 		}
 		if r != nil {
 			tbl.AddRow(r)
