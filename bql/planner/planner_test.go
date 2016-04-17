@@ -201,35 +201,35 @@ func TestPlannerDropGraph(t *testing.T) {
 
 const (
 	originalTriples = `/u<joe> "parent_of"@[] /u<mary>
-  	 /u<joe> "parent_of"@[] /u<peter>
-	   /u<peter> "parent_of"@[] /u<john>
-	   /u<peter> "parent_of"@[] /u<eve>
-		 /u<peter> "bought"@[2016-01-01T00:00:00-08:00] /c<mini>
-		 /u<peter> "bought"@[2016-02-01T00:00:00-08:00] /c<model s>
-		 /u<peter> "bought"@[2016-03-01T00:00:00-08:00] /c<model x>
-		 /u<peter> "bought"@[2016-04-01T00:00:00-08:00] /c<model y>
-		 /c<mini> "is_a"@[] /t<car>
-		 /c<model s> "is_a"@[] /t<car>
-		 /c<model x> "is_a"@[] /t<car>
-		 /c<model y> "is_a"@[] /t<car>
-		 /l<barcelona> "predicate"@[] "turned"@[2016-01-01T00:00:00-08:00]
-		 /l<barcelona> "predicate"@[] "turned"@[2016-02-01T00:00:00-08:00]
-		 /l<barcelona> "predicate"@[] "turned"@[2016-03-01T00:00:00-08:00]
-		 /l<barcelona> "predicate"@[] "turned"@[2016-04-01T00:00:00-08:00]
-	`
+		/u<joe> "parent_of"@[] /u<peter>
+		/u<peter> "parent_of"@[] /u<john>
+		/u<peter> "parent_of"@[] /u<eve>
+		/u<peter> "bought"@[2016-01-01T00:00:00-08:00] /c<mini>
+		/u<peter> "bought"@[2016-02-01T00:00:00-08:00] /c<model s>
+		/u<peter> "bought"@[2016-03-01T00:00:00-08:00] /c<model x>
+		/u<peter> "bought"@[2016-04-01T00:00:00-08:00] /c<model y>
+		/c<mini> "is_a"@[] /t<car>
+		/c<model s> "is_a"@[] /t<car>
+		/c<model x> "is_a"@[] /t<car>
+		/c<model y> "is_a"@[] /t<car>
+		/l<barcelona> "predicate"@[] "turned"@[2016-01-01T00:00:00-08:00]
+		/l<barcelona> "predicate"@[] "turned"@[2016-02-01T00:00:00-08:00]
+		/l<barcelona> "predicate"@[] "turned"@[2016-03-01T00:00:00-08:00]
+		/l<barcelona> "predicate"@[] "turned"@[2016-04-01T00:00:00-08:00]
+		`
 
 	tripleFromIssue40 = `/room<Hallway> "connects_to"@[] /room<Kitchen>
-	   /room<Kitchen> "connects_to"@[] /room<Hallway>
-		 /room<Kitchen> "connects_to"@[] /room<Bathroom>
-		 /room<Kitchen> "connects_to"@[] /room<Bedroom>
-		 /room<Bathroom> "connects_to"@[] /room<Kitchen>
-		 /room<Bedroom> "connects_to"@[] /room<Kitchen>
-		 /room<Bedroom> "connects_to"@[] /room<Fire Escape>
-		 /room<Fire Escape> "connects_to"@[] /room<Kitchen>
-		 /item/book<000> "in"@[2016-04-10T4:21:00.000000000Z] /room<Hallway>
-		 /item/book<000> "in"@[2016-04-10T4:23:00.000000000Z] /room<Kitchen>
-		 /item/book<000> "in"@[2016-04-10T4:25:00.000000000Z] /room<Bedroom>
-	`
+		/room<Kitchen> "connects_to"@[] /room<Hallway>
+		/room<Kitchen> "connects_to"@[] /room<Bathroom>
+		/room<Kitchen> "connects_to"@[] /room<Bedroom>
+		/room<Bathroom> "connects_to"@[] /room<Kitchen>
+		/room<Bedroom> "connects_to"@[] /room<Kitchen>
+		/room<Bedroom> "connects_to"@[] /room<Fire Escape>
+		/room<Fire Escape> "connects_to"@[] /room<Kitchen>
+		/item/book<000> "in"@[2016-04-10T4:21:00.000000000Z] /room<Hallway>
+		/item/book<000> "in"@[2016-04-10T4:23:00.000000000Z] /room<Kitchen>
+		/item/book<000> "in"@[2016-04-10T4:25:00.000000000Z] /room<Bedroom>
+		`
 
 	testTriples = originalTriples + tripleFromIssue40
 )
