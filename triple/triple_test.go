@@ -92,6 +92,12 @@ func TestReify(t *testing.T) {
 	if len(rts) != 4 || bn == nil {
 		t.Errorf("triple.Reify failed to create 4 valid triples and a valid blank node; returned %v, %s instead", rts, bn)
 	}
+	for _, trpl := range rts[1:] {
+		ps := string(trpl.Predicate().ID())
+		if ps != "_subject" && ps != "_predicate" && ps != "_object" {
+			t.Errorf("Inalid reification predicate; found %q", ps)
+		}
+	}
 }
 
 func TestGUID(t *testing.T) {
