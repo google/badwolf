@@ -218,7 +218,7 @@ func (t *Triple) Reify() ([]*Triple, *node.Node, error) {
 	rp := func(id string, p *predicate.Predicate) (*predicate.Predicate, error) {
 		if p.Type() == predicate.Temporal {
 			ta, _ := p.TimeAnchor()
-			return predicate.NewTemporal(string(p.ID()), *ta)
+			return predicate.NewTemporal(id, *ta)
 		}
 		return predicate.NewImmutable(id)
 	}
