@@ -88,41 +88,49 @@ func REPL(driver storage.Store, input *os.File, rl readLiner, chanSize, bulkSize
 			fmt.Print(prompt)
 			continue
 		}
+		if l != "" {
+			l = l + " " + nl
+		} else {
+			l = nl
+		}
+		if !strings.HasSuffix(nl, ";") {
+			// Not done with the statement.
+			continue
+		}
 		if strings.HasPrefix(l, "quit") {
 			break
 		}
 		if strings.HasPrefix(l, "help") {
 			printHelp()
 			fmt.Print(prompt)
+			l = ""
 			continue
 		}
 		if strings.HasPrefix(l, "export") {
-			args := strings.Split("bw "+l, " ")
+			args := strings.Split("bw "+l[:len(l)-1], " ")
 			usage := "Wrong syntax\n\n\tload <graph_names_separated_by_commas> <file_path>\n"
 			export.Eval(ctx, usage, args, driver, bulkSize)
 			fmt.Print(prompt)
+			l = ""
 			continue
 		}
 		if strings.HasPrefix(l, "load") {
-			args := strings.Split("bw "+l, " ")
+			args := strings.Split("bw "+l[:len(l)-1], " ")
 			usage := "Wrong syntax\n\n\tload <file_path> <graph_names_separated_by_commas>\n"
 			load.Eval(ctx, usage, args, driver, bulkSize, builderSize)
 			fmt.Print(prompt)
+			l = ""
 			continue
 		}
 		if strings.HasPrefix(l, "run") {
-			path, cmds, err := runBQLFromFile(ctx, driver, chanSize, l)
+			path, cmds, err := runBQLFromFile(ctx, driver, chanSize, l[:len(l)-1])
 			if err != nil {
 				fmt.Printf("[ERROR] %s\n\n", err)
 			} else {
 				fmt.Printf("Loaded %q and run %d BQL commands successfully\n\n", path, cmds)
 			}
 			fmt.Print(prompt)
-			continue
-		}
-		l = l + " " + nl
-		if !strings.HasSuffix(nl, ";") {
-			// Not done with the statement.
+			l = ""
 			continue
 		}
 
