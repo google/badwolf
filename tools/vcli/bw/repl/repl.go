@@ -81,9 +81,10 @@ func REPL(driver storage.Store, input *os.File, rl readLiner, chanSize, bulkSize
 		fmt.Printf("\n\nThanks for all those BQL queries!\n\n")
 	}()
 	fmt.Print(prompt)
+	l := ""
 	for line := range rl(input) {
-		l := strings.TrimSpace(line)
-		if l == "" {
+		nl := strings.TrimSpace(line)
+		if nl == "" {
 			fmt.Print(prompt)
 			continue
 		}
@@ -119,7 +120,14 @@ func REPL(driver storage.Store, input *os.File, rl readLiner, chanSize, bulkSize
 			fmt.Print(prompt)
 			continue
 		}
+		l = l + " " + nl
+		if !strings.HasSuffix(nl, ";") {
+			// Not done with the statement.
+			continue
+		}
+
 		table, err := runBQL(ctx, l, driver, chanSize)
+		l = ""
 		if err != nil {
 			fmt.Printf("[ERROR] %s\n\n", err)
 		} else {
@@ -135,9 +143,11 @@ func REPL(driver storage.Store, input *os.File, rl readLiner, chanSize, bulkSize
 
 // printHelp prints help for the console commands.
 func printHelp() {
-	fmt.Println("help                              - prints help for the bw console.")
-	fmt.Println("run <file_with_bql_statements>    - quits the console.")
-	fmt.Println("quit                              - quits the console.")
+	fmt.Println("help                                                  - prints help for the bw console.")
+	fmt.Println("export <graph_names_separated_by_commas> <file_path>  - dumps triples from graphs into a file path.")
+	fmt.Println("load <file_path> <graph_names_separated_by_commas>    - load triples into the specified graphs.")
+	fmt.Println("run <file_with_bql_statements>                        - runs all the BQL statements in the file.")
+	fmt.Println("quit                                                  - quits the console.")
 	fmt.Println()
 }
 
