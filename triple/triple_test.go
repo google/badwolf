@@ -80,7 +80,7 @@ func TestParse(t *testing.T) {
 	}
 }
 
-func TestReify(t *testing.T) {
+func TestReifyImmutable(t *testing.T) {
 	tr, err := Parse("/some/type<some id>\t\"foo\"@[]\t\"bar\"@[]", literal.DefaultBuilder())
 	if err != nil {
 		t.Fatalf("triple.Parse failed to parse valid triple with error %v", err)
@@ -91,6 +91,32 @@ func TestReify(t *testing.T) {
 	}
 	if len(rts) != 4 || bn == nil {
 		t.Errorf("triple.Reify failed to create 4 valid triples and a valid blank node; returned %v, %s instead", rts, bn)
+	}
+	for _, trpl := range rts[1:] {
+		ps := string(trpl.Predicate().ID())
+		if ps != "_subject" && ps != "_predicate" && ps != "_object" {
+			t.Errorf("Inalid reification predicate; found %q", ps)
+		}
+	}
+}
+
+func TestReifyTemporal(t *testing.T) {
+	tr, err := Parse("/some/type<some id>\t\"foo\"@[2015-01-01T00:00:00-09:00]\t\"bar\"@[]", literal.DefaultBuilder())
+	if err != nil {
+		t.Fatalf("triple.Parse failed to parse valid triple with error %v", err)
+	}
+	rts, bn, err := tr.Reify()
+	if err != nil {
+		t.Errorf("triple.Reify failed to reify %v with error %v", tr, err)
+	}
+	if len(rts) != 4 || bn == nil {
+		t.Errorf("triple.Reify failed to create 4 valid triples and a valid blank node; returned %v, %s instead", rts, bn)
+	}
+	for _, trpl := range rts[1:] {
+		ps := string(trpl.Predicate().ID())
+		if ps != "_subject" && ps != "_predicate" && ps != "_object" {
+			t.Errorf("Inalid reification predicate; found %q", ps)
+		}
 	}
 }
 
