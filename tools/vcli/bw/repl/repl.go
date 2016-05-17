@@ -107,7 +107,7 @@ func REPL(driver storage.Store, input *os.File, rl readLiner, chanSize, bulkSize
 			continue
 		}
 		if strings.HasPrefix(l, "export") {
-			args := strings.Split("bw "+l[:len(l)-1], " ")
+			args := strings.Split("bw "+strings.TrimSpace(l[:len(l)-1]), " ")
 			usage := "Wrong syntax\n\n\tload <graph_names_separated_by_commas> <file_path>\n"
 			export.Eval(ctx, usage, args, driver, bulkSize)
 			fmt.Print(prompt)
@@ -115,7 +115,7 @@ func REPL(driver storage.Store, input *os.File, rl readLiner, chanSize, bulkSize
 			continue
 		}
 		if strings.HasPrefix(l, "load") {
-			args := strings.Split("bw "+l[:len(l)-1], " ")
+			args := strings.Split("bw "+strings.TrimSpace(l[:len(l)-1]), " ")
 			usage := "Wrong syntax\n\n\tload <file_path> <graph_names_separated_by_commas>\n"
 			load.Eval(ctx, usage, args, driver, bulkSize, builderSize)
 			fmt.Print(prompt)
@@ -123,7 +123,7 @@ func REPL(driver storage.Store, input *os.File, rl readLiner, chanSize, bulkSize
 			continue
 		}
 		if strings.HasPrefix(l, "run") {
-			path, cmds, err := runBQLFromFile(ctx, driver, chanSize, l[:len(l)-1])
+			path, cmds, err := runBQLFromFile(ctx, driver, chanSize, strings.TrimSpace(l[:len(l)-1]))
 			if err != nil {
 				fmt.Printf("[ERROR] %s\n\n", err)
 			} else {
