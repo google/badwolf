@@ -470,3 +470,52 @@ func TestPlannerQuery(t *testing.T) {
 		}
 	}
 }
+
+func TestTreeTravesalToRoot(t *testing.T) {
+	// Graph traversal data.
+	traversalTriples := `/person<Gavin Belson>  "born in"@[]    /city<Springfield>
+		/person<Gavin Belson>  "parent of"@[]  /person<Peter Belson>
+		/person<Gavin Belson>  "parent of"@[]  /person<Mary Belson>
+		/person<Mary Belson>   "parent of"@[]  /person<Amy Schumer>
+		/person<Mary Belson>   "parent of"@[]  /person<Joe Schumer>`
+
+	traversalQuery := `SELECT ?grandparent
+		                 FROM ?test
+										 WHERE {
+										   ?s "parent of"@[] /person<Amy Schumer> .
+											 ?grandparent "parent of"@[] ?s
+										 };`
+
+	// Load traversing data
+	s, ctx := memory.NewStore(), context.Background()
+	g, gErr := s.NewGraph(ctx, "?test")
+	if gErr != nil {
+		t.Fatalf("memory.NewGraph failed to create \"?test\" with error %v", gErr)
+	}
+	b := bytes.NewBufferString(traversalTriples)
+	if _, err := io.ReadIntoGraph(ctx, g, b, literal.DefaultBuilder()); err != nil {
+		t.Fatalf("io.ReadIntoGraph failed to read test graph with error %v", err)
+	}
+	p, pErr := grammar.NewParser(grammar.SemanticBQL())
+	if pErr != nil {
+		t.Fatalf("grammar.NewParser: should have produced a valid BQL parser with error %v", pErr)
+	}
+	st := &semantic.Statement{}
+	if err := p.Parse(grammar.NewLLk(traversalQuery, 1), st); err != nil {
+		t.Errorf("Parser.consume: failed to parse query %q with error %v", traversalQuery, err)
+	}
+	plnr, err := New(ctx, s, st, 0)
+	if err != nil {
+		t.Errorf("planner.New failed to create a valid query plan with error %v", err)
+	}
+	tbl, err := plnr.Excecute(ctx)
+	if err != nil {
+		t.Errorf("planner.Excecute failed for query %q with error %v", traversalQuery, err)
+	}
+	if got, want := len(tbl.Bindings()), 1; got != want {
+		t.Errorf("tbl.Bindings returned the wrong number of bindings for %q; got %d, want %d", traversalQuery, got, want)
+	}
+	if got, want := len(tbl.Rows()), 1; got != want {
+		t.Errorf("planner.Excecute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", traversalQuery, got, want, tbl)
+	}
+}

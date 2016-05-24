@@ -298,7 +298,7 @@ func (p *queryPlan) addSpecifiedData(ctx context.Context, r table.Row, cls *sema
 		lo = nlo
 	}
 	if cls.O == nil {
-		v := getBindedValueForComponent(r, []string{cls.PBinding, cls.PAlias})
+		v := getBindedValueForComponent(r, []string{cls.OBinding, cls.OAlias})
 		if v != nil {
 			o, err := cellToObject(v)
 			if err == nil {
