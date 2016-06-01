@@ -5,7 +5,7 @@ The `bw` command line tool is built via the `tools/vcli/bw` package. You
 can build the tool by just typing
 
 ```
-$ go test ./... && go build ./tools/vcli/bw/...
+$ go test ./... && go build ./tools/vcli/bw
 ```
 
 Is the test pass successfully you will get the `bw` tool ready to go.
