@@ -5,10 +5,11 @@ The `bw` command line tool is built via the `tools/vcli/bw` package. You
 can build the tool by just typing
 
 ```
-$ go test ./... && go build ./tools/vcli/bw/...
+$ go test github.com/google/badwolf/... && go build github.com/google/badwolf/tools/vcli/bw
 ```
 
-If the test pass successfully you will get the `bw` tool ready to go.
+If the test pass successfully, the `bw` tool will be placed in the current
+directory.
 
 ## Usage
 
