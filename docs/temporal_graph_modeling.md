@@ -35,8 +35,8 @@ types.
               wher == is the case sensitive equal.
 * _Covariant_: Given two types A and B, A
               [covariant](https://en.wikipedia.org/wiki/Covariance_and_contravariance_(computer_science) )
-              B if B _is a_ A. In other word, A _covariant_ B if B is a prefix
-              of A. Or in other words, A could replace the usage of B and still
+              B if B _is a_ A. In other words, A _covariant_ B if B is a prefix
+              of A, or A could replace the usage of B and still
               convey a refined meaning.
 
 ### Node ID
@@ -51,7 +51,7 @@ node IDs is that they cannot contain for efficient marshaling reasons neither
 
 Nodes can be marshaled and unmarshaled from a simple text representation. This
 representation follows this simple structure ```type<id>``` for efficient
-processing. Some example of marshaled into text nodes are listed below.
+processing. Some examples of nodes marshaled into text are listed below.
 
 ```
    /organization/country<United States of America>
@@ -70,20 +70,20 @@ allowed to be boxed in a literal. These types are:
 * _Bool_ indicates that the type contained in the literal is a bool.
 * _Int64_ indicates that the type contained in the literal is an int64.
 * _Float64_ indicates that the type contained in the literal is a float64.
-* _String_ indicates that the type contained in the literal is a string.
+* _Text_ indicates that the type contained in the literal is a string.
 * _Blob_ indicates that the type contained in the literal is a []byte.
 
 It is important to note that a container contains one value, and one value only.
 Also, as mentioned earlier, all values and, hence, literals are immutable.
 _String_ and _Blob_ can contain elements of arbitrary length. This can be
 problematic depending on the storage backend being used. For that reason,
-the ```literal``` package provides mechanisms to enforce maximum lenght limits
+the ```literal``` package provides mechanisms to enforce maximum length limits
 to protect storage backends.
 
 Two literal builders are provided to create new literals:
 
 * _DefaultBuilder_ allows building valid literals of unbounded size.
-* _NewBoundeBuilder_ allows building valid literals of a bounded specified size.
+* _NewBoundedBuilder_ allows building valid literals of a bounded specified size.
 
 Literals can be pretty printed into a string format. The pretty printing retains
 the type and value of the literal. The format of the pretty printing formed
@@ -119,15 +119,15 @@ kind of predicates:
 * _Immutable_ or predicates that are always valid regardless of when they were
               created. For instance, they are useful to describe properties
               that never change, for instance, the color of someone's eyes.
-* _Temporal_ predicates that are anchored at some point along the time
-             continuum. For instance, the predicate _met_ describing when
-             two nodes met is anchored at a particular time.
+* _Temporal_ predicates are anchored at some point along the time continuum.
+             For instance, the predicate _met_ describing when two nodes met
+             is anchored at a particular time.
 
 It is important to note here that temporal predicates are descriptive of a
 property in relation to time. The granularity (or window) of validity of that
 predicate is left to the temporal reasoning module. This is important, since
-allow to reason against arbitrary time granularities. All time calculations
-and reasoning in BadWold assume a Gregorian calendar.
+it allows us to reason against arbitrary time granularities. All time
+calculations and reasoning in BadWolf assume a Gregorian calendar.
 
 ### Predicate ID
 
@@ -139,10 +139,10 @@ unmarshaling.
 ### Time anchors
 
 When parsing or printing dates into time anchors for temporal predicates,
-Badwolf follows the [RFC3339](https://www.ietf.org/rfc/rfc3339.txt) variant
+BadWolf follows the [RFC3339](https://www.ietf.org/rfc/rfc3339.txt) variant
 [RFC3339Nano](http://golang.org/pkg/time/#pkg-constants) as specified in the
 GO programming language to provide reliable granularity to express anchors in
-nanoseconds. An example of time anchor express in RFC3339Nano format is shown
+nanoseconds. An example of time anchor expressed in RFC3339Nano format is shown
 below.
 
 ```
@@ -168,13 +168,13 @@ The basic unit of storage on BadWolf is the triple. A triple is a three tuple
 
 Triples can be marshaled and unmarshaled. The string representation of a triple
 it is just the string representation of each of its components separated by
-blank separator (tab is the prefered blank separator).
+blank separator (tab is the preferred blank separator).
 
 ## Blank nodes and triple reification
 
 A blank node is a node of type ```/_``` where the id is unique in BadWolf.
 Blank nodes can requested to be created by BadWolf. The main use of blank nodes
-is to allow triple reification, or predicate properies about facts. It is
+is to allow triple reification, or predicate properties about facts. It is
 important to keep in mind that predication properties about a node can be
 achieved by a triple, however predicating properties about a fact (triple)
 require reification. This is better explained with an example.
@@ -205,7 +205,7 @@ triple would add the following triples.
  Reifying temporal triples anchors all the derived temporal triples at the
  same time anchor of the original triple. Now, you can predicate any property
  about the fact by predicating against the blank node. Hence we can now
- predicate about where John and Mery met as shown below.
+ predicate about where John and Mary met as shown below.
 
  ```
    /user<John> "met"@[2006-01-02T15:04:05.999999999Z07:00] /user<Mary>
@@ -215,6 +215,6 @@ triple would add the following triples.
    /_<BUID> "location"@[2006-01-02T15:04:05.999999999Z07:00] /city<New York>
  ```
 
-Anchoring the time predicate on the same time ancor as the reified triples
+Anchoring the time predicate on the same time anchor as the reified triples
 seem appropriate for this example, but there are no restrictions of what you
 predicate against blank nodes.

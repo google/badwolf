@@ -39,7 +39,7 @@ CREATE GRAPH ?a;
 ```
 
 The name of the graph is represented by a non interpreted binding (more on
-this will be discussed in the next section.) Hence, on the previous example
+this will be discussed in the next section.) Hence, in the previous example
 the statement would create a graph named ```?a```. You can create multiple
 graphs in a single statement as shown in the example below.
 
@@ -47,8 +47,8 @@ graphs in a single statement as shown in the example below.
 CREATE GRAPH ?a, ?b, ?c;
 ```
 
-If you try to create a graph that already exist, it will fail saying that
-the graph already exist. You should not expect that creating multiple graphs
+If you try to create a graph that already exists, it will fail saying that
+the graph already exists. You should not expect that creating multiple graphs
 will be atomic. If one of the graphs fails, there is no guarantee that others
 will have been created, usually failing fast and not even attempting to create
 the rest.
@@ -56,7 +56,7 @@ the rest.
 ## Dropping an Existing Graph
 
 Existing graphs can be dropped via the ```DROP``` statement. Be *very*
-*careful* when dropping graphs. The operation is assume to be irreversible.
+*careful* when dropping graphs. The operation is assumed to be irreversible.
 Hence, all data contained in the graph with be lost. You can drop a graph via:
 
 ```
@@ -80,11 +80,11 @@ been created, usually failing fast and not even attempting to create the rest.
 
 BQL relies on the concept of binding, or a place holder to represent a value.
 Bindings can be read as immutable variables given scoped context. Bindings
-starting with a '?' and it is followed by letters or digits. Some examples of
+start with a '?' and are followed by letters or digits. Some examples of
 bindings are: ```?foo```, ```?bar```, ```?id12```.
 
-Bindings, once they take a value in a context, they cannot bind to a different
-value. Bindings allow to express graph matching patterns. The simplest form
+Bindings, once they take a value in a context, cannot bind to a different
+value. Bindings allow expression of graph matching patterns. The simplest form
 of a graph pattern is the fully specified triple.
 
 ```
@@ -92,16 +92,16 @@ of a graph pattern is the fully specified triple.
 ```
 
 The above graph pattern would only match triples with the specified subject,
-predicated, and object. A peculiarity of the above pattern is that since
+predicate, and object. A peculiarity of the above pattern is that since
 the predicate is immutable, the above pattern is the equivalent of checking
-if that triple exist on the graph. The equivalent of the above pattern for a
-temporal predicate would look like as:
+if that triple exists on the graph. The equivalent of the above pattern for a
+temporal predicate would look like the following:
 
 ```
   /user<Joe> "follows"@[2006-01-02T15:04:05.999999999Z07:00] /user<Mary>
 ```
 
-The above pattern checks if that triple exist and it is anchored at that
+The above pattern checks if that triple exists and if it is anchored at that
 particular time. It is important not to confuse bindings with time ranges
 for temporal predicates. A time range is specified as shown below.
 
@@ -115,10 +115,10 @@ for temporal predicates. A time range is specified as shown below.
   /user<Joe> "follows"@[2006-01-01T15:04:05.999999999Z07:00, 2006-01-02T15:04:05.999999999Z07:00] /user<Mary>
 ```
 
-The first pattern asks if Joe at any point in time ever followed Mary. The
-second pattern asks if Joe ever followed Mary after a certain date, as opposite
+The first pattern asks if Joe, at any point in time, ever followed Mary. The
+second pattern asks if Joe ever followed Mary after a certain date, as opposed
 to the third pattern that asks if Joe ever followed Mary before a certain date.
-Finally, the fourth pattern ask if Joe followed Mary between two specific dates.
+Finally, the fourth pattern asks if Joe followed Mary between two specific dates.
 
 Bindings represent potential values in a given context. For instance,
 
@@ -126,7 +126,7 @@ Bindings represent potential values in a given context. For instance,
   /user<Joe> "follows"@[,] ?user
 ```
 
-represent a pattern that matches against all the users that Joe followed ever.
+represents a pattern that matches against all the users that Joe followed ever.
 As opposed to
 
 ```
@@ -134,7 +134,7 @@ As opposed to
 ```
 
 which represents all the users that ever followed Mary. You could also ask about
-all the predicate about Joe related to Mary, we would just write
+all the predicates about Joe related to Mary, we would just write
 
 ```
   /user<Joe> ?p /user<Mary>
@@ -152,16 +152,16 @@ express such pattern as
 You can combine multiple graph patterns together using '.' to separate clauses.
 The important thing to keep in mind is that the above composite clause
 represents a single context. That means that ?x is a binding that once
-instantiated, it cannot change the value in that context. Imagine Joe is the
+instantiated, cannot change the value in that context. Imagine Joe is the
 parent of Peter and Peter is the parent of Mary. Once the first part of the
-clause is match againt Joe is the parent of Peter, ```?grandparent``` gets
-binded against Joe and ```?x``` against Peter. To satisfy the second part of
-the composite clause we now need to find triples where the subject is Peter
-(remember that once the value is binded in a context it cannot change) a
-predicate saying it is the parent of, and then if that exist then
-```?grand_child``` would get binded and take the value of Mary.
+clause is matched against Joe as the parent of Peter, ```?grandparent``` gets
+bound against Joe and ```?x``` against Peter. To satisfy the second part of
+the composite clause, we now need to find triples where the subject is Peter
+(remember that once the value is bound in a context it cannot change) and the
+predicate is parent of. If one exists, then ```?grand_child``` would get bound
+and take the value of Mary.
 
-As we will see in later examples, bindings can be use to also identify
+As we will see in later examples, bindings can also be used to identify
 nodes, literals, predicates, or time anchors.
 
 ## Querying Data from graphs
@@ -177,10 +177,10 @@ of a query is expressed as follows
   };
 ```
 
-The above query would return all the grandchildren of Joe. BQL users binding
-notation to identify a graph to use. It over uses the '?' and it just indicates
-the name of the graph. In the above example that query would be run against
-a graph which ID is equal to "?family_tree". You can also query against multiple
+The above query would return all the grandchildren of Joe. BQL uses binding
+notation to identify a graph to use. It uses the '?' to indicate the name
+of the graph. In the above example that query would be run against a graph
+which ID is equal to "?family_tree". You can also query against multiple
 graphs.
 
 ```
@@ -191,7 +191,7 @@ graphs.
   };
 ```
 
-There is no limit on how many variable you may return. You can return multiple
+There is no limit on how many variables you may return. You can return multiple
 variables instead as shown below.
 
 ```
@@ -203,9 +203,9 @@ variables instead as shown below.
 ```
 
 The above query would return all grandparents together with the name of their
-grand kids, one pair per row. In some cases it is useful to return a different
+grandchildren, one pair per row. In some cases it is useful to return a different
 name for the variables, and not use the biding name used in the graph pattern
-directly. This is achieved using the as keyword as shown below.
+directly. This is achieved using the "as" keyword as shown below.
 
 ```
   SELECT ?grandparent as ?gp, ?grand_child as ?gc
@@ -215,13 +215,13 @@ directly. This is achieved using the as keyword as shown below.
   };
 ```
 
-It is important to note that alias are defined outside the graph pattern scope.
-Hence, alias cannot be used in graph patterns.
+It is important to note that aliases are defined outside the graph pattern scope.
+Hence, aliases cannot be used in graph patterns.
 
-BQL supports basic grouping and aggregation. To achieve this, it is accomplished
-via ```group by```. The above query may return duplicates depending on the data
+BQL supports basic grouping and aggregation. It is accomplished via
+```group by```. The above query may return duplicates depending on the data
 available on the graph. If we want to get rid of the duplicates we could just
-group them as follows to remove the duplicates.
+group them as follows.
 
 ```
   SELECT ?grandparent as ?gp, ?grand_child as ?gc
@@ -235,7 +235,7 @@ group them as follows to remove the duplicates.
 As you may have expected, you can group by multiple bindings or aliases. Also,
 grouping allows a small subset of aggregates. Those include ```count``` its
 variant with distinct, and ```sum```. Other functions will be added as needed.
-The queries below illustrate how this simple aggregations can be used.
+The queries below illustrate how these simple aggregations can be used.
 
 ```
   SELECT ?grandparent as ?gp, count(?grand_child) as ?gc
@@ -246,7 +246,7 @@ The queries below illustrate how this simple aggregations can be used.
   GROUP BY ?gp;
 ```
 
-Would return the number of grand childre per grandparent. However, it would
+Would return the number of grandchildren per grandparent. However, it would
 be better if the distinct version was used to guaranteed that all duplicates
 resulting on the graph data are removed. The query below illustrates how
 the distinct variant work.
@@ -260,7 +260,7 @@ the distinct variant work.
   GROUP BY ?gp;
 ```
 
-The sum agreegation only works if the binding is done against a literal of type
+The sum aggregation only works if the binding is done against a literal of type
 ```int64``` or ```float64```, as shown on the example below.
 
 ```
@@ -271,13 +271,13 @@ The sum agreegation only works if the binding is done against a literal of type
   }
 ```
 
-You can also use ```sum``` to do partial accumulations in the same maner as was
+You can also use ```sum``` to do partial accumulations in the same manner as was
 done in the ```count``` examples above.
 
-Results of the query can be sorted. By default on ascending order based on
-the provided variables. The example below orders first by grandparent name
-ascending (implicit direction), and then for each equal value descending based
-on the grand child name.
+Results of the query can be sorted. By default, it is sorted in ascending
+order based on the provided variables. The example below orders first by
+grandparent name ascending (implicit direction), and for each equal values,
+descending based on the grandchild name.
 
 ```
   SELECT ?grandparent, ?grand_child
@@ -288,8 +288,9 @@ on the grand child name.
   ORDER BY ?grandparent, ?grand_child DESC;
 ```
 
-The having modifier allows to filter the returned data further. For instance,
-the query below would only return tanks with a capacity bigger than 10.
+The "having" modifier allows us to filter the returned data further. For
+instance, the query below would only return tanks with a capacity bigger
+than 10.
 
 ```
   SELECT ?tank, ?capacity
@@ -327,11 +328,11 @@ certain date. You could write it as
     ?user "folows"@[2006-01-01T15:04:05.999999999Z07:00,] /user<Mary>
   }
 ```
-You can also imagine that this can become tedious fast if you graph pattern
-contains multiple clauses. BQL allows you to specify it a more compact and
+You can also imagine that this can become tedious fast if your graph pattern
+contains multiple clauses. BQL allows you to specify it in a more compact and
 readable form using composable ```before```, ```after```, and ```between```
-keywords. They can be composed together using ```not```, ```and```, and ```or```
-operators.
+keywords. They can be composed together using ```not```, ```and```, and
+```or``` operators.
 
 ```
   SELECT ?user
@@ -343,7 +344,7 @@ operators.
   AFTER 2006-01-01T15:04:05.999999999Z07:00
 ```
 
-Which is easier to read. It also allow expressing complex global time bounds
+This is easier to read. It also allow expressing complex global time bounds
 that would require multiple clauses and extra bindings.
 
 ```
@@ -373,7 +374,7 @@ look like
 
 ## Inserting data into graphs
 
-Triples can be inserted into one or more graphs. That can be achieve by just
+Triples can be inserted into one or more graphs. This can be achieved by
 running the following insert statements.
 
 ```

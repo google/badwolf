@@ -8,7 +8,7 @@ can build the tool by just typing
 $ go test ./... && go build ./tools/vcli/bw/...
 ```
 
-Is the test pass successfully you will get the `bw` tool ready to go.
+If the test pass successfully you will get the `bw` tool ready to go.
 
 ## Usage
 
@@ -18,7 +18,7 @@ Once built, you will be able to access the commands available by typing:
 $ bw help
 ```
 
-This command will list of available options already. Also, you can always type
+This command will list available options. Also, you can always type
 
 ```
 $ bw help COMMAND
@@ -225,15 +225,15 @@ Evaluating 6 stories... done.
 done
 ```
 
-If any of the assertions of a story fails, it will be proper indicated and the
-obtained result table and the expected one will both be displayed.
+If any of the assertions of a story fails, it will be properly indicated and
+the obtained result table and the expected one will both be displayed.
 
 ## Command: BQL
 
 The `bql` command starts a REPL that allows running BQL commands. The REPL can
-provide basic help on usage as shown below. Currently the REPL has limited
+provide basic help on usage as shown below. Currently, the REPL has limited
 support for terminal input. BQL statements need to be in a single line and there
-is currently not support for cursor keys neither history of past BQL statements.
+is currently no support for cursor keys or history of past BQL statements.
 
 ```
 $ bw bql
@@ -258,7 +258,7 @@ against the chosen backend. The benchmarks focus on performance of:
 2. Removing triples from a graph.
 3. BQL statements to bound backend performance.
 
-All this benchmarks run against synthetic data using two graph generators:
+All these benchmarks run against synthetic data using two graph generators:
 
 1. _Tree graph generator_: Given an arbitrary branching factor it generates
    the requested number of triples by walking an imaginary tree in depth first
@@ -270,20 +270,20 @@ All this benchmarks run against synthetic data using two graph generators:
    relates them together. The sampling of the nodes pair is done without
    replacement.
 
-These two generators create graph with very different structural properties.
+These two generators create graphs with very different structural properties.
 
-All benchmarks consist on generating random triple sets using both generators
-and using them as the graph to which to run the operations. Each benchmark is
-run 10 times and the the average and standard deviation of the time spend to
+All benchmarks consist of generating random triple sets using both generators
+and using them as the graphs on which to run the operations. Each benchmark is
+run 10 times and the the average and standard deviation of the time spent to
 run the operation is computed. Also, the benchmark runner computes an
 approximation of how many triples per second were processed.
 
 Each benchmark battery is run twice, sequentially and concurrently. The goal is
-to also measure the impact of concurrent operations on the driver. Currently
+to also measure the impact of concurrent operations on the driver. Currently,
 the command does not allow you to choose any of the parameters used.
 
-Below there is an example of how to run the benchmarks against the default
-in memory driver.
+There is an example below of how to run the benchmarks against the default
+in-memory driver.
 
 ```
 $ bw --driver=VOLATILE benchmark
