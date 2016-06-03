@@ -18,7 +18,7 @@ each of the example files with a brief description.
 * [Summarizing and sorting data queries across graphs](../examples/bql/example_2.bql):
    Sometimes you want to queries data that is stored across multiple graphs.
    This example shows how you can express queries across multiple graphs, by
-   simple listing them in the `FORM` clause, and summarize the results
+   simple listing them in the `FROM` clause, and summarize the results
    accordingly. It also shows how to sort the resulting tables using via the
    `ORDER BY` clause. It is important to highlight that BQL `FROM` clause does
    not express table joins, but the union of the specified graphs.
