@@ -116,7 +116,7 @@ func TestAcceptByParse(t *testing.T) {
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
 	}
 	for _, input := range table {
 		if err := p.Parse(NewLLk(input, 1), &semantic.Statement{}); err != nil {
@@ -210,7 +210,7 @@ func TestRejectByParse(t *testing.T) {
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
 	}
 	for _, input := range table {
 		if err := p.Parse(NewLLk(input, 1), &semantic.Statement{}); err == nil {
@@ -252,7 +252,7 @@ func TestAcceptOpsByParseAndSemantic(t *testing.T) {
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
 	}
 	for _, entry := range table {
 		st := &semantic.Statement{}
@@ -303,7 +303,7 @@ func TestAcceptQueryBySemanticParse(t *testing.T) {
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
 	}
 	for _, input := range table {
 		if err := p.Parse(NewLLk(input, 1), &semantic.Statement{}); err != nil {
@@ -334,7 +334,7 @@ func TestRejectByParseAndSemantic(t *testing.T) {
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
 	}
 	for _, entry := range table {
 		st := &semantic.Statement{}
