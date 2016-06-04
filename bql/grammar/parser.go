@@ -147,7 +147,7 @@ func (p *Parser) expect(llk *LLk, st *semantic.Statement, s semantic.Symbol, cls
 		if cls.ProcessedElement != nil {
 			var ce semantic.ConsumedElement
 			if elem.isSymbol {
-				ce = semantic.NewConsumedSymbol(ce.Symbol())
+				ce = semantic.NewConsumedSymbol(elem.Symbol())
 			} else {
 				ce = semantic.NewConsumedToken(tkn)
 			}
