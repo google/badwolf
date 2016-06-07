@@ -260,6 +260,32 @@ func populateTestStore(t *testing.T) storage.Store {
 	return s
 }
 
+func populateBenchmarkStore(b *testing.B) storage.Store {
+	s, ctx := memory.NewStore(), context.Background()
+	g, err := s.NewGraph(ctx, "?test")
+	if err != nil {
+		b.Fatalf("memory.NewGraph failed to create \"?test\" with error %v", err)
+	}
+	buf := bytes.NewBufferString(testTriples)
+	if _, err := io.ReadIntoGraph(ctx, g, buf, literal.DefaultBuilder()); err != nil {
+		b.Fatalf("io.ReadIntoGraph failed to read test graph with error %v", err)
+	}
+	trpls := make(chan *triple.Triple)
+	go func() {
+		if err := g.Triples(ctx, trpls); err != nil {
+			b.Fatal(err)
+		}
+	}()
+	cnt := 0
+	for _ = range trpls {
+		cnt++
+	}
+	if got, want := cnt, len(strings.Split(testTriples, "\n"))-1; got != want {
+		b.Fatalf("Failed to import all test triples; got %v, want %v", got, want)
+	}
+	return s
+}
+
 func TestPlannerQuery(t *testing.T) {
 	ctx := context.Background()
 	testTable := []struct {
@@ -534,4 +560,48 @@ func TestTreeTravesalToRoot(t *testing.T) {
 	if got, want := len(tbl.Rows()), 1; got != want {
 		t.Errorf("planner.Excecute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", traversalQuery, got, want, tbl)
 	}
+}
+
+// benchmarkQuery is a helper function that runs a specified query on the testing data set for benchmarking purposes.
+func benchmarkQuery(query string, b *testing.B) {
+	ctx := context.Background()
+
+	s := populateBenchmarkStore(b)
+	p, err := grammar.NewParser(grammar.SemanticBQL())
+	if err != nil {
+		b.Fatalf("grammar.NewParser: should have produced a valid BQL parser with error %v", err)
+	}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		st := &semantic.Statement{}
+		if err := p.Parse(grammar.NewLLk(query, 1), st); err != nil {
+			b.Errorf("Parser.consume: failed to parse query %q with error %v", query, err)
+		}
+		plnr, err := New(ctx, s, st, 0)
+		if err != nil {
+			b.Errorf("planner.New failed to create a valid query plan with error %v", err)
+		}
+		_, err = plnr.Excecute(ctx)
+		if err != nil {
+			b.Errorf("planner.Excecute failed for query %q with error %v", query, err)
+		}
+	}
+}
+
+// These benchmark tests are used to observe the difference in speed between queries using the "as" keyword as opposed
+// to queries that do not.
+func BenchmarkReg1(b *testing.B) {
+	benchmarkQuery(`select ?p, ?o as ?o1 from ?test where {/u<joe> ?p ?o};`, b)
+}
+
+func BenchmarkAs1(b *testing.B) {
+	benchmarkQuery(`select ?p as ?p1, ?o as ?o1 from ?test where {/u<joe> ?p ?o};`, b)
+}
+
+func BenchmarkReg2(b *testing.B) {
+	benchmarkQuery(`select ?s, ?p, ?o from ?test where {?s ?p ?o};`, b)
+}
+
+func BenchmarkAs2(b *testing.B) {
+	benchmarkQuery(`select ?s as ?s1, ?p as ?p1, ?o as ?o1 from ?test where {?s ?p ?o};`, b)
 }
