@@ -485,8 +485,14 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 // groups it by if needed.
 func (p *queryPlan) projectAndGroupBy() error {
 	grp := p.stm.GroupByBindings()
-	if len(grp) == 0 {
-		// The table only needs to be projected.
+	if len(grp) == 0 { // The table only needs to be projected.
+		p.tbl.AddBindings(p.stm.OutputBindings())
+		// For each row, copy each input binding value to its appropriate alias.
+		for _, prj := range p.stm.Projections() {
+			for _, row := range p.tbl.Rows() {
+				row[prj.Alias] = row[prj.Binding]
+			}
+		}
 		return p.tbl.ProjectBindings(p.stm.OutputBindings())
 	}
 	// The table needs to be group reduced.
