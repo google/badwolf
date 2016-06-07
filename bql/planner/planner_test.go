@@ -273,7 +273,17 @@ func TestPlannerQuery(t *testing.T) {
 			nrws: len(strings.Split(testTriples, "\n")) - 1,
 		},
 		{
+			q:    `select ?s as ?s1, ?p as ?p1, ?o as ?o1 from ?test where {?s ?p ?o};`,
+			nbs:  3,
+			nrws: len(strings.Split(testTriples, "\n")) - 1,
+		},
+		{
 			q:    `select ?p, ?o from ?test where {/u<joe> ?p ?o};`,
+			nbs:  2,
+			nrws: 2,
+		},
+		{
+			q:    `select ?p as ?p1, ?o as ?o1 from ?test where {/u<joe> ?p ?o};`,
 			nbs:  2,
 			nrws: 2,
 		},
@@ -309,6 +319,11 @@ func TestPlannerQuery(t *testing.T) {
 		},
 		{
 			q:    `select ?s from ?test where {?s "is_a"@[] /t<car>};`,
+			nbs:  1,
+			nrws: 4,
+		},
+		{
+			q:    `select ?s as ?s1 from ?test where {?s "is_a"@[] /t<car>};`,
 			nbs:  1,
 			nrws: 4,
 		},
