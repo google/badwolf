@@ -461,6 +461,7 @@ func TestPlannerQuery(t *testing.T) {
 		tbl, err := plnr.Excecute(ctx)
 		if err != nil {
 			t.Errorf("planner.Excecute failed for query %q with error %v", entry.q, err)
+			continue
 		}
 		if got, want := len(tbl.Bindings()), entry.nbs; got != want {
 			t.Errorf("tbl.Bindings returned the wrong number of bindings for %q; got %d, want %d", entry.q, got, want)
