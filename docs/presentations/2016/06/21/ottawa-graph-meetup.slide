@@ -1,0 +1,57 @@
+The BadWolf Project
+Temporal Graph Store
+19:00 21 Jun 2016
+Tags: badwolf, graph store
+
+Xavier Llorà
+SWE, Google Inc.
+@badwolf_project
+@xllora
+
+* What will be cover today?
+
+* Quick Overview
+
+Describing the world using facts
+
+Facts and how they map to graphs
+
+Quick Graph manipulation concepts
+
+Examples and demo
+
+Road map
+
+* Modeling facts with graphs
+
+* Facts change over time
+
+* How can you manage all these facts?
+
+* Managing graphs
+
+* Managing data in the graphs
+
+* Reasoning using queries
+
+* Demo time
+
+* Public usages
+
+* Road map
+
+* Updates to BQL (high priority)
+
+.link https://github.com/google/badwolf/issues/45 Create derived facts via BQL `CONSTRUCT` query
+
+.link https://github.com/google/badwolf/issues/52 Remove derived facts via BQL `DECONSTRUCT` query
+
+* Low priority (a.k.a. Out of bandwidth)
+
+Writing storage drivers
+
+.link https://github.com/xllora/bwdrivers BwDrivers repository contains contributions (e.g. BoltDB)
+
+Bridging a sister project
+
+.link https://github.com/google/cayley Cayley as a backend for BadWolf
