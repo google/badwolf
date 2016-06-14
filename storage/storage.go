@@ -30,10 +30,10 @@ type LookupOptions struct {
 	// set it returns all the lookup results.
 	MaxElements int
 
-	// LowerAnchor if provided represents the lower time anchor to be considered.
+	// LowerAnchor, if provided, represents the lower time anchor to be considered.
 	LowerAnchor *time.Time
 
-	// UpperArnchor if provided represents the upper time anchor to be considered.
+	// UpperAnchor, if provided, represents the upper time anchor to be considered.
 	UpperAnchor *time.Time
 }
 
@@ -79,7 +79,7 @@ type Graph interface {
 	// exists should not fail.
 	AddTriples(ctx context.Context, ts []*triple.Triple) error
 
-	// RemoveTriples removes the trilpes from the storage. Removing triples that
+	// RemoveTriples removes the triples from the storage. Removing triples that
 	// are not present on the store should not fail.
 	RemoveTriples(ctx context.Context, ts []*triple.Triple) error
 
@@ -147,7 +147,7 @@ type Graph interface {
 	// is provided.
 	PredicatesForObject(ctx context.Context, o *triple.Object, lo *LookupOptions, prds chan<- *predicate.Predicate) error
 
-	// PredicatesForSubjecAndObject pushes to the provided channel all predicates
+	// PredicatesForSubjectAndObject pushes to the provided channel all predicates
 	// available for the given subject and object. The function does not return
 	// immediately but spawns a goroutine to satisfy elements in the channel.
 	//
@@ -159,7 +159,7 @@ type Graph interface {
 	PredicatesForSubjectAndObject(ctx context.Context, s *node.Node, o *triple.Object, lo *LookupOptions, prds chan<- *predicate.Predicate) error
 
 	// TriplesForSubject pushes to the provided channel all triples available for
-	// the given subect. The function does not return immediately but spawns a
+	// the given subject. The function does not return immediately but spawns a
 	// goroutine to satisfy elements in the channel.
 	//
 	// If the lookup options provide a max number of elements the function will

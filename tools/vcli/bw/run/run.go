@@ -78,7 +78,7 @@ func runCommand(ctx context.Context, cmd *command.Command, args []string, store 
 	return 0
 }
 
-// BQL attemps to excecute the provided query against the given store.
+// BQL attempts to execute the provided query against the given store.
 func BQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*table.Table, error) {
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
@@ -92,7 +92,7 @@ func BQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*table
 	if err != nil {
 		return nil, fmt.Errorf("[ERROR] Should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
-	res, err := pln.Excecute(ctx)
+	res, err := pln.Execute(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("[ERROR] Failed to execute BQL statement with error %v", err)
 	}

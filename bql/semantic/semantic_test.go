@@ -80,7 +80,7 @@ func TestGraphClauseManipulation(t *testing.T) {
 	if st.WorkingClause() == nil {
 		t.Fatalf("semantic.GraphClause.WorkingClause should return a working clause after initilization in %v", st)
 	}
-	st.AddWorkingGrpahClause()
+	st.AddWorkingGraphClause()
 	if got, want := len(st.GraphPatternClauses()), 1; got != want {
 		t.Fatalf("semantic.GraphClause.Clauses return wrong number of clauses in %v; got %d, want %d", st, got, want)
 	}
@@ -116,7 +116,7 @@ func TestBindingListing(t *testing.T) {
 			OUpperBoundAlias: "?" + v,
 		}
 		*wcls = *cls
-		stm.AddWorkingGrpahClause()
+		stm.AddWorkingGraphClause()
 	}
 	bds := stm.BindingsMap()
 	if len(bds) != 10 {

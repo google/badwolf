@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package lexer implements the lexer used bye the BadWolf query language.
-// The lexer is losely written after the parsel model described by Rob Pike
+// The lexer is loosely written after the parser model described by Rob Pike
 // in his presentation "Lexical Scanning in Go". Slides can be found at
 // http://cuddle.googlecode.com/hg/talk/lex.html#landing-slide.
 package lexer
@@ -66,9 +66,9 @@ const (
 	ItemBefore
 	// ItemAfter represents the after keyword in BQL.
 	ItemAfter
-	// ItemBetween represents the betwen keyword in BQL.
+	// ItemBetween represents the between keyword in BQL.
 	ItemBetween
-	// ItemCount represents the count funtion in BQL.
+	// ItemCount represents the count function in BQL.
 	ItemCount
 	// ItemDistinct represents the distinct modifier in BQL.
 	ItemDistinct
@@ -82,17 +82,17 @@ const (
 	ItemOrder
 	// ItemHaving represents the having clause keyword clause in BQL.
 	ItemHaving
-	// ItemAsc represents asc keywork on order by clause in BQL.
+	// ItemAsc represents asc keyword on order by clause in BQL.
 	ItemAsc
-	// ItemDesc represents desc keywork on order by clause in BQL
+	// ItemDesc represents desc keyword on order by clause in BQL
 	ItemDesc
-	// ItemLimit represetnts the limit clause in BQL.
+	// ItemLimit represents the limit clause in BQL.
 	ItemLimit
 
-	// ItemBinding respresents a variable binding in BQL.
+	// ItemBinding represents a variable binding in BQL.
 	ItemBinding
 
-	// ItemNode respresents a BadWolf node in BQL.
+	// ItemNode represents a BadWolf node in BQL.
 	ItemNode
 	// ItemLiteral represents a BadWolf literal in BQL.
 	ItemLiteral
@@ -101,19 +101,19 @@ const (
 	// ItemPredicateBound represents a BadWolf predicate bound in BQL.
 	ItemPredicateBound
 
-	// ItemLBracket representes the left opening bracket token in BQL.
+	// ItemLBracket represents the left opening bracket token in BQL.
 	ItemLBracket
-	// ItemRBracket representes the right opening bracket token in BQL.
+	// ItemRBracket represents the right opening bracket token in BQL.
 	ItemRBracket
-	// ItemLPar representes the left opening parentesis token in BQL.
+	// ItemLPar represents the left opening parenthesis token in BQL.
 	ItemLPar
-	// ItemRPar representes the right closing parentesis token in BQL.
+	// ItemRPar represents the right closing parenthesis token in BQL.
 	ItemRPar
 	// ItemDot represents the graph clause separator . in BQL.
 	ItemDot
 	// ItemSemicolon represents the final statement semicolon in BQL.
 	ItemSemicolon
-	// ItemComma respresnts the graph join operator in BQL.
+	// ItemComma represents the graph join operator in BQL.
 	ItemComma
 	// ItemLT represents < in BQL.
 	ItemLT
@@ -315,7 +315,7 @@ type lexer struct {
 	tokens   chan Token // channel of scanned items.
 }
 
-// lex creates a new lexer for the givne input
+// lex creates a new lexer for the given input
 func lex(input string, capacity int) (*lexer, <-chan Token) {
 	l := &lexer{
 		input:  input,
@@ -353,34 +353,34 @@ func lexToken(l *lexer) stateFn {
 				return lexKeyword
 			}
 		}
-		if state := isSingleSymboToken(l, ItemLBracket, leftBracket); state != nil {
+		if state := isSingleSymbolToken(l, ItemLBracket, leftBracket); state != nil {
 			return state
 		}
-		if state := isSingleSymboToken(l, ItemRBracket, rightBracket); state != nil {
+		if state := isSingleSymbolToken(l, ItemRBracket, rightBracket); state != nil {
 			return state
 		}
-		if state := isSingleSymboToken(l, ItemLPar, leftPar); state != nil {
+		if state := isSingleSymbolToken(l, ItemLPar, leftPar); state != nil {
 			return state
 		}
-		if state := isSingleSymboToken(l, ItemRPar, rightPar); state != nil {
+		if state := isSingleSymbolToken(l, ItemRPar, rightPar); state != nil {
 			return state
 		}
-		if state := isSingleSymboToken(l, ItemSemicolon, semicolon); state != nil {
+		if state := isSingleSymbolToken(l, ItemSemicolon, semicolon); state != nil {
 			return state
 		}
-		if state := isSingleSymboToken(l, ItemDot, dot); state != nil {
+		if state := isSingleSymbolToken(l, ItemDot, dot); state != nil {
 			return state
 		}
-		if state := isSingleSymboToken(l, ItemComma, comma); state != nil {
+		if state := isSingleSymbolToken(l, ItemComma, comma); state != nil {
 			return state
 		}
-		if state := isSingleSymboToken(l, ItemLT, lt); state != nil {
+		if state := isSingleSymbolToken(l, ItemLT, lt); state != nil {
 			return state
 		}
-		if state := isSingleSymboToken(l, ItemGT, gt); state != nil {
+		if state := isSingleSymbolToken(l, ItemGT, gt); state != nil {
 			return state
 		}
-		if state := isSingleSymboToken(l, ItemEQ, eq); state != nil {
+		if state := isSingleSymbolToken(l, ItemEQ, eq); state != nil {
 			return state
 		}
 		{
@@ -398,8 +398,8 @@ func lexToken(l *lexer) stateFn {
 	return nil      // Stop the run loop.
 }
 
-// isSingleSymboToken check if a single char should be lexed.
-func isSingleSymboToken(l *lexer, tt TokenType, symbol rune) stateFn {
+// isSingleSymbolToken check if a single char should be lexed.
+func isSingleSymbolToken(l *lexer, tt TokenType, symbol rune) stateFn {
 	if r := l.peek(); r == symbol {
 		l.next()
 		l.emit(tt)
@@ -420,7 +420,7 @@ func lexBinding(l *lexer) stateFn {
 	return lexSpace
 }
 
-// lexSpace consumes spaces without emiting any token.
+// lexSpace consumes spaces without emitting any token.
 func lexSpace(l *lexer) stateFn {
 	for {
 		if r := l.next(); !unicode.IsSpace(r) || r == eof {
@@ -432,7 +432,7 @@ func lexSpace(l *lexer) stateFn {
 	return lexToken
 }
 
-// lexKeywork lexes the BQL keywords.
+// lexKeyword lexes the BQL keywords.
 func lexKeyword(l *lexer) stateFn {
 	input := l.input[l.pos:]
 	f := func(r rune) bool {
@@ -613,7 +613,7 @@ func lexPredicateOrLiteral(l *lexer) stateFn {
 	return lexLiteral
 }
 
-// lexPredicate lexes a predicicate of out of the input.
+// lexPredicate lexes a predicate of out of the input.
 func lexPredicate(l *lexer) stateFn {
 	l.next()
 	for done := false; !done; {

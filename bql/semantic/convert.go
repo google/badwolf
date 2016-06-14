@@ -31,7 +31,7 @@ func (s Symbol) String() string {
 	return string(s)
 }
 
-// ConsumedElement groups the curernt element being processed by the parser.
+// ConsumedElement groups the current element being processed by the parser.
 type ConsumedElement struct {
 	isSymbol bool
 	symbol   Symbol
@@ -46,7 +46,7 @@ func NewConsumedSymbol(s Symbol) ConsumedElement {
 	}
 }
 
-// NewConsumedToken create a new consumed element that boxes a roken.
+// NewConsumedToken create a new consumed element that boxes a token.
 func NewConsumedToken(tkn *lexer.Token) ConsumedElement {
 	return ConsumedElement{
 		isSymbol: false,

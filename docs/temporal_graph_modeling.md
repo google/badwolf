@@ -32,7 +32,7 @@ types.
 
 * _Equality_: Given two types A and B, A == B if and only if they have the exact
               same path representation. In other words, if strings(A)==string(B)
-              wher == is the case sensitive equal.
+              where == is the case sensitive equal.
 * _Covariant_: Given two types A and B, A
               [covariant](https://en.wikipedia.org/wiki/Covariance_and_contravariance_(computer_science) )
               B if B _is a_ A. In other words, A _covariant_ B if B is a prefix
@@ -78,7 +78,7 @@ Also, as mentioned earlier, all values and, hence, literals are immutable.
 _String_ and _Blob_ can contain elements of arbitrary length. This can be
 problematic depending on the storage backend being used. For that reason,
 the ```literal``` package provides mechanisms to enforce maximum length limits
-to protect storage backends.
+to protect storage back-ends.
 
 Two literal builders are provided to create new literals:
 
@@ -91,7 +91,7 @@ by the string representation of the value between quotes followed by ```^^``` an
 the type assertion ```type:``` with the corresponding type appended. This
 pretty printing convention loosely follows the
 [RDF specification for literals](http://www.w3.org/TR/rdf11-concepts/#section-Graph-Literal)
-also simplifying the parsing of such string formated literals. Some examples
+also simplifying the parsing of such string formatted literals. Some examples
 of pretty printed literals are shown below.
 
 ```

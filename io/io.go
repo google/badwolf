@@ -53,9 +53,9 @@ func ReadIntoGraph(ctx context.Context, g storage.Graph, r io.Reader, b literal.
 }
 
 // WriteGraph serializes the graph into the writer where each triple is
-// marshalled into a separate line. If there is an error writting the
+// marshaled into a separate line. If there is an error writing the
 // serialization will stop. It returns the number of triples serialized
-// regardless if it succeded of it failed partialy.
+// regardless if it succeeded or failed partially.
 func WriteGraph(ctx context.Context, w io.Writer, g storage.Graph) (int, error) {
 	var (
 		wg   sync.WaitGroup

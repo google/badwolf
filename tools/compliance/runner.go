@@ -96,7 +96,7 @@ func (a *Assertion) runAssertion(ctx context.Context, st storage.Store, chanSize
 	if err != nil {
 		return errorizer(fmt.Errorf("Should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err))
 	}
-	tbl, err := pln.Excecute(ctx)
+	tbl, err := pln.Execute(ctx)
 	if err != nil {
 		return errorizer(fmt.Errorf("planner.Execute: failed to execute assertion %q with error %v", a.Requires, err))
 	}

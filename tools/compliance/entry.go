@@ -16,7 +16,7 @@
 // implementations and BQL behavior testing. The compliance package is built
 // around stories. A story is a collection of graphs and a sequence of
 // assertions against the provided data. An assertion is defined by a tuple
-// containing a BQL, the execution status, and the expeted result table.
+// containing a BQL, the execution status, and the expected result table.
 package compliance
 
 import (
@@ -36,11 +36,11 @@ type Graph struct {
 	// ID of the binding name to use for the graph.
 	ID string
 
-	// Facts contains the parseable tribles which define the graph.
+	// Facts contains the parseable triples which define the graph.
 	Facts []string
 }
 
-// Assertion contains a BQL, the expecte status of the BQL query execution,
+// Assertion contains a BQL, the expected status of the BQL query execution,
 // and the returned results table.
 type Assertion struct {
 	// Requires of the assertion.
@@ -53,10 +53,10 @@ type Assertion struct {
 	WillFail bool
 
 	// MustReturn contains the table  containing the expected results provided
-	// by the BQL statemnet execution.
+	// by the BQL statement execution.
 	MustReturn []map[string]string
 
-	// The equivalent table representation of the MustReturn inforamtion.
+	// The equivalent table representation of the MustReturn information.
 	table *table.Table
 }
 

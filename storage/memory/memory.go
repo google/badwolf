@@ -183,7 +183,7 @@ func (m *memory) AddTriples(ctx context.Context, ts []*triple.Triple) error {
 	return nil
 }
 
-// RemoveTriples removes the trilpes from the storage.
+// RemoveTriples removes the triples from the storage.
 func (m *memory) RemoveTriples(ctx context.Context, ts []*triple.Triple) error {
 	for _, t := range ts {
 		guid := t.GUID()
@@ -228,7 +228,7 @@ type checker struct {
 	o   *storage.LookupOptions
 }
 
-// newChecer creates a new checker for a given LookupOptions configuration.
+// newChecker creates a new checker for a given LookupOptions configuration.
 func newChecker(o *storage.LookupOptions) *checker {
 	return &checker{
 		max: o.MaxElements > 0,
@@ -300,7 +300,7 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 	return nil
 }
 
-// PredicatesForSubjecAndObject publishes all predicates available for the
+// PredicatesForSubjectAndObject publishes all predicates available for the
 // given subject and object to the provided channel.
 func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node, o *triple.Object, lo *storage.LookupOptions, prds chan<- *predicate.Predicate) error {
 	if prds == nil {
@@ -360,7 +360,7 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 	return nil
 }
 
-// TriplesForSubject publishes all triples available for the given subect to
+// TriplesForSubject publishes all triples available for the given subject to
 // the provided channel.
 func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storage.LookupOptions, trpls chan<- *triple.Triple) error {
 	if trpls == nil {
@@ -473,7 +473,7 @@ func (m *memory) Exist(ctx context.Context, t *triple.Triple) (bool, error) {
 	return ok, nil
 }
 
-// Triples allows to iterate over all available triples by pubhsing them to the
+// Triples allows to iterate over all available triples by pushing them to the
 // provided channel.
 func (m *memory) Triples(ctx context.Context, trpls chan<- *triple.Triple) error {
 	if trpls == nil {

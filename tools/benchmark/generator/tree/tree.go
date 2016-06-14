@@ -67,9 +67,9 @@ func (t *treeGenerator) newNode(branch int, parentID string) (*node.Node, error)
 	return node.NewNode(t.nodeType, id), nil
 }
 
-// newTriple creates a new triple given the parent and the descendent as an object.
-func (t *treeGenerator) newTriple(parent, descendent *node.Node) (*triple.Triple, error) {
-	return triple.New(parent, t.predicate, triple.NewNodeObject(descendent))
+// newTriple creates a new triple given the parent and the descendant as an object.
+func (t *treeGenerator) newTriple(parent, descendant *node.Node) (*triple.Triple, error) {
+	return triple.New(parent, t.predicate, triple.NewNodeObject(descendant))
 }
 
 // recurse generated the triple by recursing while there are still triples

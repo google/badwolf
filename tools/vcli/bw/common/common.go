@@ -87,7 +87,7 @@ func Help(args []string, cmds []*command.Command) int {
 // StoreGenerator is a function that generate a new valid storage.Store.
 type StoreGenerator func() (storage.Store, error)
 
-// InitializeDriver attemps to initalize the driver.
+// InitializeDriver attempts to initialize the driver.
 func InitializeDriver(driverName string, drivers map[string]StoreGenerator) (storage.Store, error) {
 	f, ok := drivers[driverName]
 	if !ok {
@@ -100,7 +100,7 @@ func InitializeDriver(driverName string, drivers map[string]StoreGenerator) (sto
 	return f()
 }
 
-// InitializeCommands intializes the avaialbe commands with the given storage
+// InitializeCommands initializes the available commands with the given storage
 // instance.
 func InitializeCommands(driver storage.Store, chanSize, bulkTripleOpSize, builderSize int) []*command.Command {
 	return []*command.Command{

@@ -35,7 +35,7 @@ func init() {
 	}
 }
 
-func TestIncreasigMonotonicTimeNowIncrease(t *testing.T) {
+func TestIncreasingMonotonicTimeNowIncrease(t *testing.T) {
 	to := timeNow()
 	for i := 0; i <= 100; i++ {
 		tn := timeNow()
@@ -86,7 +86,7 @@ func TestDurationStats(t *testing.T) {
 	}
 }
 
-func TestRuncBenchmarkBattery(t *testing.T) {
+func TestRunBenchmarkBattery(t *testing.T) {
 	var testData []*BenchEntry
 	for i := 0; i < 1000; i++ {
 		testData = append(testData, &BenchEntry{

@@ -39,7 +39,7 @@ func (t *Type) Covariant(ot *Type) bool {
 	if !strings.HasPrefix(t.String(), ot.String()) {
 		return false
 	}
-	// /type/foo is covarian of /type, but /typefoo is not covatiant of /type.
+	// /type/foo is covariant of /type, but /typefoo is not covariant of /type.
 	return len(t.String()) == len(ot.String()) || t.String()[len(ot.String())] == '/'
 }
 
@@ -189,7 +189,7 @@ func init() {
 }
 
 // NewBlankNode creates a new blank node. The blank node ID is guaranteed to
-// be uique in BadWolf.
+// be unique in BadWolf.
 func NewBlankNode() *Node {
 	id := ID(<-nextVal)
 	return &Node{

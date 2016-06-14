@@ -300,7 +300,7 @@ func TestWhereSubjectClauseHook(t *testing.T) {
 	})
 }
 
-func TestWherePredicatClauseHook(t *testing.T) {
+func TestWherePredicateClauseHook(t *testing.T) {
 	st := &Statement{}
 	f := wherePredicateClause()
 	st.ResetWorkingGraphClause()
@@ -1254,7 +1254,7 @@ func TestGroupByBindings(t *testing.T) {
 				t.Errorf("semantic.groupByBindings should never fail with error %v", err)
 			}
 		}
-		// Check collected ouytput.
+		// Check collected output.
 		if got, want := st.groupBy, entry.want; !reflect.DeepEqual(got, want) {
 			t.Errorf("semantic.groupByBindings failed to collect the expected group by bindings; got %v, want %v", got, want)
 		}
@@ -1388,7 +1388,7 @@ func TestOrderByBindings(t *testing.T) {
 				t.Errorf("semantic.orderByBindings should never fail with error %v", err)
 			}
 		}
-		// Check collected ouytput.
+		// Check collected output.
 		if got, want := st.orderBy, entry.want; !reflect.DeepEqual(got, want) {
 			t.Errorf("semantic.orderByBindings failed to collect the expected group by bindings; got %v, want %v", got, want)
 		}
@@ -1579,7 +1579,7 @@ func TestHavingExpression(t *testing.T) {
 				t.Errorf("semantic.havingExpression should never fail with error %v", err)
 			}
 		}
-		// Check collected ouytput.
+		// Check collected output.
 		if got, want := st.havingExpression, entry.want; !reflect.DeepEqual(got, want) {
 			t.Errorf("semantic.havingExpression failed to collect the expected tokens; got %v, want %v", got, want)
 		}
@@ -1747,7 +1747,7 @@ func TestLimitCollection(t *testing.T) {
 				t.Errorf("semantic.limitCollection should never fail with error %v", err)
 			}
 		}
-		// Check collected ouytput.
+		// Check collected output.
 		if got, want := st.limit, entry.want; !st.limitSet || got != want {
 			t.Errorf("semantic.limitClause failed to collect the expected value; got %v, want %v (%v)", got, want, st.limitSet)
 		}
@@ -1907,7 +1907,7 @@ func TestCollectGlobalBounds(t *testing.T) {
 		if fail {
 			continue
 		}
-		// Check collected ouytput.
+		// Check collected output.
 		if got, want := st.lookupOptions, entry.want; !entry.fail && !reflect.DeepEqual(got, want) {
 			t.Errorf("semantic.CollectGlobalBounds failed to collect the expected value for case %q; got %v, want %v (%v)", entry.id, got, want, st.limitSet)
 		}

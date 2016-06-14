@@ -27,7 +27,7 @@ import (
 // Evaluator interface computes the evaluation of a boolean expression.
 type Evaluator interface {
 	// Evaluate computes the boolean value of the expression given a certain
-	// restults table row. It will return an
+	// results table row. It will return an
 	// error if it could not be evaluated for the provided table row.
 	Evaluate(r table.Row) (bool, error)
 }
@@ -208,7 +208,7 @@ func (e *booleanNode) Evaluate(r table.Row) (bool, error) {
 	}
 }
 
-// NewBinaryBooleanExpression creates a new binary boolean evalautor.
+// NewBinaryBooleanExpression creates a new binary boolean evaluator.
 func NewBinaryBooleanExpression(op OP, lE, rE Evaluator) (Evaluator, error) {
 	switch op {
 	case AND, OR:
@@ -224,7 +224,7 @@ func NewBinaryBooleanExpression(op OP, lE, rE Evaluator) (Evaluator, error) {
 	}
 }
 
-// NewUnaryBooleanExpression creates a new unary boolean evalautor.
+// NewUnaryBooleanExpression creates a new unary boolean evaluator.
 func NewUnaryBooleanExpression(op OP, lE Evaluator) (Evaluator, error) {
 	switch op {
 	case NOT:

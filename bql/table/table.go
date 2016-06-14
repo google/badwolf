@@ -30,7 +30,7 @@ import (
 )
 
 // Table contains the results of a BQL query. This table implementation is not
-// safe for concurrency. You should take appropiate precautions if you want to
+// safe for concurrency. You should take appropriate precautions if you want to
 // access it concurrently and wrap to properly control concurrent operations.
 type Table struct {
 	bs   []string
@@ -110,10 +110,10 @@ func (r Row) ToTextLine(res *bytes.Buffer, bs []string, sep string) error {
 	return nil
 }
 
-// AddRow adds a row to the end of a table. For preformance reasons, it does not
-// check that all bindindgs are set, nor that they are declared on table
+// AddRow adds a row to the end of a table. For performance reasons, it does not
+// check that all bindings are set, nor that they are declared on table
 // creation. BQL builds valid tables, if you plan to create tables on your own
-// you should be carful to provide valid rows.
+// you should be careful to provide valid rows.
 func (t *Table) AddRow(r Row) {
 	if len(r) > 0 {
 		t.data = append(t.data, r)
@@ -139,7 +139,7 @@ func (t *Table) Rows() []Row {
 	return t.data
 }
 
-// AddBindings add the new binings provided to the table.
+// AddBindings add the new bindings provided to the table.
 func (t *Table) AddBindings(bs []string) {
 	for _, b := range bs {
 		if !t.mbs[b] {
@@ -149,8 +149,8 @@ func (t *Table) AddBindings(bs []string) {
 	}
 }
 
-// ProjectBindings replaces the current bidings with the projected one. The
-// provided bindings needs to be a subsed of the original bindings. If the
+// ProjectBindings replaces the current bindings with the projected one. The
+// provided bindings needs to be a subset of the original bindings. If the
 // provided bindings are not a subset of the original ones, the projection will
 // fail, leave the table unmodified, and return an error. The projection only
 // modify the bindings, but does not drop non projected data.
@@ -169,7 +169,7 @@ func (t *Table) ProjectBindings(bs []string) error {
 	return nil
 }
 
-// HasBinding returns true if the binding currently exist on the teable.
+// HasBinding returns true if the binding currently exist on the table.
 func (t *Table) HasBinding(b string) bool {
 	return t.mbs[b]
 }
@@ -224,7 +224,7 @@ func equalBindings(b1, b2 map[string]bool) bool {
 }
 
 // AppendTable appends the content of the provided table. It will fail it the
-// target table is not empty and the binidngs do not match.
+// target table is not empty and the bindings do not match.
 func (t *Table) AppendTable(t2 *Table) error {
 	if t2 == nil {
 		return nil
@@ -261,7 +261,7 @@ func MergeRows(ms []Row) Row {
 	return res
 }
 
-// DotProduct does the doot product with the provided tatble
+// DotProduct does the dot product with the provided table
 func (t *Table) DotProduct(t2 *Table) error {
 	if !disjointBinding(t.mbs, t2.mbs) {
 		return fmt.Errorf("DotProduct operations requires disjoint bindingts; instead got %v and %v", t.mbs, t2.mbs)
@@ -312,7 +312,7 @@ func (t *Table) Limit(i int64) {
 }
 
 // SortConfig contains the sorting information. Contains the binding order
-// to use wile sorting as well as the deriction for each of them to use.
+// to use while sorting as well as the direction for each of them to use.
 type SortConfig []struct {
 	Binding string
 	Desc    bool
@@ -323,7 +323,7 @@ type bySortConfig struct {
 	cfg  SortConfig
 }
 
-// Len returns the lenght of the table.
+// Len returns the length of the table.
 func (c bySortConfig) Len() int {
 	return len(c.rows)
 }
@@ -476,7 +476,7 @@ func NewSumFloat64LiteralAccumulator(s float64) Accumulator {
 	return &sumFloat64{s, s}
 }
 
-// countAcc implements an accumulator that count accumulation occurances.
+// countAcc implements an accumulator that count accumulation occurrences.
 type countAcc struct {
 	state int64
 }
@@ -497,7 +497,7 @@ func NewCountAccumulator() Accumulator {
 	return &countAcc{0}
 }
 
-// countDistinctAcc implements an accumulator that count accumulation occurances.
+// countDistinctAcc implements an accumulator that count accumulation occurrences.
 type countDistinctAcc struct {
 	state map[string]int64
 }
@@ -521,12 +521,12 @@ func NewCountDistinctAccumulator() Accumulator {
 }
 
 // groupRangeReduce takes a sorted range and generates a new row containing
-// the aggregated colums and the non agggregated ones.
+// the aggregated columns and the non aggregated ones.
 func (t *Table) groupRangeReduce(i, j int, alias map[string]string, acc map[string]Accumulator) (Row, error) {
 	if i > j {
 		return nil, fmt.Errorf("cannot aggregate empty ranges [%d, %d)", i, j)
 	}
-	// Ininitalize the range and accumulator results.
+	// Initialize the range and accumulator results.
 	rng := t.data[i:j]
 	vaccs := make(map[string]interface{})
 	// Reset the accumulators.
@@ -589,12 +589,12 @@ type AliasAccPair struct {
 }
 
 // fullGroupRangeReduce takes a sorted range and generates a new row containing
-// the aggregated colums and the non agggregated ones.
+// the aggregated columns and the non aggregated ones.
 func (t *Table) fullGroupRangeReduce(i, j int, acc map[string]map[string]AliasAccPair) (Row, error) {
 	if i > j {
 		return nil, fmt.Errorf("cannot aggregate empty ranges [%d, %d)", i, j)
 	}
-	// Ininitalize the range and accumulator results.
+	// Initialize the range and accumulator results.
 	rng := t.data[i:j]
 	// Reset the accumulators.
 	for _, aap := range acc {
@@ -698,7 +698,7 @@ func (t *Table) Reduce(cfg SortConfig, aaps []AliasAccPair) error {
 		return fmt.Errorf("table.Reduce invalid reduce configuration in cfg=%v, aap=%v for table with binding %v", cfg, aaps, t.bs)
 	}
 	// Valid reduce configuration. Reduce sorts the table and then reduces
-	// contigous groups row groups.
+	// contiguous groups row groups.
 	if t.NumRows() == 0 {
 		return nil
 	}

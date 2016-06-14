@@ -67,7 +67,7 @@ func (l *Literal) Type() Type {
 	return l.t
 }
 
-// String eturns a string representation of the literal.
+// String returns a string representation of the literal.
 func (l *Literal) String() string {
 	return fmt.Sprintf("\"%v\"^^type:%v", l.Interface(), l.Type())
 }
@@ -131,7 +131,7 @@ func (l *Literal) Interface() interface{} {
 	return l.v
 }
 
-// Builder interface provides a standar way to build literals given a type and
+// Builder interface provides a standard way to build literals given a type and
 // a given value.
 type Builder interface {
 	Build(t Type, v interface{}) (*Literal, error)
@@ -145,11 +145,11 @@ func init() {
 	defaultBuilder = &unboundBuilder{}
 }
 
-// The deatuls bilder is unbound. This allows to create a literal arbitrarily
+// The default builder is unbound. This allows to create a literal arbitrarily
 // long.
 type unboundBuilder struct{}
 
-// Build creates a new unboud literal from a type and a value.
+// Build creates a new unbound literal from a type and a value.
 func (b *unboundBuilder) Build(t Type, v interface{}) (*Literal, error) {
 	switch v.(type) {
 	case bool:
@@ -181,7 +181,7 @@ func (b *unboundBuilder) Build(t Type, v interface{}) (*Literal, error) {
 	}, nil
 }
 
-// Parse creates a string out of a prettyfied representation.
+// Parse creates a string out of a prettified representation.
 func (b *unboundBuilder) Parse(s string) (*Literal, error) {
 	raw := strings.TrimSpace(s)
 	if len(raw) == 0 {
@@ -282,7 +282,7 @@ func (b *boundedBuilder) Parse(s string) (*Literal, error) {
 	return l, nil
 }
 
-// NewBoundedBuilder creates a builder that that guarantess that no literal will
+// NewBoundedBuilder creates a builder that guarantees that no literal will
 // be created if the size of the string or a blob is bigger than the provided
 // maximum.
 func NewBoundedBuilder(max int) Builder {
