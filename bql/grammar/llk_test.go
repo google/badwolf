@@ -20,7 +20,7 @@ import (
 	"github.com/google/badwolf/bql/lexer"
 )
 
-func TestEmptyImputLLk(t *testing.T) {
+func TestEmptyInputLLk(t *testing.T) {
 	const k = 10
 	l := NewLLk("", k)
 	if l.Current().Type != lexer.ItemEOF {

@@ -47,7 +47,7 @@ func insertTest(t *testing.T) {
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
-	if _, err = pln.Excecute(ctx); err != nil {
+	if _, err = pln.Execute(ctx); err != nil {
 		t.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
 	}
 	g, err := memory.DefaultStore.Graph(ctx, "?a")
@@ -86,7 +86,7 @@ func deleteTest(t *testing.T) {
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
-	if _, err = pln.Excecute(ctx); err != nil {
+	if _, err = pln.Execute(ctx); err != nil {
 		t.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
 	}
 	g, err := memory.DefaultStore.Graph(ctx, "?a")
@@ -157,7 +157,7 @@ func TestPlannerCreateGraph(t *testing.T) {
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
-	if _, err := pln.Excecute(ctx); err != nil {
+	if _, err := pln.Execute(ctx); err != nil {
 		t.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
 	}
 	if _, err := memory.DefaultStore.Graph(ctx, "?foo"); err != nil {
@@ -188,7 +188,7 @@ func TestPlannerDropGraph(t *testing.T) {
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
-	if _, err := pln.Excecute(ctx); err != nil {
+	if _, err := pln.Execute(ctx); err != nil {
 		t.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
 	}
 	if g, err := memory.DefaultStore.Graph(ctx, "?foo"); err == nil {
@@ -499,7 +499,7 @@ func TestPlannerQuery(t *testing.T) {
 		if err != nil {
 			t.Errorf("planner.New failed to create a valid query plan with error %v", err)
 		}
-		tbl, err := plnr.Excecute(ctx)
+		tbl, err := plnr.Execute(ctx)
 		if err != nil {
 			t.Errorf("planner.Excecute failed for query %q with error %v", entry.q, err)
 			continue
@@ -513,7 +513,7 @@ func TestPlannerQuery(t *testing.T) {
 	}
 }
 
-func TestTreeTravesalToRoot(t *testing.T) {
+func TestTreeTraversalToRoot(t *testing.T) {
 	// Graph traversal data.
 	traversalTriples := `/person<Gavin Belson>  "born in"@[]    /city<Springfield>
 		/person<Gavin Belson>  "parent of"@[]  /person<Peter Belson>
@@ -550,7 +550,7 @@ func TestTreeTravesalToRoot(t *testing.T) {
 	if err != nil {
 		t.Errorf("planner.New failed to create a valid query plan with error %v", err)
 	}
-	tbl, err := plnr.Excecute(ctx)
+	tbl, err := plnr.Execute(ctx)
 	if err != nil {
 		t.Errorf("planner.Excecute failed for query %q with error %v", traversalQuery, err)
 	}
@@ -581,7 +581,7 @@ func benchmarkQuery(query string, b *testing.B) {
 		if err != nil {
 			b.Errorf("planner.New failed to create a valid query plan with error %v", err)
 		}
-		_, err = plnr.Excecute(ctx)
+		_, err = plnr.Execute(ctx)
 		if err != nil {
 			b.Errorf("planner.Excecute failed for query %q with error %v", query, err)
 		}

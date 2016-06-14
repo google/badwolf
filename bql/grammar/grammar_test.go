@@ -145,7 +145,7 @@ func TestRejectByParse(t *testing.T) {
 		// Reject incomplete clauses.
 		`select ?a from ?b where {?s ?p};`,
 		`select ?a from ?b where {?s ?p ?o . ?};`,
-		// Reject imcomplete clause aliasing.
+		// Reject incomplete clause aliasing.
 		`select ?a from ?b where {?s id ?b as ?c ?d ?o};`,
 		`select ?a from ?b where {?s ?p at ?t as ?a ?o};`,
 		`select ?a from ?b where {?s ?p ?o at ?t id ?i};`,
@@ -270,7 +270,7 @@ func TestAcceptOpsByParseAndSemantic(t *testing.T) {
 
 func TestAcceptQueryBySemanticParse(t *testing.T) {
 	table := []string{
-		// Test well type litterals are accepted.
+		// Test well type literals are accepted.
 		`select ?s from ?g where{?s ?p "1"^^type:int64};`,
 		// Test predicates are accepted.
 		// Test invalid predicate time anchor are rejected.
@@ -314,7 +314,7 @@ func TestAcceptQueryBySemanticParse(t *testing.T) {
 
 func TestRejectByParseAndSemantic(t *testing.T) {
 	table := []string{
-		// Test wront type litterals are rejected.
+		// Test wrong type literals are rejected.
 		`select ?s from ?g where{?s ?p "true"^^type:int64};`,
 		// Test invalid predicate bounds are rejected.
 		`select ?s from ?b where{/_<foo> as ?s "id"@[2018-07-19T13:12:04.669618843-07:00, 2015-07-19T13:12:04.669618843-07:00] ?o};`,

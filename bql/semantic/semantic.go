@@ -13,9 +13,9 @@
 // limitations under the License.
 
 // Package semantic contains the semantic analysis required to have a
-// senantically valid parser. It includes the data conversion required to
+// semantically valid parser. It includes the data conversion required to
 // turn tokens into valid BadWolf structures. It also provides the hooks
-// implementations required for buliding an actionable execution plan.
+// implementations required for building an actionable execution plan.
 package semantic
 
 import (
@@ -38,7 +38,7 @@ type StatementType int8
 const (
 	// Query statement.
 	Query StatementType = iota
-	// Insert statemrnt.
+	// Insert statement.
 	Insert
 	// Delete statement.
 	Delete
@@ -176,7 +176,7 @@ func (c *GraphClause) IsEmpty() bool {
 	return reflect.DeepEqual(c, &GraphClause{})
 }
 
-// BindType set he type of a statement.
+// BindType sets the type of a statement.
 func (s *Statement) BindType(st StatementType) {
 	s.sType = st
 }
@@ -206,7 +206,7 @@ func (s *Statement) Data() []*triple.Triple {
 	return s.data
 }
 
-// GraphPatternClauses return the list of graph pattern clauses
+// GraphPatternClauses returns the list of graph pattern clauses
 func (s *Statement) GraphPatternClauses() []*GraphClause {
 	return s.pattern
 }
@@ -221,23 +221,23 @@ func (s *Statement) WorkingClause() *GraphClause {
 	return s.workingClause
 }
 
-// AddWorkingGrpahClause add the current working graph clause to the set of
+// AddWorkingGraphClause adds the current working graph clause to the set of
 // clauses that form the graph pattern.
-func (s *Statement) AddWorkingGrpahClause() {
+func (s *Statement) AddWorkingGraphClause() {
 	if s.workingClause != nil || !s.workingClause.IsEmpty() {
 		s.pattern = append(s.pattern, s.workingClause)
 	}
 	s.ResetWorkingGraphClause()
 }
 
-// addtoBindings add the binding if not empty.
+// addToBindings adds the binding if not empty.
 func addToBindings(bs map[string]int, b string) {
 	if b != "" {
 		bs[b]++
 	}
 }
 
-// BindingsMap retuns the set of bindings available on the graph clauses for he
+// BindingsMap returns the set of bindings available on the graph clauses for he
 // statement.
 func (s *Statement) BindingsMap() map[string]int {
 	bm := make(map[string]int)
@@ -268,7 +268,7 @@ func (s *Statement) BindingsMap() map[string]int {
 	return bm
 }
 
-// Bindings retuns the list of bindings available on the graph clauses for he
+// Bindings returns the list of bindings available on the graph clauses for he
 // statement.
 func (s *Statement) Bindings() []string {
 	var bs []string
@@ -281,12 +281,12 @@ func (s *Statement) Bindings() []string {
 // bySpecificity type helps sort clauses by Specificity.
 type bySpecificity []*GraphClause
 
-// Len returns the lenght of the clauses array.
+// Len returns the length of the clauses array.
 func (s bySpecificity) Len() int {
 	return len(s)
 }
 
-// Swap exchange the i and j elements in the clauses array.
+// Swap exchanges the i and j elements in the clauses array.
 func (s bySpecificity) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
@@ -309,7 +309,7 @@ func (s *Statement) SortedGraphPatternClauses() []*GraphClause {
 	return ptrns
 }
 
-// Projection contails the information required to project the outcome of
+// Projection contains the information required to project the outcome of
 // querying with GraphClauses. It also contains the information of what
 // aggregation function should be used.
 type Projection struct {
@@ -324,7 +324,7 @@ func (p *Projection) String() string {
 	return fmt.Sprintf("%s as %s (%s, %s)", p.Binding, p.Alias, p.OP, p.Modifier)
 }
 
-// IsEmpty check if the given projection is empty.
+// IsEmpty checks if the given projection is empty.
 func (p *Projection) IsEmpty() bool {
 	return p.Binding == "" && p.Alias == "" && p.OP == lexer.ItemError && p.Modifier == lexer.ItemError
 }
@@ -342,7 +342,7 @@ func (s *Statement) WorkingProjection() *Projection {
 	return s.workingProjection
 }
 
-// AddWorkingProjection add the current projection variableto the set of
+// AddWorkingProjection adds the current projection variable to the set of
 // projects that this statement.
 func (s *Statement) AddWorkingProjection() {
 	if s.workingProjection != nil && !s.workingProjection.IsEmpty() {
@@ -356,7 +356,7 @@ func (s *Statement) Projections() []*Projection {
 	return s.projection
 }
 
-// InputBindings returns the list of incomming binding feed from a where clause.
+// InputBindings returns the list of incoming binding feed from a where clause.
 func (s *Statement) InputBindings() []string {
 	var res []string
 	for _, p := range s.projection {

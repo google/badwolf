@@ -106,16 +106,16 @@ func dataAccumulator(b literal.Builder) ElementHook {
 }
 
 var (
-	// predicateRegexp contains the regular expression for not fullly defined predicates.
+	// predicateRegexp contains the regular expression for not fully defined predicates.
 	predicateRegexp *regexp.Regexp
 
-	// boundRegexp contains the regular expression for not fullly defined predicate bounds.
+	// boundRegexp contains the regular expression for not fully defined predicate bounds.
 	boundRegexp *regexp.Regexp
 
 	// dach provides a unique data hook generator.
 	dach ElementHook
 
-	// gach provide a unique hook to collect all targetted Graphs
+	// gach provide a unique hook to collect all targeted Graphs
 	// for a given Statement.
 	gach ElementHook
 
@@ -143,13 +143,13 @@ var (
 	// gbch contains the variable for collecting bindings from a group by.
 	gbch ElementHook
 
-	// gcch contrains the clause hook to validate group by bindings.
+	// gcch contains the clause hook to validate group by bindings.
 	gcch ClauseHook
 
 	// obch contains the variable for collecting bindings from a order by.
 	obch ElementHook
 
-	// occh contrains the clause hook to validate order by bindings.
+	// occh contains the clause hook to validate order by bindings.
 	occh ClauseHook
 
 	// hech contains the element hook to collect all the tokens that form the
@@ -237,13 +237,13 @@ func VarAccumulatorHook() ElementHook {
 }
 
 // VarBindingsGraphChecker returns the singleton for checking a query statement
-// for valid bidings in the select variables.
+// for valid bindings in the select variables.
 func VarBindingsGraphChecker() ClauseHook {
 	return bgch
 }
 
 // GroupByBindings returns the singleton for collecting all the group by
-// bidings.
+// bindings.
 func GroupByBindings() ElementHook {
 	return gbch
 }
@@ -255,7 +255,7 @@ func GroupByBindingsChecker() ClauseHook {
 }
 
 // OrderByBindings returns the singleton for collecting all the group by
-// bidings.
+// bindings.
 func OrderByBindings() ElementHook {
 	return obch
 }
@@ -315,7 +315,7 @@ func graphAccumulator() ElementHook {
 func whereNextWorkingClause() ClauseHook {
 	var f ClauseHook
 	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
-		s.AddWorkingGrpahClause()
+		s.AddWorkingGraphClause()
 		return f, nil
 	}
 	return f
@@ -396,8 +396,8 @@ func whereSubjectClause() ElementHook {
 	return f
 }
 
-// processPredicate updates the working graph clause if threre is an available
-// predcicate.
+// processPredicate updates the working graph clause if there is an available
+// predicate.
 func processPredicate(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.Token) (*predicate.Predicate, string, string, bool, error) {
 	var (
 		nP             *predicate.Predicate
@@ -426,8 +426,8 @@ func processPredicate(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.To
 	return nil, pID, pAnchorBinding, temporal, nil
 }
 
-// processPredicateBound updates the working graph clause if threre is an
-// available predcicate bound.
+// processPredicateBound updates the working graph clause if there is an
+// available predicate bound.
 func processPredicateBound(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.Token) (string, string, string, *time.Time, *time.Time, bool, error) {
 	var (
 		pID              string
@@ -443,7 +443,7 @@ func processPredicateBound(c *GraphClause, ce ConsumedElement, lastNopToken *lex
 	}
 	id, tl, tu := cmps[0][1], cmps[0][2], cmps[0][3]
 	pID = id
-	// Lower bound procssing.
+	// Lower bound processing.
 	if strings.Index(tl, "?") != -1 {
 		pLowerBoundAlias = tl
 	} else {
@@ -456,7 +456,7 @@ func processPredicateBound(c *GraphClause, ce ConsumedElement, lastNopToken *lex
 			pLowerBound = &ptl
 		}
 	}
-	// Lower bound procssing.
+	// Lower bound processing.
 	if strings.Index(tu, "?") != -1 {
 		pUpperBoundAlias = tu
 	} else {
@@ -722,7 +722,7 @@ func groupByBindings() ElementHook {
 	return f
 }
 
-// groupByBindingsChecker checks that all group by bindings are valid ouytput
+// groupByBindingsChecker checks that all group by bindings are valid output
 // bindings.
 func groupByBindingsChecker() ClauseHook {
 	var f ClauseHook
@@ -786,7 +786,7 @@ func orderByBindings() ElementHook {
 	return f
 }
 
-// orderByBindingsChecker checks that all order by bindings are valid ouytput
+// orderByBindingsChecker checks that all order by bindings are valid output
 // bindings.
 func orderByBindingsChecker() ClauseHook {
 	var f ClauseHook
@@ -840,7 +840,7 @@ func havingExpression() ElementHook {
 }
 
 // havingExpressionBuilder given the collected tokens that forms the having
-// clause expression, it builds the expresion to use when filtering values
+// clause expression, it builds the expression to use when filtering values
 // on the final result table.
 func havingExpressionBuilder() ClauseHook {
 	var f ClauseHook

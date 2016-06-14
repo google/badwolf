@@ -1,7 +1,7 @@
 # BQL: BadWolf Query language
 
 BadWolf provides a high level declarative query and update language. BQL
-(or BadWolf Query Language) is a declarative language losely modeled after
+(or BadWolf Query Language) is a declarative language loosely modeled after
 [SPARQL](https://en.wikipedia.org/wiki/SPARQL) to fit the temporal nature of
 BadWolf graph data.
 

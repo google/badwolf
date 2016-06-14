@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package io contains helper functions for io operatoins on the command line
+// Package io contains helper functions for io operations on the command line
 // bw tool.
 package io
 
@@ -59,7 +59,7 @@ func ReadLines(path string) ([]string, error) {
 	return lines, scanner.Err()
 }
 
-// ProcessLines from a file using the provied call back. The error of the
+// ProcessLines from a file using the provided call back. The error of the
 // callback will be passed through. Returns the number of processed errors
 // before the error. Returns the line where the error occurred or the total
 // numbers of lines processed.

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package triple implements and allows to manipulate Badwolf triples.
+// Package triple implements and allows to manipulate BadWolf triples.
 package triple
 
 import (
@@ -161,7 +161,7 @@ func (t *Triple) Predicate() *predicate.Predicate {
 	return t.p
 }
 
-// Object returns the object of the tirple.
+// Object returns the object of the triple.
 func (t *Triple) Object() *Object {
 	return t.o
 }

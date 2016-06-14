@@ -76,7 +76,7 @@ func (l *LLk) CanAccept(tt lexer.TokenType) bool {
 	return l.tkns[0].Type == tt
 }
 
-// Consume will consue the current token and move to the next one if it matches
+// Consume will consume the current token and move to the next one if it matches
 // the provided token, false otherwise.
 func (l *LLk) Consume(tt lexer.TokenType) bool {
 	if l.tkns[0].Type != tt {

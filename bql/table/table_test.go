@@ -335,7 +335,7 @@ func TestProjectBindings(t *testing.T) {
 	}
 }
 
-func TestDisjoingBinding(t *testing.T) {
+func TestDisjointBinding(t *testing.T) {
 	testTable := []struct {
 		b1   map[string]bool
 		b2   map[string]bool
@@ -673,7 +673,7 @@ func TestCountAccumulators(t *testing.T) {
 	if got, want := cv.(int64), int64(5); got != want {
 		t.Errorf("Count accumulator failed; got %d, want %d", got, want)
 	}
-	// Count distint accumulator
+	// Count distinct accumulator
 	var (
 		dv interface{}
 		da = NewCountDistinctAccumulator()

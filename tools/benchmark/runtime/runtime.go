@@ -27,8 +27,8 @@ import (
 var timeNow = time.Now
 
 // TrackDuration measure the duration of the run time function using the
-// wall clock. You should not consider the returned duration in the precense
-// or an error since it will likely have shortcut the excecution of the
+// wall clock. You should not consider the returned duration in the presence
+// or an error since it will likely have shortcut the execution of the
 // function being executed.
 func TrackDuration(f func() error) (time.Duration, error) {
 	ts := timeNow()
@@ -37,8 +37,8 @@ func TrackDuration(f func() error) (time.Duration, error) {
 	return d, err
 }
 
-// RepetitionDurationStats extracts some duration stats by repeateadly execution
-// and measuring runtime. Retuns the mean and deviation of the run duration of
+// RepetitionDurationStats extracts some duration stats by repeatedly execution
+// and measuring runtime. Returns the mean and deviation of the run duration of
 // the provided function. If an error is return by the function it will shortcut
 // the execution and return just the error.
 func RepetitionDurationStats(reps int, setup, f, teardown func() error) (time.Duration, time.Duration, error) {
@@ -81,7 +81,7 @@ func RepetitionDurationStats(reps int, setup, f, teardown func() error) (time.Du
 	return time.Duration(mean), time.Duration(dev), nil
 }
 
-// BenchEntry cotains the bench entry id, the function to run, and the number
+// BenchEntry contains the bench entry id, the function to run, and the number
 // of repetitions to run.
 type BenchEntry struct {
 	BatteryID string

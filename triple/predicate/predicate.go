@@ -152,7 +152,7 @@ func NewTemporal(id string, t time.Time) (*Predicate, error) {
 }
 
 // GUID returns a global unique identifier for the given predicate. It is
-// implemented as the base64 encoded stringified version of the preducate.
+// implemented as the base64 encoded stringified version of the predicate.
 func (p *Predicate) GUID() string {
 	return base64.StdEncoding.EncodeToString([]byte(p.String()))
 }

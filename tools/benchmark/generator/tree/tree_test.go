@@ -22,7 +22,7 @@ import (
 	"github.com/google/badwolf/tools/benchmark/generator"
 )
 
-func TesEmpty(t *testing.T) {
+func TestEmpty(t *testing.T) {
 }
 
 func TestNewNode(t *testing.T) {

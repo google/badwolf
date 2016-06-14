@@ -19,7 +19,7 @@ The storage abstraction layer is built around two simple interfaces:
                       query language.
 
 The goal of these interfaces is to allow writing specialized drivers for
-different storage backends. For instance, BadWolf provides a simple
+different storage back-ends. For instance, BadWolf provides a simple
 memory-based implementation of these interfaces in the ```storage/memory```
 package. All relevant interface definitions can be found in the
 [storage.go](../storage/storage.go) file of the ```storage``` package. Also

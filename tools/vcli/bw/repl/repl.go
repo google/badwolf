@@ -54,11 +54,11 @@ func New(driver storage.Store, chanSize, bulkSize, builderSize int) *command.Com
 
 type readLiner func(*os.File) <-chan string
 
-// simpleReadline reads a line from the provided file. This does not support
+// simpleReadLine reads a line from the provided file. This does not support
 // any advanced terminal functionalities.
 //
 // TODO(xllora): Replace simple reader for function that supports advanced
-// teminal input.
+// terminal input.
 func simpleReadLine(f *os.File) <-chan string {
 	c := make(chan string)
 	go func() {
@@ -181,7 +181,7 @@ func runBQLFromFile(ctx context.Context, driver storage.Store, chanSize int, lin
 	return path, len(lines), nil
 }
 
-// runBQL attemps to excecute the provided query against the given store.
+// runBQL attempts to execute the provided query against the given store.
 func runBQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*table.Table, error) {
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
@@ -195,7 +195,7 @@ func runBQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*ta
 	if err != nil {
 		return nil, fmt.Errorf("should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
-	res, err := pln.Excecute(ctx)
+	res, err := pln.Execute(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
 	}
