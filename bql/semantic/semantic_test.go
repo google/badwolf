@@ -129,7 +129,7 @@ func TestBindingListing(t *testing.T) {
 	}
 }
 
-func TesIsEmptyClause(t *testing.T) {
+func TestIsEmptyClause(t *testing.T) {
 	testTable := []struct {
 		in  *GraphClause
 		out bool
@@ -140,7 +140,7 @@ func TesIsEmptyClause(t *testing.T) {
 		},
 		{
 			in:  &GraphClause{SBinding: "?foo"},
-			out: true,
+			out: false,
 		},
 	}
 	for _, entry := range testTable {
