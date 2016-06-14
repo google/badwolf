@@ -12,9 +12,9 @@ SWE, Google Inc.
 
 * Quick Overview
 
-Describing the world using facts
+Describing the world using statements
 
-Facts and how they map to graphs
+Statements and how they map to graphs
 
 Quick Graph manipulation concepts
 
@@ -22,11 +22,80 @@ Examples and demo
 
 Road map
 
-* Modeling facts with graphs
+* What is a statement?
 
-* Facts change over time
+* A simple statement
 
-* How can you manage all these facts?
+A simple example of a statement
+
+  Charles Darwin was born in Shrewsbury
+
+A statement describes some truth about something
+
+Deconstructing a statement
+
+- _Subject_: The main actor on the statement (`Charles` `Darwin`)
+- _Predicate_: The verb qualifying the statement (`born` `in`)
+- _Object_: What is being predicated (`Shrewsbury`)
+
+There are two entities (`Charles` `Darwin` and `Shrewsbury`) linked by a verb
+
+* Another statement
+
+This is also a simple statement, but with a twist
+
+  Nikola Tesla knew Charles Darwin was born in Shrewsbury
+
+A possible way of desconstructing the statement
+
+- _Subject_: `Nikola` `Tesla`
+- _Predicate_: `knew`
+- _Object_: `Charles` `Darwin` `was` `born` `in` `Shrewsbury`
+
+You can have entities in a statement, but you can also have other statements
+
+The above example links an entity with another statement
+
+* One last statement
+
+One final statement
+
+  Shrewsbury population 6,000
+
+This statement is build using
+
+- _Subject_: (`Shrewsbury`)
+- _Predicate_: A property (`population`)
+- _Object_: The value of the property (`6,000`)
+
+A statement may not define a relation, but describe a _property_
+
+The object of properties are primitive data types. Some examples
+
+- _Text_
+- _Numbers_
+- `...`
+
+* Statement summary
+
+Relation expressing statement
+
+- _Subject_: An entity or another statement
+- _Predicate_: A verb
+- _Object_: An entity or another statement
+
+Property expressing statement
+
+- _Subject_: An entity or another statement
+- _Predicate_: A property (verb or property noun)
+- _Object_: An entity or another statement
+
+
+* Modeling statements with graphs
+
+* statements change over time
+
+* How can you manage all these statements?
 
 * Managing graphs
 
@@ -42,9 +111,9 @@ Road map
 
 * Updates to BQL (high priority)
 
-.link https://github.com/google/badwolf/issues/45 Create derived facts via BQL `CONSTRUCT` query
+.link https://github.com/google/badwolf/issues/45 Create derived statements via BQL `CONSTRUCT` query
 
-.link https://github.com/google/badwolf/issues/52 Remove derived facts via BQL `DECONSTRUCT` query
+.link https://github.com/google/badwolf/issues/52 Remove derived statements via BQL `DECONSTRUCT` query
 
 * Low priority (a.k.a. Out of bandwidth)
 
