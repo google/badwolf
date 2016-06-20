@@ -90,10 +90,142 @@ Property expressing statement
 - _Predicate_: A property (verb or property noun)
 - _Object_: An entity or another statement
 
-
 * Modeling statements with graphs
 
-* statements change over time
+* A simple statement
+
+.image images/ogm-statement.jpg
+
+* A simple property statement
+
+.image images/ogm-property.jpg
+
+* Both together
+
+.image images/ogm-statement-property.jpg
+
+* Statements about statements
+
+.image images/ogm-statement-property-reified.jpg
+
+* Statements change over time
+
+* The twist
+
+Imagine the simple question:
+
+- Can you model how many pencils you have on your desk?
+
+You can think of it as property
+
+  I have 10
+
+Is this a universal statement?
+
+- But what about now?
+- An hour ago?
+- Yesterday?
+
+* I know the answer
+
+I can predicate a property about the estament
+
+  I have 10 at 2016/06/21T19:00PST
+
+And we know how to decompose it
+
+- _Subject_: `I` `have` `10`
+- _Predicate_: `at`
+- _Object_: `2016/06/21T19:00PST`
+
+Yes we can model it, but it seems that it should be easier
+
+Some facts change over time by nature
+
+Taking it into account would allow a more intuitive reasoning
+
+* Meet BadWolf
+
+* Extending predicate semantics
+
+- _Immutable_: Predicates that do not change overtime
+
+  Charles Darwin was born in Shrewsbury
+
+- _Temporal_: Predicates only true a some point in time
+
+  Shrewsbury population 6,000
+
+* BadWolf Predicates
+
+Predicates are defined by an `ID` and a `TIME_ANCHOR`
+
+- _Immutable_: Predicates that do have `ID` but do not have `TIME_ANCHOR`
+
+  "born in"@[]
+
+- _Temporal_: Predicates that have both `ID` and a `TIME_ANCHOR`
+
+  "population"@[1860]
+
+* BadWolf Entities
+
+Entiies are defined by a `TYPE` and a `ID`
+
+`TYPE` is an hierarchical construct
+
+`ID` is a unique value that identifies the entity
+
+For convenience, you can write them as follows
+
+  /person<Charles Darwin>
+  /person<Nikola Tesla>
+
+* BadWolf Literals
+
+- `bool`: A simple boolean
+
+   "true"^^type:bool
+
+- `int64`: A 64 bit signed integer
+
+   "-1"^^type:int64
+
+- `Float64`: A 64 bit float
+
+   "1.23"^^type:float64
+
+- `Text`: An arbitrary UTF-8 text
+
+   "foo bar"^^type:text
+
+- `Blob`: An arbitrary byte array
+
+   "[ 1 2 3 ]"^^type:blob
+
+* BadWolf Triples
+
+A triple is just a subject + predicate + object
+
+- _Subject_: An entity
+- _Predicate_: An immutable or a temporal predicate
+- _Object_: Either an entity or a literal or a predicate
+
+* Remember this graph of statements?
+
+.image images/ogm-statement-property-reified.jpg
+
+* Expressing it with BadWolf triples
+
+Each of the edges in that graph represent a triple
+
+  /person<Charles Darwin>  "born in"@[]         /city<Shrewsbury>
+  /city<Shrewsbury>        "population"@[1860]  "6,000"^^type:int64
+  /person<Nikola Tesla>    "knew"@[]            /_<UUID>
+  /_<UUID>                 "_subject"@[]        /person<Charles Darwin>
+  /_<UUID>                 "_predicate"@[]      "born in"@[]
+  /_<UUID>                 "_object"@[]         /city<Shrewsbury>
+
 
 * How can you manage all these statements?
 
