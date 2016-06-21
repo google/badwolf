@@ -211,29 +211,171 @@ A triple is just a subject + predicate + object
 - _Predicate_: An immutable or a temporal predicate
 - _Object_: Either an entity or a literal or a predicate
 
+Triples in BadWolf are _immutable_
+
 * Remember this graph of statements?
 
 .image images/ogm-statement-property-reified.jpg
 
 * Expressing it with BadWolf triples
 
-Each of the edges in that graph represent a triple
+Each of the edges in that graph represent a triple.
 
   /person<Charles Darwin>  "born in"@[]         /city<Shrewsbury>
-  /city<Shrewsbury>        "population"@[1860]  "6,000"^^type:int64
+  /city<Shrewsbury>        "population"@[1860]  "6000"^^type:int64
   /person<Nikola Tesla>    "knew"@[]            /_<UUID>
   /_<UUID>                 "_subject"@[]        /person<Charles Darwin>
   /_<UUID>                 "_predicate"@[]      "born in"@[]
   /_<UUID>                 "_object"@[]         /city<Shrewsbury>
 
+This format also represent how data can be shared
 
 * How can you manage all these statements?
 
+BadWolf groups triples into graphs
+
+Graphs are _mutable_
+
 * Managing graphs
+
+* Graph basic operations
+
+You can create a graph
+
+  bql> CREATE GRAPH ?g;
+
+Or you can create several graphs at once
+
+  bql> CREATE GRAPH ?g, ?h;
+
+You can also get rid of a graph
+
+  bql> DROP GRAPH ?g;
+
+Or multiples at once
+
+  bql> DROP GRAPH ?g, ?h;
 
 * Managing data in the graphs
 
+* Adding triples to a graph
+
+Once you have a graph, you can add triples to it
+
+  bql> CREATE GRAPH ?scientist, ?cities, ?towns;
+
+  bql> INSERT DATA INTO ?scientist {
+         /person<Charles Darwin>  "born in"@[]  /city<Shrewsbury> .
+         /person<Nikola Tesla>    "born in"@[]  /city<Smiljan>
+       };
+
+  bql> INSERT DATA INTO ?cities, ?towns {
+         /city<Shrewsbury>  "belongs to"@[]  /country<England> .
+         /country<England>  "located in"@[]  /continent<Europe> .
+         /city<Smiljan>     "belongs to"@[]  /country<Croatia> .
+         /country<Croatia>  "located in"@[]  /continent<Europe>
+       };
+
+* Removing triples form a graph
+
+You can also remove triples form multiple graphs
+
+  bql> DELETE DATA FROM ?science, ?cities, ?towns {
+         /person<Charles Darwin>  "born in"@[]      /city<Shrewsbury> .
+         /person<Nikola Tesla>    "born in"@[]      /city<Smiljan> .
+         /city<Shrewsbury>        "belongs to"@[]   /country<England> .
+         /country<England>        "located in"@[]   /continent<Europe> .
+         /city<Smiljan>           "belongs to"@[]   /country<Croatia> .
+         /country<Croatia>        "located in"@[]   /continent<Europe>
+       };
+
 * Reasoning using queries
+
+* Variables
+
+Variables start with `?`
+
+Variables can appear in any position of a triple
+
+  ?country           "located in"@[]  /continent<Europe>
+  /country<England>  ?predicate       /continent<Europe>
+  /country<England>  "located in"@[]  ?continent
+
+A variable can be binded to one or multiple values. For instance
+
+  ?country  "located in"@[]  /continent<Europe>
+
+The variable `?country` in the above example given the triples
+
+  /country<England>        "located in"@[]      /continent<Europe>
+  /country<Croatia>        "located in"@[]      /continent<Europe>
+
+Can bind against to values `/country<England>` and `/country<Croatia>`.
+
+* BQL
+
+Allows you to express complex declarative queries
+
+List all the cities you know from Europe
+
+  bql> CREATE GRAPH ?g;
+
+  bql> load data/triples.txt ?g;
+
+  bql> SELECT ?city
+       FROM ?g
+       WHERE {
+          ?city "belongs to"@[] ?c .
+          ?c    "located in"@[] /continent<Europe>
+       };
+
+       ?city
+       /city<Shrewsbury>
+       /city<Smiljan>
+
+.link https://en.wikipedia.org/wiki/SPARQL Extension of SPARQL
+
+* BQL
+
+Population of cities
+
+  bql> SELECT ?city, ?population
+       FROM ?g
+       WHERE {
+          ?city "population"@[,] ?population
+       };
+
+       ?city              ?population
+       /city<Shrewsbury>  "6000"^^type:int64
+       /city<Smiljan>     "400"^^type:int64
+
+* BQL
+
+What about population of cities before 1865?
+
+  bql> SELECT ?city, ?population
+       FROM ?g
+       WHERE {
+          ?city "population"@[,1865-01-01T0:00:00.000000000Z] ?population
+       };
+
+       ?city              ?population
+       /city<Shrewsbury>  "6000"^^type:int64
+
+
+* BQL
+
+What about population of cities after 1865?
+
+  bql> SELECT ?city, ?population
+       FROM ?g
+       WHERE {
+          ?city "population"@[1865-01-01T0:00:00.000000000Z,] ?population
+       };
+
+       ?city           ?population
+       /city<Smiljan>  "400"^^type:int64
+
 
 * Demo time
 
