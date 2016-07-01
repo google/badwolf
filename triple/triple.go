@@ -17,7 +17,6 @@ package triple
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	"regexp"
 	"strings"
@@ -25,6 +24,7 @@ import (
 	"github.com/google/badwolf/triple/literal"
 	"github.com/google/badwolf/triple/node"
 	"github.com/google/badwolf/triple/predicate"
+	"github.com/pborman/uuid"
 )
 
 // Object is the box that either contains a literal, a predicate or a node.
@@ -48,25 +48,17 @@ func (o *Object) String() string {
 	return "@@@INVALID_OBJECT@@@"
 }
 
-// GUID returns a global unique identifier for the given object. It is
+// UUID returns a global unique identifier for the given object. It is
 // implemented as the base64 encoded stringified version of the object.
-func (o *Object) GUID() string {
-	buffer := bytes.NewBufferString("")
-	// Object.
-	if o.p == nil {
-		buffer.WriteString(o.String())
-	} else {
-		ta, err := o.p.TimeAnchor()
-		if err != nil {
-			// Immutable predicate.
-			buffer.WriteString(o.p.String())
-		} else {
-			// Temporal predicate.
-			buffer.WriteString(fmt.Sprintf("%q/%x", o.p.ID(), ta.UnixNano()))
-		}
+func (o *Object) UUID() uuid.UUID {
+	switch {
+	case o.l != nil:
+		return o.l.UUID()
+	case o.p != nil:
+		return o.p.UUID()
+	default:
+		return o.n.UUID()
 	}
-
-	return base64.StdEncoding.EncodeToString([]byte(buffer.Bytes()))
 }
 
 // Node attempts to return the boxed node.
@@ -168,7 +160,7 @@ func (t *Triple) Object() *Object {
 
 // Equal checks if two triples are identical.
 func (t *Triple) Equal(t2 *Triple) bool {
-	return t.GUID() == t2.GUID()
+	return uuid.Equal(t.UUID(), t2.UUID())
 }
 
 // String marshals the triple into pretty string.
@@ -259,28 +251,14 @@ func (t *Triple) Reify() ([]*Triple, *node.Node, error) {
 	return []*Triple{t, ts, tp, to}, b, nil
 }
 
-// GUID returns a global unique identifier for the given triple. It is
+// UUID returns a global unique identifier for the given triple. It is
 // implemented as the base64 encoded stringified version of the triple.
-func (t *Triple) GUID() string {
+func (t *Triple) UUID() uuid.UUID {
 	var buffer bytes.Buffer
 
-	// Subject.
-	buffer.WriteString(t.s.String())
-	buffer.WriteString(":")
+	buffer.Write([]byte(t.s.UUID()))
+	buffer.Write([]byte(t.p.UUID()))
+	buffer.Write([]byte(t.o.UUID()))
 
-	// Predicate.
-	ta, err := t.p.TimeAnchor()
-	if err != nil {
-		// Immutable predicate.
-		buffer.WriteString(t.p.String())
-	} else {
-		// Temporal predicate.
-		buffer.WriteString(fmt.Sprintf("%q/%x", t.p.ID(), ta.UnixNano()))
-	}
-	buffer.WriteString(":")
-
-	// Object.
-	buffer.WriteString(t.o.GUID())
-
-	return base64.StdEncoding.EncodeToString(buffer.Bytes())
+	return uuid.NewSHA1(uuid.NIL, buffer.Bytes())
 }

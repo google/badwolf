@@ -140,45 +140,45 @@ func (m *memory) AddTriples(ctx context.Context, ts []*triple.Triple) error {
 	m.rwmu.Lock()
 	defer m.rwmu.Unlock()
 	for _, t := range ts {
-		guid := t.GUID()
-		sGUID := t.Subject().GUID()
-		pGUID := t.Predicate().GUID()
-		oGUID := t.Object().GUID()
+		suuid := t.UUID().String()
+		sUUID := t.Subject().UUID().String()
+		pUUID := t.Predicate().UUID().String()
+		oUUID := t.Object().UUID().String()
 		// Update master index
-		m.idx[guid] = t
+		m.idx[suuid] = t
 
-		if _, ok := m.idxS[sGUID]; !ok {
-			m.idxS[sGUID] = make(map[string]*triple.Triple)
+		if _, ok := m.idxS[sUUID]; !ok {
+			m.idxS[sUUID] = make(map[string]*triple.Triple)
 		}
-		m.idxS[sGUID][guid] = t
+		m.idxS[sUUID][suuid] = t
 
-		if _, ok := m.idxP[pGUID]; !ok {
-			m.idxP[pGUID] = make(map[string]*triple.Triple)
+		if _, ok := m.idxP[pUUID]; !ok {
+			m.idxP[pUUID] = make(map[string]*triple.Triple)
 		}
-		m.idxP[pGUID][guid] = t
+		m.idxP[pUUID][suuid] = t
 
-		if _, ok := m.idxO[oGUID]; !ok {
-			m.idxO[oGUID] = make(map[string]*triple.Triple)
+		if _, ok := m.idxO[oUUID]; !ok {
+			m.idxO[oUUID] = make(map[string]*triple.Triple)
 		}
-		m.idxO[oGUID][guid] = t
+		m.idxO[oUUID][suuid] = t
 
-		key := strings.Join([]string{sGUID, pGUID}, ":")
+		key := strings.Join([]string{sUUID, pUUID}, ":")
 		if _, ok := m.idxSP[key]; !ok {
 			m.idxSP[key] = make(map[string]*triple.Triple)
 		}
-		m.idxSP[key][guid] = t
+		m.idxSP[key][suuid] = t
 
-		key = strings.Join([]string{pGUID, oGUID}, ":")
+		key = strings.Join([]string{pUUID, oUUID}, ":")
 		if _, ok := m.idxPO[key]; !ok {
 			m.idxPO[key] = make(map[string]*triple.Triple)
 		}
-		m.idxPO[key][guid] = t
+		m.idxPO[key][suuid] = t
 
-		key = strings.Join([]string{sGUID, oGUID}, ":")
+		key = strings.Join([]string{sUUID, oUUID}, ":")
 		if _, ok := m.idxSO[key]; !ok {
 			m.idxSO[key] = make(map[string]*triple.Triple)
 		}
-		m.idxSO[key][guid] = t
+		m.idxSO[key][suuid] = t
 	}
 	return nil
 }
@@ -186,31 +186,31 @@ func (m *memory) AddTriples(ctx context.Context, ts []*triple.Triple) error {
 // RemoveTriples removes the triples from the storage.
 func (m *memory) RemoveTriples(ctx context.Context, ts []*triple.Triple) error {
 	for _, t := range ts {
-		guid := t.GUID()
-		sGUID := t.Subject().GUID()
-		pGUID := t.Predicate().GUID()
-		oGUID := t.Object().GUID()
+		suuid := t.UUID().String()
+		sUUID := t.Subject().UUID().String()
+		pUUID := t.Predicate().UUID().String()
+		oUUID := t.Object().UUID().String()
 		// Update master index
 		m.rwmu.Lock()
-		delete(m.idx, guid)
-		delete(m.idxS[sGUID], guid)
-		delete(m.idxP[pGUID], guid)
-		delete(m.idxO[oGUID], guid)
+		delete(m.idx, suuid)
+		delete(m.idxS[sUUID], suuid)
+		delete(m.idxP[pUUID], suuid)
+		delete(m.idxO[oUUID], suuid)
 
-		key := strings.Join([]string{sGUID, pGUID}, ":")
-		delete(m.idxSP[key], guid)
+		key := strings.Join([]string{sUUID, pUUID}, ":")
+		delete(m.idxSP[key], suuid)
 		if len(m.idxSP[key]) == 0 {
 			delete(m.idxSP, key)
 		}
 
-		key = strings.Join([]string{pGUID, oGUID}, ":")
-		delete(m.idxPO[key], guid)
+		key = strings.Join([]string{pUUID, oUUID}, ":")
+		delete(m.idxPO[key], suuid)
 		if len(m.idxPO[key]) == 0 {
 			delete(m.idxPO, key)
 		}
 
-		key = strings.Join([]string{sGUID, oGUID}, ":")
-		delete(m.idxSO[key], guid)
+		key = strings.Join([]string{sUUID, oUUID}, ":")
+		delete(m.idxSO[key], suuid)
 		if len(m.idxSO[key]) == 0 {
 			delete(m.idxSO, key)
 		}
@@ -262,9 +262,9 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 // provided channel.
 func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions, objs chan<- *triple.Object) error {
 
-	sGUID := s.GUID()
-	pGUID := p.GUID()
-	spIdx := strings.Join([]string{sGUID, pGUID}, ":")
+	sUUID := s.UUID().String()
+	pUUID := p.UUID().String()
+	spIdx := strings.Join([]string{sUUID, pUUID}, ":")
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(objs)
@@ -284,9 +284,9 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 	if subjs == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	pGUID := p.GUID()
-	oGUID := o.GUID()
-	poIdx := strings.Join([]string{pGUID, oGUID}, ":")
+	pUUID := p.UUID().String()
+	oUUID := o.UUID().String()
+	poIdx := strings.Join([]string{pUUID, oUUID}, ":")
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(subjs)
@@ -306,9 +306,9 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 	if prds == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	sGUID := s.GUID()
-	oGUID := o.GUID()
-	soIdx := strings.Join([]string{sGUID, oGUID}, ":")
+	sUUID := s.UUID().String()
+	oUUID := o.UUID().String()
+	soIdx := strings.Join([]string{sUUID, oUUID}, ":")
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(prds)
@@ -328,12 +328,12 @@ func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *sto
 	if prds == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	sGUID := s.GUID()
+	sUUID := s.UUID().String()
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(prds)
 	ckr := newChecker(lo)
-	for _, t := range m.idxS[sGUID] {
+	for _, t := range m.idxS[sUUID] {
 		if ckr.CheckAndUpdate(t.Predicate()) {
 			prds <- t.Predicate()
 		}
@@ -347,12 +347,12 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 	if prds == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	oGUID := o.GUID()
+	oUUID := o.UUID().String()
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(prds)
 	ckr := newChecker(lo)
-	for _, t := range m.idxO[oGUID] {
+	for _, t := range m.idxO[oUUID] {
 		if ckr.CheckAndUpdate(t.Predicate()) {
 			prds <- t.Predicate()
 		}
@@ -366,13 +366,13 @@ func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storag
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	sGUID := s.GUID()
+	sUUID := s.UUID().String()
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
 	ckr := newChecker(lo)
-	for _, t := range m.idxS[sGUID] {
+	for _, t := range m.idxS[sUUID] {
 		if ckr.CheckAndUpdate(t.Predicate()) {
 			trpls <- t
 		}
@@ -386,13 +386,13 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	pGUID := p.GUID()
+	pUUID := p.UUID().String()
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
 	ckr := newChecker(lo)
-	for _, t := range m.idxP[pGUID] {
+	for _, t := range m.idxP[pUUID] {
 		if ckr.CheckAndUpdate(t.Predicate()) {
 			trpls <- t
 		}
@@ -406,13 +406,13 @@ func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *sto
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	oGUID := o.GUID()
+	oUUID := o.UUID().String()
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
 	ckr := newChecker(lo)
-	for _, t := range m.idxO[oGUID] {
+	for _, t := range m.idxO[oUUID] {
 		if ckr.CheckAndUpdate(t.Predicate()) {
 			trpls <- t
 		}
@@ -426,9 +426,9 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	sGUID := s.GUID()
-	pGUID := p.GUID()
-	spIdx := strings.Join([]string{sGUID, pGUID}, ":")
+	sUUID := s.UUID().String()
+	pUUID := p.UUID().String()
+	spIdx := strings.Join([]string{sUUID, pUUID}, ":")
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
@@ -448,9 +448,9 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	pGUID := p.GUID()
-	oGUID := o.GUID()
-	poIdx := strings.Join([]string{pGUID, oGUID}, ":")
+	pUUID := p.UUID().String()
+	oUUID := o.UUID().String()
+	poIdx := strings.Join([]string{pUUID, oUUID}, ":")
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
@@ -466,10 +466,10 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 
 // Exist checks if the provided triple exists on the store.
 func (m *memory) Exist(ctx context.Context, t *triple.Triple) (bool, error) {
-	guid := t.GUID()
+	suuid := t.UUID().String()
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
-	_, ok := m.idx[guid]
+	_, ok := m.idx[suuid]
 	return ok, nil
 }
 

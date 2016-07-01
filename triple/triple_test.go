@@ -120,7 +120,7 @@ func TestReifyTemporal(t *testing.T) {
 	}
 }
 
-func TestGUID(t *testing.T) {
+func TestUUID(t *testing.T) {
 	testTable := []struct {
 		t1 string
 		t2 string
@@ -177,7 +177,7 @@ func TestGUID(t *testing.T) {
 			t.Fatalf("triple.Parse failed to parse valid triple %s with error %v", entry.t2, err)
 		}
 		if !t1.Equal(t2) {
-			t.Errorf("Failed to equal %s(%s) == %s(%s)", t1, t1.GUID(), t2, t2.GUID())
+			t.Errorf("Failed to equal %s(%s) == %s(%s)", t1, t1.UUID(), t2, t2.UUID())
 		}
 	}
 }

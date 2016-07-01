@@ -16,11 +16,14 @@
 package predicate
 
 import (
-	"encoding/base64"
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pborman/uuid"
 )
 
 // Type describes the two type of predicates in BadWolf
@@ -151,8 +154,19 @@ func NewTemporal(id string, t time.Time) (*Predicate, error) {
 	}, nil
 }
 
-// GUID returns a global unique identifier for the given predicate. It is
+// UUID returns a global unique identifier for the given predicate. It is
 // implemented as the base64 encoded stringified version of the predicate.
-func (p *Predicate) GUID() string {
-	return base64.StdEncoding.EncodeToString([]byte(p.String()))
+func (p *Predicate) UUID() uuid.UUID {
+	var buffer bytes.Buffer
+
+	buffer.WriteString(string(p.id))
+	if p.anchor == nil {
+		buffer.WriteString("immutable")
+	} else {
+		b := make([]byte, 16)
+		binary.PutVarint(b, p.anchor.UnixNano())
+		buffer.Write(b)
+	}
+
+	return uuid.NewSHA1(uuid.NIL, buffer.Bytes())
 }

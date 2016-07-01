@@ -15,10 +15,9 @@
 package node
 
 import (
-	"encoding/base64"
-	"fmt"
-	"strings"
 	"testing"
+
+	"github.com/pborman/uuid"
 )
 
 func TestNewID(t *testing.T) {
@@ -140,16 +139,9 @@ func TestParse(t *testing.T) {
 func TestBlankNode(t *testing.T) {
 	for i := uint64(0); i < 10; i++ {
 		b := NewBlankNode()
-		bb, err := base64.StdEncoding.DecodeString(b.ID().String())
-		if err != nil {
-			t.Fatalf("NewBlankNode %s could not be decoded", b)
-		}
-		ss := strings.Split(string(bb), ":")
-		if len(ss) != 4 {
-			t.Errorf("NewBlankNode returned an invalid ID in %s, decoded to %s", b, string(bb))
-		}
-		if got, want := ss[3], fmt.Sprintf("%x", i); got != want {
-			t.Errorf("NewBlankNode failed to return increasing IDs in %s; got %s, want %s", b, got, want)
+		bID := uuid.Parse(b.ID().String())
+		if uuid.Equal(bID, uuid.NIL) {
+			t.Fatalf("NewBlankNode %s could not be decoded properly", b)
 		}
 	}
 }

@@ -16,13 +16,15 @@
 package node
 
 import (
-	"encoding/base64"
+	"bytes"
+	"encoding/binary"
 	"fmt"
-	"hash/crc64"
 	"os"
 	"os/user"
 	"strings"
 	"time"
+
+	"github.com/pborman/uuid"
 )
 
 // Type describes the type of the node.
@@ -151,39 +153,42 @@ const chanSize = 256
 
 // The channel to recover the next unique value used to create a blank node.
 var (
-	nextVal chan string
+	nextVal chan uuid.UUID
 	tBlank  Type
 )
 
 func init() {
-	// Create the hashing function.
-	hasher := crc64.New(crc64.MakeTable(crc64.ECMA))
-	h := func(s string) uint64 {
-		hasher.Reset()
-		hasher.Write([]byte(s))
-		return hasher.Sum64()
-	}
+	var buffer bytes.Buffer
+	b := make([]byte, 16)
 
 	// Get the current user name.
 	osU, err := user.Current()
-	u := "UNKNOW"
+	user := "UNKNOW"
 	if err == nil {
-		u = osU.Username
+		user = osU.Username
 	}
+	buffer.WriteString(user)
 
 	// Create the constant to make build a unique ID.
 	start := uint64(time.Now().UnixNano())
-	user := h(u)
+	binary.PutUvarint(b, start)
+	buffer.Write(b)
+
 	pid := uint64(os.Getpid())
+	binary.PutUvarint(b, pid)
+	buffer.Write(b)
+
+	// Set the node.
+	if !uuid.SetNodeID(buffer.Bytes()) {
+		os.Exit(-1)
+	}
+
 	// Initialize the channel and blank node type.
-	nextVal, tBlank = make(chan string, chanSize), Type("/_")
-	enc := base64.StdEncoding
+	nextVal, tBlank = make(chan uuid.UUID, chanSize), Type("/_")
+
 	go func() {
-		cnt := uint64(0)
 		for {
-			bs := []byte(fmt.Sprintf("%x:%x:%x:%x", start, user, pid, cnt))
-			nextVal <- enc.EncodeToString(bs)
-			cnt++
+			nextVal <- uuid.NewUUID()
 		}
 	}()
 }
@@ -191,15 +196,19 @@ func init() {
 // NewBlankNode creates a new blank node. The blank node ID is guaranteed to
 // be unique in BadWolf.
 func NewBlankNode() *Node {
-	id := ID(<-nextVal)
+	uuid := <-nextVal
+	id := ID(uuid.String())
 	return &Node{
 		t:  &tBlank,
 		id: &id,
 	}
 }
 
-// GUID returns a global unique identifier for the given node. It is
+// UUID returns a global unique identifier for the given node. It is
 // implemented as the base64 encoded stringified version of the node.
-func (n *Node) GUID() string {
-	return base64.StdEncoding.EncodeToString([]byte(n.String()))
+func (n *Node) UUID() uuid.UUID {
+	var buffer bytes.Buffer
+	buffer.WriteString(string(*n.t))
+	buffer.WriteString(string(*n.id))
+	return uuid.NewSHA1(uuid.NIL, buffer.Bytes())
 }

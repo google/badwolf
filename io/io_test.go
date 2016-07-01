@@ -115,7 +115,7 @@ func TestSerializationContents(t *testing.T) {
 		}
 	}()
 	for trpl := range gtrpls {
-		m[trpl.GUID()] = true
+		m[trpl.UUID().String()] = true
 		gs++
 	}
 	gos := 0
@@ -126,7 +126,7 @@ func TestSerializationContents(t *testing.T) {
 		}
 	}()
 	for trpl := range g2trpls {
-		if _, ok := m[trpl.GUID()]; !ok {
+		if _, ok := m[trpl.UUID().String()]; !ok {
 			t.Errorf("Failed to unmarshal marshaled triple; could not find triple %s", trpl.String())
 		}
 		gos++

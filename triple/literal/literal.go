@@ -16,10 +16,14 @@
 package literal
 
 import (
-	"encoding/base64"
+	"bytes"
+	"encoding/binary"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
+
+	"github.com/pborman/uuid"
 )
 
 // Type represents the type contained in a literal.
@@ -289,8 +293,32 @@ func NewBoundedBuilder(max int) Builder {
 	return &boundedBuilder{max: max}
 }
 
-// GUID returns a global unique identifier for the given literal. It is
+// UUID returns a global unique identifier for the given literal. It is
 // implemented as the base64 encoded stringified version of the literal.
-func (l *Literal) GUID() string {
-	return base64.StdEncoding.EncodeToString([]byte(l.String()))
+func (l *Literal) UUID() uuid.UUID {
+	var buffer bytes.Buffer
+
+	switch v := l.v.(type) {
+	case bool:
+		if v {
+			buffer.WriteString("true")
+		} else {
+			buffer.WriteString("false")
+		}
+	case int64:
+		b := make([]byte, 8)
+		binary.PutVarint(b, v)
+		buffer.Write(b)
+	case float64:
+		bs := math.Float64bits(v)
+		b := make([]byte, 8)
+		binary.LittleEndian.PutUint64(b, bs)
+		buffer.Write(b)
+	case string:
+		buffer.Write([]byte(v))
+	case []byte:
+		buffer.Write(v)
+	}
+
+	return uuid.NewSHA1(uuid.NIL, buffer.Bytes())
 }

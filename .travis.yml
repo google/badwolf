@@ -11,6 +11,7 @@ go:
 
 install:
   - go get golang.org/x/net/context
+  - go get github.com/pborman/uuid
 
 script:
   - go test -v -race ./...
