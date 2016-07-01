@@ -155,7 +155,7 @@ func NewTemporal(id string, t time.Time) (*Predicate, error) {
 }
 
 // UUID returns a global unique identifier for the given predicate. It is
-// implemented as the base64 encoded stringified version of the predicate.
+// implemented as the SHA1 UUID of the predicate values.
 func (p *Predicate) UUID() uuid.UUID {
 	var buffer bytes.Buffer
 

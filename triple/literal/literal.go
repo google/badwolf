@@ -294,7 +294,7 @@ func NewBoundedBuilder(max int) Builder {
 }
 
 // UUID returns a global unique identifier for the given literal. It is
-// implemented as the base64 encoded stringified version of the literal.
+// implemented as the SHA1 UUID of the literal value.
 func (l *Literal) UUID() uuid.UUID {
 	var buffer bytes.Buffer
 

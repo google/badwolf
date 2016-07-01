@@ -49,7 +49,8 @@ func (o *Object) String() string {
 }
 
 // UUID returns a global unique identifier for the given object. It is
-// implemented as the base64 encoded stringified version of the object.
+// implemented by returning the UIUD of the underlying value stored in the
+// object.
 func (o *Object) UUID() uuid.UUID {
 	switch {
 	case o.l != nil:
@@ -252,7 +253,8 @@ func (t *Triple) Reify() ([]*Triple, *node.Node, error) {
 }
 
 // UUID returns a global unique identifier for the given triple. It is
-// implemented as the base64 encoded stringified version of the triple.
+// implemented as the SHA1 UUID of the concatenated UUIDs of the subject,
+// predicate, and object.
 func (t *Triple) UUID() uuid.UUID {
 	var buffer bytes.Buffer
 

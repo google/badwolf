@@ -205,7 +205,7 @@ func NewBlankNode() *Node {
 }
 
 // UUID returns a global unique identifier for the given node. It is
-// implemented as the base64 encoded stringified version of the node.
+// implemented as the SHA1 UUID of the node values.
 func (n *Node) UUID() uuid.UUID {
 	var buffer bytes.Buffer
 	buffer.WriteString(string(*n.t))
