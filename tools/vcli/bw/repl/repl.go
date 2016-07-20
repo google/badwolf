@@ -52,6 +52,7 @@ func New(driver storage.Store, chanSize, bulkSize, builderSize int, rl ReadLiner
 	}
 }
 
+// ReadLiner returns a channel with the imput to be used for the REPL.
 type ReadLiner func(*os.File) <-chan string
 
 // SimpleReadLine reads a line from the provided file. This does not support
