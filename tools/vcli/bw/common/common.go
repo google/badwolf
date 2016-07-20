@@ -102,14 +102,14 @@ func InitializeDriver(driverName string, drivers map[string]StoreGenerator) (sto
 
 // InitializeCommands initializes the available commands with the given storage
 // instance.
-func InitializeCommands(driver storage.Store, chanSize, bulkTripleOpSize, builderSize int) []*command.Command {
+func InitializeCommands(driver storage.Store, chanSize, bulkTripleOpSize, builderSize int, rl repl.ReadLiner) []*command.Command {
 	return []*command.Command{
 		assert.New(driver, literal.DefaultBuilder(), chanSize),
 		benchmark.New(driver, chanSize),
 		export.New(driver, bulkTripleOpSize),
 		load.New(driver, bulkTripleOpSize, builderSize),
 		run.New(driver, chanSize),
-		repl.New(driver, chanSize, bulkTripleOpSize, builderSize),
+		repl.New(driver, chanSize, bulkTripleOpSize, builderSize, rl),
 		version.New(),
 	}
 }
@@ -142,7 +142,7 @@ func Eval(ctx context.Context, args []string, cmds []*command.Command) int {
 }
 
 // Run executes the main of the command line tool.
-func Run(driverName string, drivers map[string]StoreGenerator, chanSize, bulkTripleOpSize, builderSize int) int {
+func Run(driverName string, drivers map[string]StoreGenerator, chanSize, bulkTripleOpSize, builderSize int, rl repl.ReadLiner) int {
 	driver, err := InitializeDriver(driverName, drivers)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -155,5 +155,5 @@ func Run(driverName string, drivers map[string]StoreGenerator, chanSize, bulkTri
 		}
 		args = append(args, s)
 	}
-	return Eval(context.Background(), args, InitializeCommands(driver, chanSize, bulkTripleOpSize, builderSize))
+	return Eval(context.Background(), args, InitializeCommands(driver, chanSize, bulkTripleOpSize, builderSize, rl))
 }

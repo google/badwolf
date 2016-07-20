@@ -40,10 +40,10 @@ import (
 const prompt = "bql> "
 
 // New create the version command.
-func New(driver storage.Store, chanSize, bulkSize, builderSize int) *command.Command {
+func New(driver storage.Store, chanSize, bulkSize, builderSize int, rl ReadLiner) *command.Command {
 	return &command.Command{
 		Run: func(ctx context.Context, args []string) int {
-			REPL(driver, os.Stdin, simpleReadLine, chanSize, bulkSize, builderSize)
+			REPL(driver, os.Stdin, rl, chanSize, bulkSize, builderSize)
 			return 0
 		},
 		UsageLine: "bql",
@@ -52,14 +52,14 @@ func New(driver storage.Store, chanSize, bulkSize, builderSize int) *command.Com
 	}
 }
 
-type readLiner func(*os.File) <-chan string
+type ReadLiner func(*os.File) <-chan string
 
-// simpleReadLine reads a line from the provided file. This does not support
+// SimpleReadLine reads a line from the provided file. This does not support
 // any advanced terminal functionalities.
 //
 // TODO(xllora): Replace simple reader for function that supports advanced
 // terminal input.
-func simpleReadLine(f *os.File) <-chan string {
+func SimpleReadLine(f *os.File) <-chan string {
 	c := make(chan string)
 	go func() {
 		defer close(c)
@@ -72,7 +72,7 @@ func simpleReadLine(f *os.File) <-chan string {
 }
 
 // REPL starts a read-evaluation-print-loop to run BQL commands.
-func REPL(driver storage.Store, input *os.File, rl readLiner, chanSize, bulkSize, builderSize int) int {
+func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, builderSize int) int {
 	ctx := context.Background()
 	fmt.Printf("Welcome to BadWolf vCli (%d.%d.%d-%s)\n", version.Major, version.Minor, version.Patch, version.Release)
 	fmt.Printf("Using driver %q. Type quit; to exit\n", driver.Name(ctx))
