@@ -58,8 +58,8 @@
       SELECT ?name_1, ?name_2
       FROM ?g
       WHERE {
-        /u<joe> \"parent_of\"@[] ?c ID ?name_1 .
-        /u<joe> \"parent_of\"@[] ?c ID ?name_2
+        /u<joe> \"parent_of\"@[] ?c1 ID ?name_1 .
+        /u<joe> \"parent_of\"@[] ?c2 ID ?name_2
       }
       ORDER BY ?name_1 ASC, ?name_2 ASC;",
       "WillFail": false,
@@ -89,8 +89,8 @@
       FROM ?g
       WHERE {
         /u<joe> \"parent_of\"@[] ?c .
-        ?c \"parent_of\"@[] ?gc ID ?name_1 .
-        ?c \"parent_of\"@[] ?gc ID ?name_2
+        ?c \"parent_of\"@[] ?gc1 ID ?name_1 .
+        ?c \"parent_of\"@[] ?gc2 ID ?name_2
       }
       ORDER BY ?name_1 ASC, ?name_2 ASC;",
       "WillFail": false,
@@ -164,8 +164,8 @@
       FROM ?g
       WHERE {
         /u<joe> \"parent_of\"@[] ?c .
-        ?c \"parent_of\"@[] ?gc ID ?name_1 .
-        ?c \"parent_of\"@[] ?gc ID ?name_2
+        ?c \"parent_of\"@[] ?gc1 ID ?name_1 .
+        ?c \"parent_of\"@[] ?gc2 ID ?name_2
       }
       ORDER BY ?name_1 ASC, ?name_2 ASC
       HAVING NOT(?name_1 = ?name_2);",
@@ -188,8 +188,8 @@
       FROM ?g
       WHERE {
         /u<joe> \"parent_of\"@[] ?c .
-        ?c \"parent_of\"@[] ?gc ID ?name_1 .
-        ?c \"parent_of\"@[] ?gc ID ?name_2
+        ?c \"parent_of\"@[] ?gc1 ID ?name_1 .
+        ?c \"parent_of\"@[] ?gc2 ID ?name_2
       }
       ORDER BY ?name_1 ASC, ?name_2 ASC
       HAVING ?name_1 < ?name_2;",
