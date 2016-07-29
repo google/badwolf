@@ -177,7 +177,7 @@ func (b *unboundBuilder) Build(t Type, v interface{}) (*Literal, error) {
 			return nil, fmt.Errorf("literal.Build: type %v does not match type of value %v", t, v)
 		}
 	default:
-		return nil, fmt.Errorf("literal.Build: type %v is not supported when building literals", t)
+		return nil, fmt.Errorf("literal.Build: type %T is not supported when building literals", v)
 	}
 	return &Literal{
 		t: t,
