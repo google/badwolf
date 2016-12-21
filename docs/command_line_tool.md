@@ -238,16 +238,18 @@ is currently no support for cursor keys or history of past BQL statements.
 
 ```
 $ bw bql
-Welcome to BadWolf vCli (0.4.1-dev)
+Welcome to BadWolf vCli (0.5.1-dev @130405356)
 Using driver "VOLATILE". Type quit; to exit
-Session started at 2016-03-02 16:53:21.955285168 -0800 PST
+Session started at 2016-12-21 10:24:39.95182793 -0800 PST
 
-bql> help
-help                              - prints help for the bw console.
-run <file_with_bql_statements>    - quits the console.
-quit                              - quits the console.
+bql> help;
+help                                                  - prints help for the bw console.
+export <graph_names_separated_by_commas> <file_path>  - dumps triples from graphs into a file path.
+load <file_path> <graph_names_separated_by_commas>    - load triples into the specified graphs.
+run <file_with_bql_statements>                        - runs all the BQL statements in the file.
+quit                                                  - quits the console.
 
-bql>
+bql> 
 ```
 
 ## Command: Benchmark
@@ -331,4 +333,37 @@ Add non existing triples - rg nodes=1000, size=0001000, reps=10 - 95050.47 tripl
 Add non existing triples - rg nodes=1000, size=0100000, reps=10 - 70284.21 triples/sec - 1.422794779s/576.112238ms
 
 ...
+```
+
+## Command: Load
+
+Loads all the triples stored in a file into the provided graphs.
+Graph names need to be separated by commans with no whitespaces. Each triple
+needs to placed in a single line. Each triple needs to be formated so it can be
+parsed as indicated in the documetation. All data in the file will be treated as triples. 
+A line starting with # willbe treated as a commented line. If the load fails you may 
+end up with partially loaded data.
+
+```
+$ badwolf load ./triples.txt ?graph
+```
+
+It also suports importing into multiple graphs at once.
+
+```
+$ badwolf load ./triples.txt ?graph1,?graph2,?graph3
+```
+
+
+## Command: Export
+
+Export all the triples in the provided graphs into the provided text file. 
+
+```
+$ badwolf export ?graph ./triples.txt
+```
+As the export command, it suports exporting multiple graphs at once.
+
+```
+$ badwolf export ?graph1,?graph2,?grpah3 ./triples.txt
 ```
