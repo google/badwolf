@@ -36,6 +36,110 @@ type ClauseHook func(*Statement, Symbol) (ClauseHook, error)
 // Element is confused.
 type ElementHook func(*Statement, ConsumedElement) (ElementHook, error)
 
+var (
+	// predicateRegexp contains the regular expression for not fully defined predicates.
+	predicateRegexp *regexp.Regexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?\]$`)
+
+	// boundRegexp contains the regular expression for not fully defined predicate bounds.
+	boundRegexp *regexp.Regexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?,"?([^\]"]*)"?\]$`)
+)
+
+// DataAccumulatorHook returns the singleton for data accumulation.
+func DataAccumulatorHook() ElementHook {
+	return dataAccumulator(literal.DefaultBuilder())
+}
+
+// GraphAccumulatorHook returns the singleton for graph accumulation.
+func GraphAccumulatorHook() ElementHook {
+	return graphAccumulator()
+}
+
+// WhereInitWorkingClauseHook returns the singleton for graph accumulation.
+func WhereInitWorkingClauseHook() ClauseHook {
+	return whereInitWorkingClause()
+}
+
+// WhereNextWorkingClauseHook returns the singleton for graph accumulation.
+func WhereNextWorkingClauseHook() ClauseHook {
+	return whereNextWorkingClause()
+}
+
+// WhereSubjectClauseHook returns the singleton for working clause hooks that
+// populates the subject.
+func WhereSubjectClauseHook() ElementHook {
+	return whereSubjectClause()
+}
+
+// WherePredicateClauseHook returns the singleton for working clause hooks that
+// populates the predicate.
+func WherePredicateClauseHook() ElementHook {
+	return wherePredicateClause()
+}
+
+// WhereObjectClauseHook returns the singleton for working clause hooks that
+// populates the object.
+func WhereObjectClauseHook() ElementHook {
+	return whereObjectClause()
+}
+
+// VarAccumulatorHook returns the singleton for accumulating variable
+// projections.
+func VarAccumulatorHook() ElementHook {
+	return varAccumulator()
+}
+
+// VarBindingsGraphChecker returns the singleton for checking a query statement
+// for valid bindings in the select variables.
+func VarBindingsGraphChecker() ClauseHook {
+	return bindingsGraphChecker()
+}
+
+// GroupByBindings returns the singleton for collecting all the group by
+// bindings.
+func GroupByBindings() ElementHook {
+	return groupByBindings()
+}
+
+// GroupByBindingsChecker returns the singleton to check that the group by
+// bindings are valid.
+func GroupByBindingsChecker() ClauseHook {
+	return groupByBindingsChecker()
+}
+
+// OrderByBindings returns the singleton for collecting all the group by
+// bindings.
+func OrderByBindings() ElementHook {
+	return orderByBindings()
+}
+
+// OrderByBindingsChecker returns the singleton to check that the group by
+// bindings are valid.
+func OrderByBindingsChecker() ClauseHook {
+	return orderByBindingsChecker()
+}
+
+// HavingExpression returns the singleton to collect the tokens that form the
+// having clause.
+func HavingExpression() ElementHook {
+	return havingExpression()
+}
+
+// HavingExpressionBuilder returns the singleton to collect the tokens that form
+// the having clause.
+func HavingExpressionBuilder() ClauseHook {
+	return havingExpressionBuilder()
+}
+
+// LimitCollection returns the limit collection hook.
+func LimitCollection() ElementHook {
+	return limitCollection()
+}
+
+// CollectGlobalBounds returns the global temporary bounds hook.
+func CollectGlobalBounds() ElementHook {
+	return collectGlobalBounds()
+}
+
 // TypeBindingClauseHook returns a ClauseHook that sets the binding type.
 func TypeBindingClauseHook(t StatementType) ClauseHook {
 	var f ClauseHook
@@ -103,189 +207,6 @@ func dataAccumulator(b literal.Builder) ElementHook {
 		return nil, fmt.Errorf("hook.DataAccumulator has failed to flush the triple %s, %s, %s", s, p, o)
 	}
 	return hook
-}
-
-var (
-	// predicateRegexp contains the regular expression for not fully defined predicates.
-	predicateRegexp *regexp.Regexp
-
-	// boundRegexp contains the regular expression for not fully defined predicate bounds.
-	boundRegexp *regexp.Regexp
-
-	// dach provides a unique data hook generator.
-	dach ElementHook
-
-	// gach provide a unique hook to collect all targeted Graphs
-	// for a given Statement.
-	gach ElementHook
-
-	// wnch contains the next clause hook for where clauses.
-	wnch ClauseHook
-
-	// wich contains the initial reset of the working clause hook for where clauses.
-	wich ClauseHook
-
-	// wsch contains the where clause subject hook.
-	wsch ElementHook
-
-	// wpch contains the where clause subject hook.
-	wpch ElementHook
-
-	// woch contains the where clause subject hook.
-	woch ElementHook
-
-	// vach contains the accumulator hook.
-	vach ElementHook
-
-	// bgch contains the hook for checking bindings.
-	bgch ClauseHook
-
-	// gbch contains the variable for collecting bindings from a group by.
-	gbch ElementHook
-
-	// gcch contains the clause hook to validate group by bindings.
-	gcch ClauseHook
-
-	// obch contains the variable for collecting bindings from a order by.
-	obch ElementHook
-
-	// occh contains the clause hook to validate order by bindings.
-	occh ClauseHook
-
-	// hech contains the element hook to collect all the tokens that form the
-	// having expression.
-	hech ElementHook
-
-	// hebl contains the clause hook that builds an evaluable expression for
-	// the available collected tokens for the having clause.
-	hebl ClauseHook
-
-	// licl contains the element hook to collect all the limit value that form the
-	// limit clause expression.
-	licl ElementHook
-
-	// gbcl contains the element hook that collects the global time bounds
-	// to apply to the graph clause when temporal predicates are present.
-	gbcl ElementHook
-)
-
-func init() {
-	dach = dataAccumulator(literal.DefaultBuilder())
-	gach = graphAccumulator()
-	wnch = whereNextWorkingClause()
-	wich = whereInitWorkingClause()
-	wsch = whereSubjectClause()
-	wpch = wherePredicateClause()
-	woch = whereObjectClause()
-	vach = varAccumulator()
-	bgch = bindingsGraphChecker()
-	gbch = groupByBindings()
-	gcch = groupByBindingsChecker()
-	obch = orderByBindings()
-	occh = orderByBindingsChecker()
-	hech = havingExpression()
-	hebl = havingExpressionBuilder()
-	licl = limitCollection()
-	gbcl = collectGlobalBounds()
-
-	predicateRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?\]$`)
-	boundRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?,"?([^\]"]*)"?\]$`)
-}
-
-// DataAccumulatorHook returns the singleton for data accumulation.
-func DataAccumulatorHook() ElementHook {
-	return dach
-}
-
-// GraphAccumulatorHook returns the singleton for graph accumulation.
-func GraphAccumulatorHook() ElementHook {
-	return gach
-}
-
-// WhereInitWorkingClauseHook returns the singleton for graph accumulation.
-func WhereInitWorkingClauseHook() ClauseHook {
-	return wnch
-}
-
-// WhereNextWorkingClauseHook returns the singleton for graph accumulation.
-func WhereNextWorkingClauseHook() ClauseHook {
-	return wnch
-}
-
-// WhereSubjectClauseHook returns the singleton for working clause hooks that
-// populates the subject.
-func WhereSubjectClauseHook() ElementHook {
-	return wsch
-}
-
-// WherePredicateClauseHook returns the singleton for working clause hooks that
-// populates the predicate.
-func WherePredicateClauseHook() ElementHook {
-	return wpch
-}
-
-// WhereObjectClauseHook returns the singleton for working clause hooks that
-// populates the object.
-func WhereObjectClauseHook() ElementHook {
-	return woch
-}
-
-// VarAccumulatorHook returns the singleton for accumulating variable
-// projections.
-func VarAccumulatorHook() ElementHook {
-	return vach
-}
-
-// VarBindingsGraphChecker returns the singleton for checking a query statement
-// for valid bindings in the select variables.
-func VarBindingsGraphChecker() ClauseHook {
-	return bgch
-}
-
-// GroupByBindings returns the singleton for collecting all the group by
-// bindings.
-func GroupByBindings() ElementHook {
-	return gbch
-}
-
-// GroupByBindingsChecker returns the singleton to check that the group by
-// bindings are valid.
-func GroupByBindingsChecker() ClauseHook {
-	return gcch
-}
-
-// OrderByBindings returns the singleton for collecting all the group by
-// bindings.
-func OrderByBindings() ElementHook {
-	return obch
-}
-
-// OrderByBindingsChecker returns the singleton to check that the group by
-// bindings are valid.
-func OrderByBindingsChecker() ClauseHook {
-	return occh
-}
-
-// HavingExpression returns the singleton to collect the tokens that form the
-// having clause.
-func HavingExpression() ElementHook {
-	return hech
-}
-
-// HavingExpressionBuilder returns the singleton to collect the tokens that form
-// the having clause.
-func HavingExpressionBuilder() ClauseHook {
-	return hebl
-}
-
-// LimitCollection returns the limit collection hook.
-func LimitCollection() ElementHook {
-	return licl
-}
-
-// CollectGlobalBounds returns the global temporary bounds hook.
-func CollectGlobalBounds() ElementHook {
-	return gbcl
 }
 
 // graphAccumulator returns an element hook that keeps track of the graphs

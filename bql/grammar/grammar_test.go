@@ -233,8 +233,8 @@ func TestAcceptOpsByParseAndSemantic(t *testing.T) {
 		{`insert data into ?a,?b,?c {/_<foo> "bar"@[] /_<foo>};`, 3, 1},
 		// Insert multiple data.
 		{`insert data into ?a {/_<foo> "bar"@[] /_<foo> .
-			                      /_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z] .
-			                      /_<foo> "bar"@[] "yeah"^^type:text};`, 1, 3},
+				                      /_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z] .
+				                      /_<foo> "bar"@[] "yeah"^^type:text};`, 1, 3},
 		// Delete data.
 		{`delete data from ?a {/_<foo> "bar"@[] /_<foo>};`, 1, 1},
 		{`delete data from ?a {/_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z]};`, 1, 1},
@@ -243,8 +243,8 @@ func TestAcceptOpsByParseAndSemantic(t *testing.T) {
 		{`delete data from ?a,?b,?c {/_<foo> "bar"@[1975-01-01T00:01:01.999999999Z] /_<foo>};`, 3, 1},
 		// Delete multiple data.
 		{`delete data from ?a {/_<foo> "bar"@[] /_<foo> .
-			                      /_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z] .
-			                      /_<foo> "bar"@[] "yeah"^^type:text};`, 1, 3},
+				                      /_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z] .
+				                      /_<foo> "bar"@[] "yeah"^^type:text};`, 1, 3},
 		// Create graphs.
 		{`create graph ?foo;`, 1, 0},
 		// Drop graphs.
