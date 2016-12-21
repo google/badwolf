@@ -26,3 +26,10 @@ func TestInvalidDeserialization(t *testing.T) {
 		t.Fatal("Base64ToUUID should have never returned a corrupted UUID")
 	}
 }
+
+func TestUUIDToByteString(t *testing.T) {
+	s := UUIDToByteString(uuid.NewRandom())
+	if got, want := len(s), 16; got != want {
+		t.Fatalf("UUIDToByteString returned the wrong length string; got %d, want %d", got, want)
+	}
+}

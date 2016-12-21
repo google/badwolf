@@ -141,10 +141,10 @@ func (m *memory) AddTriples(ctx context.Context, ts []*triple.Triple) error {
 	m.rwmu.Lock()
 	defer m.rwmu.Unlock()
 	for _, t := range ts {
-		suuid := UUIDToBase64(t.UUID())
-		sUUID := UUIDToBase64(t.Subject().UUID())
-		pUUID := UUIDToBase64(t.Predicate().UUID())
-		oUUID := UUIDToBase64(t.Object().UUID())
+		suuid := UUIDToByteString(t.UUID())
+		sUUID := UUIDToByteString(t.Subject().UUID())
+		pUUID := UUIDToByteString(t.Predicate().UUID())
+		oUUID := UUIDToByteString(t.Object().UUID())
 		// Update master index
 		m.idx[suuid] = t
 
@@ -187,10 +187,10 @@ func (m *memory) AddTriples(ctx context.Context, ts []*triple.Triple) error {
 // RemoveTriples removes the triples from the storage.
 func (m *memory) RemoveTriples(ctx context.Context, ts []*triple.Triple) error {
 	for _, t := range ts {
-		suuid := UUIDToBase64(t.UUID())
-		sUUID := UUIDToBase64(t.Subject().UUID())
-		pUUID := UUIDToBase64(t.Predicate().UUID())
-		oUUID := UUIDToBase64(t.Object().UUID())
+		suuid := UUIDToByteString(t.UUID())
+		sUUID := UUIDToByteString(t.Subject().UUID())
+		pUUID := UUIDToByteString(t.Predicate().UUID())
+		oUUID := UUIDToByteString(t.Object().UUID())
 		// Update master index
 		m.rwmu.Lock()
 		delete(m.idx, suuid)
@@ -263,8 +263,8 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 // provided channel.
 func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions, objs chan<- *triple.Object) error {
 
-	sUUID := UUIDToBase64(s.UUID())
-	pUUID := UUIDToBase64(p.UUID())
+	sUUID := UUIDToByteString(s.UUID())
+	pUUID := UUIDToByteString(p.UUID())
 	spIdx := sUUID + pUUID
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
@@ -285,8 +285,8 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 	if subjs == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	pUUID := UUIDToBase64(p.UUID())
-	oUUID := UUIDToBase64(o.UUID())
+	pUUID := UUIDToByteString(p.UUID())
+	oUUID := UUIDToByteString(o.UUID())
 	poIdx := pUUID + oUUID
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
@@ -307,8 +307,8 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 	if prds == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	sUUID := UUIDToBase64(s.UUID())
-	oUUID := UUIDToBase64(o.UUID())
+	sUUID := UUIDToByteString(s.UUID())
+	oUUID := UUIDToByteString(o.UUID())
 	soIdx := sUUID + oUUID
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
@@ -329,7 +329,7 @@ func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *sto
 	if prds == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	sUUID := UUIDToBase64(s.UUID())
+	sUUID := UUIDToByteString(s.UUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(prds)
@@ -348,7 +348,7 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 	if prds == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	oUUID := UUIDToBase64(o.UUID())
+	oUUID := UUIDToByteString(o.UUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(prds)
@@ -367,7 +367,7 @@ func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storag
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	sUUID := UUIDToBase64(s.UUID())
+	sUUID := UUIDToByteString(s.UUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
@@ -387,7 +387,7 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	pUUID := UUIDToBase64(p.UUID())
+	pUUID := UUIDToByteString(p.UUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
@@ -407,7 +407,7 @@ func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *sto
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	oUUID := UUIDToBase64(o.UUID())
+	oUUID := UUIDToByteString(o.UUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
@@ -427,8 +427,8 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	sUUID := UUIDToBase64(s.UUID())
-	pUUID := UUIDToBase64(p.UUID())
+	sUUID := UUIDToByteString(s.UUID())
+	pUUID := UUIDToByteString(p.UUID())
 	spIdx := sUUID + pUUID
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
@@ -449,8 +449,8 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	pUUID := UUIDToBase64(p.UUID())
-	oUUID := UUIDToBase64(o.UUID())
+	pUUID := UUIDToByteString(p.UUID())
+	oUUID := UUIDToByteString(o.UUID())
 	poIdx := pUUID + oUUID
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
@@ -467,7 +467,7 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 
 // Exist checks if the provided triple exists on the store.
 func (m *memory) Exist(ctx context.Context, t *triple.Triple) (bool, error) {
-	suuid := UUIDToBase64(t.UUID())
+	suuid := UUIDToByteString(t.UUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	_, ok := m.idx[suuid]

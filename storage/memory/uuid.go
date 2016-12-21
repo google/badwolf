@@ -23,3 +23,10 @@ func Base64ToUUID(b64 string) (uuid.UUID, error) {
 	}
 	return uuid.UUID(bs), nil
 }
+
+// UUIDToByteString converts the bytes of the UUID into a, likely,
+// unreadable string. This is useful to minimized the key size used
+// for the inmemory indices.
+func UUIDToByteString(uuid uuid.UUID) string {
+	return string(uuid)
+}
