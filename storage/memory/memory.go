@@ -18,7 +18,6 @@ package memory
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 
 	"golang.org/x/net/context"
@@ -28,6 +27,8 @@ import (
 	"github.com/google/badwolf/triple/node"
 	"github.com/google/badwolf/triple/predicate"
 )
+
+const initialAllocation = 10000
 
 // DefaultStore provides a volatile in memory store.
 var DefaultStore storage.Store
@@ -62,13 +63,13 @@ func (s *memoryStore) Version(ctx context.Context) string {
 func (s *memoryStore) NewGraph(ctx context.Context, id string) (storage.Graph, error) {
 	g := &memory{
 		id:    id,
-		idx:   make(map[string]*triple.Triple),
-		idxS:  make(map[string]map[string]*triple.Triple),
-		idxP:  make(map[string]map[string]*triple.Triple),
-		idxO:  make(map[string]map[string]*triple.Triple),
-		idxSP: make(map[string]map[string]*triple.Triple),
-		idxPO: make(map[string]map[string]*triple.Triple),
-		idxSO: make(map[string]map[string]*triple.Triple),
+		idx:   make(map[string]*triple.Triple, initialAllocation),
+		idxS:  make(map[string]map[string]*triple.Triple, initialAllocation),
+		idxP:  make(map[string]map[string]*triple.Triple, initialAllocation),
+		idxO:  make(map[string]map[string]*triple.Triple, initialAllocation),
+		idxSP: make(map[string]map[string]*triple.Triple, initialAllocation),
+		idxPO: make(map[string]map[string]*triple.Triple, initialAllocation),
+		idxSO: make(map[string]map[string]*triple.Triple, initialAllocation),
 	}
 
 	s.rwmu.Lock()
@@ -140,10 +141,10 @@ func (m *memory) AddTriples(ctx context.Context, ts []*triple.Triple) error {
 	m.rwmu.Lock()
 	defer m.rwmu.Unlock()
 	for _, t := range ts {
-		suuid := t.UUID().String()
-		sUUID := t.Subject().UUID().String()
-		pUUID := t.Predicate().UUID().String()
-		oUUID := t.Object().UUID().String()
+		suuid := UUIDToBase64(t.UUID())
+		sUUID := UUIDToBase64(t.Subject().UUID())
+		pUUID := UUIDToBase64(t.Predicate().UUID())
+		oUUID := UUIDToBase64(t.Object().UUID())
 		// Update master index
 		m.idx[suuid] = t
 
@@ -162,19 +163,19 @@ func (m *memory) AddTriples(ctx context.Context, ts []*triple.Triple) error {
 		}
 		m.idxO[oUUID][suuid] = t
 
-		key := strings.Join([]string{sUUID, pUUID}, ":")
+		key := sUUID + pUUID
 		if _, ok := m.idxSP[key]; !ok {
 			m.idxSP[key] = make(map[string]*triple.Triple)
 		}
 		m.idxSP[key][suuid] = t
 
-		key = strings.Join([]string{pUUID, oUUID}, ":")
+		key = pUUID + oUUID
 		if _, ok := m.idxPO[key]; !ok {
 			m.idxPO[key] = make(map[string]*triple.Triple)
 		}
 		m.idxPO[key][suuid] = t
 
-		key = strings.Join([]string{sUUID, oUUID}, ":")
+		key = sUUID + oUUID
 		if _, ok := m.idxSO[key]; !ok {
 			m.idxSO[key] = make(map[string]*triple.Triple)
 		}
@@ -186,10 +187,10 @@ func (m *memory) AddTriples(ctx context.Context, ts []*triple.Triple) error {
 // RemoveTriples removes the triples from the storage.
 func (m *memory) RemoveTriples(ctx context.Context, ts []*triple.Triple) error {
 	for _, t := range ts {
-		suuid := t.UUID().String()
-		sUUID := t.Subject().UUID().String()
-		pUUID := t.Predicate().UUID().String()
-		oUUID := t.Object().UUID().String()
+		suuid := UUIDToBase64(t.UUID())
+		sUUID := UUIDToBase64(t.Subject().UUID())
+		pUUID := UUIDToBase64(t.Predicate().UUID())
+		oUUID := UUIDToBase64(t.Object().UUID())
 		// Update master index
 		m.rwmu.Lock()
 		delete(m.idx, suuid)
@@ -197,19 +198,19 @@ func (m *memory) RemoveTriples(ctx context.Context, ts []*triple.Triple) error {
 		delete(m.idxP[pUUID], suuid)
 		delete(m.idxO[oUUID], suuid)
 
-		key := strings.Join([]string{sUUID, pUUID}, ":")
+		key := sUUID + pUUID
 		delete(m.idxSP[key], suuid)
 		if len(m.idxSP[key]) == 0 {
 			delete(m.idxSP, key)
 		}
 
-		key = strings.Join([]string{pUUID, oUUID}, ":")
+		key = pUUID + oUUID
 		delete(m.idxPO[key], suuid)
 		if len(m.idxPO[key]) == 0 {
 			delete(m.idxPO, key)
 		}
 
-		key = strings.Join([]string{sUUID, oUUID}, ":")
+		key = sUUID + oUUID
 		delete(m.idxSO[key], suuid)
 		if len(m.idxSO[key]) == 0 {
 			delete(m.idxSO, key)
@@ -262,9 +263,9 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 // provided channel.
 func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions, objs chan<- *triple.Object) error {
 
-	sUUID := s.UUID().String()
-	pUUID := p.UUID().String()
-	spIdx := strings.Join([]string{sUUID, pUUID}, ":")
+	sUUID := UUIDToBase64(s.UUID())
+	pUUID := UUIDToBase64(p.UUID())
+	spIdx := sUUID + pUUID
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(objs)
@@ -284,9 +285,9 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 	if subjs == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	pUUID := p.UUID().String()
-	oUUID := o.UUID().String()
-	poIdx := strings.Join([]string{pUUID, oUUID}, ":")
+	pUUID := UUIDToBase64(p.UUID())
+	oUUID := UUIDToBase64(o.UUID())
+	poIdx := pUUID + oUUID
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(subjs)
@@ -306,9 +307,9 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 	if prds == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	sUUID := s.UUID().String()
-	oUUID := o.UUID().String()
-	soIdx := strings.Join([]string{sUUID, oUUID}, ":")
+	sUUID := UUIDToBase64(s.UUID())
+	oUUID := UUIDToBase64(o.UUID())
+	soIdx := sUUID + oUUID
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(prds)
@@ -328,7 +329,7 @@ func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *sto
 	if prds == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	sUUID := s.UUID().String()
+	sUUID := UUIDToBase64(s.UUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(prds)
@@ -347,7 +348,7 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 	if prds == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	oUUID := o.UUID().String()
+	oUUID := UUIDToBase64(o.UUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(prds)
@@ -366,7 +367,7 @@ func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storag
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	sUUID := s.UUID().String()
+	sUUID := UUIDToBase64(s.UUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
@@ -386,7 +387,7 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	pUUID := p.UUID().String()
+	pUUID := UUIDToBase64(p.UUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
@@ -406,7 +407,7 @@ func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *sto
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	oUUID := o.UUID().String()
+	oUUID := UUIDToBase64(o.UUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
@@ -426,9 +427,9 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	sUUID := s.UUID().String()
-	pUUID := p.UUID().String()
-	spIdx := strings.Join([]string{sUUID, pUUID}, ":")
+	sUUID := UUIDToBase64(s.UUID())
+	pUUID := UUIDToBase64(p.UUID())
+	spIdx := sUUID + pUUID
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
@@ -448,9 +449,9 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	pUUID := p.UUID().String()
-	oUUID := o.UUID().String()
-	poIdx := strings.Join([]string{pUUID, oUUID}, ":")
+	pUUID := UUIDToBase64(p.UUID())
+	oUUID := UUIDToBase64(o.UUID())
+	poIdx := pUUID + oUUID
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
@@ -466,7 +467,7 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 
 // Exist checks if the provided triple exists on the store.
 func (m *memory) Exist(ctx context.Context, t *triple.Triple) (bool, error) {
-	suuid := t.UUID().String()
+	suuid := UUIDToBase64(t.UUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	_, ok := m.idx[suuid]
