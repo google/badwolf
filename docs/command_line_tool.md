@@ -340,7 +340,11 @@ Add non existing triples - rg nodes=1000, size=0100000, reps=10 - 70284.21 tripl
 Loads all the triples stored in a file into the provided graphs.
 Graph names need to be separated by commans with no whitespaces. Each triple
 needs to placed in a single line. Each triple needs to be formated so it can be
-parsed as indicated in the documetation. All data in the file will be treated as triples. 
+parsed as indicated in the [documetation](./temporal_graph_modeling.md). 
+Please, also feel free to check this [example text file](./presentations/2016/06/21/data/triples.txt)
+and some examples of how to use it in this 
+[presentation](http://go-talks.appspot.com/github.com/google/badwolf/docs/presentations/2016/06/21/ottawa-graph-meetup.slide#1)
+All data in the file will be treated as triples. 
 A line starting with # willbe treated as a commented line. If the load fails you may 
 end up with partially loaded data.
 
