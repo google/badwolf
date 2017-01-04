@@ -69,7 +69,7 @@ func (p *createPlan) Execute(ctx context.Context) (*table.Table, error) {
 
 // String returns a readable description of the execution plan.
 func (p *createPlan) String() string {
-	return "not implemented"
+	return fmt.Sprintf("store(%q).NewGraph(_, %v)", p.store.Name(nil), p.stm.Graphs())
 }
 
 // dropPlan encapsulates the sequence of instructions that need to be
@@ -99,7 +99,7 @@ func (p *dropPlan) Execute(ctx context.Context) (*table.Table, error) {
 
 // String returns a readable description of the execution plan.
 func (p *dropPlan) String() string {
-	return "not implemented"
+	return fmt.Sprintf("store(%q).DeleteGraph(_, %v)", p.store.Name(nil), p.stm.Graphs())
 }
 
 // insertPlan encapsulates the sequence of instructions that need to be
