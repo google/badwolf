@@ -84,6 +84,11 @@ type Statement struct {
 	lookupOptions             storage.LookupOptions
 }
 
+// String returns a readable representaion of a statement.
+func (s *Statement) String() string {
+	return ""
+}
+
 // GraphClause represents a clause of a graph pattern in a where clause.
 type GraphClause struct {
 	S          *node.Node
@@ -118,6 +123,11 @@ type GraphClause struct {
 	OLowerBoundAlias string
 	OUpperBoundAlias string
 	OTemporal        bool
+}
+
+// String returns a readable representaion of a graph clause.
+func (c *GraphClause) String() string {
+	return ""
 }
 
 // Specificity return

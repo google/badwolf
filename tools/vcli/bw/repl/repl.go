@@ -123,6 +123,18 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			l = ""
 			continue
 		}
+		if strings.HasPrefix(l, "desc") {
+			pln, err := planBQL(ctx, l[4:], driver, chanSize)
+			if err != nil {
+				fmt.Printf("[ERROR] %s\n\n", err)
+			} else {
+				fmt.Println(pln.String())
+				fmt.Println("[OK]")
+			}
+			fmt.Print(prompt)
+			l = ""
+			continue
+		}
 		if strings.HasPrefix(l, "run") {
 			path, cmds, err := runBQLFromFile(ctx, driver, chanSize, strings.TrimSpace(l[:len(l)-1]))
 			if err != nil {
@@ -154,6 +166,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 func printHelp() {
 	fmt.Println("help                                                  - prints help for the bw console.")
 	fmt.Println("export <graph_names_separated_by_commas> <file_path>  - dumps triples from graphs into a file path.")
+	fmt.Println("desc <BQL>                                            - prints the execution plan for a BQL statement.")
 	fmt.Println("load <file_path> <graph_names_separated_by_commas>    - load triples into the specified graphs.")
 	fmt.Println("run <file_with_bql_statements>                        - runs all the BQL statements in the file.")
 	fmt.Println("quit                                                  - quits the console.")
@@ -184,6 +197,19 @@ func runBQLFromFile(ctx context.Context, driver storage.Store, chanSize int, lin
 
 // runBQL attempts to execute the provided query against the given store.
 func runBQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*table.Table, error) {
+	pln, err := planBQL(ctx, bql, s, chanSize)
+	if err != nil {
+		return nil, err
+	}
+	res, err := pln.Execute(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
+	}
+	return res, nil
+}
+
+// planBQL attempts to create the excecution plan for the provided query against the given store.
+func planBQL(ctx context.Context, bql string, s storage.Store, chanSize int) (planner.Executor, error) {
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		return nil, fmt.Errorf("failed to initilize a valid BQL parser")
@@ -196,9 +222,5 @@ func runBQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*ta
 	if err != nil {
 		return nil, fmt.Errorf("should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
-	res, err := pln.Execute(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
-	}
-	return res, nil
+	return pln, nil
 }

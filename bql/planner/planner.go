@@ -37,6 +37,9 @@ import (
 type Executor interface {
 	// Execute runs the proposed plan for a given statement.
 	Execute(ctx context.Context) (*table.Table, error)
+
+	// String returns a readable description of the execution plan.
+	String() string
 }
 
 // createPlan encapsulates the sequence of instructions that need to be
@@ -64,6 +67,11 @@ func (p *createPlan) Execute(ctx context.Context) (*table.Table, error) {
 	return t, nil
 }
 
+// String returns a readable description of the execution plan.
+func (p *createPlan) String() string {
+	return "not implemented"
+}
+
 // dropPlan encapsulates the sequence of instructions that need to be
 // executed in order to satisfy the execution of a valid drop BQL statement.
 type dropPlan struct {
@@ -87,6 +95,11 @@ func (p *dropPlan) Execute(ctx context.Context) (*table.Table, error) {
 		return nil, errors.New(strings.Join(errs, "; "))
 	}
 	return t, nil
+}
+
+// String returns a readable description of the execution plan.
+func (p *dropPlan) String() string {
+	return "not implemented"
 }
 
 // insertPlan encapsulates the sequence of instructions that need to be
@@ -143,6 +156,11 @@ func (p *insertPlan) Execute(ctx context.Context) (*table.Table, error) {
 	})
 }
 
+// String returns a readable description of the execution plan.
+func (p *insertPlan) String() string {
+	return "not implemented"
+}
+
 // deletePlan encapsulates the sequence of instructions that need to be
 // executed in order to satisfy the execution of a valid delete BQL statement.
 type deletePlan struct {
@@ -159,6 +177,11 @@ func (p *deletePlan) Execute(ctx context.Context) (*table.Table, error) {
 	return t, update(ctx, p.stm, p.store, func(g storage.Graph, d []*triple.Triple) error {
 		return g.RemoveTriples(ctx, d)
 	})
+}
+
+// String returns a readable description of the execution plan.
+func (p *deletePlan) String() string {
+	return "not implemented"
 }
 
 // queryPlan encapsulates the sequence of instructions that need to be
@@ -613,6 +636,11 @@ func (p *queryPlan) Execute(ctx context.Context) (*table.Table, error) {
 		p.tbl = t
 	}
 	return p.tbl, nil
+}
+
+// String returns a readable description of the execution plan.
+func (p *queryPlan) String() string {
+	return "not implemented"
 }
 
 // New create a new executable plan given a semantic BQL statement.
