@@ -298,6 +298,11 @@ type Token struct {
 	ErrorMessage string
 }
 
+// String returns a readable form of the token.
+func (t *Token) String() string {
+	return fmt.Sprintf("(%s, %s, %s)", t.Type, t.Text, t.ErrorMessage)
+}
+
 // stateFn represents the state of the scanner  as a function that returns
 // the next state.
 type stateFn func(*lexer) stateFn

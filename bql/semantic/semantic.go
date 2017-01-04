@@ -19,7 +19,7 @@
 package semantic
 
 import (
-	"fmt"
+	"bytes"
 	"reflect"
 	"sort"
 	"time"
@@ -84,11 +84,6 @@ type Statement struct {
 	lookupOptions             storage.LookupOptions
 }
 
-// String returns a readable representaion of a statement.
-func (s *Statement) String() string {
-	return ""
-}
-
 // GraphClause represents a clause of a graph pattern in a where clause.
 type GraphClause struct {
 	S          *node.Node
@@ -127,7 +122,7 @@ type GraphClause struct {
 
 // String returns a readable representaion of a graph clause.
 func (c *GraphClause) String() string {
-	return ""
+	return "not implemented"
 }
 
 // Specificity return
@@ -240,6 +235,31 @@ func (s *Statement) AddWorkingGraphClause() {
 	s.ResetWorkingGraphClause()
 }
 
+// Projection returns the available projections in the statement.
+func (s *Statement) Projection() []*Projection {
+	return s.projection
+}
+
+// GroupBy returns the available group by binding in the statement.
+func (s *Statement) GroupBy() []string {
+	return s.groupBy
+}
+
+// OrderBy returns the available order by binding in the statement.
+func (s *Statement) OrderBy() table.SortConfig {
+	return s.orderBy
+}
+
+// HavingExpression returns the avaible tokens in the haaving expression.
+func (s *Statement) HavingExpression() []ConsumedElement {
+	return s.havingExpression
+}
+
+// HasLimit returns true if there is valid limit.
+func (s *Statement) HasLimit() bool {
+	return s.limitSet
+}
+
 // addToBindings adds the binding if not empty.
 func addToBindings(bs map[string]int, b string) {
 	if b != "" {
@@ -331,7 +351,18 @@ type Projection struct {
 
 // String returns a readable form of the projection.
 func (p *Projection) String() string {
-	return fmt.Sprintf("%s as %s (%s, %s)", p.Binding, p.Alias, p.OP, p.Modifier)
+	b := bytes.NewBufferString(p.Binding)
+	b.WriteString(" as ")
+	b.WriteString(p.Binding)
+	if p.OP != lexer.ItemError {
+		b.WriteString(" via ")
+		b.WriteString(p.OP.String())
+		if p.Modifier != lexer.ItemError {
+			b.WriteString(" ")
+			b.WriteString(p.Modifier.String())
+		}
+	}
+	return b.String()
 }
 
 // IsEmpty checks if the given projection is empty.

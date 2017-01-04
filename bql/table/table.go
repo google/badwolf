@@ -318,6 +318,21 @@ type SortConfig []struct {
 	Desc    bool
 }
 
+func (s SortConfig) String() string {
+	b := bytes.NewBufferString("[ ")
+	for _, sc := range s {
+		b.WriteString(sc.Binding)
+		b.WriteString("->")
+		if sc.Desc {
+			b.WriteString("DESC")
+		} else {
+			b.WriteString("ASC")
+		}
+	}
+	b.WriteString(" ]")
+	return b.String()
+}
+
 type bySortConfig struct {
 	rows []Row
 	cfg  SortConfig

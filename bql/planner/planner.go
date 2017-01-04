@@ -661,7 +661,48 @@ func (p *queryPlan) Execute(ctx context.Context) (*table.Table, error) {
 
 // String returns a readable description of the execution plan.
 func (p *queryPlan) String() string {
-	return "not implemented"
+	b := bytes.NewBufferString("QUERY plan:\n\n")
+	b.WriteString("using store(\"")
+	b.WriteString(p.store.Name(nil))
+	b.WriteString(fmt.Sprintf("\") graphs %v\nresolve\n", p.grfsNames))
+	for _, c := range p.cls {
+		b.WriteString("\t")
+		b.WriteString(c.String())
+		b.WriteString("\n")
+	}
+	b.WriteString("project results using\n")
+	for _, p := range p.stm.Projection() {
+		b.WriteString("\t")
+		b.WriteString(p.String())
+		b.WriteString("\n")
+	}
+	if gb := p.stm.GroupBy(); gb != nil {
+		b.WriteString("group results using\n")
+		for _, g := range gb {
+			b.WriteString("\t")
+			b.WriteString(g)
+			b.WriteString("\n")
+		}
+	}
+	if ob := p.stm.OrderBy(); ob != nil {
+		b.WriteString("order results by ")
+		b.WriteString(ob.String())
+		b.WriteString("\n")
+	}
+	if hv := p.stm.HavingExpression(); hv != nil {
+		b.WriteString("having projected values\n")
+		for _, h := range hv {
+			b.WriteString("\t")
+			b.WriteString(h.Token().String())
+			b.WriteString("\n")
+		}
+	}
+	if p.stm.HasLimit() {
+		b.WriteString("limit results to ")
+		b.WriteString(fmt.Sprintf("%d", p.stm.Limit()))
+		b.WriteString(" rows\n")
+	}
+	return b.String()
 }
 
 // New create a new executable plan given a semantic BQL statement.
