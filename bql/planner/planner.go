@@ -17,6 +17,7 @@
 package planner
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"reflect"
@@ -69,7 +70,7 @@ func (p *createPlan) Execute(ctx context.Context) (*table.Table, error) {
 
 // String returns a readable description of the execution plan.
 func (p *createPlan) String() string {
-	return fmt.Sprintf("store(%q).NewGraph(_, %v)", p.store.Name(nil), p.stm.Graphs())
+	return fmt.Sprintf("CREATE plan:\n\nstore(%q).NewGraph(_, %v)", p.store.Name(nil), p.stm.Graphs())
 }
 
 // dropPlan encapsulates the sequence of instructions that need to be
@@ -99,7 +100,7 @@ func (p *dropPlan) Execute(ctx context.Context) (*table.Table, error) {
 
 // String returns a readable description of the execution plan.
 func (p *dropPlan) String() string {
-	return fmt.Sprintf("store(%q).DeleteGraph(_, %v)", p.store.Name(nil), p.stm.Graphs())
+	return fmt.Sprintf("DROP plan:\n\nstore(%q).DeleteGraph(_, %v)", p.store.Name(nil), p.stm.Graphs())
 }
 
 // insertPlan encapsulates the sequence of instructions that need to be
@@ -158,7 +159,17 @@ func (p *insertPlan) Execute(ctx context.Context) (*table.Table, error) {
 
 // String returns a readable description of the execution plan.
 func (p *insertPlan) String() string {
-	return "not implemented"
+	b := bytes.NewBufferString("INSERT plan:\n\n")
+	for _, g := range p.stm.Graphs() {
+		b.WriteString(fmt.Sprintf("store(%q).Graph(%q).AddTriples(_, data)\n", p.store.Name(nil), g))
+	}
+	b.WriteString("where data:\n")
+	for _, t := range p.stm.Data() {
+		b.WriteString("\t")
+		b.WriteString(t.String())
+		b.WriteString("\n")
+	}
+	return b.String()
 }
 
 // deletePlan encapsulates the sequence of instructions that need to be
@@ -181,7 +192,17 @@ func (p *deletePlan) Execute(ctx context.Context) (*table.Table, error) {
 
 // String returns a readable description of the execution plan.
 func (p *deletePlan) String() string {
-	return "not implemented"
+	b := bytes.NewBufferString("DELETE plan:\n\n")
+	for _, g := range p.stm.Graphs() {
+		b.WriteString(fmt.Sprintf("store(%q).Graph(%q).RemoveTriples(_, data)\n", p.store.Name(nil), g))
+	}
+	b.WriteString("where data:\n")
+	for _, t := range p.stm.Data() {
+		b.WriteString("\t")
+		b.WriteString(t.String())
+		b.WriteString("\n")
+	}
+	return b.String()
 }
 
 // queryPlan encapsulates the sequence of instructions that need to be
