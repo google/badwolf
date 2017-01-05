@@ -122,7 +122,161 @@ type GraphClause struct {
 
 // String returns a readable representaion of a graph clause.
 func (c *GraphClause) String() string {
-	return "not implemented"
+	b := bytes.NewBufferString("{ ")
+
+	// Subject section.
+	if c.S != nil {
+		b.WriteString(c.S.String())
+	} else {
+		b.WriteString(c.SBinding)
+	}
+	if c.SAlias != "" {
+		b.WriteString(" AS ")
+		b.WriteString(c.SAlias)
+	}
+	if c.STypeAlias != "" {
+		b.WriteString(" TYPE ")
+		b.WriteString(c.STypeAlias)
+	}
+	if c.SIDAlias != "" {
+		b.WriteString(" ID ")
+		b.WriteString(c.SIDAlias)
+	}
+
+	// Predicate section.
+	predicate := false
+	if c.P != nil {
+		b.WriteString(" ")
+		b.WriteString(c.P.String())
+		predicate = true
+	}
+	if c.PBinding != "" {
+		b.WriteString(" ")
+		b.WriteString(c.PBinding)
+	}
+	if c.PID != "" {
+		b.WriteString(" \"")
+		b.WriteString(c.PID)
+		b.WriteString("\"")
+	}
+	if !predicate {
+		if !c.PTemporal {
+			b.WriteString("@[]")
+		} else {
+			b.WriteString("@[")
+			if c.PAnchorBinding != "" {
+				b.WriteString(c.PAnchorBinding)
+				if c.PAnchorAlias != "" {
+					b.WriteString(" at ")
+					b.WriteString(c.PAnchorAlias)
+				}
+			} else {
+				if c.PLowerBound != nil {
+					b.WriteString(c.PLowerBound.String())
+				} else {
+					if c.PLowerBoundAlias != "" {
+						b.WriteString(c.PLowerBoundAlias)
+					}
+				}
+				b.WriteString(",")
+				if c.PUpperBound != nil {
+					b.WriteString(c.PUpperBound.String())
+				} else {
+					if c.PUpperBoundAlias != "" {
+						b.WriteString(c.PUpperBoundAlias)
+					}
+				}
+			}
+			b.WriteString("]")
+		}
+	}
+
+	if c.PAlias != "" {
+		b.WriteString(" AS ")
+		b.WriteString(c.PAlias)
+	}
+	if c.PIDAlias != "" {
+		b.WriteString(" ID ")
+		b.WriteString(c.PIDAlias)
+	}
+
+	// Object section.
+	// Node portion.
+	object := false
+	if c.O != nil {
+		b.WriteString(" ")
+		b.WriteString(c.O.String())
+		object = true
+	} else {
+		b.WriteString(" ")
+		b.WriteString(c.OBinding)
+		object = true
+	}
+	if c.OAlias != "" {
+		b.WriteString(" AS ")
+		b.WriteString(c.OAlias)
+	}
+	if c.OTypeAlias != "" {
+		b.WriteString(" TYPE ")
+		b.WriteString(c.OTypeAlias)
+	}
+	if c.OIDAlias != "" {
+		b.WriteString(" ID ")
+		b.WriteString(c.OIDAlias)
+	}
+	// Predicate portion.
+	if !object {
+		if c.OBinding != "" {
+			b.WriteString(" ")
+			b.WriteString(c.OBinding)
+		}
+		if c.OID != "" {
+			b.WriteString(" \"")
+			b.WriteString(c.OID)
+			b.WriteString("\"")
+		}
+		if !c.OTemporal {
+			b.WriteString("[]")
+		} else {
+			b.WriteString("[")
+			if c.OAnchorBinding != "" {
+				b.WriteString(c.OAnchorBinding)
+				if c.OAnchorAlias != "" {
+					b.WriteString(" at ")
+					b.WriteString(c.OAnchorAlias)
+				}
+			} else {
+				if c.OLowerBound != nil {
+					b.WriteString(c.OLowerBound.String())
+				} else {
+					if c.OLowerBoundAlias != "" {
+						b.WriteString(c.OLowerBoundAlias)
+					}
+				}
+				b.WriteString(",")
+				if c.OUpperBound != nil {
+					b.WriteString(c.OUpperBound.String())
+				} else {
+					if c.OUpperBoundAlias != "" {
+						b.WriteString(c.OUpperBoundAlias)
+					}
+				}
+			}
+			b.WriteString("]")
+		}
+	}
+
+	if c.OAlias != "" {
+		b.WriteString(" AS ")
+		b.WriteString(c.OAlias)
+	}
+	if c.OIDAlias != "" {
+		b.WriteString(" ID ")
+		b.WriteString(c.OIDAlias)
+	}
+
+	b.WriteString(" }")
+	return b.String()
 }
 
 // Specificity return

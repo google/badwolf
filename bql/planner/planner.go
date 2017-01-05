@@ -230,19 +230,10 @@ func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statem
 	if err != nil {
 		return nil, err
 	}
-	var gs []storage.Graph
-	for _, g := range stm.Graphs() {
-		ng, err := store.Graph(ctx, g)
-		if err != nil {
-			return nil, err
-		}
-		gs = append(gs, ng)
-	}
 	return &queryPlan{
 		stm:       stm,
 		store:     store,
 		bndgs:     bs,
-		grfs:      gs,
 		grfsNames: stm.Graphs(),
 		cls:       stm.SortedGraphPatternClauses(),
 		tbl:       t,
@@ -634,6 +625,14 @@ func (p *queryPlan) limit() {
 
 // Execute queries the indicated graphs.
 func (p *queryPlan) Execute(ctx context.Context) (*table.Table, error) {
+	// Collect the graph references.
+	for _, g := range p.stm.Graphs() {
+		ng, err := p.store.Graph(ctx, g)
+		if err != nil {
+			return nil, err
+		}
+		p.grfs = append(p.grfs, ng)
+	}
 	// Retrieve the data.
 	lo := p.stm.GlobalLookupOptions()
 	if err := p.processGraphPattern(ctx, lo); err != nil {
