@@ -255,7 +255,7 @@ func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statem
 	if err != nil {
 		return nil, err
 	}
-	qp := &queryPlan{
+	return &queryPlan{
 		stm:       stm,
 		store:     store,
 		bndgs:     bs,
@@ -264,12 +264,7 @@ func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statem
 		tbl:       t,
 		chanSize:  chanSize,
 		tracer:    w,
-	}
-	if err := stm.Init(ctx, store); err != nil {
-		return nil, err
-	}
-	qp.grfs = stm.Graphs()
-	return qp, nil
+	}, nil
 }
 
 // processClause retrieves the triples for the provided triple given the
@@ -652,6 +647,11 @@ func (p *queryPlan) limit() {
 
 // Execute queries the indicated graphs.
 func (p *queryPlan) Execute(ctx context.Context) (*table.Table, error) {
+	// Fetch and catch graph instances.
+	if err := p.stm.Init(ctx, p.store); err != nil {
+		return nil, err
+	}
+	p.grfs = p.stm.Graphs()
 	// Retrieve the data.
 	lo := p.stm.GlobalLookupOptions()
 	if err := p.processGraphPattern(ctx, lo); err != nil {
