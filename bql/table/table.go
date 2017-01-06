@@ -294,13 +294,10 @@ func (t *Table) DotProduct(t2 *Table) error {
 
 // DeleteRow removes the row at position i from the table.
 func (t *Table) DeleteRow(i int) error {
-	td := make([]Row, len(t.data)-1, len(t.data)-1) // Preallocate resulting table.
 	if i < 0 || i >= len(t.data) {
 		return fmt.Errorf("cannot delete row %d from a table with %d rows", i, len(t.data))
 	}
-	copy(td, t.data[:i])
-	copy(td[i:], t.data[i+1:])
-	t.data = td
+	t.data = append(t.data[:i], t.data[i+1:]...)
 	return nil
 }
 
