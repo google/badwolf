@@ -19,6 +19,7 @@ package repl
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -33,7 +34,7 @@ import (
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/tools/vcli/bw/command"
 	"github.com/google/badwolf/tools/vcli/bw/export"
-	"github.com/google/badwolf/tools/vcli/bw/io"
+	bio "github.com/google/badwolf/tools/vcli/bw/io"
 	"github.com/google/badwolf/tools/vcli/bw/load"
 )
 
@@ -74,7 +75,20 @@ func SimpleReadLine(f *os.File) <-chan string {
 
 // REPL starts a read-evaluation-print-loop to run BQL commands.
 func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, builderSize int) int {
-	ctx := context.Background()
+	var tracer io.Writer
+	ctx, isTracingToFile := context.Background(), false
+
+	stopTracing := func() {
+		if tracer != nil {
+			if isTracingToFile {
+				fmt.Println("Closing tracing file.")
+				tracer.(*os.File).Close()
+			}
+			tracer, isTracingToFile = nil, false
+		}
+	}
+	defer stopTracing()
+
 	fmt.Printf("Welcome to BadWolf vCli (%d.%d.%d-%s)\n", version.Major, version.Minor, version.Patch, version.Release)
 	fmt.Printf("Using driver %q. Type quit; to exit\n", driver.Name(ctx))
 	fmt.Printf("Session started at %v\n\n", time.Now())
@@ -107,8 +121,40 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			l = ""
 			continue
 		}
+		if strings.HasPrefix(l, "start tracing") {
+			args := strings.Split(strings.TrimSpace(l)[:len(l)-1], " ")
+			switch len(args) {
+			case 2:
+				// Start tracing to the console.
+				stopTracing()
+				tracer, isTracingToFile = os.Stdout, false
+				fmt.Println("[WARNING] Tracing is on. This may slow your BQL queries.")
+			case 3:
+				// Start tracing to file.
+				stopTracing()
+				f, err := os.Create(args[2])
+				if err != nil {
+					fmt.Println(err)
+				} else {
+					tracer, isTracingToFile = f, true
+					fmt.Println("[WARNING] Tracing is on. This may slow your BQL queries.")
+				}
+			default:
+				fmt.Println("Invalid syntax\n\tstart tracing [trace_file]")
+			}
+			fmt.Print(prompt)
+			l = ""
+			continue
+		}
+		if strings.HasPrefix(l, "stop tracing") {
+			stopTracing()
+			fmt.Println("Tracing is off.")
+			fmt.Print(prompt)
+			l = ""
+			continue
+		}
 		if strings.HasPrefix(l, "export") {
-			args := strings.Split("bw "+strings.TrimSpace(l[:len(l)-1]), " ")
+			args := strings.Split("bw "+strings.TrimSpace(l)[:len(l)-1], " ")
 			usage := "Wrong syntax\n\n\tload <graph_names_separated_by_commas> <file_path>\n"
 			export.Eval(ctx, usage, args, driver, bulkSize)
 			fmt.Print(prompt)
@@ -124,7 +170,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			continue
 		}
 		if strings.HasPrefix(l, "desc") {
-			pln, err := planBQL(ctx, l[4:], driver, chanSize)
+			pln, err := planBQL(ctx, l[4:], driver, chanSize, nil)
 			if err != nil {
 				fmt.Printf("[ERROR] %s\n\n", err)
 			} else {
@@ -136,7 +182,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			continue
 		}
 		if strings.HasPrefix(l, "run") {
-			path, cmds, err := runBQLFromFile(ctx, driver, chanSize, strings.TrimSpace(l[:len(l)-1]))
+			path, cmds, err := runBQLFromFile(ctx, driver, chanSize, strings.TrimSpace(l[:len(l)-1]), tracer)
 			if err != nil {
 				fmt.Printf("[ERROR] %s\n\n", err)
 			} else {
@@ -147,7 +193,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			continue
 		}
 
-		table, err := runBQL(ctx, l, driver, chanSize)
+		table, err := runBQL(ctx, l, driver, chanSize, tracer)
 		l = ""
 		if err != nil {
 			fmt.Printf("[ERROR] %s\n\n", err)
@@ -169,24 +215,26 @@ func printHelp() {
 	fmt.Println("desc <BQL>                                            - prints the execution plan for a BQL statement.")
 	fmt.Println("load <file_path> <graph_names_separated_by_commas>    - load triples into the specified graphs.")
 	fmt.Println("run <file_with_bql_statements>                        - runs all the BQL statements in the file.")
+	fmt.Println("start tracing [trace_file]                            - starts tracing queries.")
+	fmt.Println("stop tracing [trace_file]                             - stops tracing queries.")
 	fmt.Println("quit                                                  - quits the console.")
 	fmt.Println()
 }
 
 // runBQLFromFile loads all the statements in the file and runs them.
-func runBQLFromFile(ctx context.Context, driver storage.Store, chanSize int, line string) (string, int, error) {
+func runBQLFromFile(ctx context.Context, driver storage.Store, chanSize int, line string, w io.Writer) (string, int, error) {
 	ss := strings.Split(strings.TrimSpace(line), " ")
 	if len(ss) != 2 {
 		return "", 0, fmt.Errorf("wrong syntax: run <file_with_bql_statements>")
 	}
 	path := ss[1]
-	lines, err := io.GetStatementsFromFile(path)
+	lines, err := bio.GetStatementsFromFile(path)
 	if err != nil {
 		return "", 0, fmt.Errorf("failed to read file %q with error %v on\n", path, err)
 	}
 	for idx, stm := range lines {
 		fmt.Printf("Processing statement (%d/%d)\n", idx+1, len(lines))
-		_, err := runBQL(ctx, stm, driver, chanSize)
+		_, err := runBQL(ctx, stm, driver, chanSize, w)
 		if err != nil {
 			return "", 0, fmt.Errorf("%v on\n%s\n", err, stm)
 		}
@@ -196,8 +244,8 @@ func runBQLFromFile(ctx context.Context, driver storage.Store, chanSize int, lin
 }
 
 // runBQL attempts to execute the provided query against the given store.
-func runBQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*table.Table, error) {
-	pln, err := planBQL(ctx, bql, s, chanSize)
+func runBQL(ctx context.Context, bql string, s storage.Store, chanSize int, w io.Writer) (*table.Table, error) {
+	pln, err := planBQL(ctx, bql, s, chanSize, w)
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +257,7 @@ func runBQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*ta
 }
 
 // planBQL attempts to create the excecution plan for the provided query against the given store.
-func planBQL(ctx context.Context, bql string, s storage.Store, chanSize int) (planner.Executor, error) {
+func planBQL(ctx context.Context, bql string, s storage.Store, chanSize int, w io.Writer) (planner.Executor, error) {
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		return nil, fmt.Errorf("failed to initilize a valid BQL parser")
@@ -218,7 +266,7 @@ func planBQL(ctx context.Context, bql string, s storage.Store, chanSize int) (pl
 	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		return nil, fmt.Errorf("failed to parse BQL statement with error %v", err)
 	}
-	pln, err := planner.New(ctx, s, stm, chanSize)
+	pln, err := planner.New(ctx, s, stm, chanSize, w)
 	if err != nil {
 		return nil, fmt.Errorf("should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}

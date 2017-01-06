@@ -20,9 +20,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -43,11 +45,26 @@ type Executor interface {
 	String() string
 }
 
+// trace attemps to write a trace if a valid writer is provided
+func trace(w io.Writer, msgs ...string) {
+	if w == nil {
+		return
+	}
+	for _, msg := range msgs {
+		w.Write([]byte("["))
+		w.Write([]byte(time.Now().String()))
+		w.Write([]byte("] "))
+		w.Write([]byte(msg))
+		w.Write([]byte("\n"))
+	}
+}
+
 // createPlan encapsulates the sequence of instructions that need to be
 // executed in order to satisfy the execution of a valid create BQL statement.
 type createPlan struct {
-	stm   *semantic.Statement
-	store storage.Store
+	stm    *semantic.Statement
+	store  storage.Store
+	tracer io.Writer
 }
 
 // Execute creates the indicated graphs.
@@ -58,6 +75,7 @@ func (p *createPlan) Execute(ctx context.Context) (*table.Table, error) {
 	}
 	errs := []string{}
 	for _, g := range p.stm.GraphNames() {
+		trace(p.tracer, "Creating new graph \""+g+"\"")
 		if _, err := p.store.NewGraph(ctx, g); err != nil {
 			errs = append(errs, err.Error())
 		}
@@ -76,8 +94,9 @@ func (p *createPlan) String() string {
 // dropPlan encapsulates the sequence of instructions that need to be
 // executed in order to satisfy the execution of a valid drop BQL statement.
 type dropPlan struct {
-	stm   *semantic.Statement
-	store storage.Store
+	stm    *semantic.Statement
+	store  storage.Store
+	tracer io.Writer
 }
 
 // Execute drops the indicated graphs.
@@ -88,6 +107,7 @@ func (p *dropPlan) Execute(ctx context.Context) (*table.Table, error) {
 	}
 	errs := []string{}
 	for _, g := range p.stm.GraphNames() {
+		trace(p.tracer, "Deleting graph \""+g+"\"")
 		if err := p.store.DeleteGraph(ctx, g); err != nil {
 			errs = append(errs, err.Error())
 		}
@@ -106,8 +126,9 @@ func (p *dropPlan) String() string {
 // insertPlan encapsulates the sequence of instructions that need to be
 // executed in order to satisfy the execution of a valid insert BQL statement.
 type insertPlan struct {
-	stm   *semantic.Statement
-	store storage.Store
+	stm    *semantic.Statement
+	store  storage.Store
+	tracer io.Writer
 }
 
 type updater func(storage.Graph, []*triple.Triple) error
@@ -153,6 +174,7 @@ func (p *insertPlan) Execute(ctx context.Context) (*table.Table, error) {
 		return nil, err
 	}
 	return t, update(ctx, p.stm, p.store, func(g storage.Graph, d []*triple.Triple) error {
+		trace(p.tracer, "Inserting triples to graph \""+g.ID(ctx)+"\"")
 		return g.AddTriples(ctx, d)
 	})
 }
@@ -175,8 +197,9 @@ func (p *insertPlan) String() string {
 // deletePlan encapsulates the sequence of instructions that need to be
 // executed in order to satisfy the execution of a valid delete BQL statement.
 type deletePlan struct {
-	stm   *semantic.Statement
-	store storage.Store
+	stm    *semantic.Statement
+	store  storage.Store
+	tracer io.Writer
 }
 
 // Execute deletes the provided data into the indicated graphs.
@@ -186,6 +209,7 @@ func (p *deletePlan) Execute(ctx context.Context) (*table.Table, error) {
 		return nil, err
 	}
 	return t, update(ctx, p.stm, p.store, func(g storage.Graph, d []*triple.Triple) error {
+		trace(p.tracer, "Removing triples from graph \""+g.ID(ctx)+"\"")
 		return g.RemoveTriples(ctx, d)
 	})
 }
@@ -218,10 +242,11 @@ type queryPlan struct {
 	cls       []*semantic.GraphClause
 	tbl       *table.Table
 	chanSize  int
+	tracer    io.Writer
 }
 
 // newQueryPlan returns a new query plan ready to be executed.
-func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statement, chanSize int) (*queryPlan, error) {
+func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statement, chanSize int, w io.Writer) (*queryPlan, error) {
 	bs := []string{}
 	for _, b := range stm.Bindings() {
 		bs = append(bs, b)
@@ -238,6 +263,7 @@ func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statem
 		cls:       stm.SortedGraphPatternClauses(),
 		tbl:       t,
 		chanSize:  chanSize,
+		tracer:    w,
 	}
 	if err := stm.Init(ctx, store); err != nil {
 		return nil, err
@@ -698,29 +724,33 @@ func (p *queryPlan) String() string {
 }
 
 // New create a new executable plan given a semantic BQL statement.
-func New(ctx context.Context, store storage.Store, stm *semantic.Statement, chanSize int) (Executor, error) {
+func New(ctx context.Context, store storage.Store, stm *semantic.Statement, chanSize int, w io.Writer) (Executor, error) {
 	switch stm.Type() {
 	case semantic.Query:
-		return newQueryPlan(ctx, store, stm, chanSize)
+		return newQueryPlan(ctx, store, stm, chanSize, w)
 	case semantic.Insert:
 		return &insertPlan{
-			stm:   stm,
-			store: store,
+			stm:    stm,
+			store:  store,
+			tracer: w,
 		}, nil
 	case semantic.Delete:
 		return &deletePlan{
-			stm:   stm,
-			store: store,
+			stm:    stm,
+			store:  store,
+			tracer: w,
 		}, nil
 	case semantic.Create:
 		return &createPlan{
-			stm:   stm,
-			store: store,
+			stm:    stm,
+			store:  store,
+			tracer: w,
 		}, nil
 	case semantic.Drop:
 		return &dropPlan{
-			stm:   stm,
-			store: store,
+			stm:    stm,
+			store:  store,
+			tracer: w,
 		}, nil
 	default:
 		return nil, fmt.Errorf("planner.New: unknown statement type in statement %v", stm)
