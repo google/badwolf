@@ -154,17 +154,21 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			continue
 		}
 		if strings.HasPrefix(l, "export") {
+			now := time.Now()
 			args := strings.Split("bw "+strings.TrimSpace(l)[:len(l)-1], " ")
 			usage := "Wrong syntax\n\n\tload <graph_names_separated_by_commas> <file_path>\n"
 			export.Eval(ctx, usage, args, driver, bulkSize)
+			fmt.Println("[OK] Time spent: ", time.Now().Sub(now))
 			fmt.Print(prompt)
 			l = ""
 			continue
 		}
 		if strings.HasPrefix(l, "load") {
+			now := time.Now()
 			args := strings.Split("bw "+strings.TrimSpace(l[:len(l)-1]), " ")
 			usage := "Wrong syntax\n\n\tload <file_path> <graph_names_separated_by_commas>\n"
 			load.Eval(ctx, usage, args, driver, bulkSize, builderSize)
+			fmt.Println("[OK] Time spent: ", time.Now().Sub(now))
 			fmt.Print(prompt)
 			l = ""
 			continue
@@ -182,26 +186,31 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			continue
 		}
 		if strings.HasPrefix(l, "run") {
+			now := time.Now()
 			path, cmds, err := runBQLFromFile(ctx, driver, chanSize, strings.TrimSpace(l[:len(l)-1]), tracer)
 			if err != nil {
 				fmt.Printf("[ERROR] %s\n\n", err)
 			} else {
 				fmt.Printf("Loaded %q and run %d BQL commands successfully\n\n", path, cmds)
 			}
+			fmt.Println("Time spent: ", time.Now().Sub(now))
 			fmt.Print(prompt)
 			l = ""
 			continue
 		}
 
+		now := time.Now()
 		table, err := runBQL(ctx, l, driver, chanSize, tracer)
 		l = ""
 		if err != nil {
-			fmt.Printf("[ERROR] %s\n\n", err)
+			fmt.Printf("[ERROR] %s\n", err)
+			fmt.Println("Time spent: ", time.Now().Sub(now))
+			fmt.Println()
 		} else {
 			if len(table.Bindings()) > 0 {
 				fmt.Println(table.String())
 			}
-			fmt.Println("[OK]")
+			fmt.Println("[OK] Time spent: ", time.Now().Sub(now))
 		}
 		fmt.Print(prompt)
 	}
