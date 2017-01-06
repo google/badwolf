@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -534,6 +535,9 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 // data from the specified graphs.
 func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupOptions) error {
 	for _, cls := range p.cls {
+		trace(p.tracer, func() []string {
+			return []string{"Processing graph clause " + cls.String()}
+		})
 		// The current planner is based on naively executing clauses by
 		// specificity.
 		unresolvable, err := p.processClause(ctx, cls, lo)
@@ -553,6 +557,9 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 func (p *queryPlan) projectAndGroupBy() error {
 	grp := p.stm.GroupByBindings()
 	if len(grp) == 0 { // The table only needs to be projected.
+		trace(p.tracer, func() []string {
+			return []string{fmt.Sprintf("Running projection for %v", grp)}
+		})
 		p.tbl.AddBindings(p.stm.OutputBindings())
 		// For each row, copy each input binding value to its appropriate alias.
 		for _, prj := range p.stm.Projections() {
@@ -560,8 +567,14 @@ func (p *queryPlan) projectAndGroupBy() error {
 				row[prj.Alias] = row[prj.Binding]
 			}
 		}
+		trace(p.tracer, func() []string {
+			return []string{fmt.Sprintf("Output bindings projected %v", p.stm.OutputBindings())}
+		})
 		return p.tbl.ProjectBindings(p.stm.OutputBindings())
 	}
+	trace(p.tracer, func() []string {
+		return []string{"Starting roup reduce and projection"}
+	})
 	// The table needs to be group reduced.
 	// Project only binding involved in the group operation.
 	tmpBindings := []string{}
@@ -570,6 +583,9 @@ func (p *queryPlan) projectAndGroupBy() error {
 	cfg := table.SortConfig{}
 	aaps := []table.AliasAccPair{}
 	for _, prj := range p.stm.Projections() {
+		trace(p.tracer, func() []string {
+			return []string{"Analysing projection " + prj.String()}
+		})
 		// Only include used incoming bindings.
 		tmpBindings = append(tmpBindings, prj.Binding)
 		// Update sorting configuration.
@@ -615,9 +631,15 @@ func (p *queryPlan) projectAndGroupBy() error {
 		}
 		aaps = append(aaps, aap)
 	}
+	trace(p.tracer, func() []string {
+		return []string{fmt.Sprintf("Projecting %v", tmpBindings)}
+	})
 	if err := p.tbl.ProjectBindings(tmpBindings); err != nil {
 		return err
 	}
+	trace(p.tracer, func() []string {
+		return []string{"Reducing the table using configuration " + cfg.String()}
+	})
 	p.tbl.Reduce(cfg, aaps)
 	return nil
 }
@@ -625,12 +647,22 @@ func (p *queryPlan) projectAndGroupBy() error {
 // orderBy takes the resulting table and sorts its contents according to the
 // specifications of the ORDER BY clause.
 func (p *queryPlan) orderBy() {
-	p.tbl.Sort(p.stm.OrderByConfig())
+	order := p.stm.OrderByConfig()
+	if len(order) <= 0 {
+		return
+	}
+	trace(p.tracer, func() []string {
+		return []string{"Ordering by " + order.String()}
+	})
+	p.tbl.Sort(order)
 }
 
 // having runs the filtering based on the having clause if needed.
 func (p *queryPlan) having() error {
 	if p.stm.HasHavingClause() {
+		trace(p.tracer, func() []string {
+			return []string{"Having filtering"}
+		})
 		eval := p.stm.HavingEvaluator()
 		ok := true
 		var eErr error
@@ -651,6 +683,9 @@ func (p *queryPlan) having() error {
 // limit truncates the table if the limit clause if available.
 func (p *queryPlan) limit() {
 	if p.stm.IsLimitSet() {
+		trace(p.tracer, func() []string {
+			return []string{"Limit results to " + strconv.Itoa(int(p.stm.Limit()))}
+		})
 		p.tbl.Limit(p.stm.Limit())
 	}
 }
