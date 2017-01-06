@@ -249,7 +249,7 @@ desc <BQL>                                            - prints the execution pla
 load <file_path> <graph_names_separated_by_commas>    - load triples into the specified graphs.
 run <file_with_bql_statements>                        - runs all the BQL statements in the file.
 start tracing [trace_file]                            - starts tracing queries.
-stop tracing [trace_file]                             - stops tracing queries.
+stop tracing                                          - stops tracing queries.
 quit                                                  - quits the console.
 
 bql> 
