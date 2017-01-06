@@ -45,12 +45,14 @@ type Executor interface {
 	String() string
 }
 
-// trace attemps to write a trace if a valid writer is provided
-func trace(w io.Writer, msgs ...string) {
+// trace attemps to write a trace if a valid writer is provided. The
+// tracer is lazy on the string generation to avoid adding too much
+// overhead when tracing ins not on.
+func trace(w io.Writer, msgs func() []string) {
 	if w == nil {
 		return
 	}
-	for _, msg := range msgs {
+	for _, msg := range msgs() {
 		w.Write([]byte("["))
 		w.Write([]byte(time.Now().String()))
 		w.Write([]byte("] "))
@@ -75,7 +77,9 @@ func (p *createPlan) Execute(ctx context.Context) (*table.Table, error) {
 	}
 	errs := []string{}
 	for _, g := range p.stm.GraphNames() {
-		trace(p.tracer, "Creating new graph \""+g+"\"")
+		trace(p.tracer, func() []string {
+			return []string{"Creating new graph \"" + g + "\""}
+		})
 		if _, err := p.store.NewGraph(ctx, g); err != nil {
 			errs = append(errs, err.Error())
 		}
@@ -107,7 +111,9 @@ func (p *dropPlan) Execute(ctx context.Context) (*table.Table, error) {
 	}
 	errs := []string{}
 	for _, g := range p.stm.GraphNames() {
-		trace(p.tracer, "Deleting graph \""+g+"\"")
+		trace(p.tracer, func() []string {
+			return []string{"Deleting graph \"" + g + "\""}
+		})
 		if err := p.store.DeleteGraph(ctx, g); err != nil {
 			errs = append(errs, err.Error())
 		}
@@ -174,7 +180,9 @@ func (p *insertPlan) Execute(ctx context.Context) (*table.Table, error) {
 		return nil, err
 	}
 	return t, update(ctx, p.stm, p.store, func(g storage.Graph, d []*triple.Triple) error {
-		trace(p.tracer, "Inserting triples to graph \""+g.ID(ctx)+"\"")
+		trace(p.tracer, func() []string {
+			return []string{"Inserting triples to graph \"" + g.ID(ctx) + "\""}
+		})
 		return g.AddTriples(ctx, d)
 	})
 }
@@ -209,7 +217,9 @@ func (p *deletePlan) Execute(ctx context.Context) (*table.Table, error) {
 		return nil, err
 	}
 	return t, update(ctx, p.stm, p.store, func(g storage.Graph, d []*triple.Triple) error {
-		trace(p.tracer, "Removing triples from graph \""+g.ID(ctx)+"\"")
+		trace(p.tracer, func() []string {
+			return []string{"Removing triples from graph \"" + g.ID(ctx) + "\""}
+		})
 		return g.RemoveTriples(ctx, d)
 	})
 }
@@ -648,12 +658,18 @@ func (p *queryPlan) limit() {
 // Execute queries the indicated graphs.
 func (p *queryPlan) Execute(ctx context.Context) (*table.Table, error) {
 	// Fetch and catch graph instances.
+	trace(p.tracer, func() []string {
+		return []string{fmt.Sprintf("Caching graph instances for graphs %v", p.stm.GraphNames())}
+	})
 	if err := p.stm.Init(ctx, p.store); err != nil {
 		return nil, err
 	}
 	p.grfs = p.stm.Graphs()
 	// Retrieve the data.
 	lo := p.stm.GlobalLookupOptions()
+	trace(p.tracer, func() []string {
+		return []string{"Setting global lookup options to " + lo.String()}
+	})
 	if err := p.processGraphPattern(ctx, lo); err != nil {
 		return nil, err
 	}
