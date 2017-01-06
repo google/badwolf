@@ -238,13 +238,14 @@ is currently no support for cursor keys or history of past BQL statements.
 
 ```
 $ bw bql
-Welcome to BadWolf vCli (0.5.1-dev @130405356)
+Welcome to BadWolf vCli (0.6.1-dev)
 Using driver "VOLATILE". Type quit; to exit
-Session started at 2016-12-21 10:24:39.95182793 -0800 PST
+Session started at 2017-01-05 22:55:16.615327361 -0800 PST
 
 bql> help;
 help                                                  - prints help for the bw console.
 export <graph_names_separated_by_commas> <file_path>  - dumps triples from graphs into a file path.
+desc <BQL>                                            - prints the execution plan for a BQL statement.
 load <file_path> <graph_names_separated_by_commas>    - load triples into the specified graphs.
 run <file_with_bql_statements>                        - runs all the BQL statements in the file.
 quit                                                  - quits the console.
