@@ -20,6 +20,7 @@ package semantic
 
 import (
 	"bytes"
+	"context"
 	"reflect"
 	"sort"
 	"time"
@@ -69,7 +70,8 @@ func (t StatementType) String() string {
 // Statement contains all the semantic information extract from the parsing
 type Statement struct {
 	sType                     StatementType
-	graphs                    []string
+	graphNames                []string
+	graphs                    []storage.Graph
 	data                      []*triple.Triple
 	pattern                   []*GraphClause
 	workingClause             *GraphClause
@@ -347,12 +349,29 @@ func (s *Statement) Type() StatementType {
 
 // AddGraph adds a graph to a given https://critique.corp.google.com/#review/101398527statement.
 func (s *Statement) AddGraph(g string) {
-	s.graphs = append(s.graphs, g)
+	s.graphNames = append(s.graphNames, g)
 }
 
 // Graphs returns the list of graphs listed on the statement.
-func (s *Statement) Graphs() []string {
+func (s *Statement) Graphs() []storage.Graph {
 	return s.graphs
+}
+
+// Init initialize the graphs givne the graph names.
+func (s *Statement) Init(ctx context.Context, st storage.Store) error {
+	for _, gn := range s.graphNames {
+		g, err := st.Graph(ctx, gn)
+		if err != nil {
+			return err
+		}
+		s.graphs = append(s.graphs, g)
+	}
+	return nil
+}
+
+// GraphNames returns the list of graphs listed on the statement.
+func (s *Statement) GraphNames() []string {
+	return s.graphNames
 }
 
 // AddData adds a triple to a given statement's data.

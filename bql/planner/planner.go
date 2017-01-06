@@ -57,7 +57,7 @@ func (p *createPlan) Execute(ctx context.Context) (*table.Table, error) {
 		return nil, err
 	}
 	errs := []string{}
-	for _, g := range p.stm.Graphs() {
+	for _, g := range p.stm.GraphNames() {
 		if _, err := p.store.NewGraph(ctx, g); err != nil {
 			errs = append(errs, err.Error())
 		}
@@ -87,7 +87,7 @@ func (p *dropPlan) Execute(ctx context.Context) (*table.Table, error) {
 		return nil, err
 	}
 	errs := []string{}
-	for _, g := range p.stm.Graphs() {
+	for _, g := range p.stm.GraphNames() {
 		if err := p.store.DeleteGraph(ctx, g); err != nil {
 			errs = append(errs, err.Error())
 		}
@@ -124,7 +124,7 @@ func update(ctx context.Context, stm *semantic.Statement, store storage.Store, f
 		errs = append(errs, err.Error())
 	}
 
-	for _, graphBinding := range stm.Graphs() {
+	for _, graphBinding := range stm.GraphNames() {
 		wg.Add(1)
 		go func(graph string) {
 			defer wg.Done()
@@ -230,15 +230,20 @@ func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statem
 	if err != nil {
 		return nil, err
 	}
-	return &queryPlan{
+	qp := &queryPlan{
 		stm:       stm,
 		store:     store,
 		bndgs:     bs,
-		grfsNames: stm.Graphs(),
+		grfsNames: stm.GraphNames(),
 		cls:       stm.SortedGraphPatternClauses(),
 		tbl:       t,
 		chanSize:  chanSize,
-	}, nil
+	}
+	if err := stm.Init(ctx, store); err != nil {
+		return nil, err
+	}
+	qp.grfs = stm.Graphs()
+	return qp, nil
 }
 
 // processClause retrieves the triples for the provided triple given the
@@ -480,11 +485,7 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 			if err != nil {
 				return err
 			}
-			gph, err := p.store.Graph(ctx, g)
-			if err != nil {
-				return err
-			}
-			b, err := gph.Exist(ctx, t)
+			b, err := g.Exist(ctx, t)
 			if err != nil {
 				return err
 			}
@@ -625,14 +626,6 @@ func (p *queryPlan) limit() {
 
 // Execute queries the indicated graphs.
 func (p *queryPlan) Execute(ctx context.Context) (*table.Table, error) {
-	// Collect the graph references.
-	for _, g := range p.stm.Graphs() {
-		ng, err := p.store.Graph(ctx, g)
-		if err != nil {
-			return nil, err
-		}
-		p.grfs = append(p.grfs, ng)
-	}
 	// Retrieve the data.
 	lo := p.stm.GlobalLookupOptions()
 	if err := p.processGraphPattern(ctx, lo); err != nil {

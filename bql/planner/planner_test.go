@@ -562,6 +562,53 @@ func TestTreeTraversalToRoot(t *testing.T) {
 	}
 }
 
+func TestChaining(t *testing.T) {
+	// Graph traversal data.
+	traversalTriples := `/u<joe> "parent_of"@[] /u<mary>
+		/u<joe> "parent_of"@[] /u<peter>
+		/u<peter> "parent_of"@[] /u<john>
+		/u<peter> "parent_of"@[] /u<eve>`
+
+	traversalQuery := `SELECT ?o FROM ?test 
+	                   WHERE {
+	                       /u<joe> "parent_of"@[] ?o .
+		                   ?o "parent_of"@[] /u<john>
+	                   };`
+
+	// Load traversing data
+	s, ctx := memory.NewStore(), context.Background()
+	g, gErr := s.NewGraph(ctx, "?test")
+	if gErr != nil {
+		t.Fatalf("memory.NewGraph failed to create \"?test\" with error %v", gErr)
+	}
+	b := bytes.NewBufferString(traversalTriples)
+	if _, err := io.ReadIntoGraph(ctx, g, b, literal.DefaultBuilder()); err != nil {
+		t.Fatalf("io.ReadIntoGraph failed to read test graph with error %v", err)
+	}
+	p, pErr := grammar.NewParser(grammar.SemanticBQL())
+	if pErr != nil {
+		t.Fatalf("grammar.NewParser: should have produced a valid BQL parser with error %v", pErr)
+	}
+	st := &semantic.Statement{}
+	if err := p.Parse(grammar.NewLLk(traversalQuery, 1), st); err != nil {
+		t.Errorf("Parser.consume: failed to parse query %q with error %v", traversalQuery, err)
+	}
+	plnr, err := New(ctx, s, st, 0)
+	if err != nil {
+		t.Errorf("planner.New failed to create a valid query plan with error %v", err)
+	}
+	tbl, err := plnr.Execute(ctx)
+	if err != nil {
+		t.Errorf("planner.Excecute failed for query %q with error %v", traversalQuery, err)
+	}
+	if got, want := len(tbl.Bindings()), 1; got != want {
+		t.Errorf("tbl.Bindings returned the wrong number of bindings for %q; got %d, want %d", traversalQuery, got, want)
+	}
+	if got, want := len(tbl.Rows()), 1; got != want {
+		t.Errorf("planner.Excecute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", traversalQuery, got, want, tbl)
+	}
+}
+
 // benchmarkQuery is a helper function that runs a specified query on the testing data set for benchmarking purposes.
 func benchmarkQuery(query string, b *testing.B) {
 	ctx := context.Background()

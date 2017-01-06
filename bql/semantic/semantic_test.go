@@ -36,7 +36,7 @@ func TestStatementAddGraph(t *testing.T) {
 	st := &Statement{}
 	st.BindType(Query)
 	st.AddGraph("?foo")
-	if got, want := st.Graphs(), []string{"?foo"}; !reflect.DeepEqual(got, want) {
+	if got, want := st.GraphNames(), []string{"?foo"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("semantic.AddGraph returned the wrong graphs avaiable; got %v, want %v", got, want)
 	}
 }

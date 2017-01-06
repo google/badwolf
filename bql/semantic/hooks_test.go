@@ -120,7 +120,7 @@ func TestSemanticAcceptInsertDelete(t *testing.T) {
 			t.Errorf("semantic.GraphAccumulator hook should have never failed for %v with error %v", ce, err)
 		}
 	}
-	data := st.Graphs()
+	data := st.GraphNames()
 	if len(data) != 2 {
 		t.Errorf("semantic.GraphAccumulator hook should have produced 2 graph bindings; instead produced %v", st.Graphs())
 	}

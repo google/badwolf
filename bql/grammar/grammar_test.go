@@ -259,7 +259,7 @@ func TestAcceptOpsByParseAndSemantic(t *testing.T) {
 		if err := p.Parse(NewLLk(entry.query, 1), st); err != nil {
 			t.Errorf("Parser.consume: failed to accept entry %q with error %v", entry, err)
 		}
-		if got, want := len(st.Graphs()), entry.graphs; got != want {
+		if got, want := len(st.GraphNames()), entry.graphs; got != want {
 			t.Errorf("Parser.consume: failed to collect right number of graphs for case %v; got %d, want %d", entry, got, want)
 		}
 		if got, want := len(st.Data()), entry.triples; got != want {
