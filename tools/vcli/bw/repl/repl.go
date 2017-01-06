@@ -69,6 +69,17 @@ func SimpleReadLine(f *os.File) <-chan string {
 		for scanner.Scan() {
 			c <- strings.TrimSpace(scanner.Text())
 		}
+		cmd := ""
+		for {
+			if !scanner.Scan() {
+				break
+			}
+			cmd = strings.TrimSpace(cmd + " " + strings.TrimSpace(scanner.Text()))
+			if strings.HasSuffix(cmd, ";") {
+				c <- cmd
+				cmd = ""
+			}
+		}
 	}()
 	return c
 }
@@ -100,7 +111,6 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 	for line := range rl(input) {
 		nl := strings.TrimSpace(line)
 		if nl == "" {
-			fmt.Print(prompt)
 			continue
 		}
 		if l != "" {
