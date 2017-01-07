@@ -41,10 +41,10 @@ import (
 const prompt = "bql> "
 
 // New create the version command.
-func New(driver storage.Store, chanSize, bulkSize, builderSize int, rl ReadLiner) *command.Command {
+func New(driver storage.Store, chanSize, bulkSize, builderSize int, rl ReadLiner, done chan bool) *command.Command {
 	return &command.Command{
 		Run: func(ctx context.Context, args []string) int {
-			REPL(driver, os.Stdin, rl, chanSize, bulkSize, builderSize)
+			REPL(driver, os.Stdin, rl, chanSize, bulkSize, builderSize, done)
 			return 0
 		},
 		UsageLine: "bql",
@@ -54,22 +54,20 @@ func New(driver storage.Store, chanSize, bulkSize, builderSize int, rl ReadLiner
 }
 
 // ReadLiner returns a channel with the imput to be used for the REPL.
-type ReadLiner func(*os.File) <-chan string
+type ReadLiner func(done chan bool) <-chan string
 
 // SimpleReadLine reads a line from the provided file. This does not support
 // any advanced terminal functionalities.
 //
 // TODO(xllora): Replace simple reader for function that supports advanced
 // terminal input.
-func SimpleReadLine(f *os.File) <-chan string {
+func SimpleReadLine(done chan bool) <-chan string {
 	c := make(chan string)
 	go func() {
 		defer close(c)
 		scanner := bufio.NewScanner(os.Stdin)
-		for scanner.Scan() {
-			c <- strings.TrimSpace(scanner.Text())
-		}
 		cmd := ""
+		fmt.Print("bql> ")
 		for {
 			if !scanner.Scan() {
 				break
@@ -77,7 +75,11 @@ func SimpleReadLine(f *os.File) <-chan string {
 			cmd = strings.TrimSpace(cmd + " " + strings.TrimSpace(scanner.Text()))
 			if strings.HasSuffix(cmd, ";") {
 				c <- cmd
+				if <-done {
+					break
+				}
 				cmd = ""
+				fmt.Print("bql> ")
 			}
 		}
 	}()
@@ -85,7 +87,7 @@ func SimpleReadLine(f *os.File) <-chan string {
 }
 
 // REPL starts a read-evaluation-print-loop to run BQL commands.
-func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, builderSize int) int {
+func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, builderSize int, done chan bool) int {
 	var tracer io.Writer
 	ctx, isTracingToFile := context.Background(), false
 
@@ -106,29 +108,15 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 	defer func() {
 		fmt.Printf("\n\nThanks for all those BQL queries!\n\n")
 	}()
-	fmt.Print(prompt)
-	l := ""
-	for line := range rl(input) {
-		nl := strings.TrimSpace(line)
-		if nl == "" {
-			continue
-		}
-		if l != "" {
-			l = l + " " + nl
-		} else {
-			l = nl
-		}
-		if !strings.HasSuffix(nl, ";") {
-			// Not done with the statement.
-			continue
-		}
+
+	for l := range rl(done) {
 		if strings.HasPrefix(l, "quit") {
+			done <- true
 			break
 		}
 		if strings.HasPrefix(l, "help") {
 			printHelp()
-			fmt.Print(prompt)
-			l = ""
+			done <- false
 			continue
 		}
 		if strings.HasPrefix(l, "start tracing") {
@@ -152,15 +140,13 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			default:
 				fmt.Println("Invalid syntax\n\tstart tracing [trace_file]")
 			}
-			fmt.Print(prompt)
-			l = ""
+			done <- false
 			continue
 		}
 		if strings.HasPrefix(l, "stop tracing") {
 			stopTracing()
 			fmt.Println("Tracing is off.")
-			fmt.Print(prompt)
-			l = ""
+			done <- false
 			continue
 		}
 		if strings.HasPrefix(l, "export") {
@@ -169,8 +155,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			usage := "Wrong syntax\n\n\tload <graph_names_separated_by_commas> <file_path>\n"
 			export.Eval(ctx, usage, args, driver, bulkSize)
 			fmt.Println("[OK] Time spent: ", time.Now().Sub(now))
-			fmt.Print(prompt)
-			l = ""
+			done <- false
 			continue
 		}
 		if strings.HasPrefix(l, "load") {
@@ -179,8 +164,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			usage := "Wrong syntax\n\n\tload <file_path> <graph_names_separated_by_commas>\n"
 			load.Eval(ctx, usage, args, driver, bulkSize, builderSize)
 			fmt.Println("[OK] Time spent: ", time.Now().Sub(now))
-			fmt.Print(prompt)
-			l = ""
+			done <- false
 			continue
 		}
 		if strings.HasPrefix(l, "desc") {
@@ -191,8 +175,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 				fmt.Println(pln.String())
 				fmt.Println("[OK]")
 			}
-			fmt.Print(prompt)
-			l = ""
+			done <- false
 			continue
 		}
 		if strings.HasPrefix(l, "run") {
@@ -204,14 +187,12 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 				fmt.Printf("Loaded %q and run %d BQL commands successfully\n\n", path, cmds)
 			}
 			fmt.Println("Time spent: ", time.Now().Sub(now))
-			fmt.Print(prompt)
-			l = ""
+			done <- false
 			continue
 		}
 
 		now := time.Now()
 		table, err := runBQL(ctx, l, driver, chanSize, tracer)
-		l = ""
 		if err != nil {
 			fmt.Printf("[ERROR] %s\n", err)
 			fmt.Println("Time spent: ", time.Now().Sub(now))
@@ -222,7 +203,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			}
 			fmt.Println("[OK] Time spent: ", time.Now().Sub(now))
 		}
-		fmt.Print(prompt)
+		done <- false
 	}
 	return 0
 }
