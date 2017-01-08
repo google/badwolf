@@ -393,7 +393,7 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 				if err != nil {
 					return fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
 				}
-				// Need to check teh bounds of the triple.
+				// Need to check the bounds of the triple.
 				if cls.PLowerBound != nil && cls.PLowerBound.After(*ta) {
 					continue
 				}
@@ -416,7 +416,7 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 					if err != nil {
 						return fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
 					}
-					// Need to check teh bounds of the triple.
+					// Need to check the bounds of the triple.
 					if cls.OLowerBound != nil && cls.OLowerBound.After(*ta) {
 						continue
 					}

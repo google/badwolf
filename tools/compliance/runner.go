@@ -114,7 +114,7 @@ func (a *Assertion) runAssertion(ctx context.Context, st storage.Store, chanSize
 
 // Run evaluates a story. Returns if the story is true or not. It will also
 // return an error if something wrong happen along the way. It is worth
-// mentioning that Run does not clear any data avaiable in the provided
+// mentioning that Run does not clear any data available in the provided
 // storage.
 func (s *Story) Run(ctx context.Context, st storage.Store, b literal.Builder, chanSize int) (map[string]*AssertionOutcome, error) {
 	// Populate the sources.
@@ -147,7 +147,7 @@ type AssertionBattery struct {
 	Entries []*AssertionBatteryEntry
 }
 
-//AssertionBatteryEntry contains teh result of running a story.
+//AssertionBatteryEntry contains the result of running a story.
 type AssertionBatteryEntry struct {
 	Story   *Story
 	Outcome map[string]*AssertionOutcome

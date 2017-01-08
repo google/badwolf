@@ -112,7 +112,7 @@ func TestLimitedItemsLookupChecker(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !c.CheckAndUpdate(ip) {
-		t.Errorf("The first predicate should always succeeed on bounded lookup %v", blu)
+		t.Errorf("The first predicate should always succeed on bounded lookup %v", blu)
 	}
 	for i := 0; i < 10; i++ {
 		if c.CheckAndUpdate(ip) {

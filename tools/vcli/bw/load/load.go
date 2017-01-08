@@ -36,7 +36,7 @@ func New(store storage.Store, bulkSize, builderSize int) *command.Command {
 		UsageLine: "load <file_path> <graph_names_separated_by_commas>",
 		Short:     "load triples in bulk stored in a file.",
 		Long: `Loads all the triples stored in a file into the provided graphs.
-Graph names need to be separated by commans with no whitespaces. Each triple
+Graph names need to be separated by commands with no whitespaces. Each triple
 needs to placed in a single line. Each triple needs to be formated so it can be
 parsed as indicated in the documetation (see https://github.com/google/badwolf).
 All data in the file will be treated as triples. A line starting with # will

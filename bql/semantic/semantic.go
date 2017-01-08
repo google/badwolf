@@ -122,7 +122,7 @@ type GraphClause struct {
 	OTemporal        bool
 }
 
-// String returns a readable representaion of a graph clause.
+// String returns a readable representation of a graph clause.
 func (c *GraphClause) String() string {
 	b := bytes.NewBufferString("{ ")
 

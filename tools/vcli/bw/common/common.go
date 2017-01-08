@@ -95,7 +95,7 @@ func InitializeDriver(driverName string, drivers map[string]StoreGenerator) (sto
 		for k := range drivers {
 			ds = append(ds, k)
 		}
-		return nil, fmt.Errorf("unkown driver name %q; valid drivers [%q]", driverName, strings.Join(ds, ", "))
+		return nil, fmt.Errorf("unknown driver name %q; valid drivers [%q]", driverName, strings.Join(ds, ", "))
 	}
 	return f()
 }

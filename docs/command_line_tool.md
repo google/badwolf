@@ -339,7 +339,7 @@ Add non existing triples - rg nodes=1000, size=0100000, reps=10 - 70284.21 tripl
 ## Command: Load
 
 Loads all the triples stored in a file into the provided graphs.
-Graph names need to be separated by commans with no whitespaces. Each triple
+Graph names need to be separated by commands with no whitespaces. Each triple
 needs to placed in a single line. Each triple needs to be formated so it can be
 parsed as indicated in the [documetation](./temporal_graph_modeling.md). 
 Please, also feel free to check this [example text file](./presentations/2016/06/21/data/triples.txt)

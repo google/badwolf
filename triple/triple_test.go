@@ -61,7 +61,7 @@ func TestPrettyTriple(t *testing.T) {
 	s, p, o := getTestData(t)
 	tr, err := New(s, p, o)
 	if err != nil {
-		t.Fatalf("triple.New shoulds not fail to create triple wih error %v", err)
+		t.Fatalf("triple.New shoulds not fail to create triple with error %v", err)
 	}
 	if got, want := tr.String(), "/some/type<some id>\t\"foo\"@[]\t/some/type<some id>"; got != want {
 		t.Errorf("triple.String failed to return a valid prety printed string; got %s, want %s", got, err)

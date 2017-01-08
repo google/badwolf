@@ -208,7 +208,7 @@ func runBQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*ta
 	return res, nil
 }
 
-// planBQL attempts to create the excecution plan for the provided query against the given store.
+// planBQL attempts to create the execution plan for the provided query against the given store.
 func planBQL(ctx context.Context, bql string, s storage.Store, chanSize int) (planner.Executor, error) {
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {

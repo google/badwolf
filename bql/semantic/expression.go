@@ -220,7 +220,7 @@ func NewBinaryBooleanExpression(op OP, lE, rE Evaluator) (Evaluator, error) {
 			rE: rE,
 		}, nil
 	default:
-		return nil, errors.New("binary boolean expresions require the operation to be one for the follwing 'and', 'or'")
+		return nil, errors.New("binary boolean expressions require the operation to be one for the follwing 'and', 'or'")
 	}
 }
 
@@ -235,7 +235,7 @@ func NewUnaryBooleanExpression(op OP, lE Evaluator) (Evaluator, error) {
 			rS: false,
 		}, nil
 	default:
-		return nil, errors.New("unary boolean expresions require the operation to be one for the follwing 'not'")
+		return nil, errors.New("unary boolean expressions require the operation to be one for the follwing 'not'")
 	}
 }
 

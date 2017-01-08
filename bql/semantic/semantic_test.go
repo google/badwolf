@@ -37,7 +37,7 @@ func TestStatementAddGraph(t *testing.T) {
 	st.BindType(Query)
 	st.AddGraph("?foo")
 	if got, want := st.GraphNames(), []string{"?foo"}; !reflect.DeepEqual(got, want) {
-		t.Errorf("semantic.AddGraph returned the wrong graphs avaiable; got %v, want %v", got, want)
+		t.Errorf("semantic.AddGraph returned the wrong graphs available; got %v, want %v", got, want)
 	}
 }
 
@@ -50,7 +50,7 @@ func TestStatementAddData(t *testing.T) {
 	st.BindType(Query)
 	st.AddData(tr)
 	if got, want := st.Data(), []*triple.Triple{tr}; !reflect.DeepEqual(got, want) {
-		t.Errorf("semantic.AddData returned the wrong data avaiable; got %v, want %v", got, want)
+		t.Errorf("semantic.AddData returned the wrong data available; got %v, want %v", got, want)
 	}
 }
 

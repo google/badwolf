@@ -56,7 +56,7 @@ func TestTrackDuration(t *testing.T) {
 		return nil
 	})
 	if d <= 0 {
-		t.Fatalf("TrackDuration should ahve returned a valid duration")
+		t.Fatalf("TrackDuration should have returned a valid duration")
 	}
 }
 
