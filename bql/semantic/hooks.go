@@ -336,7 +336,7 @@ func processPredicate(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.To
 	// The predicate may have a binding on the anchor.
 	cmps := predicateRegexp.FindAllStringSubmatch(raw, 2)
 	if len(cmps) != 1 || (len(cmps) == 1 && len(cmps[0]) != 3) {
-		return nil, "", "", false, fmt.Errorf("failed to extract partialy defined predicate %q, got %v instead", raw, cmps)
+		return nil, "", "", false, fmt.Errorf("failed to extract partially defined predicate %q, got %v instead", raw, cmps)
 	}
 	id, ta := cmps[0][1], cmps[0][2]
 	pID = id
@@ -360,7 +360,7 @@ func processPredicateBound(c *GraphClause, ce ConsumedElement, lastNopToken *lex
 	raw := ce.Token().Text
 	cmps := boundRegexp.FindAllStringSubmatch(raw, 2)
 	if len(cmps) != 1 || (len(cmps) == 1 && len(cmps[0]) != 4) {
-		return "", "", "", nil, nil, false, fmt.Errorf("failed to extract partialy defined predicate bound %q, got %v instead", raw, cmps)
+		return "", "", "", nil, nil, false, fmt.Errorf("failed to extract partially defined predicate bound %q, got %v instead", raw, cmps)
 	}
 	id, tl, tu := cmps[0][1], cmps[0][2], cmps[0][3]
 	pID = id

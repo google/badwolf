@@ -46,7 +46,7 @@ type Executor interface {
 	String() string
 }
 
-// trace attemps to write a trace if a valid writer is provided. The
+// trace attempts to write a trace if a valid writer is provided. The
 // tracer is lazy on the string generation to avoid adding too much
 // overhead when tracing ins not on.
 func trace(w io.Writer, msgs func() []string) {
