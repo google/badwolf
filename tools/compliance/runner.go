@@ -92,7 +92,7 @@ func (a *Assertion) runAssertion(ctx context.Context, st storage.Store, chanSize
 	if err := p.Parse(grammar.NewLLk(a.Statement, 1), stm); err != nil {
 		return errorizer(fmt.Errorf("Failed to parse BQL statement with error %v", err))
 	}
-	pln, err := planner.New(ctx, st, stm, chanSize)
+	pln, err := planner.New(ctx, st, stm, chanSize, nil)
 	if err != nil {
 		return errorizer(fmt.Errorf("Should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err))
 	}

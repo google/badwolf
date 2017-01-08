@@ -88,7 +88,7 @@ func BQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*table
 	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		return nil, fmt.Errorf("[ERROR] Failed to parse BQL statement with error %v", err)
 	}
-	pln, err := planner.New(ctx, s, stm, chanSize)
+	pln, err := planner.New(ctx, s, stm, chanSize, nil)
 	if err != nil {
 		return nil, fmt.Errorf("[ERROR] Should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}

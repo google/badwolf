@@ -102,14 +102,14 @@ func InitializeDriver(driverName string, drivers map[string]StoreGenerator) (sto
 
 // InitializeCommands initializes the available commands with the given storage
 // instance.
-func InitializeCommands(driver storage.Store, chanSize, bulkTripleOpSize, builderSize int, rl repl.ReadLiner) []*command.Command {
+func InitializeCommands(driver storage.Store, chanSize, bulkTripleOpSize, builderSize int, rl repl.ReadLiner, done chan bool) []*command.Command {
 	return []*command.Command{
 		assert.New(driver, literal.DefaultBuilder(), chanSize),
 		benchmark.New(driver, chanSize),
 		export.New(driver, bulkTripleOpSize),
 		load.New(driver, bulkTripleOpSize, builderSize),
 		run.New(driver, chanSize),
-		repl.New(driver, chanSize, bulkTripleOpSize, builderSize, rl),
+		repl.New(driver, chanSize, bulkTripleOpSize, builderSize, rl, done),
 		version.New(),
 	}
 }
@@ -155,5 +155,5 @@ func Run(driverName string, drivers map[string]StoreGenerator, chanSize, bulkTri
 		}
 		args = append(args, s)
 	}
-	return Eval(context.Background(), args, InitializeCommands(driver, chanSize, bulkTripleOpSize, builderSize, rl))
+	return Eval(context.Background(), args, InitializeCommands(driver, chanSize, bulkTripleOpSize, builderSize, rl, make(chan bool)))
 }

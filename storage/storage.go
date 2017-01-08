@@ -16,6 +16,8 @@
 package storage
 
 import (
+	"bytes"
+	"strconv"
 	"time"
 
 	"github.com/google/badwolf/triple"
@@ -35,6 +37,26 @@ type LookupOptions struct {
 
 	// UpperAnchor, if provided, represents the upper time anchor to be considered.
 	UpperAnchor *time.Time
+}
+
+// String returns a readable version of the LookupOptions instance.
+func (l *LookupOptions) String() string {
+	b := bytes.NewBufferString("<limit=")
+	b.WriteString(strconv.Itoa(l.MaxElements))
+	b.WriteString(", lower_anchor=")
+	if l.LowerAnchor != nil {
+		b.WriteString(l.LowerAnchor.String())
+	} else {
+		b.WriteString("nil")
+	}
+	b.WriteString(", upper_anchor=")
+	if l.UpperAnchor != nil {
+		b.WriteString(l.UpperAnchor.String())
+	} else {
+		b.WriteString("nil")
+	}
+	b.WriteString(">")
+	return b.String()
 }
 
 // DefaultLookup provides the default lookup behavior.
