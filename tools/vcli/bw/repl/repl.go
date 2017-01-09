@@ -216,7 +216,7 @@ func printHelp() {
 	fmt.Println("load <file_path> <graph_names_separated_by_commas>    - load triples into the specified graphs.")
 	fmt.Println("run <file_with_bql_statements>                        - runs all the BQL statements in the file.")
 	fmt.Println("start tracing [trace_file]                            - starts tracing queries.")
-	fmt.Println("stop tracing [trace_file]                             - stops tracing queries.")
+	fmt.Println("stop tracing                                          - stops tracing queries.")
 	fmt.Println("quit                                                  - quits the console.")
 	fmt.Println()
 }
