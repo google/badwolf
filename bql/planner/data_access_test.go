@@ -222,7 +222,7 @@ func TestDataAccessAddTriples(t *testing.T) {
 	ts := make(chan *triple.Triple)
 	go func() {
 		defer wg.Done()
-		if err := g.Triples(ctx, ts); err != nil {
+		if err := g.Triples(ctx, storage.DefaultLookup, ts); err != nil {
 			t.Fatal(err)
 		}
 	}()

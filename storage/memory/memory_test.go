@@ -513,7 +513,7 @@ func TestTriples(t *testing.T) {
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
 	// to collect the error code eventually.
 	trpls := make(chan *triple.Triple, 100)
-	if err := g.Triples(ctx, trpls); err != nil {
+	if err := g.Triples(ctx, storage.DefaultLookup, trpls); err != nil {
 		t.Fatal(err)
 	}
 	cnt := 0

@@ -66,7 +66,7 @@ func WriteGraph(ctx context.Context, w io.Writer, g storage.Graph) (int, error) 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		tErr = g.Triples(ctx, ts)
+		tErr = g.Triples(ctx, storage.DefaultLookup, ts)
 	}()
 	for t := range ts {
 		if wErr != nil {

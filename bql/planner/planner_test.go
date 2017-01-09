@@ -57,7 +57,7 @@ func insertTest(t *testing.T) {
 	i := 0
 	ts := make(chan *triple.Triple)
 	go func() {
-		if err := g.Triples(ctx, ts); err != nil {
+		if err := g.Triples(ctx, storage.DefaultLookup, ts); err != nil {
 			t.Error(err)
 		}
 	}()
@@ -95,7 +95,7 @@ func deleteTest(t *testing.T) {
 	}
 	i := 0
 	ts := make(chan *triple.Triple)
-	if err := g.Triples(ctx, ts); err != nil {
+	if err := g.Triples(ctx, storage.DefaultLookup, ts); err != nil {
 		t.Error(err)
 	}
 	for _ = range ts {
@@ -246,7 +246,7 @@ func populateTestStore(t *testing.T) storage.Store {
 	}
 	trpls := make(chan *triple.Triple)
 	go func() {
-		if err := g.Triples(ctx, trpls); err != nil {
+		if err := g.Triples(ctx, storage.DefaultLookup, trpls); err != nil {
 			t.Fatal(err)
 		}
 	}()
@@ -272,7 +272,7 @@ func populateBenchmarkStore(b *testing.B) storage.Store {
 	}
 	trpls := make(chan *triple.Triple)
 	go func() {
-		if err := g.Triples(ctx, trpls); err != nil {
+		if err := g.Triples(ctx, storage.DefaultLookup, trpls); err != nil {
 			b.Fatal(err)
 		}
 	}()

@@ -21,6 +21,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/storage/memory"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/literal"
@@ -110,7 +111,7 @@ func TestSerializationContents(t *testing.T) {
 	gs := 0
 	gtrpls := make(chan *triple.Triple)
 	go func() {
-		if err := g.Triples(ctx, gtrpls); err != nil {
+		if err := g.Triples(ctx, storage.DefaultLookup, gtrpls); err != nil {
 			t.Errorf("g.Triples failed to retrieve triples with error %v", err)
 		}
 	}()
@@ -121,7 +122,7 @@ func TestSerializationContents(t *testing.T) {
 	gos := 0
 	g2trpls := make(chan *triple.Triple)
 	go func() {
-		if err := g2.Triples(ctx, g2trpls); err != nil {
+		if err := g2.Triples(ctx, storage.DefaultLookup, g2trpls); err != nil {
 			t.Errorf("g2.Triples failed to retrieve triples with error %v", err)
 		}
 	}()

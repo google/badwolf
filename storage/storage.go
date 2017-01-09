@@ -241,5 +241,5 @@ type Graph interface {
 	// Triples pushes to the provided channel all available triples in the graph.
 	// The function does not return immediately but spawns a goroutine to satisfy
 	// elements in the channel.
-	Triples(ctx context.Context, trpls chan<- *triple.Triple) error
+	Triples(ctx context.Context, lo *LookupOptions, trpls chan<- *triple.Triple) error
 }

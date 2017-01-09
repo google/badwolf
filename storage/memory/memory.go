@@ -476,7 +476,7 @@ func (m *memory) Exist(ctx context.Context, t *triple.Triple) (bool, error) {
 
 // Triples allows to iterate over all available triples by pushing them to the
 // provided channel.
-func (m *memory) Triples(ctx context.Context, trpls chan<- *triple.Triple) error {
+func (m *memory) Triples(ctx context.Context, lo *storage.LookupOptions, trpls chan<- *triple.Triple) error {
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
@@ -484,8 +484,11 @@ func (m *memory) Triples(ctx context.Context, trpls chan<- *triple.Triple) error
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
+	ckr := newChecker(lo)
 	for _, t := range m.idx {
-		trpls <- t
+		if ckr.CheckAndUpdate(t.Predicate()) {
+			trpls <- t
+		}
 	}
 	return nil
 }

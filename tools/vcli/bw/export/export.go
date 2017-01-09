@@ -72,7 +72,7 @@ func Eval(ctx context.Context, usage string, args []string, store storage.Store,
 	chn := make(chan *triple.Triple, bulkSize)
 	for _, vg := range sgs {
 		go func(g storage.Graph) {
-			err := g.Triples(ctx, chn)
+			err := g.Triples(ctx, storage.DefaultLookup, chn)
 			mu.Lock()
 			errs = append(errs, err)
 			mu.Unlock()

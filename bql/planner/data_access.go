@@ -358,7 +358,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				tErr = g.Triples(ctx, ts)
+				tErr = g.Triples(ctx, lo, ts)
 			}()
 			aErr = addTriples(ts, cls, tbl)
 			wg.Wait()
