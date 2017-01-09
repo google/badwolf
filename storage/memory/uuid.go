@@ -12,7 +12,7 @@ func UUIDToBase64(uuid uuid.UUID) string {
 	return base64.StdEncoding.EncodeToString([]byte(uuid))
 }
 
-// UUIDToBase64 attempts to decode a base 64 encoded UUID.
+// Base64ToUUID attempts to decode a base 64 encoded UUID.
 func Base64ToUUID(b64 string) (uuid.UUID, error) {
 	bs, err := base64.StdEncoding.DecodeString(b64)
 	if err != nil {
