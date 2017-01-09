@@ -105,7 +105,7 @@ func simpleExist(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 // simpleFetch returns a table containing the data specified by the graph
 // clause by querying the provided stora. Will return an error if it had poblems
 // retrieveing the data.
-func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphClause, lo *storage.LookupOptions, chanSize int) (*table.Table, error) {
+func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphClause, lo *storage.LookupOptions, stmLimit int64, chanSize int) (*table.Table, error) {
 	s, p, o := cls.S, cls.P, cls.O
 	lo = updateTimeBounds(lo, cls)
 	tbl, err := table.New(cls.Bindings())
@@ -358,7 +358,12 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				tErr = g.Triples(ctx, lo, ts)
+				// Push global limit down.
+				nlo := *lo
+				if stmLimit > 0 {
+					nlo.MaxElements = int(stmLimit)
+				}
+				tErr = g.Triples(ctx, &nlo, ts)
 			}()
 			aErr = addTriples(ts, cls, tbl)
 			wg.Wait()
