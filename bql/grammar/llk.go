@@ -62,10 +62,10 @@ func (l *LLk) Current() *lexer.Token {
 // on creation.
 func (l *LLk) Peek(k int) (*lexer.Token, error) {
 	if k > l.k {
-		return nil, fmt.Errorf("grammar.LLk: cannot look ahead %d beyond defined %d", k, l.k)
+		return nil, fmt.Errorf("grammar.LLk: cannot look ahead %v beyond defined %v", k, l.k)
 	}
 	if k <= 0 {
-		return nil, fmt.Errorf("grammar.LLk: invalid look ahead value %d", k)
+		return nil, fmt.Errorf("grammar.LLk: invalid look ahead value %v", k)
 	}
 	return &l.tkns[k], nil
 }
