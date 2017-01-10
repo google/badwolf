@@ -402,7 +402,7 @@ func (s *Statement) WorkingClause() *GraphClause {
 // AddWorkingGraphClause adds the current working graph clause to the set of
 // clauses that form the graph pattern.
 func (s *Statement) AddWorkingGraphClause() {
-	if s.workingClause != nil || !s.workingClause.IsEmpty() {
+	if s.workingClause != nil && !s.workingClause.IsEmpty() {
 		s.pattern = append(s.pattern, s.workingClause)
 	}
 	s.ResetWorkingGraphClause()

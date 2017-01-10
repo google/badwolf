@@ -343,3 +343,36 @@ func TestRejectByParseAndSemantic(t *testing.T) {
 		}
 	}
 }
+
+func TestSemanticStatementGraphClausesLenghtCorrectness(t *testing.T) {
+	table := []struct {
+		query string
+		want  int
+	}{
+		{
+			query: `SELECT ?o,?l FROM ?bbacl WHERE { ?o "some_id"@[,] ?l } LIMIT "20"^^type:int64;`,
+			want:  1,
+		},
+		{
+			query: `SELECT ?o,?l FROM ?bbacl WHERE { ?o "some_id"@[,] ?x . ?x "some_id"@[,] ?l } LIMIT "20"^^type:int64;`,
+			want:  2,
+		},
+		{
+			query: `SELECT ?o,?l FROM ?bbacl WHERE { ?o "some_id"@[,] ?x . ?x "some_id"@[,] ?y . ?y "some_id"@[,] ?l } LIMIT "20"^^type:int64;`,
+			want:  3,
+		},
+	}
+	p, err := NewParser(SemanticBQL())
+	if err != nil {
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+	}
+	for _, entry := range table {
+		st := &semantic.Statement{}
+		if err := p.Parse(NewLLk(entry.query, 1), st); err != nil {
+			t.Errorf("Parser.consume: failed to accept valid semantic entry %q", entry.query)
+		}
+		if got, want := len(st.GraphPatternClauses()), entry.want; got != want {
+			t.Errorf("Invalid number of graph pattern clauses for query %q; got %d, want %d; %v", entry.query, got, want, st.GraphPatternClauses())
+		}
+	}
+}

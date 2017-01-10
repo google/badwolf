@@ -155,8 +155,8 @@ func TestWhereWorkingClauseHook(t *testing.T) {
 	st.ResetWorkingGraphClause()
 	f(st, Symbol("FOO"))
 	f(st, Symbol("FOO"))
-	if len(st.GraphPatternClauses()) != 2 {
-		t.Errorf("semantic.whereNextWorkingClause should have returned two clauses for statement %v", st)
+	if got, want := len(st.GraphPatternClauses()), 0; got != want {
+		t.Errorf("semantic.whereNextWorkingClause should have returned two clauses for statement %v; got %d, want %d", st, got, want)
 	}
 }
 

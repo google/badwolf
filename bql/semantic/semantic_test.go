@@ -81,7 +81,7 @@ func TestGraphClauseManipulation(t *testing.T) {
 		t.Fatalf("semantic.GraphClause.WorkingClause should return a working clause after initilization in %v", st)
 	}
 	st.AddWorkingGraphClause()
-	if got, want := len(st.GraphPatternClauses()), 1; got != want {
+	if got, want := len(st.GraphPatternClauses()), 0; got != want {
 		t.Fatalf("semantic.GraphClause.Clauses return wrong number of clauses in %v; got %d, want %d", st, got, want)
 	}
 }
