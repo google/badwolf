@@ -444,11 +444,9 @@ func cellToObject(c *table.Cell) (*triple.Object, error) {
 // filterOnExistence removes rows based on the existence of the fully qualified
 // triple after the biding of the clause.
 func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphClause, lo *storage.LookupOptions) error {
-	nt, err := table.New(p.tbl.Bindings())
-	if err != nil {
-		return err
-	}
-	for idx, r := range p.tbl.Rows() {
+	data := p.tbl.Rows()
+	p.tbl.Truncate()
+	for _, r := range data {
 		sbj, prd, obj := cls.S, cls.P, cls.O
 		// Attempt to rebind the subject.
 		if sbj == nil && p.tbl.HasBinding(cls.SBinding) {
@@ -522,6 +520,7 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 		if sbj == nil || prd == nil || obj == nil {
 			return fmt.Errorf("failed to fully specify clause %v for row %+v", cls, r)
 		}
+		exist := false
 		for _, g := range p.stm.Graphs() {
 			t, err := triple.New(sbj, prd, obj)
 			if err != nil {
@@ -531,16 +530,15 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 			if err != nil {
 				return err
 			}
-			if b {
-				r, ok := p.tbl.Row(idx)
-				if !ok {
-					return errors.New("failed to retrieve a row of temporal table")
-				}
-				nt.AddRow(r)
+			exist = exist || b
+			if exist {
+				break
 			}
 		}
+		if exist {
+			p.tbl.AddRow(r)
+		}
 	}
-	p.tbl = nt
 	return nil
 }
 

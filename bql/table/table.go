@@ -308,7 +308,7 @@ func (t *Table) DeleteRow(i int) error {
 
 // Truncate flushes all the data away. It still retains all set bindings.
 func (t *Table) Truncate() {
-	t.data = []Row{}
+	t.data = nil
 }
 
 // Limit keeps the initial ith rows.
