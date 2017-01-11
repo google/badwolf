@@ -729,11 +729,12 @@ func (t *Table) Reduce(cfg SortConfig, aaps []AliasAccPair) error {
 	t.Sort(cfg)
 	last, lastIdx, current, newData := "", 0, "", []Row{}
 	id := func(r Row) string {
-		res := ""
+		res := bytes.NewBufferString("")
 		for _, c := range cfg {
-			res += r[c.Binding].String()
+			res.WriteString(r[c.Binding].String())
+			res.WriteString(";")
 		}
-		return res
+		return res.String()
 	}
 	for idx, r := range t.data {
 		current = id(r)
