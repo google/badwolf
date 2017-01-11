@@ -128,7 +128,7 @@ func (t *Table) NumRows() int {
 // Row returns the requested row. Rows start at 0. Also, if you request a row
 // beyond it will return nil, and the ok boolean will be false.
 func (t *Table) Row(i int) (Row, bool) {
-	if i >= len(t.data) {
+	if i < 0 || i >= len(t.data) {
 		return nil, false
 	}
 	return t.data[i], true

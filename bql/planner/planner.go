@@ -534,7 +534,7 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 			if b {
 				r, ok := p.tbl.Row(idx)
 				if !ok {
-					return errors.New("failed to retrieve a row of temp table")
+					return errors.New("failed to retrieve a row of temporal table")
 				}
 				nt.AddRow(r)
 			}
