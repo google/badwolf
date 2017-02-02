@@ -251,7 +251,7 @@ func runBQL(ctx context.Context, bql string, s storage.Store, chanSize int, w io
 	}
 	res, err := pln.Execute(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
+		return nil, fmt.Errorf("planner.Execute: failed to execute query plan with error %v", err)
 	}
 	return res, nil
 }
