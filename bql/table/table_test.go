@@ -245,7 +245,7 @@ func TestAppendTable(t *testing.T) {
 	newNonEmpty := func(twice bool) *Table {
 		tbl := testTable(t)
 		if twice {
-			tbl.data = append(tbl.data, tbl.data...)
+			tbl.Data = append(tbl.Data, tbl.Data...)
 		}
 		return tbl
 	}
@@ -594,12 +594,12 @@ func TestRowLess(t *testing.T) {
 func TestSort(t *testing.T) {
 	table := func() *Table {
 		return &Table{
-			bs: []string{"?s", "?t"},
+			AvailableBindings: []string{"?s", "?t"},
 			mbs: map[string]bool{
 				"?s": true,
 				"?t": true,
 			},
-			data: []Row{
+			Data: []Row{
 				{
 					"?s": &Cell{S: CellString("1")},
 					"?t": &Cell{S: CellString("1")},
@@ -626,7 +626,7 @@ func TestSort(t *testing.T) {
 
 	for _, entry := range testTable {
 		entry.t.Sort(entry.cfg)
-		s1, s2 := entry.t.data[0]["?s"].S, entry.t.data[1]["?s"].S
+		s1, s2 := entry.t.Data[0]["?s"].S, entry.t.Data[1]["?s"].S
 		b := *s1 < *s2
 		if !entry.desc && !b || entry.desc && b {
 			t.Errorf("table.Sort failed to sort table DESC=%v; returned\n%s", entry.desc, entry.t)
@@ -855,12 +855,12 @@ func TestTableReduce(t *testing.T) {
 	}{
 		{
 			tbl: &Table{
-				bs: []string{"?foo", "?bar"},
+				AvailableBindings: []string{"?foo", "?bar"},
 				mbs: map[string]bool{
 					"?foo": true,
 					"?bar": true,
 				},
-				data: []Row{
+				Data: []Row{
 					{
 						"?foo": &Cell{S: CellString("foo")},
 						"?bar": &Cell{S: CellString("bar")},
@@ -891,12 +891,12 @@ func TestTableReduce(t *testing.T) {
 				},
 			},
 			want: &Table{
-				bs: []string{"?foo_alias", "?bar_alias"},
+				AvailableBindings: []string{"?foo_alias", "?bar_alias"},
 				mbs: map[string]bool{
 					"?foo_alias": true,
 					"?bar_alias": true,
 				},
-				data: []Row{
+				Data: []Row{
 					{
 						"?foo_alias": &Cell{S: CellString("foo")},
 						"?bar_alias": int64LiteralCell(int64(3)),
@@ -906,12 +906,12 @@ func TestTableReduce(t *testing.T) {
 		},
 		{
 			tbl: &Table{
-				bs: []string{"?foo", "?bar"},
+				AvailableBindings: []string{"?foo", "?bar"},
 				mbs: map[string]bool{
 					"?foo": true,
 					"?bar": true,
 				},
-				data: []Row{
+				Data: []Row{
 					{
 						"?foo": &Cell{S: CellString("foo")},
 						"?bar": &Cell{S: CellString("bar")},
@@ -951,12 +951,12 @@ func TestTableReduce(t *testing.T) {
 				},
 			},
 			want: &Table{
-				bs: []string{"?foo_alias", "?bar_alias"},
+				AvailableBindings: []string{"?foo_alias", "?bar_alias"},
 				mbs: map[string]bool{
 					"?foo_alias": true,
 					"?bar_alias": true,
 				},
-				data: []Row{
+				Data: []Row{
 					{
 						"?foo_alias": &Cell{S: CellString("foo")},
 						"?bar_alias": int64LiteralCell(int64(3)),
@@ -974,12 +974,12 @@ func TestTableReduce(t *testing.T) {
 		},
 		{
 			tbl: &Table{
-				bs: []string{"?foo", "?bar"},
+				AvailableBindings: []string{"?foo", "?bar"},
 				mbs: map[string]bool{
 					"?foo": true,
 					"?bar": true,
 				},
-				data: []Row{
+				Data: []Row{
 					{
 						"?foo": &Cell{S: CellString("foo")},
 						"?bar": &Cell{S: CellString("bar")},
@@ -1019,12 +1019,12 @@ func TestTableReduce(t *testing.T) {
 				},
 			},
 			want: &Table{
-				bs: []string{"?foo_alias", "?bar_alias"},
+				AvailableBindings: []string{"?foo_alias", "?bar_alias"},
 				mbs: map[string]bool{
 					"?foo_alias": true,
 					"?bar_alias": true,
 				},
-				data: []Row{
+				Data: []Row{
 					{
 						"?foo_alias": &Cell{S: CellString("foo3")},
 						"?bar_alias": int64LiteralCell(int64(1)),
@@ -1059,12 +1059,12 @@ func TestTableReduce(t *testing.T) {
 func TestFilter(t *testing.T) {
 	table := func() *Table {
 		return &Table{
-			bs: []string{"?s", "?t"},
+			AvailableBindings: []string{"?s", "?t"},
 			mbs: map[string]bool{
 				"?s": true,
 				"?t": true,
 			},
-			data: []Row{
+			Data: []Row{
 				{
 					"?s": &Cell{S: CellString("1s")},
 					"?t": &Cell{S: CellString("1t")},
