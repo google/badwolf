@@ -33,6 +33,7 @@ import (
 	"github.com/google/badwolf/tools/vcli/bw/load"
 	"github.com/google/badwolf/tools/vcli/bw/repl"
 	"github.com/google/badwolf/tools/vcli/bw/run"
+	"github.com/google/badwolf/tools/vcli/bw/server"
 	"github.com/google/badwolf/tools/vcli/bw/version"
 	"github.com/google/badwolf/triple/literal"
 )
@@ -110,6 +111,7 @@ func InitializeCommands(driver storage.Store, chanSize, bulkTripleOpSize, builde
 		load.New(driver, bulkTripleOpSize, builderSize),
 		run.New(driver, chanSize),
 		repl.New(driver, chanSize, bulkTripleOpSize, builderSize, rl, done),
+		server.New(driver, chanSize),
 		version.New(),
 	}
 }

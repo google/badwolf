@@ -18,6 +18,7 @@ package export
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"sync"
@@ -46,13 +47,13 @@ text file.`,
 // Eval loads the triples in the file against as indicated by the command.
 func Eval(ctx context.Context, usage string, args []string, store storage.Store, bulkSize int) int {
 	if len(args) <= 3 {
-		fmt.Fprintf(os.Stderr, "[ERROR] Missing required file path and/or graph names.\n\n%s", usage)
+		log.Printf("[ERROR] Missing required file path and/or graph names.\n\n%s", usage)
 		return 2
 	}
 	graphs, path := strings.Split(args[len(args)-2], ","), args[len(args)-1]
 	f, err := os.Create(path)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] Failed to open target file %q with error %v.\n\n", path, err)
+		log.Printf("[ERROR] Failed to open target file %q with error %v.\n\n", path, err)
 		return 2
 	}
 	defer f.Close()
@@ -60,7 +61,7 @@ func Eval(ctx context.Context, usage string, args []string, store storage.Store,
 	for _, gr := range graphs {
 		g, err := store.Graph(ctx, gr)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "[ERROR] Failed to retrieve graph %q with error %v.\n\n", gr, err)
+			log.Printf("[ERROR] Failed to retrieve graph %q with error %v.\n\n", gr, err)
 			return 2
 		}
 		sgs = append(sgs, g)
@@ -81,14 +82,14 @@ func Eval(ctx context.Context, usage string, args []string, store storage.Store,
 
 	for t := range chn {
 		if _, err := f.WriteString(t.String() + "\n"); err != nil {
-			fmt.Fprintf(os.Stderr, "[ERROR] Failed to write triple %s to file %q, %v.\n\n", t.String(), path, err)
+			log.Printf("[ERROR] Failed to write triple %s to file %q, %v.\n\n", t.String(), path, err)
 			return 2
 		}
 		cnt++
 	}
 	for _, err := range errs {
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "[ERROR] Failed to retrieve triples with error %v.\n\n", err)
+			log.Printf("[ERROR] Failed to retrieve triples with error %v.\n\n", err)
 			return 2
 		}
 	}

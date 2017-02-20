@@ -18,6 +18,7 @@ package assert
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"strings"
@@ -49,7 +50,7 @@ file containing all the sources and all the assertions to run.
 // assertCommand runs all the BQL statements available in the file.
 func assertCommand(ctx context.Context, cmd *command.Command, args []string, store storage.Store, builder literal.Builder, chanSize int) int {
 	if len(args) < 3 {
-		fmt.Fprintf(os.Stderr, "Missing required folder path. ")
+		log.Printf("Missing required folder path. ")
 		cmd.Usage()
 		return 2
 	}
@@ -57,12 +58,12 @@ func assertCommand(ctx context.Context, cmd *command.Command, args []string, sto
 	folder := strings.TrimSpace(args[len(args)-1])
 	f, err := os.Open(folder)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] Failed to open folder %s\n\n\t%v\n\n", folder, err)
+		log.Printf("[ERROR] Failed to open folder %s\n\n\t%v\n\n", folder, err)
 		return 2
 	}
 	fis, err := f.Readdir(0)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] Failed to read folder %s\n\n\t%v\n\n", folder, err)
+		log.Printf("[ERROR] Failed to read folder %s\n\n\t%v\n\n", folder, err)
 		return 2
 	}
 	fmt.Println("-------------------------------------------------------------")
@@ -76,13 +77,13 @@ func assertCommand(ctx context.Context, cmd *command.Command, args []string, sto
 		fmt.Printf("\tProcessing file %q... ", fi.Name())
 		lns, err := io.ReadLines(path.Join(folder, fi.Name()))
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "\n\n\tFailed to read file content with error %v\n\n", err)
+			log.Printf("\n\n\tFailed to read file content with error %v\n\n", err)
 			return 2
 		}
 		rawStory := strings.Join(lns, "\n")
 		s := &compliance.Story{}
 		if err := s.Unmarshal(rawStory); err != nil {
-			fmt.Fprintf(os.Stderr, "\n\n\tFailed to unmarshal story with error %v\n\n", err)
+			log.Printf("\n\n\tFailed to unmarshal story with error %v\n\n", err)
 			return 2
 		}
 		empty = false
@@ -102,7 +103,7 @@ func assertCommand(ctx context.Context, cmd *command.Command, args []string, sto
 	for i, entry := range results.Entries {
 		fmt.Printf("(%d/%d) Story %q...\n", i+1, len(stories), entry.Story.Name)
 		if entry.Err != nil {
-			fmt.Fprintf(os.Stderr, "\tFailed to run story %q with error %v\n\n", entry.Story.Name, entry.Err)
+			log.Printf("\tFailed to run story %q with error %v\n\n", entry.Story.Name, entry.Err)
 			return 2
 		}
 		for aid, aido := range entry.Outcome {

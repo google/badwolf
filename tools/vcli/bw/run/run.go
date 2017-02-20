@@ -18,7 +18,7 @@ package run
 
 import (
 	"fmt"
-	"os"
+	"log"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -51,14 +51,14 @@ sequentially.
 // runCommand runs all the BQL statements available in the file.
 func runCommand(ctx context.Context, cmd *command.Command, args []string, store storage.Store, chanSize int) int {
 	if len(args) < 3 {
-		fmt.Fprintf(os.Stderr, "[ERROR] Missing required file path. ")
+		log.Printf("[ERROR] Missing required file path. ")
 		cmd.Usage()
 		return 2
 	}
 	file := strings.TrimSpace(args[len(args)-1])
 	lines, err := io.GetStatementsFromFile(file)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] Failed to read file %s\n\n\t%v\n\n", file, err)
+		log.Printf("[ERROR] Failed to read file %s\n\n\t%v\n\n", file, err)
 		return 2
 	}
 	fmt.Printf("Processing file %s\n\n", args[len(args)-1])

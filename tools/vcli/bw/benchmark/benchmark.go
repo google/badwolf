@@ -18,7 +18,7 @@ package benchmark
 
 import (
 	"fmt"
-	"os"
+	"log"
 	"sort"
 	"time"
 
@@ -89,7 +89,7 @@ func runBattery(ctx context.Context, st storage.Store, name string, chanSize int
 	fmt.Printf("Creating %s triples benchmark... ", name)
 	bes, err := f(ctx, st, chanSize)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] %v\n", err)
+		log.Printf("[ERROR] %v\n", err)
 		return 2
 	}
 	fmt.Printf("%d entries created\n", len(bes))

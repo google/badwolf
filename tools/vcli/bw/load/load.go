@@ -18,7 +18,7 @@ package load
 
 import (
 	"fmt"
-	"os"
+	"log"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -53,7 +53,7 @@ loaded data.
 // Eval loads the triples in the file against as indicated by the command.
 func Eval(ctx context.Context, usage string, args []string, store storage.Store, bulkSize, builderSize int) int {
 	if len(args) <= 3 {
-		fmt.Fprintf(os.Stderr, "[ERROR] Missing required file path and/or graph names.\n\n%s", usage)
+		log.Printf("[ERROR] Missing required file path and/or graph names.\n\n%s", usage)
 		return 2
 	}
 	graphs, lb := strings.Split(args[len(args)-1], ","), literal.NewBoundedBuilder(builderSize)
@@ -69,12 +69,12 @@ func Eval(ctx context.Context, usage string, args []string, store storage.Store,
 		return <-errChan
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] Failed to process file %q. Ivalid triple on line %d. %v\n", path, cnt, err)
+		log.Printf("[ERROR] Failed to process file %q. Ivalid triple on line %d. %v\n", path, cnt, err)
 		return 2
 	}
 	doneChan <- true
 	if err := <-errChan; err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] Failed to process file %q. Ivalid triple on line %d. %v\n", path, cnt, err)
+		log.Printf("[ERROR] Failed to process file %q. Ivalid triple on line %d. %v\n", path, cnt, err)
 		return 2
 	}
 	fmt.Printf("Successfully processed %d lines from file %q.\nTriples loaded into graphs:\n\t- %s\n", cnt, path, strings.Join(graphs, "\n\t- "))

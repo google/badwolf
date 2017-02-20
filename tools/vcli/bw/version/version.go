@@ -17,8 +17,7 @@
 package version
 
 import (
-	"fmt"
-	"os"
+	"log"
 
 	"golang.org/x/net/context"
 
@@ -30,7 +29,7 @@ import (
 func New() *command.Command {
 	return &command.Command{
 		Run: func(ctx context.Context, args []string) int {
-			fmt.Fprintf(os.Stderr, "badwolf vCli (%d.%d.%d-%s)\n", version.Major, version.Minor, version.Patch, version.Release)
+			log.Printf("badwolf vCli (%d.%d.%d-%s)\n", version.Major, version.Minor, version.Patch, version.Release)
 			return 0
 		},
 		UsageLine: "version",

@@ -18,7 +18,7 @@ package command
 
 import (
 	"fmt"
-	"os"
+	"log"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -59,7 +59,7 @@ func (c *Command) UsageString() string {
 
 // Usage prints the command usage.
 func (c *Command) Usage() int {
-	fmt.Fprintf(os.Stderr, c.UsageString())
+	log.Printf(c.UsageString())
 	return 0
 }
 
