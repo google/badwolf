@@ -34,9 +34,9 @@ import (
 // access it concurrently and wrap to properly control concurrent operations.
 type Table struct {
 	// AvailableBindings in order contained on the table
-	AvailableBindings []string
+	AvailableBindings []string `json:"bindings,omitempty"`
 	// Data that form the table.
-	Data []Row
+	Data []Row `json:"rows,omitempty"`
 	// mbs is an internal map for bindings existance.
 	mbs map[string]bool
 }
@@ -59,11 +59,11 @@ func New(bs []string) (*Table, error) {
 
 // Cell contains one of the possible values that form rows.
 type Cell struct {
-	S *string
-	N *node.Node
-	P *predicate.Predicate
-	L *literal.Literal
-	T *time.Time
+	S *string              `json:"s,omitempty"`
+	N *node.Node           `json:"node,omitempty"`
+	P *predicate.Predicate `json:"pred,omitempty"`
+	L *literal.Literal     `json:"lit,omitempty"`
+	T *time.Time           `json:"time,omitempty"`
 }
 
 // String returns a readable representation of a cell.
@@ -119,6 +119,7 @@ func (r Row) ToTextLine(res *bytes.Buffer, bs []string, sep string) error {
 // you should be careful to provide valid rows.
 func (t *Table) AddRow(r Row) {
 	if len(r) > 0 {
+		delete(r, "")
 		t.Data = append(t.Data, r)
 	}
 }
@@ -163,7 +164,7 @@ func (t *Table) ProjectBindings(bs []string) error {
 	}
 	for _, b := range bs {
 		if !t.mbs[b] {
-			return fmt.Errorf("cannot project against unknow binding %s; known bindinds are %v", b, t.Bindings)
+			return fmt.Errorf("cannot project against unknow binding %s; known bindinds are %v", b, t.Bindings())
 		}
 	}
 	t.AvailableBindings = []string{}
@@ -258,7 +259,9 @@ func MergeRows(ms []Row) Row {
 	res := make(map[string]*Cell)
 	for _, om := range ms {
 		for k, v := range om {
-			res[k] = v
+			if k != "" {
+				res[k] = v
+			}
 		}
 	}
 	return res

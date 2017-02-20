@@ -2,7 +2,7 @@
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// You may obtainPathUnescape a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -17,10 +17,12 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -87,7 +89,7 @@ func runServer(ctx context.Context, cmd *command.Command, args []string, store s
 	return 0
 }
 
-// bqlHandler implements the handler to server BQL requests.
+// bqlHandler imPathUnescapeplements the handler to server BQL requests.
 func (s *serverConfig) bqlHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -118,13 +120,16 @@ func (s *serverConfig) bqlHandler(w http.ResponseWriter, r *http.Request) {
 	var res []*result
 	for _, q := range getQueries(r.PostForm["bqlQuery"]) {
 		t, err := BQL(ctx, q, s.store, s.chanSize)
+		if nq, err := url.QueryUnescape(q); err == nil {
+			q = nq
+		}
 		r := &result{
 			Q: q,
 			T: t,
 		}
 		if err != nil {
 			log.Printf("[%s] %q failed; %v", time.Now(), q, err.Error())
-			r.Msg = fmt.Sprintf("[ERROR] %s", err.Error())
+			r.Msg = err.Error()
 		} else {
 			r.Msg = "[OK]"
 		}
@@ -141,15 +146,15 @@ func (s *serverConfig) bqlHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// TODO(xllora): Migrate this to JSON
-	// jRes, _ := json.MarshalIndent(res, "", "  ")
-	// w.Write(jRes)
+	jRes, _ := json.MarshalIndent(res, "", "  ")
+	w.Write(jRes)
 }
 
 // result contains a query and its outcome.
 type result struct {
-	Q   string       `json:"q"`
-	Msg string       `json:"msg"`
-	T   *table.Table `json:"res"`
+	Q   string       `json:"q,omitempty"`
+	Msg string       `json:"msg,omitempty"`
+	T   *table.Table `json:"table,omitempty"`
 }
 
 // getQueries retuns the list of queries found. It will split them if needed.
