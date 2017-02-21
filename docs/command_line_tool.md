@@ -374,3 +374,27 @@ As the export command, it suports exporting multiple graphs at once.
 ```
 $ badwolf export ?graph1,?graph2,?grpah3 ./triples.txt
 ```
+
+## Command: Server
+
+Ther ```server``` command starts a simple HTTP endpoint for BQL commands on
+the provided port. 
+
+```
+$ badwolf server 1234
+```
+
+This will start an enpoint on port ```1234```. You can just access the
+endpoint by hitting http://localhost:1234. This will render a simple for
+for you to enter muliple BQL queries.
+
+The endpoint for queries can be accessed at http://localhost:1234/bql by
+posting a form with ```bqlQuery``` parameter. The enpoint returns, in 
+JSON format, and array of results. Each element of the array contains:
+
+* _query_: The original passed query.
+* _msg_: A human readable message. It will contain error information if the
+         query failed to execute correctly.
+* _table_: It the query was a query result, table will contain the obtained
+           results.
+		   		 
