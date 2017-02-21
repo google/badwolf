@@ -17,7 +17,6 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -135,19 +134,29 @@ func (s *serverConfig) bqlHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		res = append(res, r)
 	}
-	// Write the result
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "text/plain")
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`[`))
+	cnt := len(res) - 1
 	for _, r := range res {
-		w.Write([]byte(r.Q + "\n"))
-		w.Write([]byte(r.Msg + "\n"))
-		if r.T != nil {
-			w.Write([]byte(r.T.String() + "\n"))
+		w.Write([]byte(`{ "query": "`))
+		w.Write([]byte(strings.Replace(r.Q, `"`, `\"`, -1)))
+		w.Write([]byte(`", "msg": "`))
+		w.Write([]byte(strings.Replace(r.Msg, `"`, `\"`, -1)))
+		w.Write([]byte(`", "table": `))
+		if r.T == nil {
+			w.Write([]byte(`{}`))
+		} else {
+			r.T.ToJSON(w)
 		}
+		w.Write([]byte(` }`))
+		if cnt > 1 {
+			w.Write([]byte(`, `))
+		}
+		cnt--
 	}
-	// TODO(xllora): Migrate this to JSON
-	jRes, _ := json.MarshalIndent(res, "", "  ")
-	w.Write(jRes)
+	w.Write([]byte(`]`))
+
 }
 
 // result contains a query and its outcome.

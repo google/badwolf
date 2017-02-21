@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"sort"
 	"strings"
@@ -181,37 +182,6 @@ func (t *Table) HasBinding(b string) bool {
 // Bindings returns the bindings contained on the tables.
 func (t *Table) Bindings() []string {
 	return t.AvailableBindings
-}
-
-// ToText convert the table into a readable text versions. It requires the
-// separator to be used between cells.
-func (t *Table) ToText(sep string) (*bytes.Buffer, error) {
-	res, row := &bytes.Buffer{}, &bytes.Buffer{}
-	res.WriteString(strings.Join(t.AvailableBindings, sep))
-	res.WriteString("\n")
-	for _, r := range t.Data {
-		err := r.ToTextLine(row, t.AvailableBindings, sep)
-		if err != nil {
-			return nil, err
-		}
-		if _, err := res.Write(row.Bytes()); err != nil {
-			return nil, err
-		}
-		if _, err := res.WriteString("\n"); err != nil {
-			return nil, err
-		}
-		row.Reset()
-	}
-	return res, nil
-}
-
-// String attempts to force serialize the table into a string.
-func (t *Table) String() string {
-	b, err := t.ToText("\t")
-	if err != nil {
-		return fmt.Sprintf("Failed to serialize to text! Error: %s", err)
-	}
-	return b.String()
 }
 
 // equalBindings returns true if the bindings are the same, false otherwise.
@@ -787,4 +757,99 @@ func (t *Table) Filter(f func(Row) bool) {
 		}
 	}
 	t.Data = newData
+}
+
+// ToText convert the table into a readable text versions. It requires the
+// separator to be used between cells.
+func (t *Table) ToText(sep string) (*bytes.Buffer, error) {
+	res, row := &bytes.Buffer{}, &bytes.Buffer{}
+	res.WriteString(strings.Join(t.AvailableBindings, sep))
+	res.WriteString("\n")
+	for _, r := range t.Data {
+		err := r.ToTextLine(row, t.AvailableBindings, sep)
+		if err != nil {
+			return nil, err
+		}
+		if _, err := res.Write(row.Bytes()); err != nil {
+			return nil, err
+		}
+		if _, err := res.WriteString("\n"); err != nil {
+			return nil, err
+		}
+		row.Reset()
+	}
+	return res, nil
+}
+
+// String attempts to force serialize the table into a string.
+func (t *Table) String() string {
+	b, err := t.ToText("\t")
+	if err != nil {
+		return fmt.Sprintf("Failed to serialize to text! Error: %s", err)
+	}
+	return b.String()
+}
+
+// ToJSON convert the table intotext versions. It requires the
+// separator to be used between cells JSON.
+func (t *Table) ToJSON(w io.Writer) {
+	w.Write([]byte(`{ "bindings": [`))
+
+	if len(t.AvailableBindings) > 0 {
+		w.Write([]byte(`"`))
+		w.Write([]byte(strings.Join(t.AvailableBindings, `", "`)))
+		w.Write([]byte(`"`))
+	}
+
+	w.Write([]byte(`], "rows": [`))
+
+	rc := len(t.Data) - 1
+	for _, r := range t.Data {
+		if len(r) > 0 {
+			w.Write([]byte(`{ `))
+
+			cc := len(r) - 1
+			for k, c := range r {
+				if k != "" {
+
+					w.Write([]byte(`"`))
+					w.Write([]byte(k))
+					w.Write([]byte(`": {"`))
+
+					if c.S != nil {
+						w.Write([]byte(`string": "`))
+						w.Write([]byte(strings.Replace(*c.S, `"`, `\"`, -1)))
+					} else if c.N != nil {
+						w.Write([]byte(`node": "`))
+						w.Write([]byte(strings.Replace(c.N.String(), `"`, `\"`, -1)))
+					} else if c.P != nil {
+						w.Write([]byte(`pred": "`))
+						w.Write([]byte(strings.Replace(c.P.String(), `"`, `\"`, -1)))
+
+					} else if c.L != nil {
+						w.Write([]byte(`lit": "`))
+						w.Write([]byte(strings.Replace(c.L.String(), `"`, `\"`, -1)))
+
+					} else if c.T != nil {
+						w.Write([]byte(`node": "`))
+						w.Write([]byte(strings.Replace(c.T.Format(time.RFC3339Nano), `"`, `\"`, -1)))
+					}
+
+					w.Write([]byte(`"}`))
+					if cc > 1 {
+						w.Write([]byte(`,`))
+					}
+					w.Write([]byte(` `))
+				}
+				cc--
+			}
+			w.Write([]byte(` }`))
+			if rc > 1 {
+				w.Write([]byte(`, `))
+			}
+		}
+		rc--
+	}
+
+	w.Write([]byte(`] }`))
 }
