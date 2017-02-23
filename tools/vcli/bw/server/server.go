@@ -118,10 +118,10 @@ func (s *serverConfig) bqlHandler(w http.ResponseWriter, r *http.Request) {
 
 	var res []*result
 	for _, q := range getQueries(r.PostForm["bqlQuery"]) {
-		t, err := BQL(ctx, q, s.store, s.chanSize)
 		if nq, err := url.QueryUnescape(q); err == nil {
-			q = nq
+			q = strings.Replace(strings.Replace(nq, "\n", " ", -1), "\r", " ", -1)
 		}
+		t, err := BQL(ctx, q, s.store, s.chanSize)
 		r := &result{
 			Q: q,
 			T: t,
@@ -137,7 +137,7 @@ func (s *serverConfig) bqlHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`[`))
-	cnt := len(res) - 1
+	cnt := len(res)
 	for _, r := range res {
 		w.Write([]byte(`{ "query": "`))
 		w.Write([]byte(strings.Replace(r.Q, `"`, `\"`, -1)))

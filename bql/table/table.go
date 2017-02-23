@@ -803,15 +803,15 @@ func (t *Table) ToJSON(w io.Writer) {
 
 	w.Write([]byte(`], "rows": [`))
 
-	rc := len(t.Data) - 1
+	rc := len(t.Data)
 	for _, r := range t.Data {
 		if len(r) > 0 {
 			w.Write([]byte(`{ `))
 
-			cc := len(r) - 1
-			for k, c := range r {
+			cc := len(t.AvailableBindings)
+			for _, k := range t.AvailableBindings {
 				if k != "" {
-
+					c := r[k]
 					w.Write([]byte(`"`))
 					w.Write([]byte(k))
 					w.Write([]byte(`": {"`))
