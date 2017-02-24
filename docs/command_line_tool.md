@@ -530,5 +530,3 @@ get the following JSON on a newly started server:
 	}
 }]
 ```
-
-The table fi
