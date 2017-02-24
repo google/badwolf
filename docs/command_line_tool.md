@@ -352,13 +352,13 @@ A line starting with # willbe treated as a commented line. If the load fails you
 end up with partially loaded data.
 
 ```
-$ badwolf load ./triples.txt ?graph
+$ bw load ./triples.txt ?graph
 ```
 
 It also suports importing into multiple graphs at once.
 
 ```
-$ badwolf load ./triples.txt ?graph1,?graph2,?graph3
+$ bw load ./triples.txt ?graph1,?graph2,?graph3
 ```
 
 
@@ -367,7 +367,7 @@ $ badwolf load ./triples.txt ?graph1,?graph2,?graph3
 Export all the triples in the provided graphs into the provided text file. 
 
 ```
-$ badwolf export ?graph ./triples.txt
+$ bw export ?graph ./triples.txt
 ```
 As the export command, it suports exporting multiple graphs at once.
 
@@ -381,7 +381,7 @@ Ther ```server``` command starts a simple HTTP endpoint for BQL commands on
 the provided port. 
 
 ```
-$ badwolf server 1234
+$ bw server 1234
 ```
 
 This will start an enpoint on port ```1234```. You can just access the
