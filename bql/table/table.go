@@ -831,7 +831,7 @@ func (t *Table) ToJSON(w io.Writer) {
 						w.Write([]byte(strings.Replace(c.L.String(), `"`, `\"`, -1)))
 
 					} else if c.T != nil {
-						w.Write([]byte(`node": "`))
+						w.Write([]byte(`anchor": "`))
 						w.Write([]byte(strings.Replace(c.T.Format(time.RFC3339Nano), `"`, `\"`, -1)))
 					}
 

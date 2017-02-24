@@ -396,5 +396,139 @@ and array of results. Each element of the array contains:
 * _query_: The original passed query.
 * _msg_: A human readable message. It will contain error information if the
          query failed to execute correctly.
-* _table_: It the query was a query result, table will contain the obtained
-           result.
+* _table_: If the query was run successfully and a query result was produced, 
+           _table_ will contain an array with the output bidings under
+		   _bindings_. The table data will be provided as an array of rows
+		   under the _rows_ field. Each row entry represents an object where
+		   the fields are the binding name and the valu an object containing
+		   the cell value. The cell value is an object that may contain 
+		   one of the following fields depending on the value type:
+		   _string_, _node_, _pred_, _lit_, or _anchor_. All the values
+		   are represented using the string format for each time. Time 
+		   anchors are formated following 
+		   (RFC3339Nano)[https://godoc.org/time#pkg-constants].
+
+For instance you can pass the following queries to the endpoint
+
+```
+create graph ?test;
+
+insert data into ?test {
+   /foo<id> "knows"@[] /bar<id>.
+   /foo<id> "follows"@[] /bar<id>
+};
+
+select ?s,?p,?o,?k,?l,?m
+from ?test
+where {
+  ?s ?p ?o.
+  ?k ?l ?m
+};
+```
+
+The endpoint will execute each of the statements in order and return and array
+of JSON formated objects, one for each query. For the above example you should
+get the following JSON on a newly started server:
+
+```
+[{
+	"query": "create graph ?test;",
+	"msg": "[OK]",
+	"table": {
+		"bindings": [],
+		"rows": []
+	}
+}, {
+	"query": "insert data into ?test {     /foo<id> \"knows\"@[] /bar<id>.     /foo<id> \"follows\"@[] /bar<id>  };",
+	"msg": "[OK]",
+	"table": {
+		"bindings": [],
+		"rows": []
+	}
+}, {
+	"query": "select ?s,?p,?o,?k,?l,?m  from ?test  where {    ?s ?p ?o.    ?k ?l ?m  };",
+	"msg": "[OK]",
+	"table": {
+		"bindings": ["?s", "?p", "?o", "?k", "?l", "?m"],
+		"rows": [{
+			"?s": {
+				"node": "/foo<id>"
+			},
+			"?p": {
+				"pred": "\"knows\"@[]"
+			},
+			"?o": {
+				"node": "/bar<id>"
+			},
+			"?k": {
+				"node": "/foo<id>"
+			},
+			"?l": {
+				"pred": "\"knows\"@[]"
+			},
+			"?m": {
+				"node": "/bar<id>"
+			}
+		}, {
+			"?s": {
+				"node": "/foo<id>"
+			},
+			"?p": {
+				"pred": "\"knows\"@[]"
+			},
+			"?o": {
+				"node": "/bar<id>"
+			},
+			"?k": {
+				"node": "/foo<id>"
+			},
+			"?l": {
+				"pred": "\"follows\"@[]"
+			},
+			"?m": {
+				"node": "/bar<id>"
+			}
+		}, {
+			"?s": {
+				"node": "/foo<id>"
+			},
+			"?p": {
+				"pred": "\"follows\"@[]"
+			},
+			"?o": {
+				"node": "/bar<id>"
+			},
+			"?k": {
+				"node": "/foo<id>"
+			},
+			"?l": {
+				"pred": "\"knows\"@[]"
+			},
+			"?m": {
+				"node": "/bar<id>"
+			}
+		}, {
+			"?s": {
+				"node": "/foo<id>"
+			},
+			"?p": {
+				"pred": "\"follows\"@[]"
+			},
+			"?o": {
+				"node": "/bar<id>"
+			},
+			"?k": {
+				"node": "/foo<id>"
+			},
+			"?l": {
+				"pred": "\"follows\"@[]"
+			},
+			"?m": {
+				"node": "/bar<id>"
+			}
+		}]
+	}
+}]
+```
+
+The table fi
