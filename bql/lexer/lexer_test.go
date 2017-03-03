@@ -47,7 +47,7 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemEOF}}},
 		{`SeLeCt FrOm WhErE As BeFoRe AfTeR BeTwEeN CoUnT SuM GrOuP bY HaViNg LiMiT
 		  OrDeR AsC DeSc NoT AnD Or Id TyPe At DiStInCt InSeRt DeLeTe DaTa InTo
-			CrEaTe DrOp GrApH`,
+		  cONsTruCT CrEaTe DrOp GrApH`,
 			[]Token{
 				{Type: ItemQuery, Text: "SeLeCt"},
 				{Type: ItemFrom, Text: "FrOm"},
@@ -76,6 +76,7 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemDelete, Text: "DeLeTe"},
 				{Type: ItemData, Text: "DaTa"},
 				{Type: ItemInto, Text: "InTo"},
+				{Type: ItemConstruct, Text: "cONsTruCT"},
 				{Type: ItemCreate, Text: "CrEaTe"},
 				{Type: ItemDrop, Text: "DrOp"},
 				{Type: ItemGraph, Text: "GrApH"},
@@ -208,6 +209,11 @@ func TestValidTokenQuery(t *testing.T) {
 			ItemBinding, ItemLT, ItemBinding, ItemAnd, ItemNot, ItemBinding, ItemOr,
 			ItemBinding, ItemEQ, ItemBinding, ItemLimit, ItemLiteral, ItemSemicolon,
 			ItemEOF}},
+		{`construct {?s "foo"@[,] ?o} into ?a from ?b where {?s "foo"@[,] ?o};`, []TokenType{
+			ItemConstruct, ItemLBracket, ItemBinding, ItemPredicateBound, ItemBinding,
+			ItemRBracket, ItemInto, ItemBinding, ItemFrom, ItemBinding, ItemWhere,
+			ItemLBracket, ItemBinding, ItemPredicateBound, ItemBinding, ItemRBracket,
+			ItemSemicolon, ItemEOF}},
 	}
 	for _, test := range table {
 		_, c := lex(test.input, 0)

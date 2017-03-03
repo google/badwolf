@@ -42,6 +42,8 @@ const (
 	ItemDelete
 	// ItemCreate represents the creation of a graph in BQL.
 	ItemCreate
+	// ItemConstruct represents the construct keyword in BQL.
+	ItemConstruct
 	// ItemDrop represent the destruction of a graph in BQL.
 	ItemDrop
 	// ItemGraph represent the graph to be created of destroyed in BQL.
@@ -143,6 +145,8 @@ func (tt TokenType) String() string {
 		return "DELETE"
 	case ItemCreate:
 		return "CREATE"
+	case ItemConstruct:
+		return "CONSTRUCT"
 	case ItemDrop:
 		return "DROP"
 	case ItemGraph:
@@ -256,6 +260,7 @@ const (
 	insert         = "insert"
 	delete         = "delete"
 	create         = "create"
+	construct      = "construct"
 	drop           = "drop"
 	graph          = "graph"
 	data           = "data"
@@ -462,6 +467,10 @@ func lexKeyword(l *lexer) stateFn {
 		consumeKeyword(l, ItemCreate)
 		return lexSpace
 	}
+	if strings.EqualFold(input, construct) {
+		consumeKeyword(l, ItemConstruct)
+		return lexSpace
+	}
 	if strings.EqualFold(input, drop) {
 		consumeKeyword(l, ItemDrop)
 		return lexSpace
@@ -618,7 +627,7 @@ func lexPredicateOrLiteral(l *lexer) stateFn {
 	return lexLiteral
 }
 
-// lexPredicate lexes a predicate of out of the input.
+// lexPredicate lexes a predicate out of the input.
 func lexPredicate(l *lexer) stateFn {
 	l.next()
 	for done := false; !done; {
@@ -669,7 +678,7 @@ func lexPredicate(l *lexer) stateFn {
 	return lexSpace
 }
 
-// lexPredicate lexes a literal of out of the input.
+// lexLiteral lexes a literal out of the input.
 func lexLiteral(l *lexer) stateFn {
 	l.next()
 	for done := false; !done; {

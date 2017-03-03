@@ -113,6 +113,10 @@ func TestAcceptByParse(t *testing.T) {
 		                          /room<000> "connects_to"@[] /room<001>};`,
 		`delete data from ?world {/room<000> "named"@[] "Hallway"^^type:text.
 		                          /room<000> "connects_to"@[] /room<001>};`,
+		// Test Construct clause.
+		`construct {?s "foo"@[,] ?o} into ?a from ?b where {?s "foo"@[,] ?o} having ?s = ?o;`,
+		`construct {?s "foo"@[,] ?o} into ?a from ?b where {?s "foo"@[,] ?o};`,
+
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
@@ -207,6 +211,10 @@ func TestRejectByParse(t *testing.T) {
 		// Drop graphs.
 		`drop graph ;`,
 		`drop graph ?a ?b, ?c;`,
+		// Construct clause without source.
+		`construct {?s "foo"@[,] ?o} into ?a where{?s "foo"@[,] ?o} having ?s = ?o;`,
+		// Construct clause without destination.
+		`construct {?s "foo"@[,] ?o} from ?b where{?s "foo"@[,] ?o} having ?s = ?o;`,
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
@@ -344,7 +352,7 @@ func TestRejectByParseAndSemantic(t *testing.T) {
 	}
 }
 
-func TestSemanticStatementGraphClausesLenghtCorrectness(t *testing.T) {
+func TestSemanticStatementGraphClausesLengthCorrectness(t *testing.T) {
 	table := []struct {
 		query string
 		want  int
