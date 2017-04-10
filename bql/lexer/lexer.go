@@ -33,7 +33,6 @@ const (
 	ItemError TokenType = iota
 	// ItemEOF indicates end of input to be scanned in BQL.
 	ItemEOF
-
 	// ItemQuery represents the select keyword in BQL.
 	ItemQuery
 	// ItemInsert represents insert keyword in BQL.
@@ -90,19 +89,18 @@ const (
 	ItemDesc
 	// ItemLimit represents the limit clause in BQL.
 	ItemLimit
-
 	// ItemBinding represents a variable binding in BQL.
 	ItemBinding
-
 	// ItemNode represents a BadWolf node in BQL.
 	ItemNode
+	// ItemBlankNode represents a blank BadWolf node in BQL.
+	ItemBlankNode
 	// ItemLiteral represents a BadWolf literal in BQL.
 	ItemLiteral
 	// ItemPredicate represents a BadWolf predicates in BQL.
 	ItemPredicate
 	// ItemPredicateBound represents a BadWolf predicate bound in BQL.
 	ItemPredicateBound
-
 	// ItemLBracket represents the left opening bracket token in BQL.
 	ItemLBracket
 	// ItemRBracket represents the right opening bracket token in BQL.
@@ -189,6 +187,8 @@ func (tt TokenType) String() string {
 		return "BINDING"
 	case ItemNode:
 		return "NODE"
+	case ItemBlankNode:
+		return "BLANK_NODE"
 	case ItemLiteral:
 		return "LITERAL"
 	case ItemPredicate:
@@ -248,6 +248,7 @@ const (
 	semicolon      = rune(';')
 	comma          = rune(',')
 	slash          = rune('/')
+	underscore     = rune('_')
 	backSlash      = rune('\\')
 	lt             = rune('<')
 	gt             = rune('>')
@@ -356,6 +357,9 @@ func lexToken(l *lexer) stateFn {
 				return lexBinding
 			case slash:
 				return lexNode
+			case underscore:
+				l.next()
+				return lexBlankNode
 			case quote:
 				return lexPredicateOrLiteral
 			}
@@ -609,6 +613,22 @@ func lexNode(l *lexer) stateFn {
 		return nil
 	}
 	l.emit(ItemNode)
+	return lexSpace
+}
+
+// lexBlankNode tries to lex a blank node out of the input
+func lexBlankNode(l *lexer) stateFn {
+	if r := l.next(); r != colon {
+		l.emitError("blank node should start with _:")
+		return nil
+	}
+	for {
+		if r := l.next(); !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != rune('_') || r == eof {
+			l.backup()
+			l.emit(ItemBlankNode)
+			break
+		}
+	}
 	return lexSpace
 }
 

@@ -102,6 +102,16 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemError, Text: "/_<foo",
 					ErrorMessage: "[lexer:0:6] node is not properly terminated; missing final > delimiter"},
 				{Type: ItemEOF}}},
+		{"_:v1 _:foo_bar",
+			[]Token{
+				{Type: ItemBlankNode, Text: "_:v1"},
+				{Type: ItemBlankNode, Text: "_:foo_bar"},
+				{Type: ItemEOF}}},
+		{"_v1",
+			[]Token{
+				{Type: ItemError, Text: "_v",
+					ErrorMessage: "[lexer:0:2] blank node should start with _:"},
+				{Type: ItemEOF}}},
 		{`"true"^^type:bool "1"^^type:int64"2"^^type:float64"t"^^type:text`,
 			[]Token{
 				{Type: ItemLiteral, Text: `"true"^^type:bool`},
@@ -214,6 +224,12 @@ func TestValidTokenQuery(t *testing.T) {
 			ItemRBracket, ItemInto, ItemBinding, ItemFrom, ItemBinding, ItemWhere,
 			ItemLBracket, ItemBinding, ItemPredicateBound, ItemBinding, ItemRBracket,
 			ItemSemicolon, ItemEOF}},
+		{`construct {_:v1 "predicate"@[] ?p.
+		             _:v1 "object"@[,] ?o} into ?a from ?b where {?s "foo"@[,] ?o};`, []TokenType{
+			ItemConstruct, ItemLBracket, ItemBlankNode, ItemPredicate, ItemBinding, ItemDot,
+			ItemBlankNode, ItemPredicateBound, ItemBinding, ItemRBracket, ItemInto, ItemBinding,
+			ItemFrom, ItemBinding, ItemWhere, ItemLBracket, ItemBinding, ItemPredicateBound,
+			ItemBinding, ItemRBracket, ItemSemicolon, ItemEOF}},
 	}
 	for _, test := range table {
 		_, c := lex(test.input, 0)

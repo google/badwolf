@@ -116,6 +116,12 @@ func TestAcceptByParse(t *testing.T) {
 		// Test Construct clause.
 		`construct {?s "foo"@[,] ?o} into ?a from ?b where {?s "foo"@[,] ?o} having ?s = ?o;`,
 		`construct {?s "foo"@[,] ?o} into ?a from ?b where {?s "foo"@[,] ?o};`,
+		`construct {?s ?p ?o} into ?a from ?b where {?s "foo"@[,] ?o} having ?s = ?o;`,
+		`construct {?s ?p ?o.
+			    _:v "_subject"@[] ?s.
+			    _:v "_predicate"@[] ?p.
+			    _:v "_object"@[] ?o.
+			    _:v "some_pred"@[] ?k } into ?a from ?b where {?s "foo"@[,] ?o};`,
 
 	}
 	p, err := NewParser(BQL())
@@ -215,6 +221,13 @@ func TestRejectByParse(t *testing.T) {
 		`construct {?s "foo"@[,] ?o} into ?a where{?s "foo"@[,] ?o} having ?s = ?o;`,
 		// Construct clause without destination.
 		`construct {?s "foo"@[,] ?o} from ?b where{?s "foo"@[,] ?o} having ?s = ?o;`,
+		// Construct clause with badly formed blank node.
+		`construct {?s ?p ?o.
+			    _v "some_pred"@[] ?k } into ?a from ?b where {?s "foo"@[,] ?o};`,
+		// Construct clause with badle formed triple.
+		`construct {?s ?p ?o.
+		            _:v "some_pred"@[]} into ?a from ?b where {?s "foo"@[,] ?o};`,
+
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
