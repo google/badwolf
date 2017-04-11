@@ -230,16 +230,16 @@ func TestValidTokenQuery(t *testing.T) {
 			ItemBinding, ItemLT, ItemBinding, ItemAnd, ItemNot, ItemBinding, ItemOr,
 			ItemBinding, ItemEQ, ItemBinding, ItemLimit, ItemLiteral, ItemSemicolon,
 			ItemEOF}},
-		{`construct {?s "foo"@[,] ?o} into ?a from ?b where {?s "foo"@[,] ?o};`, []TokenType{
-			ItemConstruct, ItemLBracket, ItemBinding, ItemPredicateBound, ItemBinding,
+		{`construct {?s "foo"@[] ?o} into ?a from ?b where {?s "foo"@[] ?o};`, []TokenType{
+			ItemConstruct, ItemLBracket, ItemBinding, ItemPredicate, ItemBinding,
 			ItemRBracket, ItemInto, ItemBinding, ItemFrom, ItemBinding, ItemWhere,
-			ItemLBracket, ItemBinding, ItemPredicateBound, ItemBinding, ItemRBracket,
+			ItemLBracket, ItemBinding, ItemPredicate, ItemBinding, ItemRBracket,
 			ItemSemicolon, ItemEOF}},
 		{`construct {_:v1 "predicate"@[] ?p.
-		             _:v1 "object"@[,] ?o} into ?a from ?b where {?s "foo"@[,] ?o};`, []TokenType{
+		             _:v1 "object"@[] ?o} into ?a from ?b where {?s "foo"@[] ?o};`, []TokenType{
 			ItemConstruct, ItemLBracket, ItemBlankNode, ItemPredicate, ItemBinding, ItemDot,
-			ItemBlankNode, ItemPredicateBound, ItemBinding, ItemRBracket, ItemInto, ItemBinding,
-			ItemFrom, ItemBinding, ItemWhere, ItemLBracket, ItemBinding, ItemPredicateBound,
+			ItemBlankNode, ItemPredicate, ItemBinding, ItemRBracket, ItemInto, ItemBinding,
+			ItemFrom, ItemBinding, ItemWhere, ItemLBracket, ItemBinding, ItemPredicate,
 			ItemBinding, ItemRBracket, ItemSemicolon, ItemEOF}},
 	}
 	for _, test := range table {
