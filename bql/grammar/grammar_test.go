@@ -114,14 +114,14 @@ func TestAcceptByParse(t *testing.T) {
 		`delete data from ?world {/room<000> "named"@[] "Hallway"^^type:text.
 		                          /room<000> "connects_to"@[] /room<001>};`,
 		// Test Construct clause.
-		`construct {?s "foo"@[,] ?o} into ?a from ?b where {?s "foo"@[,] ?o} having ?s = ?o;`,
-		`construct {?s "foo"@[,] ?o} into ?a from ?b where {?s "foo"@[,] ?o};`,
+		`construct {?s "foo"@[] ?o} into ?a from ?b where {?s "foo"@[,] ?o} having ?s = ?o;`,
+		`construct {?s "foo"@[] ?o} into ?a from ?b where {?s "foo"@[,] ?o};`,
 		`construct {?s ?p ?o} into ?a from ?b where {?s "foo"@[,] ?o} having ?s = ?o;`,
 		`construct {?s ?p ?o.
 			    _:v "_subject"@[] ?s.
 			    _:v "_predicate"@[] ?p.
 			    _:v "_object"@[] ?o.
-			    _:v "some_pred"@[] ?k } into ?a from ?b where {?s "foo"@[,] ?o};`,
+			    _:v "some_pred"@[2006-01-02T15:04:05.999999999Z07:00] ?k } into ?a from ?b where {?s "foo"@[,] ?o};`,
 
 	}
 	p, err := NewParser(BQL())
@@ -224,7 +224,7 @@ func TestRejectByParse(t *testing.T) {
 		// Construct clause with badly formed blank node.
 		`construct {?s ?p ?o.
 			    _v "some_pred"@[] ?k } into ?a from ?b where {?s "foo"@[,] ?o};`,
-		// Construct clause with badle formed triple.
+		// Construct clause with badly formed triple.
 		`construct {?s ?p ?o.
 		            _:v "some_pred"@[]} into ?a from ?b where {?s "foo"@[,] ?o};`,
 

@@ -309,7 +309,7 @@ func (t *Token) String() string {
 	return fmt.Sprintf("(%s, %s, %s)", t.Type, t.Text, t.ErrorMessage)
 }
 
-// stateFn represents the state of the scanner  as a function that returns
+// stateFn represents the state of the scanner as a function that returns
 // the next state.
 type stateFn func(*lexer) stateFn
 
@@ -412,7 +412,7 @@ func lexToken(l *lexer) stateFn {
 	return nil      // Stop the run loop.
 }
 
-// isSingleSymbolToken check if a single char should be lexed.
+// isSingleSymbolToken checks if a single char should be lexed.
 func isSingleSymbolToken(l *lexer, tt TokenType, symbol rune) stateFn {
 	if r := l.peek(); r == symbol {
 		l.next()
@@ -620,6 +620,10 @@ func lexNode(l *lexer) stateFn {
 func lexBlankNode(l *lexer) stateFn {
 	if r := l.next(); r != colon {
 		l.emitError("blank node should start with _:")
+		return nil
+	}
+	if r := l.next(); !unicode.IsLetter(r) {
+		l.emitError("blank node label should begin with a letter")
 		return nil
 	}
 	for {

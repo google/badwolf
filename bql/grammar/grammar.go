@@ -789,11 +789,6 @@ func BQL() *Grammar {
 			},
 			{
 				Elements: []Element{
-					NewTokenType(lexer.ItemPredicateBound),
-				},
-			},
-			{
-				Elements: []Element{
 					NewTokenType(lexer.ItemBinding),
 				},
 			},
@@ -807,11 +802,6 @@ func BQL() *Grammar {
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemPredicate),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemPredicateBound),
 				},
 			},
 			{

@@ -112,6 +112,17 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemError, Text: "_v",
 					ErrorMessage: "[lexer:0:2] blank node should start with _:"},
 				{Type: ItemEOF}}},
+
+		{"_:1v",
+			[]Token{
+				{Type: ItemError, Text: "_:1",
+					ErrorMessage: "[lexer:0:3] blank node label should begin with a letter"},
+				{Type: ItemEOF}}},
+		{"_:_",
+			[]Token{
+				{Type: ItemError, Text: "_:_",
+					ErrorMessage: "[lexer:0:3] blank node label should begin with a letter"},
+				{Type: ItemEOF}}},
 		{`"true"^^type:bool "1"^^type:int64"2"^^type:float64"t"^^type:text`,
 			[]Token{
 				{Type: ItemLiteral, Text: `"true"^^type:bool`},
