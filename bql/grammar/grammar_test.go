@@ -114,15 +114,17 @@ func TestAcceptByParse(t *testing.T) {
 		`delete data from ?world {/room<000> "named"@[] "Hallway"^^type:text.
 		                          /room<000> "connects_to"@[] /room<001>};`,
 		// Test Construct clause.
-		`construct {?s "foo"@[] ?o} into ?a from ?b where {?s "foo"@[,] ?o} having ?s = ?o;`,
-		`construct {?s "foo"@[] ?o} into ?a from ?b where {?s "foo"@[,] ?o};`,
-		`construct {?s ?p ?o} into ?a from ?b where {?s "foo"@[,] ?o} having ?s = ?o;`,
+		`construct {?s "new_predicate"@[] ?o} into ?a from ?b where {?s "old_predicate"@[,] ?o} having ?s = ?o;`,
+		`construct {?s "new_predicate"@[] ?o} into ?a from ?b where {?s "old_predicate"@[,] ?o};`,
+		`construct {?s ?p ?o} into ?a from ?b where {?n "_subject"@[] ?s.
+							     ?n "_predicate"@[] ?p.
+						             ?n "_object"@[] ?o};`,
 		`construct {?s ?p ?o.
 			    _:v "_subject"@[] ?s.
 			    _:v "_predicate"@[] ?p.
-			    _:v "_object"@[] ?o.
-			    _:v "some_pred"@[2006-01-02T15:04:05.999999999Z07:00] ?k } into ?a from ?b where {?s "foo"@[,] ?o};`,
-
+			    _:v "_object"@[] ?o} into ?a from ?b where {?n "_subject"@[] ?s.
+									?n "_predicate"@[] ?p.
+									?n "_object"@[] ?o};`,
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
