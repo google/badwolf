@@ -113,6 +113,18 @@ func TestAcceptByParse(t *testing.T) {
 		                          /room<000> "connects_to"@[] /room<001>};`,
 		`delete data from ?world {/room<000> "named"@[] "Hallway"^^type:text.
 		                          /room<000> "connects_to"@[] /room<001>};`,
+		// Test Construct clause.
+		`construct {?s "new_predicate"@[] ?o} into ?a from ?b where {?s "old_predicate"@[,] ?o} having ?s = ?o;`,
+		`construct {?s "new_predicate"@[] ?o} into ?a from ?b where {?s "old_predicate"@[,] ?o};`,
+		`construct {?s ?p ?o} into ?a from ?b where {?n "_subject"@[] ?s.
+							     ?n "_predicate"@[] ?p.
+						             ?n "_object"@[] ?o};`,
+		`construct {?s ?p ?o.
+			    _:v "_subject"@[] ?s.
+			    _:v "_predicate"@[] ?p.
+			    _:v "_object"@[] ?o} into ?a from ?b where {?n "_subject"@[] ?s.
+									?n "_predicate"@[] ?p.
+									?n "_object"@[] ?o};`,
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
@@ -207,6 +219,17 @@ func TestRejectByParse(t *testing.T) {
 		// Drop graphs.
 		`drop graph ;`,
 		`drop graph ?a ?b, ?c;`,
+		// Construct clause without source.
+		`construct {?s "foo"@[,] ?o} into ?a where{?s "foo"@[,] ?o} having ?s = ?o;`,
+		// Construct clause without destination.
+		`construct {?s "foo"@[,] ?o} from ?b where{?s "foo"@[,] ?o} having ?s = ?o;`,
+		// Construct clause with badly formed blank node.
+		`construct {?s ?p ?o.
+			    _v "some_pred"@[] ?k } into ?a from ?b where {?s "foo"@[,] ?o};`,
+		// Construct clause with badly formed triple.
+		`construct {?s ?p ?o.
+		            _:v "some_pred"@[]} into ?a from ?b where {?s "foo"@[,] ?o};`,
+
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
@@ -344,7 +367,7 @@ func TestRejectByParseAndSemantic(t *testing.T) {
 	}
 }
 
-func TestSemanticStatementGraphClausesLenghtCorrectness(t *testing.T) {
+func TestSemanticStatementGraphClausesLengthCorrectness(t *testing.T) {
 	table := []struct {
 		query string
 		want  int

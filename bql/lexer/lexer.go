@@ -33,7 +33,6 @@ const (
 	ItemError TokenType = iota
 	// ItemEOF indicates end of input to be scanned in BQL.
 	ItemEOF
-
 	// ItemQuery represents the select keyword in BQL.
 	ItemQuery
 	// ItemInsert represents insert keyword in BQL.
@@ -42,6 +41,8 @@ const (
 	ItemDelete
 	// ItemCreate represents the creation of a graph in BQL.
 	ItemCreate
+	// ItemConstruct represents the construct keyword in BQL.
+	ItemConstruct
 	// ItemDrop represent the destruction of a graph in BQL.
 	ItemDrop
 	// ItemGraph represent the graph to be created of destroyed in BQL.
@@ -88,19 +89,18 @@ const (
 	ItemDesc
 	// ItemLimit represents the limit clause in BQL.
 	ItemLimit
-
 	// ItemBinding represents a variable binding in BQL.
 	ItemBinding
-
 	// ItemNode represents a BadWolf node in BQL.
 	ItemNode
+	// ItemBlankNode represents a blank BadWolf node in BQL.
+	ItemBlankNode
 	// ItemLiteral represents a BadWolf literal in BQL.
 	ItemLiteral
 	// ItemPredicate represents a BadWolf predicates in BQL.
 	ItemPredicate
 	// ItemPredicateBound represents a BadWolf predicate bound in BQL.
 	ItemPredicateBound
-
 	// ItemLBracket represents the left opening bracket token in BQL.
 	ItemLBracket
 	// ItemRBracket represents the right opening bracket token in BQL.
@@ -143,6 +143,8 @@ func (tt TokenType) String() string {
 		return "DELETE"
 	case ItemCreate:
 		return "CREATE"
+	case ItemConstruct:
+		return "CONSTRUCT"
 	case ItemDrop:
 		return "DROP"
 	case ItemGraph:
@@ -185,6 +187,8 @@ func (tt TokenType) String() string {
 		return "BINDING"
 	case ItemNode:
 		return "NODE"
+	case ItemBlankNode:
+		return "BLANK_NODE"
 	case ItemLiteral:
 		return "LITERAL"
 	case ItemPredicate:
@@ -244,6 +248,7 @@ const (
 	semicolon      = rune(';')
 	comma          = rune(',')
 	slash          = rune('/')
+	underscore     = rune('_')
 	backSlash      = rune('\\')
 	lt             = rune('<')
 	gt             = rune('>')
@@ -256,6 +261,7 @@ const (
 	insert         = "insert"
 	delete         = "delete"
 	create         = "create"
+	construct      = "construct"
 	drop           = "drop"
 	graph          = "graph"
 	data           = "data"
@@ -303,7 +309,7 @@ func (t *Token) String() string {
 	return fmt.Sprintf("(%s, %s, %s)", t.Type, t.Text, t.ErrorMessage)
 }
 
-// stateFn represents the state of the scanner  as a function that returns
+// stateFn represents the state of the scanner as a function that returns
 // the next state.
 type stateFn func(*lexer) stateFn
 
@@ -351,6 +357,9 @@ func lexToken(l *lexer) stateFn {
 				return lexBinding
 			case slash:
 				return lexNode
+			case underscore:
+				l.next()
+				return lexBlankNode
 			case quote:
 				return lexPredicateOrLiteral
 			}
@@ -403,7 +412,7 @@ func lexToken(l *lexer) stateFn {
 	return nil      // Stop the run loop.
 }
 
-// isSingleSymbolToken check if a single char should be lexed.
+// isSingleSymbolToken checks if a single char should be lexed.
 func isSingleSymbolToken(l *lexer, tt TokenType, symbol rune) stateFn {
 	if r := l.peek(); r == symbol {
 		l.next()
@@ -460,6 +469,10 @@ func lexKeyword(l *lexer) stateFn {
 	}
 	if strings.EqualFold(input, create) {
 		consumeKeyword(l, ItemCreate)
+		return lexSpace
+	}
+	if strings.EqualFold(input, construct) {
+		consumeKeyword(l, ItemConstruct)
 		return lexSpace
 	}
 	if strings.EqualFold(input, drop) {
@@ -603,6 +616,26 @@ func lexNode(l *lexer) stateFn {
 	return lexSpace
 }
 
+// lexBlankNode tries to lex a blank node out of the input
+func lexBlankNode(l *lexer) stateFn {
+	if r := l.next(); r != colon {
+		l.emitError("blank node should start with _:")
+		return nil
+	}
+	if r := l.next(); !unicode.IsLetter(r) {
+		l.emitError("blank node label should begin with a letter")
+		return nil
+	}
+	for {
+		if r := l.next(); !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != rune('_') || r == eof {
+			l.backup()
+			l.emit(ItemBlankNode)
+			break
+		}
+	}
+	return lexSpace
+}
+
 // lexPredicateOrLiteral tries to lex a predicate or a literal out of the input.
 func lexPredicateOrLiteral(l *lexer) stateFn {
 	text := l.input[l.pos:]
@@ -618,7 +651,7 @@ func lexPredicateOrLiteral(l *lexer) stateFn {
 	return lexLiteral
 }
 
-// lexPredicate lexes a predicate of out of the input.
+// lexPredicate lexes a predicate out of the input.
 func lexPredicate(l *lexer) stateFn {
 	l.next()
 	for done := false; !done; {
@@ -669,7 +702,7 @@ func lexPredicate(l *lexer) stateFn {
 	return lexSpace
 }
 
-// lexPredicate lexes a literal of out of the input.
+// lexLiteral lexes a literal out of the input.
 func lexLiteral(l *lexer) stateFn {
 	l.next()
 	for done := false; !done; {

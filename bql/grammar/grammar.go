@@ -88,6 +88,19 @@ func BQL() *Grammar {
 					NewTokenType(lexer.ItemSemicolon),
 				},
 			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemConstruct),
+					NewSymbol("CONSTRUCT_FACTS"),
+					NewTokenType(lexer.ItemInto),
+					NewSymbol("GRAPHS"),
+					NewTokenType(lexer.ItemFrom),
+					NewSymbol("GRAPHS"),
+					NewSymbol("WHERE"),
+					NewSymbol("HAVING"),
+					NewTokenType(lexer.ItemSemicolon),
+				},
+			},
 		},
 		"CREATE_GRAPHS": []*Clause{
 			{
@@ -729,6 +742,84 @@ func BQL() *Grammar {
 					NewTokenType(lexer.ItemPredicate),
 					NewSymbol("DELETE_OBJECT"),
 					NewSymbol("DELETE_DATA"),
+				},
+			},
+			{},
+		},
+		"CONSTRUCT_FACTS": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemLBracket),
+					NewSymbol("CONSTRUCT_TRIPLES"),
+					NewTokenType(lexer.ItemRBracket),
+				},
+			},
+		},
+		"CONSTRUCT_TRIPLES": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemNode),
+					NewSymbol("CONSTRUCT_PREDICATE"),
+					NewSymbol("CONSTRUCT_OBJECT"),
+					NewSymbol("MORE_CONSTRUCT_TRIPLES"),
+				},
+			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemBlankNode),
+					NewSymbol("CONSTRUCT_PREDICATE"),
+					NewSymbol("CONSTRUCT_OBJECT"),
+					NewSymbol("MORE_CONSTRUCT_TRIPLES"),
+				},
+			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemBinding),
+					NewSymbol("CONSTRUCT_PREDICATE"),
+					NewSymbol("CONSTRUCT_OBJECT"),
+					NewSymbol("MORE_CONSTRUCT_TRIPLES"),
+				},
+			},
+		},
+		"CONSTRUCT_PREDICATE": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemPredicate),
+				},
+			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemBinding),
+				},
+			},
+		},
+		"CONSTRUCT_OBJECT": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemNode),
+				},
+			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemPredicate),
+				},
+			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemLiteral),
+				},
+			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemBinding),
+				},
+			},
+		},
+		"MORE_CONSTRUCT_TRIPLES": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemDot),
+					NewSymbol("CONSTRUCT_TRIPLES"),
 				},
 			},
 			{},

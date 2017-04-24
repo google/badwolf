@@ -47,7 +47,7 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemEOF}}},
 		{`SeLeCt FrOm WhErE As BeFoRe AfTeR BeTwEeN CoUnT SuM GrOuP bY HaViNg LiMiT
 		  OrDeR AsC DeSc NoT AnD Or Id TyPe At DiStInCt InSeRt DeLeTe DaTa InTo
-			CrEaTe DrOp GrApH`,
+		  cONsTruCT CrEaTe DrOp GrApH`,
 			[]Token{
 				{Type: ItemQuery, Text: "SeLeCt"},
 				{Type: ItemFrom, Text: "FrOm"},
@@ -76,6 +76,7 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemDelete, Text: "DeLeTe"},
 				{Type: ItemData, Text: "DaTa"},
 				{Type: ItemInto, Text: "InTo"},
+				{Type: ItemConstruct, Text: "cONsTruCT"},
 				{Type: ItemCreate, Text: "CrEaTe"},
 				{Type: ItemDrop, Text: "DrOp"},
 				{Type: ItemGraph, Text: "GrApH"},
@@ -100,6 +101,27 @@ func TestIndividualTokens(t *testing.T) {
 			[]Token{
 				{Type: ItemError, Text: "/_<foo",
 					ErrorMessage: "[lexer:0:6] node is not properly terminated; missing final > delimiter"},
+				{Type: ItemEOF}}},
+		{"_:v1 _:foo_bar",
+			[]Token{
+				{Type: ItemBlankNode, Text: "_:v1"},
+				{Type: ItemBlankNode, Text: "_:foo_bar"},
+				{Type: ItemEOF}}},
+		{"_v1",
+			[]Token{
+				{Type: ItemError, Text: "_v",
+					ErrorMessage: "[lexer:0:2] blank node should start with _:"},
+				{Type: ItemEOF}}},
+
+		{"_:1v",
+			[]Token{
+				{Type: ItemError, Text: "_:1",
+					ErrorMessage: "[lexer:0:3] blank node label should begin with a letter"},
+				{Type: ItemEOF}}},
+		{"_:_",
+			[]Token{
+				{Type: ItemError, Text: "_:_",
+					ErrorMessage: "[lexer:0:3] blank node label should begin with a letter"},
 				{Type: ItemEOF}}},
 		{`"true"^^type:bool "1"^^type:int64"2"^^type:float64"t"^^type:text`,
 			[]Token{
@@ -208,6 +230,17 @@ func TestValidTokenQuery(t *testing.T) {
 			ItemBinding, ItemLT, ItemBinding, ItemAnd, ItemNot, ItemBinding, ItemOr,
 			ItemBinding, ItemEQ, ItemBinding, ItemLimit, ItemLiteral, ItemSemicolon,
 			ItemEOF}},
+		{`construct {?s "foo"@[] ?o} into ?a from ?b where {?s "foo"@[] ?o};`, []TokenType{
+			ItemConstruct, ItemLBracket, ItemBinding, ItemPredicate, ItemBinding,
+			ItemRBracket, ItemInto, ItemBinding, ItemFrom, ItemBinding, ItemWhere,
+			ItemLBracket, ItemBinding, ItemPredicate, ItemBinding, ItemRBracket,
+			ItemSemicolon, ItemEOF}},
+		{`construct {_:v1 "predicate"@[] ?p.
+		             _:v1 "object"@[] ?o} into ?a from ?b where {?s "foo"@[] ?o};`, []TokenType{
+			ItemConstruct, ItemLBracket, ItemBlankNode, ItemPredicate, ItemBinding, ItemDot,
+			ItemBlankNode, ItemPredicate, ItemBinding, ItemRBracket, ItemInto, ItemBinding,
+			ItemFrom, ItemBinding, ItemWhere, ItemLBracket, ItemBinding, ItemPredicate,
+			ItemBinding, ItemRBracket, ItemSemicolon, ItemEOF}},
 	}
 	for _, test := range table {
 		_, c := lex(test.input, 0)
