@@ -125,6 +125,15 @@ func TestAcceptByParse(t *testing.T) {
 			    _:v "_object"@[] ?o} into ?a from ?b where {?n "_subject"@[] ?s.
 									?n "_predicate"@[] ?p.
 									?n "_object"@[] ?o};`,
+		`construct {?s "predicate_1"@[] ?o1;
+			       "predicate_2"@[] ?o2} into ?a from ?b where {?s "old_predicate_1"@[,] ?o1.
+									    ?s "old_predicate_2"@[,] ?o2};`,
+
+		`construct {?s "predicate_1"@[] ?o1;
+			       "predicate_2"@[] ?o2.
+		            ?s "predicate_3"@[] ?o3} into ?a from ?b where {?s "old_predicate_1"@[,] ?o1.
+									    ?s "old_predicate_2"@[,] ?o2.
+									    ?s "old_predicate_3"@[,] ?o3};`,
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
@@ -229,6 +238,10 @@ func TestRejectByParse(t *testing.T) {
 		// Construct clause with badly formed triple.
 		`construct {?s ?p ?o.
 		            _:v "some_pred"@[]} into ?a from ?b where {?s "foo"@[,] ?o};`,
+		// Construct clause with badly formed reification clause.
+		`construct {?s "predicate_1"@[] ?o1;
+		            ?s "predicate_2"@[] ?o2} into ?a from ?b where {?s "old_predicate_1"@[,] ?o1.
+									    ?s "old_predicate_2"@[,] ?o2};`,
 
 	}
 	p, err := NewParser(BQL())
