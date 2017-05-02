@@ -761,6 +761,7 @@ func BQL() *Grammar {
 					NewTokenType(lexer.ItemNode),
 					NewSymbol("CONSTRUCT_PREDICATE"),
 					NewSymbol("CONSTRUCT_OBJECT"),
+					NewSymbol("REIFICATION_CLAUSE"),
 					NewSymbol("MORE_CONSTRUCT_TRIPLES"),
 				},
 			},
@@ -769,6 +770,7 @@ func BQL() *Grammar {
 					NewTokenType(lexer.ItemBlankNode),
 					NewSymbol("CONSTRUCT_PREDICATE"),
 					NewSymbol("CONSTRUCT_OBJECT"),
+					NewSymbol("REIFICATION_CLAUSE"),
 					NewSymbol("MORE_CONSTRUCT_TRIPLES"),
 				},
 			},
@@ -777,6 +779,7 @@ func BQL() *Grammar {
 					NewTokenType(lexer.ItemBinding),
 					NewSymbol("CONSTRUCT_PREDICATE"),
 					NewSymbol("CONSTRUCT_OBJECT"),
+					NewSymbol("REIFICATION_CLAUSE"),
 					NewSymbol("MORE_CONSTRUCT_TRIPLES"),
 				},
 			},
@@ -814,6 +817,17 @@ func BQL() *Grammar {
 					NewTokenType(lexer.ItemBinding),
 				},
 			},
+		},
+		"REIFICATION_CLAUSE": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemSemicolon),
+					NewSymbol("CONSTRUCT_PREDICATE"),
+					NewSymbol("CONSTRUCT_OBJECT"),
+					NewSymbol("REIFICATION_CLAUSE"),
+				},
+			},
+			{},
 		},
 		"MORE_CONSTRUCT_TRIPLES": []*Clause{
 			{
