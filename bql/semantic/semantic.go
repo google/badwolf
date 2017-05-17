@@ -141,7 +141,7 @@ type ConstructClause struct {
 	O        *triple.Object
 	OBinding string
 
-	ReificationClause []*ReificationClause
+	ReificationClauses []*ReificationClause
 }
 
 // ReificationClause represents a clause used to reify a triple.
@@ -473,7 +473,7 @@ func addToBindings(bs map[string]int, b string) {
 	}
 }
 
-// BindingsMap returns the set of bindings available on the graph clauses for he
+// BindingsMap returns the set of bindings available on the graph clauses for the
 // statement.
 func (s *Statement) BindingsMap() map[string]int {
 	bm := make(map[string]int)
@@ -603,12 +603,31 @@ func (s *Statement) Projections() []*Projection {
 	return s.projection
 }
 
-// InputBindings returns the list of incoming binding feed from a where clause.
+// InputBindings returns the list of incoming bindings feed from a where clause.
 func (s *Statement) InputBindings() []string {
 	var res []string
 	for _, p := range s.projection {
 		if p.Binding != "" {
 			res = append(res, p.Binding)
+		}
+	}
+	for _, c := range s.constructClauses {
+		if c.SBinding != "" {
+			res = append(res, c.SBinding)
+		}
+		if c.PBinding != "" {
+			res = append(res, c.PBinding)
+		}
+		if c.OBinding != "" {
+			res = append(res, c.OBinding)
+		}
+		for _, r := range c.ReificationClauses {
+			if r.PBinding != "" {
+				res = append(res, r.PBinding)
+			}
+			if r.OBinding != "" {
+				res = append(res, r.OBinding)
+			}
 		}
 	}
 	return res
