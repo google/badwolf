@@ -47,6 +47,8 @@ const (
 	Create
 	// Drop statement.
 	Drop
+	// Construct statement.
+	Construct
 )
 
 // String provides a readable version of the StatementType.
@@ -62,6 +64,8 @@ func (t StatementType) String() string {
 		return "CREATE"
 	case Drop:
 		return "DROP"
+	case Construct:
+		return "CONSTRUCT"
 	default:
 		return "UNKNOWN"
 	}
@@ -75,6 +79,8 @@ type Statement struct {
 	data                      []*triple.Triple
 	pattern                   []*GraphClause
 	workingClause             *GraphClause
+	constructClauses          []*ConstructClause
+	workingConstructClause    *ConstructClause
 	projection                []*Projection
 	workingProjection         *Projection
 	groupBy                   []string
@@ -120,6 +126,33 @@ type GraphClause struct {
 	OLowerBoundAlias string
 	OUpperBoundAlias string
 	OTemporal        bool
+}
+
+// ConstructClause represents a singular clause within a construct statement.
+type ConstructClause struct {
+	S        *node.Node
+	SBinding string
+
+	P              *predicate.Predicate
+	PBinding       string
+	PAnchorBinding string
+	PTemporal      bool
+
+	O        *triple.Object
+	OBinding string
+
+	ReificationClause []*ReificationClause
+}
+
+// ReificationClause represents a clause used to reify a triple.
+type ReificationClause struct {
+	P              *predicate.Predicate
+	PBinding       string
+	PAnchorBinding string
+	PTemporal      bool
+
+	O        *triple.Object
+	OBinding string
 }
 
 // String returns a readable representation of a graph clause.
