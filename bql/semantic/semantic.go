@@ -370,6 +370,11 @@ func (c *GraphClause) IsEmpty() bool {
 	return reflect.DeepEqual(c, &GraphClause{})
 }
 
+// IsEmpty will return true if there are no set values in the construct clause.
+func (c *ConstructClause) IsEmpty() bool {
+	return reflect.DeepEqual(c, &ConstructClause{})
+}
+
 // BindType sets the type of a statement.
 func (s *Statement) BindType(st StatementType) {
 	s.sType = st
@@ -685,4 +690,19 @@ func (s *Statement) Limit() int64 {
 func (s *Statement) GlobalLookupOptions() *storage.LookupOptions {
 	lo := s.lookupOptions
 	return &lo
+}
+
+// ResetWorkingConstructClause resets the current working construct clause.
+func (s *Statement) ResetWorkingConstructClause() {
+		s.workingConstructClause = &ConstructClause{}
+}
+
+
+// AddWorkingConstructClause adds the current working construct clause to the set
+// of construct clauses that form the construct statement.
+func (s *Statement) AddWorkingConstructClause() {
+	if s.workingConstructClause != nil && !s.workingConstructClause.IsEmpty() {
+		s.constructClauses = append(s.constructClauses, s.workingConstructClause)
+	}
+	s.ResetWorkingConstructClause()
 }
