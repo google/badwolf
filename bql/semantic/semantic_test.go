@@ -201,8 +201,33 @@ func TestInputOutputBindings(t *testing.T) {
 				Binding: "?bar",
 			},
 		},
+		constructClauses: []*ConstructClause{
+			{
+				SBinding: "?foo1",
+				PBinding: "?foo2",
+				OBinding: "?foo3",
+			},
+			{
+				SBinding: "?foo4",
+				PBinding: "?foo5",
+				OBinding: "?foo6",
+				ReificationClauses: []*ReificationClause{
+					{
+						PBinding: "?foo7",
+						OBinding: "?foo8",
+					},
+					{
+						PBinding: "?foo9",
+						OBinding: "?foo10",
+					},
+
+				},
+			},
+		},
 	}
-	if got, want := s.InputBindings(), []string{"?foo", "?bar"}; !reflect.DeepEqual(got, want) {
+	want := []string{"?foo", "?bar", "?foo1", "?foo2", "?foo3", "?foo4", "?foo5", "?foo6",
+	        "?foo7","?foo8", "?foo9", "?foo10"}
+	if got := s.InputBindings(); !reflect.DeepEqual(got, want) {
 		t.Errorf("s.InputBindings return the wrong input binding; got %v, want %v", got, want)
 	}
 	if got, want := s.OutputBindings(), []string{"?foo_alias", "?bar"}; !reflect.DeepEqual(got, want) {

@@ -47,6 +47,8 @@ const (
 	Create
 	// Drop statement.
 	Drop
+	// Construct statement.
+	Construct
 )
 
 // String provides a readable version of the StatementType.
@@ -62,6 +64,8 @@ func (t StatementType) String() string {
 		return "CREATE"
 	case Drop:
 		return "DROP"
+	case Construct:
+		return "CONSTRUCT"
 	default:
 		return "UNKNOWN"
 	}
@@ -75,6 +79,8 @@ type Statement struct {
 	data                      []*triple.Triple
 	pattern                   []*GraphClause
 	workingClause             *GraphClause
+	constructClauses          []*ConstructClause
+	workingConstructClause    *ConstructClause
 	projection                []*Projection
 	workingProjection         *Projection
 	groupBy                   []string
@@ -120,6 +126,33 @@ type GraphClause struct {
 	OLowerBoundAlias string
 	OUpperBoundAlias string
 	OTemporal        bool
+}
+
+// ConstructClause represents a singular clause within a construct statement.
+type ConstructClause struct {
+	S        *node.Node
+	SBinding string
+
+	P              *predicate.Predicate
+	PBinding       string
+	PAnchorBinding string
+	PTemporal      bool
+
+	O        *triple.Object
+	OBinding string
+
+	ReificationClauses []*ReificationClause
+}
+
+// ReificationClause represents a clause used to reify a triple.
+type ReificationClause struct {
+	P              *predicate.Predicate
+	PBinding       string
+	PAnchorBinding string
+	PTemporal      bool
+
+	O        *triple.Object
+	OBinding string
 }
 
 // String returns a readable representation of a graph clause.
@@ -337,6 +370,11 @@ func (c *GraphClause) IsEmpty() bool {
 	return reflect.DeepEqual(c, &GraphClause{})
 }
 
+// IsEmpty will return true if there are no set values in the construct clause.
+func (c *ConstructClause) IsEmpty() bool {
+	return reflect.DeepEqual(c, &ConstructClause{})
+}
+
 // BindType sets the type of a statement.
 func (s *Statement) BindType(st StatementType) {
 	s.sType = st
@@ -440,7 +478,7 @@ func addToBindings(bs map[string]int, b string) {
 	}
 }
 
-// BindingsMap returns the set of bindings available on the graph clauses for he
+// BindingsMap returns the set of bindings available on the graph clauses for the
 // statement.
 func (s *Statement) BindingsMap() map[string]int {
 	bm := make(map[string]int)
@@ -570,12 +608,31 @@ func (s *Statement) Projections() []*Projection {
 	return s.projection
 }
 
-// InputBindings returns the list of incoming binding feed from a where clause.
+// InputBindings returns the list of incoming bindings feed from a where clause.
 func (s *Statement) InputBindings() []string {
 	var res []string
 	for _, p := range s.projection {
 		if p.Binding != "" {
 			res = append(res, p.Binding)
+		}
+	}
+	for _, c := range s.constructClauses {
+		if c.SBinding != "" {
+			res = append(res, c.SBinding)
+		}
+		if c.PBinding != "" {
+			res = append(res, c.PBinding)
+		}
+		if c.OBinding != "" {
+			res = append(res, c.OBinding)
+		}
+		for _, r := range c.ReificationClauses {
+			if r.PBinding != "" {
+				res = append(res, r.PBinding)
+			}
+			if r.OBinding != "" {
+				res = append(res, r.OBinding)
+			}
 		}
 	}
 	return res
@@ -633,4 +690,19 @@ func (s *Statement) Limit() int64 {
 func (s *Statement) GlobalLookupOptions() *storage.LookupOptions {
 	lo := s.lookupOptions
 	return &lo
+}
+
+// ResetWorkingConstructClause resets the current working construct clause.
+func (s *Statement) ResetWorkingConstructClause() {
+		s.workingConstructClause = &ConstructClause{}
+}
+
+
+// AddWorkingConstructClause adds the current working construct clause to the set
+// of construct clauses that form the construct statement.
+func (s *Statement) AddWorkingConstructClause() {
+	if s.workingConstructClause != nil && !s.workingConstructClause.IsEmpty() {
+		s.constructClauses = append(s.constructClauses, s.workingConstructClause)
+	}
+	s.ResetWorkingConstructClause()
 }
