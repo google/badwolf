@@ -116,22 +116,42 @@ func TestParse(t *testing.T) {
 			id: "123",
 			v:  true,
 		},
+		{
+			s:  "_:v1",
+			t:  "/_",
+			id: "v1",
+			v:  true,
+		},
 		// Invalid text nodes.
+		{
+			s:  "/foo<123",
+			t:  "",
+			id: "",
+			v:  false,
+		},
+		{
+			s:  "foo<123>",
+			t:  "",
+			id: "",
+			v:  false,
+		},
 	}
 	for _, tc := range table {
 		n, err := Parse(tc.s)
-		if tc.v && err != nil {
-			t.Errorf("node.Parse: failed to parse %q; %v", tc.s, err)
-		}
-		if !tc.v && err == nil {
-			t.Errorf("node.Parse: failed to reject invalid %q", tc.s)
-			continue
-		}
-		if got, want := n.Type().String(), tc.t; got != want {
-			t.Errorf("node.Parse: failed to return proper type; got %q, want %q", got, want)
-		}
-		if got, want := n.ID().String(), tc.id; got != want {
-			t.Errorf("node.Parse: failed to return proper id; got %q, want %q", got, want)
+		if tc.v {
+			if err != nil {
+				t.Errorf("node.Parse: failed to parse %q; %v", tc.s, err)
+			}
+			if got, want := n.Type().String(), tc.t; got != want {
+				t.Errorf("node.Parse: failed to return proper type; got %q, want %q", got, want)
+			}
+			if got, want := n.ID().String(), tc.id; got != want {
+				t.Errorf("node.Parse: failed to return proper id; got %q, want %q", got, want)
+			}
+		} else {
+			if err == nil {
+				t.Errorf("node.Parse: failed to reject invalid %q", tc.s)
+			}
 		}
 	}
 }

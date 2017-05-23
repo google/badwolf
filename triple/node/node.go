@@ -27,6 +27,11 @@ import (
 	"github.com/pborman/uuid"
 )
 
+const (
+	slash      = byte('/')
+	underscore = byte('_')
+)
+
 // Type describes the type of the node.
 type Type string
 
@@ -74,25 +79,37 @@ func (n *Node) String() string {
 	return fmt.Sprintf("%s<%s>", n.t.String(), n.id.String())
 }
 
-// Parse returns a node given a pretty printed representation of Node.
+// Parse returns a node given a pretty printed representation of a Node or a BlankNode.
 func Parse(s string) (*Node, error) {
 	raw := strings.TrimSpace(s)
-	idx := strings.Index(raw, "<")
-	if idx < 0 {
-		return nil, fmt.Errorf("node.Parser: invalid format, could not find ID in %v", raw)
+	switch raw[0] {
+	case slash:
+		idx := strings.Index(raw, "<")
+		if idx < 0 {
+			return nil, fmt.Errorf("node.Parser: invalid format, could not find ID in %v", raw)
+		}
+		t, err := NewType(raw[:idx])
+		if err != nil {
+			return nil, fmt.Errorf("node.Parser: invalid type %q, %v", raw[:idx], err)
+		}
+		if raw[len(raw)-1] != '>' {
+			return nil, fmt.Errorf("node.Parser: pretty printing should finish with '>' in %q", raw)
+		}
+		id, err := NewID(raw[idx+1 : len(raw)-1])
+		if err != nil {
+			return nil, fmt.Errorf("node.Parser: invalid ID in %q, %v", raw, err)
+		}
+		return NewNode(t, id), nil
+	case underscore:
+		id, err := NewID(raw[2:len(raw)])
+		if err != nil {
+			return nil, fmt.Errorf("node.Parser: invalid ID in %q, %v", raw, err)
+		}
+		t, _ :=  NewType("/_")
+		return NewNode(t, id), nil
+	default:
+		return nil, fmt.Errorf("node.Parser: node representation should start with '/' or '_' in %v", raw)
 	}
-	t, err := NewType(raw[:idx])
-	if err != nil {
-		return nil, fmt.Errorf("node.Parser: invalid type %q, %v", raw[:idx], err)
-	}
-	if raw[len(raw)-1] != '>' {
-		return nil, fmt.Errorf("node.Parser: pretty printing should finish with '>' in %q", raw)
-	}
-	id, err := NewID(raw[idx+1 : len(raw)-1])
-	if err != nil {
-		return nil, fmt.Errorf("node.Parser: invalid ID in %q, %v", raw, err)
-	}
-	return NewNode(t, id), nil
 }
 
 // Covariant checks if the types of two nodes is covariant.
