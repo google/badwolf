@@ -692,11 +692,20 @@ func (s *Statement) GlobalLookupOptions() *storage.LookupOptions {
 	return &lo
 }
 
-// ResetWorkingConstructClause resets the current working construct clause.
-func (s *Statement) ResetWorkingConstructClause() {
-		s.workingConstructClause = &ConstructClause{}
+// ConstructClauses returns the list of construct clauses in the statement.
+func (s *Statement) ConstructClauses() []*ConstructClause {
+	return s.constructClauses
 }
 
+// ResetWorkingConstructClause resets the current working construct clause.
+func (s *Statement) ResetWorkingConstructClause() {
+	s.workingConstructClause = &ConstructClause{}
+}
+
+// WorkingConstructClause returns the current working clause.
+func (s *Statement) WorkingConstructClause() *ConstructClause {
+	return s.workingConstructClause
+}
 
 // AddWorkingConstructClause adds the current working construct clause to the set
 // of construct clauses that form the construct statement.

@@ -140,6 +140,16 @@ func CollectGlobalBounds() ElementHook {
 	return collectGlobalBounds()
 }
 
+// InitWorkingConstructClauseHook returns the singleton for clause accumulation within the construct statement.
+func InitWorkingConstructClauseHook() ClauseHook {
+	return InitWorkingConstructClause()
+}
+
+// NextWorkingConstructClauseHook returns the singleton for clause accumulation within the construct statement.
+func NextWorkingConstructClauseHook() ClauseHook {
+	return NextWorkingConstructClause()
+}
+
 // TypeBindingClauseHook returns a ClauseHook that sets the binding type.
 func TypeBindingClauseHook(t StatementType) ClauseHook {
 	var f ClauseHook
@@ -567,7 +577,7 @@ func whereObjectClause() ElementHook {
 	return f
 }
 
-// whereObjectClause returns an element hook that updates the object
+// varAccumulator returns an element hook that updates the object
 // modifiers on the working graph clause.
 func varAccumulator() ElementHook {
 	var (
@@ -858,6 +868,29 @@ func collectGlobalBounds() ElementHook {
 		default:
 			return nil, fmt.Errorf("global bound found unexpected token %v", tkn)
 		}
+		return f, nil
+	}
+	return f
+}
+
+// InitWorkingConstructClause returns a clause hook to initialize a new working
+// construct clause.
+func InitWorkingConstructClause() ClauseHook {
+	var f ClauseHook
+	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+		s.ResetWorkingConstructClause()
+		return f, nil
+	}
+	return f
+}
+
+
+// NextWorkingConstructClause returns a clause hook to close the current working
+// construct clause and start a new working construct clause.
+func NextWorkingConstructClause() ClauseHook {
+	var f ClauseHook
+	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+		s.AddWorkingConstructClause()
 		return f, nil
 	}
 	return f

@@ -136,7 +136,7 @@ func TestTypeBindingClauseHook(t *testing.T) {
 	st := &Statement{}
 	f(st, Symbol("FOO"))
 	if got, want := st.Type(), Insert; got != want {
-		t.Errorf("semantic.TypeBidingHook failed to set the right type; got %s, want %s", got, want)
+		t.Errorf("semantic.TypeBindingHook failed to set the right type; got %s, want %s", got, want)
 	}
 }
 
@@ -153,9 +153,14 @@ func TestWhereWorkingClauseHook(t *testing.T) {
 	f := whereNextWorkingClause()
 	st := &Statement{}
 	st.ResetWorkingGraphClause()
+	wcs := st.WorkingClause()
+	wcs.SBinding = "?a"
 	f(st, Symbol("FOO"))
+	wcs = st.WorkingClause()
+	wcs.SBinding = "?b"
 	f(st, Symbol("FOO"))
-	if got, want := len(st.GraphPatternClauses()), 0; got != want {
+
+	if got, want := len(st.GraphPatternClauses()), 2; got != want {
 		t.Errorf("semantic.whereNextWorkingClause should have returned two clauses for statement %v; got %d, want %d", st, got, want)
 	}
 }
@@ -1169,7 +1174,7 @@ func TestBindingsGraphChecker(t *testing.T) {
 		want bool
 	}{
 		{
-			id: "missing biding",
+			id: "missing binding",
 			s: &Statement{
 				pattern: []*GraphClause{
 					{},
@@ -1199,7 +1204,7 @@ func TestBindingsGraphChecker(t *testing.T) {
 			want: false,
 		},
 		{
-			id: "all bidings available",
+			id: "all bindings available",
 			s: &Statement{
 				pattern: []*GraphClause{
 					{},
@@ -1911,5 +1916,29 @@ func TestCollectGlobalBounds(t *testing.T) {
 		if got, want := st.lookupOptions, entry.want; !entry.fail && !reflect.DeepEqual(got, want) {
 			t.Errorf("semantic.CollectGlobalBounds failed to collect the expected value for case %q; got %v, want %v (%v)", entry.id, got, want, st.limitSet)
 		}
+	}
+}
+
+func TestInitWorkingConstructClauseHook(t *testing.T) {
+	f := InitWorkingConstructClause()
+	st := &Statement{}
+	f(st, Symbol("FOO"))
+	if st.WorkingConstructClause() == nil {
+		t.Errorf("semantic.InitConstructWorkingClause should have returned a valid working clause for statement %v", st)
+	}
+}
+
+func TestNextWorkingConstructClauseHook(t *testing.T) {
+	f := NextWorkingConstructClause()
+	st := &Statement{}
+	st.ResetWorkingConstructClause()
+	wcs := st.WorkingConstructClause()
+	wcs.SBinding = "?a"
+	f(st, Symbol("FOO"))
+	wcs = st.WorkingConstructClause()
+	wcs.SBinding = "?b"
+	f(st, Symbol("FOO"))
+	if got, want := len(st.ConstructClauses()), 2; got != want {
+		t.Errorf("semantic.NextConstructWorkingClause should have returned two clauses for statement %v; got %d, want %d", st, got, want)
 	}
 }
