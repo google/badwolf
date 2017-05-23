@@ -918,7 +918,7 @@ func SemanticBQL() *Grammar {
 	}
 	setElementHook(semanticBQL, varSymbols, semantic.VarAccumulatorHook(), nil)
 
-	// Collect and valiadate group by bindinds.
+	// Collect and validate group by bindings.
 	grpSymbols := []semantic.Symbol{"GROUP_BY", "GROUP_BY_BINDINGS"}
 	setElementHook(semanticBQL, grpSymbols, semantic.GroupByBindings(), nil)
 	setClauseHook(semanticBQL, []semantic.Symbol{"GROUP_BY"}, nil, semantic.GroupByBindingsChecker())
@@ -951,6 +951,13 @@ func SemanticBQL() *Grammar {
 			return true
 		})
 	setClauseHook(semanticBQL, []semantic.Symbol{"START"}, nil, semantic.GroupByBindingsChecker())
+
+	// CONSTRUCT clause semantic hooks.
+	setClauseHook(semanticBQL, []semantic.Symbol{"CONSTRUCT"}, nil, semantic.TypeBindingClauseHook(semantic.Construct))
+	setClauseHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_FACTS"}, semantic.InitWorkingConstructClauseHook(), nil)
+	constructTriplesSymbols := []semantic.Symbol{"CONSTRUCT_TRIPLES", "MORE_CONSTRUCT_TRIPLES"}
+	setClauseHook(semanticBQL, constructTriplesSymbols, semantic.NextWorkingConstructClauseHook(), semantic.NextWorkingConstructClauseHook())
+
 
 	return semanticBQL
 }

@@ -694,7 +694,7 @@ func (s *Statement) GlobalLookupOptions() *storage.LookupOptions {
 
 // ResetWorkingConstructClause resets the current working construct clause.
 func (s *Statement) ResetWorkingConstructClause() {
-		s.workingConstructClause = &ConstructClause{}
+	s.workingConstructClause = &ConstructClause{}
 }
 
 
