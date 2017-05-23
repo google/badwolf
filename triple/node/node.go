@@ -101,9 +101,12 @@ func Parse(s string) (*Node, error) {
 		}
 		return NewNode(t, id), nil
 	case underscore:
-		id := ID(raw[2:len(raw)])
-		t :=  Type("/_")
-		return NewNode(&t, &id), nil
+		id, err := NewID(raw[2:len(raw)])
+		if err != nil {
+			return nil, fmt.Errorf("node.Parser: invalid ID in %q, %v", raw, err)
+		}
+		t, _ :=  NewType("/_")
+		return NewNode(t, id), nil
 	default:
 		return nil, fmt.Errorf("node.Parser: node representation should start with '/' or '_' in %v", raw)
 	}
