@@ -86,29 +86,29 @@ func Parse(s string) (*Node, error) {
 	case slash:
 		idx := strings.Index(raw, "<")
 		if idx < 0 {
-			return nil, fmt.Errorf("node.Parser: invalid format, could not find ID in %v", raw)
+			return nil, fmt.Errorf("node.Parse: invalid format, could not find ID in %v", raw)
 		}
 		t, err := NewType(raw[:idx])
 		if err != nil {
-			return nil, fmt.Errorf("node.Parser: invalid type %q, %v", raw[:idx], err)
+			return nil, fmt.Errorf("node.Parse: invalid type %q, %v", raw[:idx], err)
 		}
 		if raw[len(raw)-1] != '>' {
-			return nil, fmt.Errorf("node.Parser: pretty printing should finish with '>' in %q", raw)
+			return nil, fmt.Errorf("node.Parse: pretty printing should finish with '>' in %q", raw)
 		}
 		id, err := NewID(raw[idx+1 : len(raw)-1])
 		if err != nil {
-			return nil, fmt.Errorf("node.Parser: invalid ID in %q, %v", raw, err)
+			return nil, fmt.Errorf("node.Parse: invalid ID in %q, %v", raw, err)
 		}
 		return NewNode(t, id), nil
 	case underscore:
 		id, err := NewID(raw[2:len(raw)])
 		if err != nil {
-			return nil, fmt.Errorf("node.Parser: invalid ID in %q, %v", raw, err)
+			return nil, fmt.Errorf("node.Parse: invalid ID in %q, %v", raw, err)
 		}
 		t, _ :=  NewType("/_")
 		return NewNode(t, id), nil
 	default:
-		return nil, fmt.Errorf("node.Parser: node representation should start with '/' or '_' in %v", raw)
+		return nil, fmt.Errorf("node.Parse: node representation should start with '/' or '_' in %v", raw)
 	}
 }
 

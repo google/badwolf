@@ -804,6 +804,11 @@ func BQL() *Grammar {
 			},
 			{
 				Elements: []Element{
+					NewTokenType(lexer.ItemBlankNode),
+				},
+			},
+			{
+				Elements: []Element{
 					NewTokenType(lexer.ItemPredicate),
 				},
 			},
@@ -957,7 +962,9 @@ func SemanticBQL() *Grammar {
 	setClauseHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_FACTS"}, semantic.InitWorkingConstructClauseHook(), nil)
 	constructTriplesSymbols := []semantic.Symbol{"CONSTRUCT_TRIPLES", "MORE_CONSTRUCT_TRIPLES"}
 	setClauseHook(semanticBQL, constructTriplesSymbols, semantic.NextWorkingConstructClauseHook(), semantic.NextWorkingConstructClauseHook())
-
+	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_TRIPLES"}, semantic.ConstructSubjectClauseHook(), nil)
+	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_PREDICATE"}, semantic.ConstructPredicateClauseHook(), nil)
+	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_OBJECT"}, semantic.ConstructObjectClauseHook(), nil)
 
 	return semanticBQL
 }

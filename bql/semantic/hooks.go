@@ -150,6 +150,24 @@ func NextWorkingConstructClauseHook() ClauseHook {
 	return NextWorkingConstructClause()
 }
 
+// ConstructSubjectClauseHook returns the singleton for populating the subject in the
+// working construct clause.
+func ConstructSubjectClauseHook() ElementHook {
+	return constructSubjectClause()
+}
+
+// ConstructPredicateClauseHook returns the singleton for populating the predicate in the
+// working construct clause.
+func ConstructPredicateClauseHook() ElementHook {
+	return constructPredicateClause()
+}
+
+// ConstructObjectClauseHook returns the singleton for populating the object in the
+// working construct clause.
+func ConstructObjectClauseHook() ElementHook {
+	return constructObjectClause()
+}
+
 // TypeBindingClauseHook returns a ClauseHook that sets the binding type.
 func TypeBindingClauseHook(t StatementType) ClauseHook {
 	var f ClauseHook
@@ -298,7 +316,7 @@ func whereSubjectClause() ElementHook {
 			}
 			if lastNopToken.Type == lexer.ItemAs {
 				if c.SAlias != "" {
-					return nil, fmt.Errorf("AS alias binding for subject has already being assined on %v", st)
+					return nil, fmt.Errorf("AS alias binding for subject has already being assigned on %v", st)
 				}
 				c.SAlias = tkn.Text
 				lastNopToken = nil
@@ -306,7 +324,7 @@ func whereSubjectClause() ElementHook {
 			}
 			if lastNopToken.Type == lexer.ItemType {
 				if c.STypeAlias != "" {
-					return nil, fmt.Errorf("TYPE alias binding for subject has already being assined on %v", st)
+					return nil, fmt.Errorf("TYPE alias binding for subject has already being assigned on %v", st)
 				}
 				c.STypeAlias = tkn.Text
 				lastNopToken = nil
@@ -314,7 +332,7 @@ func whereSubjectClause() ElementHook {
 			}
 			if c.SIDAlias == "" && lastNopToken.Type == lexer.ItemID {
 				if c.SIDAlias != "" {
-					return nil, fmt.Errorf("ID alias binding for subject has already being assined on %v", st)
+					return nil, fmt.Errorf("ID alias binding for subject has already being assigned on %v", st)
 				}
 				c.SIDAlias = tkn.Text
 				lastNopToken = nil
@@ -327,9 +345,8 @@ func whereSubjectClause() ElementHook {
 	return f
 }
 
-// processPredicate updates the working graph clause if there is an available
-// predicate.
-func processPredicate(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.Token) (*predicate.Predicate, string, string, bool, error) {
+// processPredicate parses a consumed element and returns a predicate and its attributes if possible.
+func processPredicate(ce ConsumedElement) (*predicate.Predicate, string, string, bool, error) {
 	var (
 		nP             *predicate.Predicate
 		pID            string
@@ -357,9 +374,8 @@ func processPredicate(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.To
 	return nil, pID, pAnchorBinding, temporal, nil
 }
 
-// processPredicateBound updates the working graph clause if there is an
-// available predicate bound.
-func processPredicateBound(c *GraphClause, ce ConsumedElement, lastNopToken *lexer.Token) (string, string, string, *time.Time, *time.Time, bool, error) {
+// processPredicate parses a consumed element and returns a bound predicate and its attributes if possible.
+func processPredicateBound(ce ConsumedElement) (string, string, string, *time.Time, *time.Time, bool, error) {
 	var (
 		pID              string
 		pLowerBoundAlias string
@@ -428,7 +444,7 @@ func wherePredicateClause() ElementHook {
 			if c.P != nil {
 				return nil, fmt.Errorf("invalid predicate %s on graph clause since already set to %s", tkn.Text, c.P)
 			}
-			p, pID, pAnchorBinding, pTemporal, err := processPredicate(c, ce, lastNopToken)
+			p, pID, pAnchorBinding, pTemporal, err := processPredicate(ce)
 			if err != nil {
 				return nil, err
 			}
@@ -439,7 +455,7 @@ func wherePredicateClause() ElementHook {
 			if c.PLowerBound != nil || c.PUpperBound != nil || c.PLowerBoundAlias != "" || c.PUpperBoundAlias != "" {
 				return nil, fmt.Errorf("invalid predicate bound %s on graph clause since already set to %s", tkn.Text, c.P)
 			}
-			pID, pLowerBoundAlias, pUpperBoundAlias, pLowerBound, pUpperBound, pTemp, err := processPredicateBound(c, ce, lastNopToken)
+			pID, pLowerBoundAlias, pUpperBoundAlias, pLowerBound, pUpperBound, pTemp, err := processPredicateBound(ce)
 			if err != nil {
 				return nil, err
 			}
@@ -456,17 +472,17 @@ func wherePredicateClause() ElementHook {
 			switch lastNopToken.Type {
 			case lexer.ItemAs:
 				if c.PAlias != "" {
-					return nil, fmt.Errorf("AS alias binding for predicate has already being assined on %v", st)
+					return nil, fmt.Errorf("AS alias binding for predicate has already being assigned on %v", st)
 				}
 				c.PAlias = tkn.Text
 			case lexer.ItemID:
 				if c.PIDAlias != "" {
-					return nil, fmt.Errorf("ID alias binding for predicate has already being assined on %v", st)
+					return nil, fmt.Errorf("ID alias binding for predicate has already being assigned on %v", st)
 				}
 				c.PIDAlias = tkn.Text
 			case lexer.ItemAt:
 				if c.PAnchorAlias != "" {
-					return nil, fmt.Errorf("AT alias binding for predicate has already being assined on %v", st)
+					return nil, fmt.Errorf("AT alias binding for predicate has already being assigned on %v", st)
 				}
 				c.PAnchorAlias = tkn.Text
 			default:
@@ -515,7 +531,7 @@ func whereObjectClause() ElementHook {
 				pred *predicate.Predicate
 				err  error
 			)
-			pred, c.OID, c.OAnchorBinding, c.OTemporal, err = processPredicate(c, ce, lastNopToken)
+			pred, c.OID, c.OAnchorBinding, c.OTemporal, err = processPredicate(ce)
 			if err != nil {
 				return nil, err
 			}
@@ -528,7 +544,7 @@ func whereObjectClause() ElementHook {
 			if c.OLowerBound != nil || c.OUpperBound != nil || c.OLowerBoundAlias != "" || c.OUpperBoundAlias != "" {
 				return nil, fmt.Errorf("invalid predicate bound %s on graph clause since already set to %s", tkn.Text, c.O)
 			}
-			oID, oLowerBoundAlias, oUpperBoundAlias, oLowerBound, oUpperBound, oTemp, err := processPredicateBound(c, ce, lastNopToken)
+			oID, oLowerBoundAlias, oUpperBoundAlias, oLowerBound, oUpperBound, oTemp, err := processPredicateBound(ce)
 			if err != nil {
 				return nil, err
 			}
@@ -548,22 +564,22 @@ func whereObjectClause() ElementHook {
 			switch lastNopToken.Type {
 			case lexer.ItemAs:
 				if c.OAlias != "" {
-					return nil, fmt.Errorf("AS alias binding for predicate has already being assined on %v", st)
+					return nil, fmt.Errorf("AS alias binding for predicate has already being assigned on %v", st)
 				}
 				c.OAlias = tkn.Text
 			case lexer.ItemType:
 				if c.OTypeAlias != "" {
-					return nil, fmt.Errorf("TYPE alias binding for predicate has already being assined on %v", st)
+					return nil, fmt.Errorf("TYPE alias binding for predicate has already being assigned on %v", st)
 				}
 				c.OTypeAlias = tkn.Text
 			case lexer.ItemID:
 				if c.OIDAlias != "" {
-					return nil, fmt.Errorf("ID alias binding for predicate has already being assined on %v", st)
+					return nil, fmt.Errorf("ID alias binding for predicate has already being assigned on %v", st)
 				}
 				c.OIDAlias = tkn.Text
 			case lexer.ItemAt:
 				if c.OAnchorAlias != "" {
-					return nil, fmt.Errorf("AT alias binding for predicate has already being assined on %v", st)
+					return nil, fmt.Errorf("AT alias binding for predicate has already being assigned on %v", st)
 				}
 				c.OAnchorAlias = tkn.Text
 			default:
@@ -891,6 +907,111 @@ func NextWorkingConstructClause() ClauseHook {
 	var f ClauseHook
 	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
 		s.AddWorkingConstructClause()
+		return f, nil
+	}
+	return f
+}
+
+// constructSubjectClause returns an element hook that updates the subject
+// modifiers on the working construct clause.
+func constructSubjectClause() ElementHook {
+	var f ElementHook
+	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+		if ce.IsSymbol() {
+			return f, nil
+		}
+		tkn := ce.Token()
+		c := st.workingConstructClause
+		if c.S != nil {
+			return nil, fmt.Errorf("invalid subject %v in construct clause, subject already set to %v", tkn.Type, c.S)
+		}
+		if c.SBinding != "" {
+			return nil, fmt.Errorf("invalid subject %v in construct clause, subject already set to %v", tkn.Type, c.SBinding)
+		}
+		switch tkn.Type {
+		case lexer.ItemNode, lexer.ItemBlankNode:
+			n, err := ToNode(ce)
+			if err != nil {
+				return nil, err
+			}
+			c.S = n
+		case lexer.ItemBinding:
+			c.SBinding = tkn.Text
+		}
+		return f, nil
+	}
+	return f
+}
+
+// constructPredicateClause returns an element hook that updates the predicate
+// modifiers on the working construct clause.
+func constructPredicateClause() ElementHook {
+	var f ElementHook
+	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+		if ce.IsSymbol() {
+			return f, nil
+		}
+		tkn := ce.Token()
+		c := st.workingConstructClause
+		if c.P != nil {
+			return nil, fmt.Errorf("invalid predicate %v in construct clause, predicate already set to %v", tkn.Type, c.P)
+		}
+		if c.PBinding != "" {
+			return nil, fmt.Errorf("invalid predicate %v in construct clause, predicate already set to %v", tkn.Type, c.PBinding)
+		}
+		switch tkn.Type {
+		case lexer.ItemPredicate:
+			p, pID, pAnchorBinding, pTemporal, err := processPredicate(ce)
+			if err != nil {
+				return nil, err
+			}
+			c.P, c.PID, c.PAnchorBinding, c.PTemporal = p, pID, pAnchorBinding, pTemporal
+		case lexer.ItemBinding:
+			c.PBinding = tkn.Text
+		}
+		return f, nil
+	}
+	return f
+}
+
+// constructObjectClause returns an element hook that updates the object
+// modifiers on the working graph clause.
+func constructObjectClause() ElementHook {
+	var f ElementHook
+	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+		if ce.IsSymbol() {
+			return f, nil
+		}
+		tkn := ce.Token()
+		c := st.WorkingClause()
+		if c.O != nil {
+			return nil, fmt.Errorf("invalid object %v in construct clause, object already set to %v", tkn.Text, c.O)
+		}
+		if c.OBinding != "" {
+			return nil, fmt.Errorf("invalid object %v in construct clause, object already set to %v", tkn.Type, c.OBinding)
+		}
+		switch tkn.Type {
+		case lexer.ItemNode, lexer.ItemBlankNode, lexer.ItemLiteral:
+			obj, err := triple.ParseObject(tkn.Text, literal.DefaultBuilder())
+			if err != nil {
+				return nil, err
+			}
+			c.O = obj
+		case lexer.ItemPredicate:
+			var (
+				pred *predicate.Predicate
+				err  error
+			)
+			pred, c.OID, c.OAnchorBinding, c.OTemporal, err = processPredicate(ce)
+			if err != nil {
+				return nil, err
+			}
+			if pred != nil {
+				c.O = triple.NewPredicateObject(pred)
+			}
+		case lexer.ItemBinding:
+			c.OBinding = tkn.Text
+		}
 		return f, nil
 	}
 	return f

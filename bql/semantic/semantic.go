@@ -135,11 +135,15 @@ type ConstructClause struct {
 
 	P              *predicate.Predicate
 	PBinding       string
+	PID            string
 	PAnchorBinding string
 	PTemporal      bool
 
-	O        *triple.Object
-	OBinding string
+	O              *triple.Object
+	OBinding       string
+	OID            string
+	OAnchorBinding string
+	OTemporal      bool
 
 	ReificationClauses []*ReificationClause
 }
@@ -148,11 +152,15 @@ type ConstructClause struct {
 type ReificationClause struct {
 	P              *predicate.Predicate
 	PBinding       string
+	PID            string
 	PAnchorBinding string
 	PTemporal      bool
 
-	O        *triple.Object
-	OBinding string
+	O              *triple.Object
+	OBinding       string
+	OID            string
+	OAnchorBinding string
+	OTemporal      bool
 }
 
 // String returns a readable representation of a graph clause.
@@ -385,7 +393,7 @@ func (s *Statement) Type() StatementType {
 	return s.sType
 }
 
-// AddGraph adds a graph to a given https://critique.corp.google.com/#review/101398527statement.
+// AddGraph adds a graph to a given statement.
 func (s *Statement) AddGraph(g string) {
 	s.graphNames = append(s.graphNames, g)
 }
