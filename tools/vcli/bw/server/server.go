@@ -96,7 +96,7 @@ func (s *serverConfig) bqlHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method != http.MethodPost {
-		reportError(w, r, fmt.Errorf("Invalid %s request on %q endpoint. Only POST request are accepted.", r.Method, r.URL.Path))
+		reportError(w, r, fmt.Errorf("invalid %s request on %q endpoint. Only POST request are accepted.", r.Method, r.URL.Path))
 		log.Printf("[%s] Invalid request: %#v\n", time.Now(), r)
 		return
 	}
