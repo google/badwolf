@@ -61,7 +61,7 @@ func insertTest(t *testing.T) {
 			t.Error(err)
 		}
 	}()
-	for _ = range ts {
+	for range ts {
 		i++
 	}
 	if i != 3 {
@@ -606,6 +606,64 @@ func TestChaining(t *testing.T) {
 	}
 	if got, want := len(tbl.Rows()), 1; got != want {
 		t.Errorf("planner.Excecute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", traversalQuery, got, want, tbl)
+	}
+}
+
+// Test to validate https://github.com/google/badwolf/issues/70
+func TestReificationResolutionIssue70(t *testing.T) {
+	// Graph traversal data.
+	issue70Triples := `/_<c175b457-e6d6-4ce3-8312-674353815720>	"_predicate"@[]	"/some/immutable/id"@[]
+		/_<c175b457-e6d6-4ce3-8312-674353815720>	"_owner"@[2017-05-23T16:41:12.187373-07:00]	/gid<0x9>
+		/_<c175b457-e6d6-4ce3-8312-674353815720>	"_subject"@[]	/aid</some/subject/id>
+		/_<c175b457-e6d6-4ce3-8312-674353815720>	"_object"@[]	/aid</some/object/id>
+		/_<cd8bae87-be96-41af-b1a8-27df990c9825>	"_object"@[2017-05-23T16:41:12.187373-07:00]	/aid</some/object/id>
+		/_<cd8bae87-be96-41af-b1a8-27df990c9825>	"_owner"@[2017-05-23T16:41:12.187373-07:00]	/gid<0x6>
+		/_<cd8bae87-be96-41af-b1a8-27df990c9825>	"_predicate"@[2017-05-23T16:41:12.187373-07:00]	"/some/temporal/id"@[2017-05-23T16:41:12.187373-07:00]
+		/_<cd8bae87-be96-41af-b1a8-27df990c9825>	"_subject"@[2017-05-23T16:41:12.187373-07:00]	/aid</some/subject/id>
+		/aid</some/subject/id>	"/some/temporal/id"@[2017-05-23T16:41:12.187373-07:00]	/aid</some/object/id>
+		/aid</some/subject/id>	"/some/immutable/id"@[]	/aid</some/object/id>
+		/aid</some/subject/id>	"/some/ownerless_temporal/id"@[2017-05-23T16:41:12.187373-07:00]	/aid</some/object/id>`
+
+	query := `
+		SELECT ?bn, ?p
+		FROM ?test
+		WHERE {
+			?bn "_subject"@[,]   /aid</some/subject/id>.
+			?bn "_predicate"@[,] ?p .
+			?bn "_object"@[,]    /aid</some/object/id>
+		};`
+
+	// Load traversing data
+	s, ctx := memory.NewStore(), context.Background()
+	g, gErr := s.NewGraph(ctx, "?test")
+	if gErr != nil {
+		t.Fatalf("memory.NewGraph failed to create \"?test\" with error %v", gErr)
+	}
+	b := bytes.NewBufferString(issue70Triples)
+	if _, err := io.ReadIntoGraph(ctx, g, b, literal.DefaultBuilder()); err != nil {
+		t.Fatalf("io.ReadIntoGraph failed to read test graph with error %v", err)
+	}
+	p, pErr := grammar.NewParser(grammar.SemanticBQL())
+	if pErr != nil {
+		t.Fatalf("grammar.NewParser: should have produced a valid BQL parser with error %v", pErr)
+	}
+	st := &semantic.Statement{}
+	if err := p.Parse(grammar.NewLLk(query, 1), st); err != nil {
+		t.Errorf("Parser.consume: failed to parse query %q with error %v", query, err)
+	}
+	plnr, err := New(ctx, s, st, 0, nil)
+	if err != nil {
+		t.Errorf("planner.New failed to create a valid query plan with error %v", err)
+	}
+	tbl, err := plnr.Execute(ctx)
+	if err != nil {
+		t.Fatalf("planner.Excecute failed for query %q with error %v", query, err)
+	}
+	if got, want := len(tbl.Bindings()), 2; got != want {
+		t.Errorf("tbl.Bindings returned the wrong number of bindings for %q; got %d, want %d", query, got, want)
+	}
+	if got, want := len(tbl.Rows()), 1; got != want {
+		t.Errorf("planner.Excecute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", query, got, want, tbl)
 	}
 }
 

@@ -298,7 +298,7 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 		return b, nil
 	}
 	exist, total := 0, 0
-	for _, b := range cls.Bindings() {
+	for _, b := range cls.   () {
 		total++
 		if p.tbl.HasBinding(b) {
 			exist++
@@ -328,6 +328,8 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 		// Since all bindings in the clause are already solved, the clause becomes a
 		// fully specified triple. If the triple does not exist the row will be
 		// deleted.
+
+		// TODO(xllora): This should be fixed, only works for immutable predicates, any predicate bound will  not satisfy it..
 		return false, p.filterOnExistence(ctx, cls, lo)
 	}
 	// Something is wrong with the code.
