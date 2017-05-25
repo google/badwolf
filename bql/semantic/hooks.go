@@ -921,7 +921,7 @@ func constructSubjectClause() ElementHook {
 			return f, nil
 		}
 		tkn := ce.Token()
-		c := st.workingConstructClause
+		c := st.WorkingConstructClause()
 		if c.S != nil {
 			return nil, fmt.Errorf("invalid subject %v in construct clause, subject already set to %v", tkn.Type, c.S)
 		}
@@ -952,9 +952,12 @@ func constructPredicateClause() ElementHook {
 			return f, nil
 		}
 		tkn := ce.Token()
-		c := st.workingConstructClause
+		c := st.WorkingConstructClause()
 		if c.P != nil {
 			return nil, fmt.Errorf("invalid predicate %v in construct clause, predicate already set to %v", tkn.Type, c.P)
+		}
+		if c.PID != "" {
+			return nil, fmt.Errorf("invalid predicate %v in construct clause, predicate already set to %v", tkn.Type, c.PID)
 		}
 		if c.PBinding != "" {
 			return nil, fmt.Errorf("invalid predicate %v in construct clause, predicate already set to %v", tkn.Type, c.PBinding)
@@ -983,9 +986,12 @@ func constructObjectClause() ElementHook {
 			return f, nil
 		}
 		tkn := ce.Token()
-		c := st.WorkingClause()
+		c := st.WorkingConstructClause()
 		if c.O != nil {
 			return nil, fmt.Errorf("invalid object %v in construct clause, object already set to %v", tkn.Text, c.O)
+		}
+		if c.OID != "" {
+			return nil, fmt.Errorf("invalid object %v in construct clause, objct already set to %v", tkn.Type, c.OID)
 		}
 		if c.OBinding != "" {
 			return nil, fmt.Errorf("invalid object %v in construct clause, object already set to %v", tkn.Type, c.OBinding)

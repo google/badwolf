@@ -188,7 +188,7 @@ func runTabulatedClauseHookTest(t *testing.T, testName string, f ElementHook, ta
 		}
 		if entry.valid {
 			if got, want := st.WorkingClause(), entry.want; !reflect.DeepEqual(got, want) {
-				t.Errorf("%s case %q should have populated all subject fields; got %+v, want %+v", testName, entry.id, got, want)
+				t.Errorf("%s case %q should have populated all required fields; got %+v, want %+v", testName, entry.id, got, want)
 			}
 		} else {
 			if !failed {
@@ -588,7 +588,7 @@ func TestWhereObjectClauseHook(t *testing.T) {
 	}
 	l, err := triple.ParseObject(`"1"^^type:int64`, literal.DefaultBuilder())
 	if err != nil {
-		t.Fatalf("literal.Parse should have never fail to pars %s with error %v", `"1"^^type:int64`, err)
+		t.Fatalf("literal.Parse should never fail to parse %s with error %v", `"1"^^type:int64`, err)
 	}
 
 	runTabulatedClauseHookTest(t, "semantic.whereObjectClause", f, []testClauseTable{
@@ -1941,4 +1941,357 @@ func TestNextWorkingConstructClauseHook(t *testing.T) {
 	if got, want := len(st.ConstructClauses()), 2; got != want {
 		t.Errorf("semantic.NextConstructWorkingClause should have returned two clauses for statement %v; got %d, want %d", st, got, want)
 	}
+}
+
+type testConstructClauseTable struct {
+	valid bool
+	id    string
+	ces   []ConsumedElement
+	want  *ConstructClause
+}
+
+func runTabulatedConstructClauseHookTest(t *testing.T, testName string, f ElementHook, table []testConstructClauseTable) {
+	st := &Statement{}
+	st.ResetWorkingConstructClause()
+	failed := false
+	for _, entry := range table {
+		for _, ce := range entry.ces {
+			if _, err := f(st, ce); err != nil {
+				if entry.valid {
+					t.Errorf("%s case %q should have never failed with error: %v", testName, entry.id, err)
+				} else {
+					failed = true
+				}
+			}
+		}
+		if entry.valid {
+			if got, want := st.WorkingConstructClause(), entry.want; !reflect.DeepEqual(got, want) {
+				t.Errorf("%s case %q should have populated all required fields; got %+v, want %+v", testName, entry.id, got, want)
+			}
+		} else {
+			if !failed {
+				t.Errorf("%s failed to reject invalid case %q", testName, entry.id)
+			}
+		}
+		st.ResetWorkingConstructClause()
+	}
+}
+
+func TestConstructSubjectClauseHook(t *testing.T) {
+	st := &Statement{}
+	f := constructSubjectClause()
+	st.ResetWorkingConstructClause()
+	n, err := node.Parse("/_<foo>")
+	if err != nil {
+		t.Fatalf("node.Parse called for '/_<foo>' failed with error %v", err)
+	}
+	bn, err := node.Parse("_:v1")
+	if err != nil {
+		t.Fatalf("node.Parse called for '_:v1' failed with error %v", err)
+	}
+	runTabulatedConstructClauseHookTest(t, "semantic.constructSubjectClause", f, []testConstructClauseTable{
+		{
+			valid: true,
+			id:    "valid node",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("CONSTRUCT_TRIPLES"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemNode,
+					Text: "/_<foo>",
+				}),
+			},
+			want: &ConstructClause{
+				S: n,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid blank node",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("CONSTRUCT_TRIPLES"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBlankNode,
+					Text: "_:v1",
+				}),
+			},
+			want: &ConstructClause{
+				S: bn,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid binding",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("CONSTRUCT_TRIPLES"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+			},
+			want: &ConstructClause{
+				SBinding:   "?foo",
+			},
+		},
+		{
+			valid: false,
+			id:    "invalid node and binding",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("CONSTRUCT_TRIPLES"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBlankNode,
+					Text: "_:v1",
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+			},
+			want: &ConstructClause{},
+		},
+	})
+}
+
+func TestConstructPredicateClauseHook(t *testing.T) {
+	st := &Statement{}
+	f := constructPredicateClause()
+	st.ResetWorkingConstructClause()
+	ip, err := predicate.Parse(`"foo"@[]`)
+	if err != nil {
+		t.Fatalf("predicate.Parse failed with error %v", err)
+	}
+	tp, err := predicate.Parse(`"foo"@[2015-07-19T13:12:04.669618843-07:00]`)
+	if err != nil {
+		t.Fatalf("predicate.Parse failed with error %v", err)
+	}
+	runTabulatedConstructClauseHookTest(t, "semantic.constructPredicateClause", f, []testConstructClauseTable{
+		{
+			valid: true,
+			id:    "valid immutable predicate",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("CONSTRUCT_PREDICATE"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[]`,
+				}),
+			},
+			want: &ConstructClause{
+				P:         ip,
+				PTemporal: false,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid temporal predicate",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("CONSTRUCT_PREDICATE"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[2015-07-19T13:12:04.669618843-07:00]`,
+				}),
+			},
+			want: &ConstructClause{
+				P:         tp,
+				PTemporal: true,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid temporal predicate with bound time anchor",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("CONSTRUCT_PREDICATE"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[?bar]`,
+				}),
+			},
+			want: &ConstructClause{
+				PID:            "foo",
+				PAnchorBinding: "?bar",
+				PTemporal:      true,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid binding",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("CONSTRUCT_PREDICATE"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+			},
+			want: &ConstructClause{
+				PBinding: "?foo",
+			},
+		},
+		{
+			valid: false,
+			id:    "invalid temporal predicate and binding",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("CONSTRUCT_PREDICATE"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[?bar]`,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+			},
+			want: &ConstructClause{},
+		},
+	})
+}
+
+func TestConstructObjectClauseHook(t *testing.T) {
+	st := &Statement{}
+	f := constructObjectClause()
+	st.ResetWorkingConstructClause()
+	n, err := node.Parse("/_<foo>")
+	if err != nil {
+		t.Fatalf("node.Parse failed with error %v", err)
+	}
+	no := triple.NewNodeObject(n)
+	bn, err := node.Parse("_:v1")
+	if err != nil {
+		t.Fatalf("node.Parse failed with error %v", err)
+	}
+	bno := triple.NewNodeObject(bn)
+	ip, err := predicate.Parse(`"foo"@[]`)
+	if err != nil {
+		t.Fatalf("predicate.Parse failed with error %v", err)
+	}
+	ipo := triple.NewPredicateObject(ip)
+	tp, err := predicate.Parse(`"foo"@[2015-07-19T13:12:04.669618843-07:00]`)
+	if err != nil {
+		t.Fatalf("predicate.Parse failed with error %v", err)
+	}
+	tpo := triple.NewPredicateObject(tp)
+	l, err := triple.ParseObject(`"1"^^type:int64`, literal.DefaultBuilder())
+	if err != nil {
+		t.Fatalf("literal.Parse should never fail to parse %s with error %v", `"1"^^type:int64`, err)
+	}
+	runTabulatedConstructClauseHookTest(t, "semantic.constructObjectClause", f, []testConstructClauseTable{
+		{
+			valid: true,
+			id:    "valid node object",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("CONSTRUCT_OBJECT"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemNode,
+					Text: "/_<foo>",
+				}),
+			},
+			want: &ConstructClause{
+				O: no,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid blank node object",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("CONSTRUCT_OBJECT"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBlankNode,
+					Text: "_:v1",
+				}),
+			},
+			want: &ConstructClause{
+				O: bno,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid literal object",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("CONSTRUCT_OBJECT"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: `"1"^^type:int64`,
+				}),
+			},
+			want: &ConstructClause{
+				O: l,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid immutable predicate object",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("CONSTRUCT_OBJECT"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[]`,
+				}),
+			},
+			want: &ConstructClause{
+				O:         ipo,
+				OTemporal: false,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid temporal predicate object",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("CONSTRUCT_OBJECT"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[2015-07-19T13:12:04.669618843-07:00]`,
+				}),
+			},
+			want: &ConstructClause{
+				O:         tpo,
+				OTemporal: true,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid temporal predicate object with bound time anchor",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("CONSTRUCT_OBJECT"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[?bar]`,
+				}),
+			},
+			want: &ConstructClause{
+				OID:            "foo",
+				OAnchorBinding: "?bar",
+				OTemporal:      true,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid binding",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("CONSTRUCT_OBJECT"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+			},
+			want: &ConstructClause{
+				OBinding: "?foo",
+			},
+		},
+		{
+			valid: false,
+			id:    "invalid temporal predicate and binding objects",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("CONSTRUCT_OBJECT"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[?bar]`,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+			},
+			want: &ConstructClause{},
+		},
+	})
 }
