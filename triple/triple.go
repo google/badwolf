@@ -98,7 +98,6 @@ func ParseObject(s string, b literal.Builder) (*Object, error) {
 	}
 	o, err := predicate.Parse(s)
 	if err == nil {
-
 		return NewPredicateObject(o), nil
 	}
 	return nil, err

@@ -76,7 +76,7 @@ func ToNode(ce ConsumedElement) (*node.Node, error) {
 		return nil, fmt.Errorf("semantic.ToNode cannot convert symbol %v to a node", ce)
 	}
 	tkn := ce.Token()
-	if tkn.Type != lexer.ItemNode {
+	if tkn.Type != lexer.ItemNode && tkn.Type != lexer.ItemBlankNode {
 		return nil, fmt.Errorf("semantic.ToNode cannot convert token type %s to a node", tkn.Type)
 	}
 	return node.Parse(tkn.Text)
