@@ -190,6 +190,37 @@ func TestProjectionIsEmpty(t *testing.T) {
 	}
 }
 
+func TestConstructClauseManipulation(t *testing.T) {
+	st := &Statement{}
+	if st.WorkingConstructClause() != nil {
+		t.Fatalf("semantic.GraphClause.ConstructClause should not return a working construct clause without initialization in %v", st)
+	}
+	st.ResetWorkingConstructClause()
+	if st.WorkingConstructClause() == nil {
+		t.Fatalf("semantic.GraphClause.WorkingConstructClause should return a working construct clause after initialization in %v", st)
+	}
+	st.AddWorkingConstructClause()
+	if got, want := len(st.ConstructClauses()), 0; got != want {
+		t.Fatalf("semantic.GraphClause.ConstructClauses returns wrong number of clauses in %v; got %d, want %d", st, got, want)
+	}
+}
+
+func TestReificationClauseManipulation(t *testing.T) {
+	st := &Statement{}
+	st.ResetWorkingConstructClause()
+	if st.WorkingReificationClause() != nil {
+		t.Fatalf("semantic.GraphClause.ReificationClause should not return a working reification clause without initialization in %v", st)
+	}
+	st.ResetWorkingReificationClause()
+	if st.WorkingReificationClause() == nil {
+		t.Fatalf("semantic.GraphClause.WorkingReificationClause should return a working reification clause after initialization in %v", st)
+	}
+	st.AddWorkingReificationClause()
+	if got, want := len(st.ReificationClauses()), 0; got != want {
+		t.Fatalf("semantic.GraphClause.ReificationClauses returns wrong number of clauses in %v; got %d, want %d", st, got, want)
+	}
+}
+
 func TestInputOutputBindings(t *testing.T) {
 	s := &Statement{
 		projection: []*Projection{
