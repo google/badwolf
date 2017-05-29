@@ -168,6 +168,30 @@ func ConstructObjectClauseHook() ElementHook {
 	return constructObjectClause()
 }
 
+// InitWorkingReificationClauseHook returns the singleton for initializing a new reification clause
+// within the working construct statement.
+func InitWorkingReificationClauseHook() ClauseHook {
+	return InitWorkingReificationClause()
+}
+
+// NextWorkingReificationClauseHook returns the singleton for adding the current reification clause
+// and initializing a new reification clause within the working construct statement.
+func NextWorkingReificationClauseHook() ClauseHook {
+	return NextWorkingReificationClause()
+}
+
+// ReificationPredicateClauseHook returns the singleton for populating the predicate in the
+// current reification clause within the working construct clause.
+func ReificationPredicateClauseHook() ElementHook {
+	return reificationPredicateClause()
+}
+
+// ReificationPredicateClauseHook returns the singleton for populating the object in the
+// current reification clause within the working construct clause.
+func ReificationObjectClauseHook() ElementHook {
+	return reificationObjectClause()
+}
+
 // TypeBindingClauseHook returns a ClauseHook that sets the binding type.
 func TypeBindingClauseHook(t StatementType) ClauseHook {
 	var f ClauseHook
@@ -1020,5 +1044,38 @@ func constructObjectClause() ElementHook {
 		}
 		return f, nil
 	}
+	return f
+}
+
+// InitWorkingReificationClause returns a clause hook to initialize a new reification
+// clause within the working construct clause.
+func InitWorkingReificationClause() ClauseHook {
+	var f ClauseHook
+	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+		s.ResetWorkingReificationClause()
+		return f, nil
+	}
+	return f
+}
+
+
+// NextWorkingReificationClause returns a clause hook to close the current reifcation
+// clause and start a new reification clause within the working construct clause.
+func NextWorkingReificationClause() ClauseHook {
+	var f ClauseHook
+	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+		s.AddWorkingReificationClause()
+		return f, nil
+	}
+	return f
+}
+
+func reificationPredicateClause() ElementHook {
+	var f ElementHook
+	return f
+}
+
+func reificationObjectClause() ElementHook {
+	var f ElementHook
 	return f
 }

@@ -211,7 +211,7 @@ func TestInputOutputBindings(t *testing.T) {
 				SBinding: "?foo4",
 				PBinding: "?foo5",
 				OBinding: "?foo6",
-				ReificationClauses: []*ReificationClause{
+				reificationClauses: []*ReificationClause{
 					{
 						PBinding: "?foo7",
 						OBinding: "?foo8",

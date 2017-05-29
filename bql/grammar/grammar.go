@@ -827,12 +827,51 @@ func BQL() *Grammar {
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemSemicolon),
-					NewSymbol("CONSTRUCT_PREDICATE"),
-					NewSymbol("CONSTRUCT_OBJECT"),
+					NewSymbol("REIFICATION_PREDICATE"),
+					NewSymbol("REIFICATION_OBJECT"),
 					NewSymbol("REIFICATION_CLAUSE"),
 				},
 			},
 			{},
+		},
+		"REIFICATION_PREDICATE": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemPredicate),
+				},
+			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemBinding),
+				},
+			},
+		},
+		"REIFICATION_OBJECT": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemNode),
+				},
+			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemBlankNode),
+				},
+			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemPredicate),
+				},
+			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemLiteral),
+				},
+			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemBinding),
+				},
+			},
 		},
 		"MORE_CONSTRUCT_TRIPLES": []*Clause{
 			{
@@ -960,11 +999,17 @@ func SemanticBQL() *Grammar {
 	// CONSTRUCT clause semantic hooks.
 	setClauseHook(semanticBQL, []semantic.Symbol{"CONSTRUCT"}, nil, semantic.TypeBindingClauseHook(semantic.Construct))
 	setClauseHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_FACTS"}, semantic.InitWorkingConstructClauseHook(), nil)
+
 	constructTriplesSymbols := []semantic.Symbol{"CONSTRUCT_TRIPLES", "MORE_CONSTRUCT_TRIPLES"}
 	setClauseHook(semanticBQL, constructTriplesSymbols, semantic.NextWorkingConstructClauseHook(), semantic.NextWorkingConstructClauseHook())
+
 	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_TRIPLES"}, semantic.ConstructSubjectClauseHook(), nil)
 	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_PREDICATE"}, semantic.ConstructPredicateClauseHook(), nil)
 	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_OBJECT"}, semantic.ConstructObjectClauseHook(), nil)
+
+	setClauseHook(semanticBQL, []semantic.Symbol{"REIFICATION_CLAUSE"}, semantic.InitWorkingReificationClauseHook(), semantic.NextWorkingReificationClauseHook())
+	setElementHook(semanticBQL, []semantic.Symbol{"REIFICATION_PREDICATE"}, semantic.ReificationPredicateClauseHook(), nil)
+	setElementHook(semanticBQL, []semantic.Symbol{"REIFICATION_OBJECT"}, semantic.ReificationObjectClauseHook(), nil)
 
 	return semanticBQL
 }

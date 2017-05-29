@@ -145,7 +145,8 @@ type ConstructClause struct {
 	OAnchorBinding string
 	OTemporal      bool
 
-	ReificationClauses []*ReificationClause
+	reificationClauses        []*ReificationClause
+	workingReificationClause  *ReificationClause
 }
 
 // ReificationClause represents a clause used to reify a triple.
@@ -381,6 +382,11 @@ func (c *GraphClause) IsEmpty() bool {
 // IsEmpty will return true if there are no set values in the construct clause.
 func (c *ConstructClause) IsEmpty() bool {
 	return reflect.DeepEqual(c, &ConstructClause{})
+}
+
+// IsEmpty will return true if there are no set values in the reification clause.
+func (c *ReificationClause) IsEmpty() bool {
+	return reflect.DeepEqual(c, &ReificationClause{})
 }
 
 // BindType sets the type of a statement.
@@ -634,7 +640,7 @@ func (s *Statement) InputBindings() []string {
 		if c.OBinding != "" {
 			res = append(res, c.OBinding)
 		}
-		for _, r := range c.ReificationClauses {
+		for _, r := range c.reificationClauses {
 			if r.PBinding != "" {
 				res = append(res, r.PBinding)
 			}
@@ -710,7 +716,7 @@ func (s *Statement) ResetWorkingConstructClause() {
 	s.workingConstructClause = &ConstructClause{}
 }
 
-// WorkingConstructClause returns the current working clause.
+// WorkingConstructClause returns the current working construct clause.
 func (s *Statement) WorkingConstructClause() *ConstructClause {
 	return s.workingConstructClause
 }
@@ -722,4 +728,43 @@ func (s *Statement) AddWorkingConstructClause() {
 		s.constructClauses = append(s.constructClauses, s.workingConstructClause)
 	}
 	s.ResetWorkingConstructClause()
+}
+
+// ReificationClauses returns the list of reification clauses within the working
+// construct clause.
+func (s *Statement) ReificationClauses() []*ReificationClause {
+	if s.workingConstructClause != nil {
+    return s.workingConstructClause.reificationClauses
+	}
+  return nil
+}
+
+// ResetWorkingReificationClause resets the current reification clause in the
+// working construct clause.
+func (s *Statement) ResetWorkingReificationClause() {
+	if s.workingConstructClause != nil {
+		s.workingConstructClause.workingReificationClause = &ReificationClause{}
+	}
+}
+
+// WorkingReificationClause returns the current reification clause in the
+// working construct clause.
+func (s *Statement) WorkingReificationClause() *ReificationClause {
+	if s.workingConstructClause != nil {
+		return s.workingConstructClause.workingReificationClause
+	}
+  return nil
+}
+
+// AddWorkingReificationClause adds the current reification clause to the set
+// of reification clauses belonging to the working construct clause.
+func (s *Statement) AddWorkingReificationClause() {
+  wcc := s.workingConstructClause
+	if wcc != nil {
+    wrc := s.workingConstructClause.workingReificationClause
+    if wrc != nil && !wrc.IsEmpty() {
+      wcc.reificationClauses = append(wcc.reificationClauses, wrc)
+    }
+    s.ResetWorkingReificationClause()
+  }
 }
