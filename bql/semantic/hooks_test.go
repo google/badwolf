@@ -2295,3 +2295,309 @@ func TestConstructObjectClauseHook(t *testing.T) {
 		},
 	})
 }
+
+func TestInitWorkingReificationClauseHook(t *testing.T) {
+	f := InitWorkingReificationClause()
+	st := &Statement{}
+	st.ResetWorkingConstructClause()
+	f(st, Symbol("FOO"))
+	if st.WorkingReificationClause() == nil {
+		t.Errorf("semantic.InitWorkingReificationClause should have returned a valid working reification clause for statement %v", st)
+	}
+}
+
+func TestNextWorkingReificationClauseHook(t *testing.T) {
+	f := NextWorkingReificationClause()
+	st := &Statement{}
+	st.ResetWorkingConstructClause()
+	st.ResetWorkingReificationClause()
+	wrs := st.WorkingReificationClause()
+	wrs.PBinding = "?a"
+	f(st, Symbol("FOO"))
+	wrs = st.WorkingReificationClause()
+	wrs.PBinding = "?b"
+	f(st, Symbol("FOO"))
+	if got, want := len(st.ReificationClauses()), 2; got != want {
+		t.Errorf("semantic.NextReificationWorkingClause should have returned two clauses for statement %v; got %d, want %d", st, got, want)
+	}
+}
+
+type testReificationClauseTable struct {
+	valid bool
+	id    string
+	ces   []ConsumedElement
+	want  *ReificationClause
+}
+
+func runTabulatedReificationClauseHookTest(t *testing.T, testName string, f ElementHook, table []testReificationClauseTable) {
+	st := &Statement{}
+	st.ResetWorkingConstructClause()
+	st.ResetWorkingReificationClause()
+	failed := false
+	for _, entry := range table {
+		for _, ce := range entry.ces {
+			if _, err := f(st, ce); err != nil {
+				if entry.valid {
+					t.Errorf("%s case %q should have never failed with error: %v", testName, entry.id, err)
+				} else {
+					failed = true
+				}
+			}
+		}
+		if entry.valid {
+			if got, want := st.WorkingReificationClause(), entry.want; !reflect.DeepEqual(got, want) {
+				t.Errorf("%s case %q should have populated all required fields; got %+v, want %+v", testName, entry.id, got, want)
+			}
+		} else {
+			if !failed {
+				t.Errorf("%s failed to reject invalid case %q", testName, entry.id)
+			}
+		}
+		st.ResetWorkingReificationClause()
+	}
+}
+
+func TestReificationPredicateClauseHook(t *testing.T) {
+	st := &Statement{}
+	f := reificationPredicateClause()
+	st.ResetWorkingReificationClause()
+	ip, err := predicate.Parse(`"foo"@[]`)
+	if err != nil {
+		t.Fatalf("predicate.Parse failed with error %v", err)
+	}
+	tp, err := predicate.Parse(`"foo"@[2015-07-19T13:12:04.669618843-07:00]`)
+	if err != nil {
+		t.Fatalf("predicate.Parse failed with error %v", err)
+	}
+	runTabulatedReificationClauseHookTest(t, "semantic.reificationPredicateClause", f, []testReificationClauseTable{
+		{
+			valid: true,
+			id:    "valid immutable predicate",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("REIFICATION_PREDICATE"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[]`,
+				}),
+			},
+			want: &ReificationClause{
+				P:         ip,
+				PTemporal: false,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid temporal predicate",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("REIFICATION_PREDICATE"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[2015-07-19T13:12:04.669618843-07:00]`,
+				}),
+			},
+			want: &ReificationClause{
+				P:         tp,
+				PTemporal: true,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid temporal predicate with bound time anchor",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("REIFICATION_PREDICATE"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[?bar]`,
+				}),
+			},
+			want: &ReificationClause{
+				PID:            "foo",
+				PAnchorBinding: "?bar",
+				PTemporal:      true,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid binding",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("REIFICATION_PREDICATE"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+			},
+			want: &ReificationClause{
+				PBinding: "?foo",
+			},
+		},
+		{
+			valid: false,
+			id:    "invalid temporal predicate and binding",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("REIFICATION_PREDICATE"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[?bar]`,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+			},
+			want: &ReificationClause{},
+		},
+	})
+}
+
+func TestReificationObjectClauseHook(t *testing.T) {
+	st := &Statement{}
+	f := reificationObjectClause()
+	st.ResetWorkingConstructClause()
+	st.ResetWorkingReificationClause()
+	n, err := node.Parse("/_<foo>")
+	if err != nil {
+		t.Fatalf("node.Parse failed with error %v", err)
+	}
+	no := triple.NewNodeObject(n)
+	bn, err := node.Parse("_:v1")
+	if err != nil {
+		t.Fatalf("node.Parse failed with error %v", err)
+	}
+	bno := triple.NewNodeObject(bn)
+	ip, err := predicate.Parse(`"foo"@[]`)
+	if err != nil {
+		t.Fatalf("predicate.Parse failed with error %v", err)
+	}
+	ipo := triple.NewPredicateObject(ip)
+	tp, err := predicate.Parse(`"foo"@[2015-07-19T13:12:04.669618843-07:00]`)
+	if err != nil {
+		t.Fatalf("predicate.Parse failed with error %v", err)
+	}
+	tpo := triple.NewPredicateObject(tp)
+	l, err := triple.ParseObject(`"1"^^type:int64`, literal.DefaultBuilder())
+	if err != nil {
+		t.Fatalf("literal.Parse should never fail to parse %s with error %v", `"1"^^type:int64`, err)
+	}
+	runTabulatedReificationClauseHookTest(t, "semantic.reificationObjectClause", f, []testReificationClauseTable{
+		{
+			valid: true,
+			id:    "valid node object",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("REIFICATION_OBJECT"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemNode,
+					Text: "/_<foo>",
+				}),
+			},
+			want: &ReificationClause{
+				O: no,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid blank node object",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("REIFICATION_OBJECT"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBlankNode,
+					Text: "_:v1",
+				}),
+			},
+			want: &ReificationClause{
+				O: bno,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid literal object",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("REIFICATION_OBJECT"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: `"1"^^type:int64`,
+				}),
+			},
+			want: &ReificationClause{
+				O: l,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid immutable predicate object",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("REIFICATION_OBJECT"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[]`,
+				}),
+			},
+			want: &ReificationClause{
+				O:         ipo,
+				OTemporal: false,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid temporal predicate object",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("REIFICATION_OBJECT"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[2015-07-19T13:12:04.669618843-07:00]`,
+				}),
+			},
+			want: &ReificationClause{
+				O:         tpo,
+				OTemporal: true,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid temporal predicate object with bound time anchor",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("REIFICATION_OBJECT"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[?bar]`,
+				}),
+			},
+			want: &ReificationClause{
+				OID:            "foo",
+				OAnchorBinding: "?bar",
+				OTemporal:      true,
+			},
+		},
+		{
+			valid: true,
+			id:    "valid binding",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("REIFICATION_OBJECT"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+			},
+			want: &ReificationClause{
+				OBinding: "?foo",
+			},
+		},
+		{
+			valid: false,
+			id:    "invalid temporal predicate and binding objects",
+			ces: []ConsumedElement{
+				NewConsumedSymbol("REIFICATION_OBJECT"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"foo"@[?bar]`,
+				}),
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+			},
+			want: &ReificationClause{},
+		},
+	})
+}
