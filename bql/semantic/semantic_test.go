@@ -190,6 +190,38 @@ func TestProjectionIsEmpty(t *testing.T) {
 	}
 }
 
+func TestConstructClauseManipulation(t *testing.T) {
+	st := &Statement{}
+	if st.WorkingConstructClause() != nil {
+		t.Fatalf("semantic.ConstructClause.WorkingConstructClause should not return a working construct clause without initialization in %v", st)
+	}
+	st.ResetWorkingConstructClause()
+	if st.WorkingConstructClause() == nil {
+		t.Fatalf("semantic.ConstructClause.WorkingConstructClause should return a working construct clause after initialization in %v", st)
+	}
+	st.AddWorkingConstructClause()
+	if got, want := len(st.ConstructClauses()), 0; got != want {
+		t.Fatalf("semantic.ConstructClause.ConstructClauses returns wrong number of clauses in %v; got %d, want %d", st, got, want)
+	}
+}
+
+func TestReificationClauseManipulation(t *testing.T) {
+	st := &Statement{}
+	st.ResetWorkingConstructClause()
+	wcc := st.WorkingConstructClause()
+	if wcc.WorkingReificationClause() != nil {
+		t.Fatalf("semantic.ConstructClause.WorkingReificationClause should not return a working reification clause without initialization in %v", st)
+	}
+	wcc.ResetWorkingReificationClause()
+	if wcc.WorkingReificationClause() == nil {
+		t.Fatalf("semantic.ConstructClause.WorkingReificationClause should return a working reification clause after initialization in %v", st)
+	}
+	wcc.AddWorkingReificationClause()
+	if got, want := len(wcc.ReificationClauses()), 0; got != want {
+		t.Fatalf("semantic.ConstructClause.WorkingReificationClauses returns wrong number of clauses in %v; got %d, want %d", st, got, want)
+	}
+}
+
 func TestInputOutputBindings(t *testing.T) {
 	s := &Statement{
 		projection: []*Projection{
@@ -211,7 +243,7 @@ func TestInputOutputBindings(t *testing.T) {
 				SBinding: "?foo4",
 				PBinding: "?foo5",
 				OBinding: "?foo6",
-				ReificationClauses: []*ReificationClause{
+				reificationClauses: []*ReificationClause{
 					{
 						PBinding: "?foo7",
 						OBinding: "?foo8",
@@ -223,10 +255,21 @@ func TestInputOutputBindings(t *testing.T) {
 
 				},
 			},
+			{
+				PAnchorBinding: "?foo11",
+				OAnchorBinding: "?foo12",
+				reificationClauses: []*ReificationClause{
+					{
+						PAnchorBinding: "?foo13",
+						OAnchorBinding: "?foo14",
+					},
+
+				},
+			},
 		},
 	}
 	want := []string{"?foo", "?bar", "?foo1", "?foo2", "?foo3", "?foo4", "?foo5", "?foo6",
-	        "?foo7","?foo8", "?foo9", "?foo10"}
+	        "?foo7","?foo8", "?foo9", "?foo10", "?foo11", "?foo12", "?foo13", "?foo14"}
 	if got := s.InputBindings(); !reflect.DeepEqual(got, want) {
 		t.Errorf("s.InputBindings return the wrong input binding; got %v, want %v", got, want)
 	}
