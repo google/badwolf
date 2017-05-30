@@ -255,10 +255,21 @@ func TestInputOutputBindings(t *testing.T) {
 
 				},
 			},
+			{
+				PAnchorBinding: "?foo11",
+				OAnchorBinding: "?foo12",
+				reificationClauses: []*ReificationClause{
+					{
+						PAnchorBinding: "?foo13",
+						OAnchorBinding: "?foo14",
+					},
+
+				},
+			},
 		},
 	}
 	want := []string{"?foo", "?bar", "?foo1", "?foo2", "?foo3", "?foo4", "?foo5", "?foo6",
-	        "?foo7","?foo8", "?foo9", "?foo10"}
+	        "?foo7","?foo8", "?foo9", "?foo10", "?foo11", "?foo12", "?foo13", "?foo14"}
 	if got := s.InputBindings(); !reflect.DeepEqual(got, want) {
 		t.Errorf("s.InputBindings return the wrong input binding; got %v, want %v", got, want)
 	}

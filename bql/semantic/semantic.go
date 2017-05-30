@@ -637,15 +637,27 @@ func (s *Statement) InputBindings() []string {
 		if c.PBinding != "" {
 			res = append(res, c.PBinding)
 		}
+		if c.PAnchorBinding != "" {
+			res = append(res, c.PAnchorBinding)
+		}
 		if c.OBinding != "" {
 			res = append(res, c.OBinding)
+		}
+		if c.OAnchorBinding != "" {
+			res = append(res, c.OAnchorBinding)
 		}
 		for _, r := range c.reificationClauses {
 			if r.PBinding != "" {
 				res = append(res, r.PBinding)
 			}
+			if r.PAnchorBinding != "" {
+				res = append(res, r.PAnchorBinding)
+			}
 			if r.OBinding != "" {
 				res = append(res, r.OBinding)
+			}
+			if r.OAnchorBinding != "" {
+				res = append(res, r.OAnchorBinding)
 			}
 		}
 	}

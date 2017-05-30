@@ -497,6 +497,19 @@ func TestSemanticStatementReificationClausesLengthCorrectness(t *testing.T) {
 			want_one:  2,
 			want_two:  2,
 		},
+		{
+			query: `construct {?s "predicate_1"@[] ?o1;
+			                      "predicate_2"@[] ?o2;
+			                      "predicate_3"@[?t] ?o3.
+				           ?s1 "predicate_1"@[] ?o1;
+				               "predicate_2"@[] ?o2;
+				               "predicate_3"@[?t] ?o3} into ?a from ?b where {?s "old_predicate_1"@[,] ?o1.
+											      ?s "old_predicate_2"@[,] ?o2.
+											      ?s1 "old_predicate_3"@[?t] ?o3};`,
+			want_one:  2,
+			want_two:  2,
+		},
+
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
