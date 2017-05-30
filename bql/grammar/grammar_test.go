@@ -412,3 +412,85 @@ func TestSemanticStatementGraphClausesLengthCorrectness(t *testing.T) {
 		}
 	}
 }
+
+func TestSemanticStatementConstructClausesLengthCorrectness(t *testing.T) {
+	table := []struct {
+		query string
+		want  int
+	}{
+		{
+			query: `construct {?s "predicate_1"@[] ?o1;
+			                      "predicate_2"@[] ?o2} into ?a from ?b where {?s "old_predicate_1"@[,] ?o1.
+					                                                   ?s "old_predicate_2"@[,] ?o2.
+											   ?s "old_predicate_3"@[,] ?o3};`,
+			want:  1,
+		},
+		{
+			query: `construct {?s "predicate_1"@[] ?o1;
+			                      "predicate_2"@[] ?o2.
+			                   ?s "predicate_3"@[] ?o3} into ?a from ?b where {?s "old_predicate_1"@[,] ?o1.
+					                                                   ?s "old_predicate_2"@[,] ?o2.
+											   ?s "old_predicate_3"@[,] ?o3};`,
+			want:  2,
+		},
+	}
+	p, err := NewParser(SemanticBQL())
+	if err != nil {
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+	}
+	for _, entry := range table {
+		st := &semantic.Statement{}
+		if err := p.Parse(NewLLk(entry.query, 1), st); err != nil {
+			t.Errorf("Parser.consume: failed to accept valid semantic entry %q", entry.query)
+		}
+		if got, want := len(st.ConstructClauses()), entry.want; got != want {
+			t.Errorf("Invalid number of construct clauses for query %q; got %d, want %d; %v", entry.query, got, want, st.ConstructClauses())
+		}
+	}
+}
+
+func TestSemanticStatementReificationClausesLengthCorrectness(t *testing.T) {
+	table := []struct {
+		query     string
+		want_one  int
+		want_two  int
+	}{
+		{
+			query: `construct {?s "predicate_1"@[] ?o1;
+			                      "predicate_2"@[] ?o2.
+				           ?s "predicate_3"@[] ?o3} into ?a from ?b where {?s "old_predicate_1"@[,] ?o1.
+					                                                   ?s "old_predicate_2"@[,] ?o2.
+											   ?s "old_predicate_3"@[,] ?o3};`,
+			want_one:  1,
+			want_two:  0,
+		},
+		{
+			query: `construct {?s "predicate_1"@[] ?o1;
+			                      "predicate_2"@[] ?o2;
+			                      "predicate_3"@[] ?o3.
+				           ?s1 "predicate_1"@[] ?o1;
+				               "predicate_2"@[] ?o2;
+				               "predicate_3"@[] ?o3} into ?a from ?b where {?s "old_predicate_1"@[,] ?o1.
+					                                                    ?s "old_predicate_2"@[,] ?o2.
+											    ?s1 "old_predicate_3"@[,] ?o3};`,
+			want_one:  2,
+			want_two:  2,
+		},
+	}
+	p, err := NewParser(SemanticBQL())
+	if err != nil {
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+	}
+	for _, entry := range table {
+		st := &semantic.Statement{}
+		if err := p.Parse(NewLLk(entry.query, 1), st); err != nil {
+			t.Errorf("Parser.consume: failed to accept valid semantic entry %q", entry.query)
+		}
+		if got, want := len(st.ConstructClauses()[0].ReificationClauses()), entry.want_one; got != want {
+			t.Errorf("Invalid number of reification clauses for query %q; got %d, want %d; %v", entry.query, got, want, st.ConstructClauses()[0].ReificationClauses())
+		}
+		if got, want := len(st.ConstructClauses()[1].ReificationClauses()), entry.want_two; got != want {
+			t.Errorf("Invalid number of reification clauses for query %q; got %d, want %d; %v", entry.query, got, want, st.ConstructClauses()[0].ReificationClauses())
+		}
+	}
+}

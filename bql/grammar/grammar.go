@@ -1007,7 +1007,7 @@ func SemanticBQL() *Grammar {
 	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_PREDICATE"}, semantic.ConstructPredicateClauseHook(), nil)
 	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_OBJECT"}, semantic.ConstructObjectClauseHook(), nil)
 
-	setClauseHook(semanticBQL, []semantic.Symbol{"REIFICATION_CLAUSE"}, semantic.InitWorkingReificationClauseHook(), semantic.NextWorkingReificationClauseHook())
+	setClauseHook(semanticBQL, []semantic.Symbol{"REIFICATION_CLAUSE"}, semantic.NextWorkingReificationClauseHook(), semantic.NextWorkingReificationClauseHook())
 	setElementHook(semanticBQL, []semantic.Symbol{"REIFICATION_PREDICATE"}, semantic.ReificationPredicateClauseHook(), nil)
 	setElementHook(semanticBQL, []semantic.Symbol{"REIFICATION_OBJECT"}, semantic.ReificationObjectClauseHook(), nil)
 

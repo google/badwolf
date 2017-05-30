@@ -730,41 +730,29 @@ func (s *Statement) AddWorkingConstructClause() {
 	s.ResetWorkingConstructClause()
 }
 
-// ReificationClauses returns the list of reification clauses within the working
+// ReificationClauses returns the list of reification clauses within the construct
+// clause.
+func (c *ConstructClause) ReificationClauses() []*ReificationClause {
+	return c.reificationClauses
+}
+
+// ResetWorkingReificationClause resets the working reification clause in the
 // construct clause.
-func (s *Statement) ReificationClauses() []*ReificationClause {
-	if s.workingConstructClause != nil {
-    return s.workingConstructClause.reificationClauses
-	}
-  return nil
+func (c *ConstructClause) ResetWorkingReificationClause() {
+	c.workingReificationClause = &ReificationClause{}
 }
 
-// ResetWorkingReificationClause resets the current reification clause in the
-// working construct clause.
-func (s *Statement) ResetWorkingReificationClause() {
-	if s.workingConstructClause != nil {
-		s.workingConstructClause.workingReificationClause = &ReificationClause{}
-	}
+// WorkingReificationClause returns the working reification clause in the
+// construct clause.
+func (c *ConstructClause) WorkingReificationClause() *ReificationClause {
+	return c.workingReificationClause
 }
 
-// WorkingReificationClause returns the current reification clause in the
-// working construct clause.
-func (s *Statement) WorkingReificationClause() *ReificationClause {
-	if s.workingConstructClause != nil {
-		return s.workingConstructClause.workingReificationClause
+// AddWorkingReificationClause adds the working  reification clause to the set
+// of reification clauses belonging to the construct clause.
+func (c *ConstructClause) AddWorkingReificationClause() {
+	if c.workingReificationClause != nil && !c.workingReificationClause.IsEmpty(){
+		c.reificationClauses = append(c.reificationClauses, c.workingReificationClause)
 	}
-  return nil
-}
-
-// AddWorkingReificationClause adds the current reification clause to the set
-// of reification clauses belonging to the working construct clause.
-func (s *Statement) AddWorkingReificationClause() {
-  wcc := s.workingConstructClause
-	if wcc != nil {
-    wrc := s.workingConstructClause.workingReificationClause
-    if wrc != nil && !wrc.IsEmpty() {
-      wcc.reificationClauses = append(wcc.reificationClauses, wrc)
-    }
-    s.ResetWorkingReificationClause()
-  }
+	c.ResetWorkingReificationClause()
 }

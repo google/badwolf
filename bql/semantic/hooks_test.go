@@ -2296,28 +2296,19 @@ func TestConstructObjectClauseHook(t *testing.T) {
 	})
 }
 
-func TestInitWorkingReificationClauseHook(t *testing.T) {
-	f := InitWorkingReificationClause()
-	st := &Statement{}
-	st.ResetWorkingConstructClause()
-	f(st, Symbol("FOO"))
-	if st.WorkingReificationClause() == nil {
-		t.Errorf("semantic.InitWorkingReificationClause should have returned a valid working reification clause for statement %v", st)
-	}
-}
-
 func TestNextWorkingReificationClauseHook(t *testing.T) {
 	f := NextWorkingReificationClause()
 	st := &Statement{}
 	st.ResetWorkingConstructClause()
-	st.ResetWorkingReificationClause()
-	wrs := st.WorkingReificationClause()
+	wcc := st.WorkingConstructClause()
+	wcc.ResetWorkingReificationClause()
+	wrs := wcc.WorkingReificationClause()
 	wrs.PBinding = "?a"
 	f(st, Symbol("FOO"))
-	wrs = st.WorkingReificationClause()
+	wrs = wcc.WorkingReificationClause()
 	wrs.PBinding = "?b"
 	f(st, Symbol("FOO"))
-	if got, want := len(st.ReificationClauses()), 2; got != want {
+	if got, want := len(wcc.ReificationClauses()), 2; got != want {
 		t.Errorf("semantic.NextReificationWorkingClause should have returned two clauses for statement %v; got %d, want %d", st, got, want)
 	}
 }
@@ -2332,7 +2323,8 @@ type testReificationClauseTable struct {
 func runTabulatedReificationClauseHookTest(t *testing.T, testName string, f ElementHook, table []testReificationClauseTable) {
 	st := &Statement{}
 	st.ResetWorkingConstructClause()
-	st.ResetWorkingReificationClause()
+	wcc := st.WorkingConstructClause()
+	wcc.ResetWorkingReificationClause()
 	failed := false
 	for _, entry := range table {
 		for _, ce := range entry.ces {
@@ -2345,7 +2337,7 @@ func runTabulatedReificationClauseHookTest(t *testing.T, testName string, f Elem
 			}
 		}
 		if entry.valid {
-			if got, want := st.WorkingReificationClause(), entry.want; !reflect.DeepEqual(got, want) {
+			if got, want := wcc.WorkingReificationClause(), entry.want; !reflect.DeepEqual(got, want) {
 				t.Errorf("%s case %q should have populated all required fields; got %+v, want %+v", testName, entry.id, got, want)
 			}
 		} else {
@@ -2353,14 +2345,16 @@ func runTabulatedReificationClauseHookTest(t *testing.T, testName string, f Elem
 				t.Errorf("%s failed to reject invalid case %q", testName, entry.id)
 			}
 		}
-		st.ResetWorkingReificationClause()
+		wcc.ResetWorkingReificationClause()
 	}
 }
 
 func TestReificationPredicateClauseHook(t *testing.T) {
 	st := &Statement{}
 	f := reificationPredicateClause()
-	st.ResetWorkingReificationClause()
+	st.ResetWorkingConstructClause()
+	wcc := st.WorkingConstructClause()
+	wcc.ResetWorkingReificationClause()
 	ip, err := predicate.Parse(`"foo"@[]`)
 	if err != nil {
 		t.Fatalf("predicate.Parse failed with error %v", err)
@@ -2454,7 +2448,8 @@ func TestReificationObjectClauseHook(t *testing.T) {
 	st := &Statement{}
 	f := reificationObjectClause()
 	st.ResetWorkingConstructClause()
-	st.ResetWorkingReificationClause()
+	wcc := st.WorkingConstructClause()
+	wcc.ResetWorkingReificationClause()
 	n, err := node.Parse("/_<foo>")
 	if err != nil {
 		t.Fatalf("node.Parse failed with error %v", err)

@@ -168,12 +168,6 @@ func ConstructObjectClauseHook() ElementHook {
 	return constructObjectClause()
 }
 
-// InitWorkingReificationClauseHook returns the singleton for initializing a new reification clause
-// within the working construct statement.
-func InitWorkingReificationClauseHook() ClauseHook {
-	return InitWorkingReificationClause()
-}
-
 // NextWorkingReificationClauseHook returns the singleton for adding the current reification clause
 // and initializing a new reification clause within the working construct statement.
 func NextWorkingReificationClauseHook() ClauseHook {
@@ -1047,24 +1041,12 @@ func constructObjectClause() ElementHook {
 	return f
 }
 
-// InitWorkingReificationClause returns a clause hook to initialize a new reification
-// clause within the working construct clause.
-func InitWorkingReificationClause() ClauseHook {
-	var f ClauseHook
-	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
-		s.ResetWorkingReificationClause()
-		return f, nil
-	}
-	return f
-}
-
-
 // NextWorkingReificationClause returns a clause hook to close the current reifcation
 // clause and start a new reification clause within the working construct clause.
 func NextWorkingReificationClause() ClauseHook {
 	var f ClauseHook
 	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
-		s.AddWorkingReificationClause()
+		s.WorkingConstructClause().AddWorkingReificationClause()
 		return f, nil
 	}
 	return f
@@ -1077,7 +1059,7 @@ func reificationPredicateClause() ElementHook {
 			return f, nil
 		}
 		tkn := ce.Token()
-		c := st.WorkingReificationClause()
+		c := st.WorkingConstructClause().WorkingReificationClause()
 		if c.P != nil {
 			return nil, fmt.Errorf("invalid predicate %v in construct clause, predicate already set to %v", tkn.Type, c.P)
 		}
@@ -1109,7 +1091,7 @@ func reificationObjectClause() ElementHook {
 			return f, nil
 		}
 		tkn := ce.Token()
-		c := st.WorkingReificationClause()
+		c := st.WorkingConstructClause().WorkingReificationClause()
 		if c.O != nil {
 			return nil, fmt.Errorf("invalid object %v in construct clause, object already set to %v", tkn.Text, c.O)
 		}
