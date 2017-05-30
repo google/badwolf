@@ -137,11 +137,11 @@ func TestAcceptByParse(t *testing.T) {
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+		t.Errorf("grammar.NewParser: Should have produced a valid BQL parser, %v", err)
 	}
 	for _, input := range table {
 		if err := p.Parse(NewLLk(input, 1), &semantic.Statement{}); err != nil {
-			t.Errorf("Parser.consume: failed to accept input %q with error %v", input, err)
+			t.Errorf("Parser.consume: Failed to accept input %q with error %v", input, err)
 		}
 	}
 }
@@ -246,11 +246,11 @@ func TestRejectByParse(t *testing.T) {
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+		t.Errorf("grammar.NewParser: Should have produced a valid BQL parser, %v", err)
 	}
 	for _, input := range table {
 		if err := p.Parse(NewLLk(input, 1), &semantic.Statement{}); err == nil {
-			t.Errorf("Parser.consume: failed to reject input %q with parsing error", input)
+			t.Errorf("Parser.consume: Failed to reject input %q with parsing error", input)
 		}
 	}
 }
@@ -288,18 +288,18 @@ func TestAcceptOpsByParseAndSemantic(t *testing.T) {
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+		t.Errorf("grammar.NewParser: Should have produced a valid BQL parser, %v", err)
 	}
 	for _, entry := range table {
 		st := &semantic.Statement{}
 		if err := p.Parse(NewLLk(entry.query, 1), st); err != nil {
-			t.Errorf("Parser.consume: failed to accept entry %q with error %v", entry, err)
+			t.Errorf("Parser.consume: Failed to accept entry %q with error %v", entry, err)
 		}
 		if got, want := len(st.GraphNames()), entry.graphs; got != want {
-			t.Errorf("Parser.consume: failed to collect right number of graphs for case %v; got %d, want %d", entry, got, want)
+			t.Errorf("Parser.consume: Failed to collect right number of graphs for case %v; got %d, want %d", entry, got, want)
 		}
 		if got, want := len(st.Data()), entry.triples; got != want {
-			t.Errorf("Parser.consume: failed to collect right number of triples for case %v; got %d, want %d", entry, got, want)
+			t.Errorf("Parser.consume: Failed to collect right number of triples for case %v; got %d, want %d", entry, got, want)
 		}
 	}
 }
@@ -339,11 +339,11 @@ func TestAcceptQueryBySemanticParse(t *testing.T) {
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+		t.Errorf("grammar.NewParser: Should have produced a valid BQL parser, %v", err)
 	}
 	for _, input := range table {
 		if err := p.Parse(NewLLk(input, 1), &semantic.Statement{}); err != nil {
-			t.Errorf("Parser.consume: failed to accept input %q with error %v", input, err)
+			t.Errorf("Parser.consume: Failed to accept input %q with error %v", input, err)
 		}
 	}
 }
@@ -370,12 +370,12 @@ func TestRejectByParseAndSemantic(t *testing.T) {
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+		t.Errorf("grammar.NewParser: Should have produced a valid BQL parser, %v", err)
 	}
 	for _, entry := range table {
 		st := &semantic.Statement{}
 		if err := p.Parse(NewLLk(entry, 1), st); err == nil {
-			t.Errorf("Parser.consume: failed to reject invalid semantic entry %q", entry)
+			t.Errorf("Parser.consume: Failed to reject invalid semantic entry %q", entry)
 		}
 	}
 }
@@ -400,12 +400,12 @@ func TestSemanticStatementGraphClausesLengthCorrectness(t *testing.T) {
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+		t.Errorf("grammar.NewParser: Should have produced a valid BQL parser, %v", err)
 	}
 	for _, entry := range table {
 		st := &semantic.Statement{}
 		if err := p.Parse(NewLLk(entry.query, 1), st); err != nil {
-			t.Errorf("Parser.consume: failed to accept valid semantic entry %q", entry.query)
+			t.Errorf("Parser.consume: Failed to accept valid semantic entry %q", entry.query)
 		}
 		if got, want := len(st.GraphPatternClauses()), entry.want; got != want {
 			t.Errorf("Invalid number of graph pattern clauses for query %q; got %d, want %d; %v", entry.query, got, want, st.GraphPatternClauses())
@@ -436,12 +436,12 @@ func TestSemanticStatementConstructClausesLengthCorrectness(t *testing.T) {
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+		t.Errorf("grammar.NewParser: Should have produced a valid BQL parser, %v", err)
 	}
 	for _, entry := range table {
 		st := &semantic.Statement{}
 		if err := p.Parse(NewLLk(entry.query, 1), st); err != nil {
-			t.Errorf("Parser.consume: failed to accept valid semantic entry %q", entry.query)
+			t.Errorf("Parser.consume: Failed to accept valid semantic entry %q", entry.query)
 		}
 		if got, want := len(st.ConstructClauses()), entry.want; got != want {
 			t.Errorf("Invalid number of construct clauses for query %q; got %d, want %d; %v", entry.query, got, want, st.ConstructClauses())
@@ -476,15 +476,36 @@ func TestSemanticStatementReificationClausesLengthCorrectness(t *testing.T) {
 			want_one:  2,
 			want_two:  2,
 		},
+		{
+			query: `construct {?s "predicate_1"@[2015-07-19T13:12:04.669618843-07:00] ?o1;
+			                      "predicate_2"@[2015-07-19T13:12:04.669618843-07:00] ?o2.
+				           ?s "predicate_3"@[2015-07-19T13:12:04.669618843-07:00] ?o3} into ?a from ?b where {?s "old_predicate_1"@[,] ?o1.
+					                                                                                      ?s "old_predicate_2"@[,] ?o2.
+											                                      ?s "old_predicate_3"@[,] ?o3};`,
+			want_one:  1,
+			want_two:  0,
+		},
+		{
+			query: `construct {?s "predicate_1"@[2015-07-19T13:12:04.669618843-07:00] ?o1;
+			                      "predicate_2"@[2015-07-19T13:12:04.669618843-07:00] ?o2;
+			                      "predicate_3"@[2015-07-19T13:12:04.669618843-07:00] ?o3.
+				           ?s1 "predicate_1"@[2015-07-19T13:12:04.669618843-07:00] ?o1;
+				               "predicate_2"@[2015-07-19T13:12:04.669618843-07:00] ?o2;
+				               "predicate_3"@[2015-07-19T13:12:04.669618843-07:00] ?o3} into ?a from ?b where {?s "old_predicate_1"@[,] ?o1.
+															       ?s "old_predicate_2"@[,] ?o2.
+															       ?s1 "old_predicate_3"@[,] ?o3};`,
+			want_one:  2,
+			want_two:  2,
+		},
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+		t.Errorf("grammar.NewParser: Should have produced a valid BQL parser, %v", err)
 	}
 	for _, entry := range table {
 		st := &semantic.Statement{}
 		if err := p.Parse(NewLLk(entry.query, 1), st); err != nil {
-			t.Errorf("Parser.consume: failed to accept valid semantic entry %q", entry.query)
+			t.Errorf("Parser.consume: Failed to accept valid semantic entry %q", entry.query)
 		}
 		if got, want := len(st.ConstructClauses()[0].ReificationClauses()), entry.want_one; got != want {
 			t.Errorf("Invalid number of reification clauses for query %q; got %d, want %d; %v", entry.query, got, want, st.ConstructClauses()[0].ReificationClauses())
