@@ -997,8 +997,7 @@ func SemanticBQL() *Grammar {
 	setClauseHook(semanticBQL, []semantic.Symbol{"START"}, nil, semantic.GroupByBindingsChecker())
 
 	// CONSTRUCT clause semantic hooks.
-	setClauseHook(semanticBQL, []semantic.Symbol{"CONSTRUCT"}, nil, semantic.TypeBindingClauseHook(semantic.Construct))
-	setClauseHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_FACTS"}, semantic.InitWorkingConstructClauseHook(), nil)
+	setClauseHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_FACTS"}, semantic.InitWorkingConstructClauseHook(), semantic.TypeBindingClauseHook(semantic.Construct))
 
 	constructTriplesSymbols := []semantic.Symbol{"CONSTRUCT_TRIPLES", "MORE_CONSTRUCT_TRIPLES"}
 	setClauseHook(semanticBQL, constructTriplesSymbols, semantic.NextWorkingConstructClauseHook(), semantic.NextWorkingConstructClauseHook())
