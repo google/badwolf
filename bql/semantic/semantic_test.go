@@ -41,6 +41,24 @@ func TestStatementAddGraph(t *testing.T) {
 	}
 }
 
+func TestStatementAddInputGraph(t *testing.T) {
+	st := &Statement{}
+	st.BindType(Query)
+	st.AddInputGraph("?foo")
+	if got, want := st.InputGraphNames(), []string{"?foo"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("semantic.AddInputGraph returned the wrong graphs available; got %v, want %v", got, want)
+	}
+}
+
+func TestStatementAddOutputGraph(t *testing.T) {
+	st := &Statement{}
+	st.BindType(Query)
+	st.AddOutputGraph("?foo")
+	if got, want := st.OutputGraphNames(), []string{"?foo"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("semantic.AddOutputGraph returned the wrong graphs available; got %v, want %v", got, want)
+	}
+}
+
 func TestStatementAddData(t *testing.T) {
 	tr, err := triple.Parse(`/_<foo> "foo"@[] /_<bar>`, literal.DefaultBuilder())
 	if err != nil {
