@@ -501,14 +501,14 @@ func TestPlannerQuery(t *testing.T) {
 		}
 		tbl, err := plnr.Execute(ctx)
 		if err != nil {
-			t.Errorf("planner.Excecute failed for query %q with error %v", entry.q, err)
+			t.Errorf("planner.Execute failed for query %q with error %v", entry.q, err)
 			continue
 		}
 		if got, want := len(tbl.Bindings()), entry.nbs; got != want {
 			t.Errorf("tbl.Bindings returned the wrong number of bindings for %q; got %d, want %d", entry.q, got, want)
 		}
 		if got, want := len(tbl.Rows()), entry.nrws; got != want {
-			t.Errorf("planner.Excecute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", entry.q, got, want, tbl)
+			t.Errorf("planner.Execute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", entry.q, got, want, tbl)
 		}
 	}
 }
@@ -552,13 +552,13 @@ func TestTreeTraversalToRoot(t *testing.T) {
 	}
 	tbl, err := plnr.Execute(ctx)
 	if err != nil {
-		t.Errorf("planner.Excecute failed for query %q with error %v", traversalQuery, err)
+		t.Errorf("planner.Execute failed for query %q with error %v", traversalQuery, err)
 	}
 	if got, want := len(tbl.Bindings()), 1; got != want {
 		t.Errorf("tbl.Bindings returned the wrong number of bindings for %q; got %d, want %d", traversalQuery, got, want)
 	}
 	if got, want := len(tbl.Rows()), 1; got != want {
-		t.Errorf("planner.Excecute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", traversalQuery, got, want, tbl)
+		t.Errorf("planner.Execute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", traversalQuery, got, want, tbl)
 	}
 }
 
@@ -599,13 +599,13 @@ func TestChaining(t *testing.T) {
 	}
 	tbl, err := plnr.Execute(ctx)
 	if err != nil {
-		t.Errorf("planner.Excecute failed for query %q with error %v", traversalQuery, err)
+		t.Errorf("planner.Execute failed for query %q with error %v", traversalQuery, err)
 	}
 	if got, want := len(tbl.Bindings()), 1; got != want {
 		t.Errorf("tbl.Bindings returned the wrong number of bindings for %q; got %d, want %d", traversalQuery, got, want)
 	}
 	if got, want := len(tbl.Rows()), 1; got != want {
-		t.Errorf("planner.Excecute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", traversalQuery, got, want, tbl)
+		t.Errorf("planner.Execute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", traversalQuery, got, want, tbl)
 	}
 }
 
@@ -657,13 +657,13 @@ func TestReificationResolutionIssue70(t *testing.T) {
 	}
 	tbl, err := plnr.Execute(ctx)
 	if err != nil {
-		t.Fatalf("planner.Excecute failed for query %q with error %v", query, err)
+		t.Fatalf("planner.Execute failed for query %q with error %v", query, err)
 	}
 	if got, want := len(tbl.Bindings()), 2; got != want {
 		t.Errorf("tbl.Bindings returned the wrong number of bindings for %q; got %d, want %d", query, got, want)
 	}
 	if got, want := len(tbl.Rows()), 1; got != want {
-		t.Errorf("planner.Excecute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", query, got, want, tbl)
+		t.Errorf("planner.Execute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", query, got, want, tbl)
 	}
 }
 
@@ -688,7 +688,7 @@ func benchmarkQuery(query string, b *testing.B) {
 		}
 		_, err = plnr.Execute(ctx)
 		if err != nil {
-			b.Errorf("planner.Excecute failed for query %q with error %v", query, err)
+			b.Errorf("planner.Execute failed for query %q with error %v", query, err)
 		}
 	}
 }

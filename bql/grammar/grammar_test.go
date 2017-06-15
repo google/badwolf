@@ -15,6 +15,7 @@
 package grammar
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/google/badwolf/bql/semantic"
@@ -255,36 +256,54 @@ func TestRejectByParse(t *testing.T) {
 	}
 }
 
-func TestAcceptOpsByParseAndSemantic(t *testing.T) {
+func TestAcceptGraphOpsByParseAndSemantic(t *testing.T) {
+	var empty []string
 	table := []struct {
-		query   string
-		graphs  int
-		triples int
+		query        string
+		graphs       []string
+		inputGraphs  []string
+		outputGraphs []string
+		triples      int
 	}{
-		// Insert data.
-		{`insert data into ?a {/_<foo> "bar"@[1975-01-01T00:01:01.999999999Z] /_<foo>};`, 1, 1},
-		{`insert data into ?a {/_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z]};`, 1, 1},
-		{`insert data into ?a {/_<foo> "bar"@[] "yeah"^^type:text};`, 1, 1},
-		// Insert into multiple graphs.
-		{`insert data into ?a,?b,?c {/_<foo> "bar"@[] /_<foo>};`, 3, 1},
+		// Create graphs. All graphs are regular graphs.
+		{`create graph ?foo1, ?bar1;`, []string{"?foo1", "?bar1"}, empty, empty, 0},
+		// Drop graphs. All graphs are regular graphs.
+		{`drop graph ?foo2, ?bar2;`, []string{"?foo2", "?bar2"}, empty, empty, 0},
+
+		// Insert data. All graphs are output graphs.
+		{`insert data into ?a {/_<foo> "bar"@[1975-01-01T00:01:01.999999999Z] /_<foo>};`, empty, empty, []string{"?a"}, 1},
+		{`insert data into ?a {/_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z]};`, empty, empty, []string{"?a"}, 1},
+		{`insert data into ?a {/_<foo> "bar"@[] "yeah"^^type:text};`, empty, empty, []string{"?a"}, 1},
+		// Insert into multiple output graphs.
+		{`insert data into ?a,?b,?c {/_<foo> "bar"@[] /_<foo>};`, empty, empty, []string{"?a", "?b", "?c"}, 1},
 		// Insert multiple data.
 		{`insert data into ?a {/_<foo> "bar"@[] /_<foo> .
 				                      /_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z] .
-				                      /_<foo> "bar"@[] "yeah"^^type:text};`, 1, 3},
-		// Delete data.
-		{`delete data from ?a {/_<foo> "bar"@[] /_<foo>};`, 1, 1},
-		{`delete data from ?a {/_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z]};`, 1, 1},
-		{`delete data from ?a {/_<foo> "bar"@[] "yeah"^^type:text};`, 1, 1},
-		// Delete from multiple graphs.
-		{`delete data from ?a,?b,?c {/_<foo> "bar"@[1975-01-01T00:01:01.999999999Z] /_<foo>};`, 3, 1},
+				                      /_<foo> "bar"@[] "yeah"^^type:text};`, empty, empty, []string{"?a"}, 3},
+
+		// Delete data. All graphs are input graphs.
+		{`delete data from ?a {/_<foo> "bar"@[] /_<foo>};`, empty, []string{"?a"}, empty, 1},
+		{`delete data from ?a {/_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z]};`, empty, []string{"?a"}, empty, 1},
+		{`delete data from ?a {/_<foo> "bar"@[] "yeah"^^type:text};`, empty, []string{"?a"}, empty, 1},
+		// Delete from multiple input graphs.
+		{`delete data from ?a,?b,?c {/_<foo> "bar"@[1975-01-01T00:01:01.999999999Z] /_<foo>};`, empty, []string{"?a", "?b", "?c"}, empty, 1},
 		// Delete multiple data.
 		{`delete data from ?a {/_<foo> "bar"@[] /_<foo> .
 				                      /_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z] .
-				                      /_<foo> "bar"@[] "yeah"^^type:text};`, 1, 3},
-		// Create graphs.
-		{`create graph ?foo;`, 1, 0},
-		// Drop graphs.
-		{`drop graph ?foo, ?bar;`, 2, 0},
+				                      /_<foo> "bar"@[] "yeah"^^type:text};`, empty, []string{"?a"}, empty, 3},
+
+		// Construct data. Graphs can be input or output graphs.
+		{`construct {?s "predicate_1"@[] ?o1;
+		                "predicate_2"@[] ?o2} into ?a from ?b where {?s "old_predicate_1"@[,] ?o1.
+					                                     ?s "old_predicate_2"@[,] ?o2.
+									     ?s "old_predicate_3"@[,] ?o3};`,
+		 empty, []string{"?b"}, []string{"?a"}, 0},
+		// construct data into multiple output graphs from multple input graphs.
+		{`construct {?s "predicate_1"@[] ?o1;
+		                "predicate_2"@[] ?o2} into ?a, ?b from ?c, ?d where {?s "old_predicate_1"@[,] ?o1.
+										     ?s "old_predicate_2"@[,] ?o2.
+									             ?s "old_predicate_3"@[,] ?o3};`,
+		 empty, []string{"?c", "?d"}, []string{"?a", "?b"}, 0},
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
@@ -295,8 +314,14 @@ func TestAcceptOpsByParseAndSemantic(t *testing.T) {
 		if err := p.Parse(NewLLk(entry.query, 1), st); err != nil {
 			t.Errorf("Parser.consume: Failed to accept entry %q with error %v", entry, err)
 		}
-		if got, want := len(st.GraphNames()), entry.graphs; got != want {
-			t.Errorf("Parser.consume: Failed to collect right number of graphs for case %v; got %d, want %d", entry, got, want)
+		if got, want := st.GraphNames(), entry.graphs; !reflect.DeepEqual(got, want) {
+			t.Errorf("Parser.consume: Failed to collect the right graphs for case %v; got %d, want %d", entry, got, want)
+		}
+		if got, want := st.InputGraphNames(), entry.inputGraphs; !reflect.DeepEqual(got, want) {
+			t.Errorf("Parser.consume: Failed to collect the right input graphs for case %v; got %d, want %d", entry, got, want)
+		}
+		if got, want := st.OutputGraphNames(), entry.outputGraphs; !reflect.DeepEqual(got, want) {
+			t.Errorf("Parser.consume: Failed to collect the right output graphs for case %v; got %d, want %d", entry, got, want)
 		}
 		if got, want := len(st.Data()), entry.triples; got != want {
 			t.Errorf("Parser.consume: Failed to collect right number of triples for case %v; got %d, want %d", entry, got, want)

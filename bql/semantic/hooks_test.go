@@ -91,7 +91,7 @@ func TestDataAccumulatorHook(t *testing.T) {
 	}
 }
 
-func TestSemanticAcceptInsertDelete(t *testing.T) {
+func TestGraphAccumulatorElementHooks(t *testing.T) {
 	st := &Statement{}
 	ces := []ConsumedElement{
 		NewConsumedSymbol("FOO"),
@@ -111,6 +111,7 @@ func TestSemanticAcceptInsertDelete(t *testing.T) {
 	}
 	var (
 		hook ElementHook
+		data []string
 		err  error
 	)
 	hook = graphAccumulator()
@@ -120,13 +121,47 @@ func TestSemanticAcceptInsertDelete(t *testing.T) {
 			t.Errorf("semantic.GraphAccumulator hook should have never failed for %v with error %v", ce, err)
 		}
 	}
-	data := st.GraphNames()
+	data = st.GraphNames()
 	if len(data) != 2 {
 		t.Errorf("semantic.GraphAccumulator hook should have produced 2 graph bindings; instead produced %v", st.Graphs())
 	}
 	for _, g := range data {
 		if g != "?foo" && g != "?bar" {
 			t.Errorf("semantic.GraphAccumulator hook failed to provied either ?foo or ?bar; got %v instead", g)
+		}
+	}
+
+	hook = inputGraphAccumulator()
+	for _, ce := range ces {
+		hook, err = hook(st, ce)
+		if err != nil {
+			t.Errorf("semantic.InputGraphAccumulator hook should have never failed for %v with error %v", ce, err)
+		}
+	}
+	data = st.InputGraphNames()
+	if len(data) != 2 {
+		t.Errorf("semantic.InputGraphAccumulator hook should have produced 2 graph bindings; instead produced %v", st.Graphs())
+	}
+	for _, g := range data {
+		if g != "?foo" && g != "?bar" {
+			t.Errorf("semantic.InputGraphAccumulator hook failed to provied either ?foo or ?bar; got %v instead", g)
+		}
+	}
+
+	hook = outputGraphAccumulator()
+	for _, ce := range ces {
+		hook, err = hook(st, ce)
+		if err != nil {
+			t.Errorf("semantic.OutputGraphAccumulator hook should have never failed for %v with error %v", ce, err)
+		}
+	}
+	data = st.OutputGraphNames()
+	if len(data) != 2 {
+		t.Errorf("semantic.OutputGraphAccumulator hook should have produced 2 graph bindings; instead produced %v", st.Graphs())
+	}
+	for _, g := range data {
+		if g != "?foo" && g != "?bar" {
+			t.Errorf("semantic.OutputGraphAccumulator hook failed to provied either ?foo or ?bar; got %v instead", g)
 		}
 	}
 }

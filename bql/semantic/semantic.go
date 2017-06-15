@@ -76,6 +76,10 @@ type Statement struct {
 	sType                     StatementType
 	graphNames                []string
 	graphs                    []storage.Graph
+	inputGraphNames           []string
+	inputGraphs               []storage.Graph
+	outputGraphNames          []string
+	outputGraphs              []storage.Graph
 	data                      []*triple.Triple
 	pattern                   []*GraphClause
 	workingClause             *GraphClause
@@ -409,7 +413,37 @@ func (s *Statement) Graphs() []storage.Graph {
 	return s.graphs
 }
 
-// Init initialize the graphs givne the graph names.
+// InputGraphNames returns the list of input graphs listed on the statement.
+func (s *Statement) InputGraphNames() []string {
+	return s.inputGraphNames
+}
+
+// AddInputGraph adds an input graph to a given statement.
+func (s *Statement) AddInputGraph(g string) {
+	s.inputGraphNames = append(s.inputGraphNames, g)
+}
+
+// InputGraphs returns the list of input graphs listed on the statement.
+func (s *Statement) InputGraphs() []storage.Graph {
+	return s.inputGraphs
+}
+
+// OutputGraphNames returns the list of output graphs listed on the statement.
+func (s *Statement) OutputGraphNames() []string {
+	return s.outputGraphNames
+}
+
+// AddOutputGraph adds an output graph to a given statement.
+func (s *Statement) AddOutputGraph(g string) {
+	s.outputGraphNames = append(s.outputGraphNames, g)
+}
+
+// OutputGraphs returns the list of output graphs listed on the statement.
+func (s *Statement) OutputGraphs() []storage.Graph {
+	return s.outputGraphs
+}
+
+// Init initializes all graphs given the graph names.
 func (s *Statement) Init(ctx context.Context, st storage.Store) error {
 	for _, gn := range s.graphNames {
 		g, err := st.Graph(ctx, gn)
@@ -417,6 +451,20 @@ func (s *Statement) Init(ctx context.Context, st storage.Store) error {
 			return err
 		}
 		s.graphs = append(s.graphs, g)
+	}
+	for _, ign := range s.inputGraphNames {
+		ig, err := st.Graph(ctx, ign)
+		if err != nil {
+			return err
+		}
+		s.inputGraphs = append(s.inputGraphs, ig)
+	}
+	for _, ogn := range s.outputGraphNames {
+		og, err := st.Graph(ctx, ogn)
+		if err != nil {
+			return err
+		}
+		s.outputGraphs = append(s.outputGraphs, og)
 	}
 	return nil
 }

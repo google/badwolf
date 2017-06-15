@@ -34,7 +34,7 @@ func BQL() *Grammar {
 					NewTokenType(lexer.ItemQuery),
 					NewSymbol("VARS"),
 					NewTokenType(lexer.ItemFrom),
-					NewSymbol("GRAPHS"),
+					NewSymbol("INPUT_GRAPHS"),
 					NewSymbol("WHERE"),
 					NewSymbol("GROUP_BY"),
 					NewSymbol("ORDER_BY"),
@@ -49,7 +49,7 @@ func BQL() *Grammar {
 					NewTokenType(lexer.ItemInsert),
 					NewTokenType(lexer.ItemData),
 					NewTokenType(lexer.ItemInto),
-					NewSymbol("GRAPHS"),
+					NewSymbol("OUTPUT_GRAPHS"),
 					NewTokenType(lexer.ItemLBracket),
 					NewTokenType(lexer.ItemNode),
 					NewTokenType(lexer.ItemPredicate),
@@ -64,7 +64,7 @@ func BQL() *Grammar {
 					NewTokenType(lexer.ItemDelete),
 					NewTokenType(lexer.ItemData),
 					NewTokenType(lexer.ItemFrom),
-					NewSymbol("GRAPHS"),
+					NewSymbol("INPUT_GRAPHS"),
 					NewTokenType(lexer.ItemLBracket),
 					NewTokenType(lexer.ItemNode),
 					NewTokenType(lexer.ItemPredicate),
@@ -93,9 +93,9 @@ func BQL() *Grammar {
 					NewTokenType(lexer.ItemConstruct),
 					NewSymbol("CONSTRUCT_FACTS"),
 					NewTokenType(lexer.ItemInto),
-					NewSymbol("GRAPHS"),
+					NewSymbol("OUTPUT_GRAPHS"),
 					NewTokenType(lexer.ItemFrom),
-					NewSymbol("GRAPHS"),
+					NewSymbol("INPUT_GRAPHS"),
 					NewSymbol("WHERE"),
 					NewSymbol("HAVING"),
 					NewTokenType(lexer.ItemSemicolon),
@@ -190,6 +190,42 @@ func BQL() *Grammar {
 					NewTokenType(lexer.ItemComma),
 					NewTokenType(lexer.ItemBinding),
 					NewSymbol("MORE_GRAPHS"),
+				},
+			},
+			{},
+		},
+		"INPUT_GRAPHS": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemBinding),
+					NewSymbol("MORE_INPUT_GRAPHS"),
+				},
+			},
+		},
+		"MORE_INPUT_GRAPHS": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemComma),
+					NewTokenType(lexer.ItemBinding),
+					NewSymbol("MORE_INPUT_GRAPHS"),
+				},
+			},
+			{},
+		},
+		"OUTPUT_GRAPHS": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemBinding),
+					NewSymbol("MORE_OUTPUT_GRAPHS"),
+				},
+			},
+		},
+		"MORE_OUTPUT_GRAPHS": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemComma),
+					NewTokenType(lexer.ItemBinding),
+					NewSymbol("MORE_OUTPUT_GRAPHS"),
 				},
 			},
 			{},
@@ -918,6 +954,14 @@ func SemanticBQL() *Grammar {
 	// Add graph binding collection to GRAPHS and MORE_GRAPHS clauses.
 	graphSymbols := []semantic.Symbol{"GRAPHS", "MORE_GRAPHS"}
 	setElementHook(semanticBQL, graphSymbols, semantic.GraphAccumulatorHook(), nil)
+
+	// Add graph binding collection to INPUT_GRAPHS and MORE_INPUT_GRAPHS clauses.
+	inputGraphSymbols := []semantic.Symbol{"INPUT_GRAPHS", "MORE_INPUT_GRAPHS"}
+	setElementHook(semanticBQL, inputGraphSymbols, semantic.InputGraphAccumulatorHook(), nil)
+
+	// Add graph binding collection to OUTPUT_GRAPHS and MORE_OUTPUT_GRAPHS clauses.
+	outputGraphSymbols := []semantic.Symbol{"OUTPUT_GRAPHS", "MORE_OUTPUT_GRAPHS"}
+	setElementHook(semanticBQL, outputGraphSymbols, semantic.OutputGraphAccumulatorHook(), nil)
 
 	// Insert and Delete semantic hooks addition.
 	insertSymbols := []semantic.Symbol{

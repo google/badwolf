@@ -152,7 +152,7 @@ func update(ctx context.Context, stm *semantic.Statement, store storage.Store, f
 		errs = append(errs, err.Error())
 	}
 
-	for _, graphBinding := range stm.GraphNames() {
+	for _, graphBinding := range stm.OutputGraphNames() {
 		wg.Add(1)
 		go func(graph string) {
 			defer wg.Done()
@@ -191,7 +191,7 @@ func (p *insertPlan) Execute(ctx context.Context) (*table.Table, error) {
 // String returns a readable description of the execution plan.
 func (p *insertPlan) String() string {
 	b := bytes.NewBufferString("INSERT plan:\n\n")
-	for _, g := range p.stm.Graphs() {
+	for _, g := range p.stm.OutputGraphs() {
 		b.WriteString(fmt.Sprintf("store(%q).Graph(%q).AddTriples(_, data)\n", p.store.Name(nil), g))
 	}
 	b.WriteString("where data:\n")
@@ -228,7 +228,7 @@ func (p *deletePlan) Execute(ctx context.Context) (*table.Table, error) {
 // String returns a readable description of the execution plan.
 func (p *deletePlan) String() string {
 	b := bytes.NewBufferString("DELETE plan:\n\n")
-	for _, g := range p.stm.Graphs() {
+	for _, g := range p.stm.InputGraphs() {
 		b.WriteString(fmt.Sprintf("store(%q).Graph(%q).RemoveTriples(_, data)\n", p.store.Name(nil), g))
 	}
 	b.WriteString("where data:\n")
@@ -270,7 +270,7 @@ func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statem
 		stm:       stm,
 		store:     store,
 		bndgs:     bs,
-		grfsNames: stm.GraphNames(),
+		grfsNames: stm.InputGraphNames(),
 		cls:       stm.SortedGraphPatternClauses(),
 		tbl:       t,
 		chanSize:  chanSize,
@@ -524,7 +524,7 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 			return fmt.Errorf("failed to fully specify clause %v for row %+v", cls, r)
 		}
 		exist := false
-		for _, g := range p.stm.Graphs() {
+		for _, g := range p.stm.InputGraphs() {
 			t, err := triple.New(sbj, prd, obj)
 			if err != nil {
 				return err
@@ -708,12 +708,12 @@ func (p *queryPlan) limit() {
 func (p *queryPlan) Execute(ctx context.Context) (*table.Table, error) {
 	// Fetch and catch graph instances.
 	trace(p.tracer, func() []string {
-		return []string{fmt.Sprintf("Caching graph instances for graphs %v", p.stm.GraphNames())}
+		return []string{fmt.Sprintf("Caching graph instances for graphs %v", p.stm.InputGraphNames())}
 	})
 	if err := p.stm.Init(ctx, p.store); err != nil {
 		return nil, err
 	}
-	p.grfs = p.stm.Graphs()
+	p.grfs = p.stm.InputGraphs()
 	// Retrieve the data.
 	lo := p.stm.GlobalLookupOptions()
 	trace(p.tracer, func() []string {

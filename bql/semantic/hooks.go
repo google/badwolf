@@ -54,6 +54,16 @@ func GraphAccumulatorHook() ElementHook {
 	return graphAccumulator()
 }
 
+// InputGraphAccumulatorHook returns the singleton for input graph accumulation.
+func InputGraphAccumulatorHook() ElementHook {
+	return inputGraphAccumulator()
+}
+
+// OutputGraphAccumulatorHook returns the singleton for output graph accumulation.
+func OutputGraphAccumulatorHook() ElementHook {
+	return outputGraphAccumulator()
+}
+
 // WhereInitWorkingClauseHook returns the singleton for graph accumulation.
 func WhereInitWorkingClauseHook() ClauseHook {
 	return whereInitWorkingClause()
@@ -271,7 +281,51 @@ func graphAccumulator() ElementHook {
 			st.AddGraph(strings.TrimSpace(tkn.Text))
 			return hook, nil
 		default:
-			return nil, fmt.Errorf("hook.GrapAccumulator requires a binding to refer to a graph, got %v instead", tkn)
+			return nil, fmt.Errorf("hook.GraphAccumulator requires a binding to refer to a graph, got %v instead", tkn)
+		}
+	}
+	return hook
+}
+
+// inputGraphAccumulator returns an element hook that keeps track of the graphs
+// listed in a statement.
+func inputGraphAccumulator() ElementHook {
+	var hook ElementHook
+	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+		if ce.IsSymbol() {
+			return hook, nil
+		}
+		tkn := ce.Token()
+		switch tkn.Type {
+		case lexer.ItemComma:
+			return hook, nil
+		case lexer.ItemBinding:
+			st.AddInputGraph(strings.TrimSpace(tkn.Text))
+			return hook, nil
+		default:
+			return nil, fmt.Errorf("hook.InputGraphAccumulator requires a binding to refer to a graph, got %v instead", tkn)
+		}
+	}
+	return hook
+}
+
+// outputGraphAccumulator returns an element hook that keeps track of the graphs
+// listed in a statement.
+func outputGraphAccumulator() ElementHook {
+	var hook ElementHook
+	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+		if ce.IsSymbol() {
+			return hook, nil
+		}
+		tkn := ce.Token()
+		switch tkn.Type {
+		case lexer.ItemComma:
+			return hook, nil
+		case lexer.ItemBinding:
+			st.AddOutputGraph(strings.TrimSpace(tkn.Text))
+			return hook, nil
+		default:
+			return nil, fmt.Errorf("hook.OutputGraphAccumulator requires a binding to refer to a graph, got %v instead", tkn)
 		}
 	}
 	return hook
