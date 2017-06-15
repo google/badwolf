@@ -30,8 +30,10 @@ import (
 	"github.com/google/badwolf/triple/literal"
 )
 
-func insertTest(t *testing.T) {
+func insertAndDeleteTest(t *testing.T) {
 	ctx := context.Background()
+
+	// Testing insertion of triples.
 	bql := `insert data into ?a {/_<foo> "bar"@[] /_<foo> .
                                /_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z] .
                                /_<foo> "bar"@[] "yeah"^^type:text};`
@@ -67,64 +69,40 @@ func insertTest(t *testing.T) {
 	if i != 3 {
 		t.Errorf("g.Triples should have returned 3 triples, returned %d instead", i)
 	}
-}
 
-func deleteTest(t *testing.T) {
-	ctx := context.Background()
-	bql := `delete data from ?a {/_<foo> "bar"@[] /_<foo> .
-                               /_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z] .
-                               /_<foo> "bar"@[] "yeah"^^type:text};`
-	p, err := grammar.NewParser(grammar.SemanticBQL())
+	// Testing deletion of triples.
+	bql = `delete data from ?a {/_<foo> "bar"@[] /_<foo> .
+	                      /_<foo> "bar"@[] "bar"@[1975-01-01T00:01:01.999999999Z] .
+			      /_<foo> "bar"@[] "yeah"^^type:text};`
+	p, err = grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
 	}
-	stm := &semantic.Statement{}
+	stm = &semantic.Statement{}
 	if err = p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
-	pln, err := New(ctx, memory.DefaultStore, stm, 0, nil)
+	pln, err = New(ctx, memory.DefaultStore, stm, 0, nil)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
 	if _, err = pln.Execute(ctx); err != nil {
 		t.Errorf("planner.Execute: failed to execute insert plan with error %v", err)
 	}
-	g, err := memory.DefaultStore.Graph(ctx, "?a")
+	g, err = memory.DefaultStore.Graph(ctx, "?a")
 	if err != nil {
 		t.Errorf("memory.DefaultStore.Graph(%q) should have not fail with error %v", "?a", err)
 	}
-	i := 0
-	ts := make(chan *triple.Triple)
-	if err := g.Triples(ctx, storage.DefaultLookup, ts); err != nil {
+	i = 0
+	ts = make(chan *triple.Triple)
+	if err = g.Triples(ctx, storage.DefaultLookup, ts); err != nil {
 		t.Error(err)
 	}
 	for _ = range ts {
 		i++
 	}
 	if i != 0 {
-		t.Errorf("g.Triples should have returned 3 triples, returned %d instead", i)
-	}
-}
-
-func TestPlannerInsertDoesNotFail(t *testing.T) {
-	ctx := context.Background()
-	if _, err := memory.DefaultStore.NewGraph(ctx, "?a"); err != nil {
-		t.Errorf("memory.DefaultStore.NewGraph(%q) should have not failed with error %v", "?a", err)
-	}
-	insertTest(t)
-	if err := memory.DefaultStore.DeleteGraph(ctx, "?a"); err != nil {
-		t.Errorf("memory.DefaultStore.DeleteGraph(%q) should have not failed with error %v", "?a", err)
-	}
-}
-
-func TestPlannerDeleteDoesNotFail(t *testing.T) {
-	ctx := context.Background()
-	if _, err := memory.DefaultStore.NewGraph(ctx, "?a"); err != nil {
-		t.Errorf("memory.DefaultStore.NewGraph(%q) should have not failed with error %v", "?a", err)
-	}
-	deleteTest(t)
-	if err := memory.DefaultStore.DeleteGraph(ctx, "?a"); err != nil {
-		t.Errorf("memory.DefaultStore.DeleteGraph(%q) should have not failed with error %v", "?a", err)
+		t.Errorf("g.Triples should have returned 0 triples, returned %d instead", i)
 	}
 }
 
@@ -133,7 +111,7 @@ func TestPlannerInsertDeleteDoesNotFail(t *testing.T) {
 	if _, err := memory.DefaultStore.NewGraph(ctx, "?a"); err != nil {
 		t.Errorf("memory.DefaultStore.NewGraph(%q) should have not failed with error %v", "?a", err)
 	}
-	deleteTest(t)
+	insertAndDeleteTest(t)
 	if err := memory.DefaultStore.DeleteGraph(ctx, "?a"); err != nil {
 		t.Errorf("memory.DefaultStore.DeleteGraph(%q) should have not failed with error %v", "?a", err)
 	}
