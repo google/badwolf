@@ -140,7 +140,7 @@ type insertPlan struct {
 
 type updater func(storage.Graph, []*triple.Triple) error
 
-func update(ctx context.Context, stm *semantic.Statement, store storage.Store, f updater) error {
+func update(ctx context.Context, stm *semantic.Statement, gbs []string, store storage.Store, f updater) error {
 	var (
 		mu   sync.Mutex
 		wg   sync.WaitGroup
@@ -152,7 +152,7 @@ func update(ctx context.Context, stm *semantic.Statement, store storage.Store, f
 		errs = append(errs, err.Error())
 	}
 
-	for _, graphBinding := range stm.OutputGraphNames() {
+	for _, graphBinding := range gbs {
 		wg.Add(1)
 		go func(graph string) {
 			defer wg.Done()
@@ -180,7 +180,7 @@ func (p *insertPlan) Execute(ctx context.Context) (*table.Table, error) {
 	if err != nil {
 		return nil, err
 	}
-	return t, update(ctx, p.stm, p.store, func(g storage.Graph, d []*triple.Triple) error {
+	return t, update(ctx, p.stm, p.stm.OutputGraphNames(), p.store, func(g storage.Graph, d []*triple.Triple) error {
 		trace(p.tracer, func() []string {
 			return []string{"Inserting triples to graph \"" + g.ID(ctx) + "\""}
 		})
@@ -217,7 +217,7 @@ func (p *deletePlan) Execute(ctx context.Context) (*table.Table, error) {
 	if err != nil {
 		return nil, err
 	}
-	return t, update(ctx, p.stm, p.store, func(g storage.Graph, d []*triple.Triple) error {
+	return t, update(ctx, p.stm, p.stm.InputGraphNames(), p.store, func(g storage.Graph, d []*triple.Triple) error {
 		trace(p.tracer, func() []string {
 			return []string{"Removing triples from graph \"" + g.ID(ctx) + "\""}
 		})
