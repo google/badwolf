@@ -21,6 +21,7 @@ package semantic
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"reflect"
 	"sort"
 	"time"
@@ -149,8 +150,8 @@ type ConstructClause struct {
 	OAnchorBinding string
 	OTemporal      bool
 
-	reificationClauses        []*ReificationClause
-	workingReificationClause  *ReificationClause
+	reificationClauses       []*ReificationClause
+	workingReificationClause *ReificationClause
 }
 
 // ReificationClause represents a clause used to reify a triple.
@@ -342,7 +343,7 @@ func (c *GraphClause) Specificity() int {
 	return s
 }
 
-// BindingsMap returns the binding map fo he graph clause.
+// BindingsMap returns the binding map for the graph clause.
 func (c *GraphClause) BindingsMap() map[string]int {
 	bm := make(map[string]int)
 
@@ -369,7 +370,7 @@ func (c *GraphClause) BindingsMap() map[string]int {
 	return bm
 }
 
-// Bindings returns the list of unique bindings listed int he graph clause.
+// Bindings returns the list of unique bindings listed in the graph clause.
 func (c *GraphClause) Bindings() []string {
 	var bs []string
 	for k := range c.BindingsMap() {
@@ -383,9 +384,158 @@ func (c *GraphClause) IsEmpty() bool {
 	return reflect.DeepEqual(c, &GraphClause{})
 }
 
+// String returns a readable representation of a construct clause.
+func (c *ConstructClause) String() string {
+	b := bytes.NewBufferString("{ ")
+
+	// Subject section.
+	if c.S != nil {
+		b.WriteString(c.S.String())
+	} else {
+		b.WriteString(c.SBinding)
+	}
+
+	// Predicate section.
+	predicate := false
+	if c.P != nil {
+		b.WriteString(" ")
+		b.WriteString(c.P.String())
+		predicate = true
+	}
+	if c.PBinding != "" {
+		b.WriteString(" ")
+		b.WriteString(c.PBinding)
+	}
+	if c.PID != "" {
+		b.WriteString(" \"")
+		b.WriteString(c.PID)
+		b.WriteString("\"")
+	}
+	if !predicate {
+		if !c.PTemporal {
+			b.WriteString("@[]")
+		} else {
+			b.WriteString("@[")
+			if c.PAnchorBinding != "" {
+				b.WriteString(c.PAnchorBinding)
+			}
+		}
+		b.WriteString("]")
+	}
+
+	// Object section.
+	// Node portion.
+	object := false
+	if c.O != nil {
+		b.WriteString(" ")
+		b.WriteString(c.O.String())
+		object = true
+	} else {
+		b.WriteString(" ")
+		b.WriteString(c.OBinding)
+		object = true
+	}
+	// Predicate portion.
+	if !object {
+		if c.OBinding != "" {
+			b.WriteString(" ")
+			b.WriteString(c.OBinding)
+		}
+		if c.OID != "" {
+			b.WriteString(" \"")
+			b.WriteString(c.OID)
+			b.WriteString("\"")
+		}
+		if !c.OTemporal {
+			b.WriteString("[]")
+		} else {
+			b.WriteString("[")
+			if c.OAnchorBinding != "" {
+				b.WriteString(c.OAnchorBinding)
+			}
+			b.WriteString("]")
+		}
+	}
+
+	// Reification clauses portion.
+	for _, rc := range c.ReificationClauses() {
+		b.WriteString(fmt.Sprintf(";%v", rc))
+	}
+	b.WriteString(" }")
+	return b.String()
+}
+
 // IsEmpty will return true if there are no set values in the construct clause.
 func (c *ConstructClause) IsEmpty() bool {
 	return reflect.DeepEqual(c, &ConstructClause{})
+}
+
+// String returns a readable representation of a reification clause.
+func (c *ReificationClause) String() string {
+	b := bytes.NewBufferString("")
+
+	// Predicate section.
+	predicate := false
+	if c.P != nil {
+		b.WriteString(" ")
+		b.WriteString(c.P.String())
+		predicate = true
+	}
+	if c.PBinding != "" {
+		b.WriteString(" ")
+		b.WriteString(c.PBinding)
+	}
+	if c.PID != "" {
+		b.WriteString(" \"")
+		b.WriteString(c.PID)
+		b.WriteString("\"")
+	}
+	if !predicate {
+		if !c.PTemporal {
+			b.WriteString("@[]")
+		} else {
+			b.WriteString("@[")
+			if c.PAnchorBinding != "" {
+				b.WriteString(c.PAnchorBinding)
+			}
+		}
+		b.WriteString("]")
+	}
+
+	// Object section.
+	// Node portion.
+	object := false
+	if c.O != nil {
+		b.WriteString(" ")
+		b.WriteString(c.O.String())
+		object = true
+	} else {
+		b.WriteString(" ")
+		b.WriteString(c.OBinding)
+		object = true
+	}
+	// Predicate portion.
+	if !object {
+		if c.OBinding != "" {
+			b.WriteString(" ")
+			b.WriteString(c.OBinding)
+		}
+		if c.OID != "" {
+			b.WriteString(" \"")
+			b.WriteString(c.OID)
+			b.WriteString("\"")
+		}
+		if !c.OTemporal {
+			b.WriteString("[]")
+		} else {
+			b.WriteString("[")
+			if c.OAnchorBinding != "" {
+				b.WriteString(c.OAnchorBinding)
+			}
+			b.WriteString("]")
+		}
+	}
+	return b.String()
 }
 
 // IsEmpty will return true if there are no set values in the reification clause.
@@ -724,6 +874,48 @@ func (s *Statement) OutputBindings() []string {
 			res = append(res, p.Binding)
 		}
 	}
+	set := make(map[string]bool)
+	set[""] = true
+	for _, c := range s.constructClauses {
+		if _, ok := set[c.SBinding]; !ok {
+			res = append(res, c.SBinding)
+			set[c.SBinding] = true
+		}
+		if _, ok := set[c.PBinding]; !ok {
+			res = append(res, c.PBinding)
+			set[c.PBinding] = true
+		}
+		if _, ok := set[c.PAnchorBinding]; !ok {
+			res = append(res, c.PAnchorBinding)
+			set[c.PAnchorBinding] = true
+		}
+		if _, ok := set[c.OBinding]; !ok {
+			res = append(res, c.OBinding)
+			set[c.OBinding] = true
+		}
+		if _, ok := set[c.OAnchorBinding]; !ok {
+			res = append(res, c.OAnchorBinding)
+			set[c.OAnchorBinding] = true
+		}
+		for _, r := range c.reificationClauses {
+			if _, ok := set[r.PBinding]; !ok {
+				res = append(res, r.PBinding)
+				set[r.PBinding] = true
+			}
+			if _, ok := set[r.PAnchorBinding]; !ok {
+				res = append(res, r.PAnchorBinding)
+				set[r.PAnchorBinding] = true
+			}
+			if _, ok := set[r.OBinding]; !ok {
+				res = append(res, r.OBinding)
+				set[r.OBinding] = true
+			}
+			if _, ok := set[r.OAnchorBinding]; !ok {
+				res = append(res, r.OAnchorBinding)
+				set[r.OAnchorBinding] = true
+			}
+		}
+	}
 	return res
 }
 
@@ -811,7 +1003,7 @@ func (c *ConstructClause) WorkingReificationClause() *ReificationClause {
 // AddWorkingReificationClause adds the working  reification clause to the set
 // of reification clauses belonging to the construct clause.
 func (c *ConstructClause) AddWorkingReificationClause() {
-	if c.workingReificationClause != nil && !c.workingReificationClause.IsEmpty(){
+	if c.workingReificationClause != nil && !c.workingReificationClause.IsEmpty() {
 		c.reificationClauses = append(c.reificationClauses, c.workingReificationClause)
 	}
 	c.ResetWorkingReificationClause()

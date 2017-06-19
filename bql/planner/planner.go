@@ -35,6 +35,7 @@ import (
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/literal"
+	"github.com/google/badwolf/triple/predicate"
 )
 
 // Executor interface unifies the execution of statements.
@@ -140,7 +141,7 @@ type insertPlan struct {
 
 type updater func(storage.Graph, []*triple.Triple) error
 
-func update(ctx context.Context, stm *semantic.Statement, gbs []string, store storage.Store, f updater) error {
+func update(ctx context.Context, ts []*triple.Triple, gbs []string, store storage.Store, f updater) error {
 	var (
 		mu   sync.Mutex
 		wg   sync.WaitGroup
@@ -161,7 +162,7 @@ func update(ctx context.Context, stm *semantic.Statement, gbs []string, store st
 				appendError(err)
 				return
 			}
-			err = f(g, stm.Data())
+			err = f(g, ts)
 			if err != nil {
 				appendError(err)
 			}
@@ -180,7 +181,7 @@ func (p *insertPlan) Execute(ctx context.Context) (*table.Table, error) {
 	if err != nil {
 		return nil, err
 	}
-	return t, update(ctx, p.stm, p.stm.OutputGraphNames(), p.store, func(g storage.Graph, d []*triple.Triple) error {
+	return t, update(ctx, p.stm.Data(), p.stm.OutputGraphNames(), p.store, func(g storage.Graph, d []*triple.Triple) error {
 		trace(p.tracer, func() []string {
 			return []string{"Inserting triples to graph \"" + g.ID(ctx) + "\""}
 		})
@@ -217,7 +218,7 @@ func (p *deletePlan) Execute(ctx context.Context) (*table.Table, error) {
 	if err != nil {
 		return nil, err
 	}
-	return t, update(ctx, p.stm, p.stm.InputGraphNames(), p.store, func(g storage.Graph, d []*triple.Triple) error {
+	return t, update(ctx, p.stm.Data(), p.stm.InputGraphNames(), p.store, func(g storage.Graph, d []*triple.Triple) error {
 		trace(p.tracer, func() []string {
 			return []string{"Removing triples from graph \"" + g.ID(ctx) + "\""}
 		})
@@ -587,7 +588,7 @@ func (p *queryPlan) projectAndGroupBy() error {
 		return p.tbl.ProjectBindings(p.stm.OutputBindings())
 	}
 	trace(p.tracer, func() []string {
-		return []string{"Starting roup reduce and projection"}
+		return []string{"Starting group reduce and projection"}
 	})
 	// The table needs to be group reduced.
 	// Project only binding involved in the group operation.
@@ -632,7 +633,7 @@ func (p *queryPlan) projectAndGroupBy() error {
 		case lexer.ItemSum:
 			cell := p.tbl.Rows()[0][prj.Binding]
 			if cell.L == nil {
-				return fmt.Errorf("cannot only sum int64 and float64 literals; found %s instead for binding %q", cell, prj.Binding)
+				return fmt.Errorf("can only sum int64 and float64 literals; found %s instead for binding %q", cell, prj.Binding)
 			}
 			switch cell.L.Type() {
 			case literal.Int64:
@@ -640,7 +641,7 @@ func (p *queryPlan) projectAndGroupBy() error {
 			case literal.Float64:
 				aap.Acc = table.NewSumFloat64LiteralAccumulator(0)
 			default:
-				return fmt.Errorf("cannot only sum int64 and float64 literals; found literal type %s instead for binding %q", cell.L.Type(), prj.Binding)
+				return fmt.Errorf("can only sum int64 and float64 literals; found literal type %s instead for binding %q", cell.L.Type(), prj.Binding)
 			}
 		}
 		aaps = append(aaps, aap)
@@ -706,7 +707,7 @@ func (p *queryPlan) limit() {
 
 // Execute queries the indicated graphs.
 func (p *queryPlan) Execute(ctx context.Context) (*table.Table, error) {
-	// Fetch and catch graph instances.
+	// Fetch and cache graph instances.
 	trace(p.tracer, func() []string {
 		return []string{fmt.Sprintf("Caching graph instances for graphs %v", p.stm.InputGraphNames())}
 	})
@@ -788,6 +789,204 @@ func (p *queryPlan) String() string {
 	return b.String()
 }
 
+// constructPlan encapsulates the sequence of instructions that need to be
+// executed in order to satisfy the execution of a valid construct BQL statement.
+type constructPlan struct {
+	stm       *semantic.Statement
+	store     storage.Store
+	tracer    io.Writer
+	queryPlan *queryPlan
+}
+
+func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
+	tbl, err := p.queryPlan.Execute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var ts []*triple.Triple
+	for _, cc := range p.stm.ConstructClauses() {
+		for _, r := range tbl.Rows() {
+			sbj, prd, obj := cc.S, cc.P, cc.O
+			if sbj == nil && tbl.HasBinding(cc.SBinding) {
+				v, ok := r[cc.SBinding]
+				if !ok {
+					return nil, fmt.Errorf("row %+v misses binding %q", r, cc.SBinding)
+				}
+				if v.N == nil {
+					return nil, fmt.Errorf("binding %q requires a node, got %+v instead", cc.SBinding, v)
+				}
+				sbj = v.N
+			}
+			if prd == nil {
+				if tbl.HasBinding(cc.PBinding) {
+
+					// Try to bind the predicate.
+					v, ok := r[cc.PBinding]
+					if !ok {
+						return nil, fmt.Errorf("row %+v misses binding %q", r, cc.PBinding)
+					}
+					if v.P == nil {
+						return nil, fmt.Errorf("binding %q requires a predicate, got %+v instead", cc.PBinding, v)
+					}
+					prd = v.P
+				} else if cc.PTemporal && cc.PAnchorBinding != "" {
+
+					// Try to bind the predicate anchor.
+					v, ok := r[cc.PAnchorBinding]
+					if !ok {
+						return nil, fmt.Errorf("row %+v misses binding %q", r, cc.PAnchorBinding)
+					}
+					if v.T == nil {
+						return nil, fmt.Errorf("binding %q requires a time, got %+v instead", cc.PAnchorBinding, v)
+					}
+					prd, err = predicate.NewTemporal(cc.PID, *v.T)
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
+			if obj == nil {
+				if tbl.HasBinding(cc.OBinding) {
+
+					// Try to bind the object
+					v, ok := r[cc.OBinding]
+					if !ok {
+						return nil, fmt.Errorf("row %+v misses binding %q", r, cc.OBinding)
+					}
+					co, err := cellToObject(v)
+					if err != nil {
+						return nil, err
+					}
+					obj = co
+				} else if cc.OTemporal && cc.OAnchorBinding != "" {
+
+					// Try to bind the object anchor.
+					v, ok := r[cc.OAnchorBinding]
+					if !ok {
+						return nil, fmt.Errorf("row %+v misses binding %q", r, cc.OAnchorBinding)
+					}
+					if v.T == nil {
+						return nil, fmt.Errorf("binding %q requires a time, got %+v instead", cc.OAnchorBinding, v)
+					}
+					op, err := predicate.NewTemporal(cc.OID, *v.T)
+					if err != nil {
+						return nil, err
+					}
+					obj = triple.NewPredicateObject(op)
+				}
+			}
+			t, err := triple.New(sbj, prd, obj)
+			if err != nil {
+				return nil, err
+			}
+			if len(cc.ReificationClauses()) > 0 {
+				rts, bn, err := t.Reify()
+				if err != nil {
+					fmt.Errorf("triple.Reify failed to reify %v with error %v", t, err)
+					return nil, err
+				}
+				for _, trpl := range rts[1:] {
+					ts = append(ts, trpl)
+				}
+				for _, rc := range cc.ReificationClauses() {
+					rprd, robj := rc.P, rc.O
+					if rprd == nil {
+						if tbl.HasBinding(rc.PBinding) {
+
+							// Try to bind the predicate.
+							v, ok := r[rc.PBinding]
+							if !ok {
+								return nil, fmt.Errorf("row %+v misses binding %q", r, rc.PBinding)
+							}
+							if v.P == nil {
+								return nil, fmt.Errorf("binding %q requires a predicate, got %+v instead", rc.PBinding, v)
+							}
+							rprd = v.P
+						} else if rc.PTemporal && rc.PAnchorBinding != "" {
+
+							// Try to bind the predicate anchor.
+							v, ok := r[rc.PAnchorBinding]
+							if !ok {
+								return nil, fmt.Errorf("row %+v misses binding %q", r, rc.PAnchorBinding)
+							}
+							if v.T == nil {
+								return nil, fmt.Errorf("binding %q requires a time, got %+v instead", rc.PAnchorBinding, v)
+							}
+							rprd, err = predicate.NewTemporal(rc.PID, *v.T)
+							if err != nil {
+								return nil, err
+							}
+						}
+					}
+					if robj == nil {
+						if tbl.HasBinding(rc.OBinding) {
+
+							// Try to bind the object
+							v, ok := r[rc.OBinding]
+							if !ok {
+								return nil, fmt.Errorf("row %+v misses binding %q", r, rc.OBinding)
+							}
+							co, err := cellToObject(v)
+							if err != nil {
+								return nil, err
+							}
+							robj = co
+						} else if rc.OTemporal && rc.OAnchorBinding != "" {
+
+							// Try to bind the object anchor.
+							v, ok := r[rc.OAnchorBinding]
+							if !ok {
+								return nil, fmt.Errorf("row %+v misses binding %q", r, rc.OAnchorBinding)
+							}
+							if v.T == nil {
+								return nil, fmt.Errorf("binding %q requires a time, got %+v instead", rc.OAnchorBinding, v)
+							}
+							rop, err := predicate.NewTemporal(rc.OID, *v.T)
+							if err != nil {
+								return nil, err
+							}
+							robj = triple.NewPredicateObject(rop)
+						}
+
+					}
+					rt, err := triple.New(bn, rprd, robj)
+					if err != nil {
+						return nil, err
+					}
+					ts = append(ts, rt)
+				}
+
+			} else {
+				ts = append(ts, t)
+			}
+		}
+	}
+	return tbl, update(ctx, ts, p.stm.OutputGraphNames(), p.store, func(g storage.Graph, d []*triple.Triple) error {
+		trace(p.tracer, func() []string {
+			return []string{"Inserting triples to graph \"" + g.ID(ctx) + "\""}
+		})
+		return g.AddTriples(ctx, d)
+	})
+}
+
+func (p *constructPlan) String() string {
+	b := bytes.NewBufferString("CONSTRUCT plan:\n\n")
+	b.WriteString("Input graphs:\n")
+	for _, gn := range p.stm.InputGraphNames() {
+		b.WriteString(fmt.Sprintf("\t%v\n", gn))
+	}
+	b.WriteString("Output graphs:\n")
+	for _, gn := range p.stm.OutputGraphNames() {
+		b.WriteString(fmt.Sprintf("\t%v\n", gn))
+	}
+	b.WriteString("Construct clauses:\n")
+	for _, cc := range p.stm.ConstructClauses() {
+		b.WriteString(fmt.Sprintf("\t%v\n", cc))
+	}
+	b.WriteString(fmt.Sprintf("\n%v", p.queryPlan.String()))
+	return b.String()
+}
+
 // New create a new executable plan given a semantic BQL statement.
 func New(ctx context.Context, store storage.Store, stm *semantic.Statement, chanSize int, w io.Writer) (Executor, error) {
 	switch stm.Type() {
@@ -816,6 +1015,14 @@ func New(ctx context.Context, store storage.Store, stm *semantic.Statement, chan
 			stm:    stm,
 			store:  store,
 			tracer: w,
+		}, nil
+	case semantic.Construct:
+		qp, _ := newQueryPlan(ctx, store, stm, chanSize, w)
+		return &constructPlan{
+			stm:       stm,
+			store:     store,
+			tracer:    w,
+			queryPlan: qp,
 		}, nil
 	default:
 		return nil, fmt.Errorf("planner.New: unknown statement type in statement %v", stm)
