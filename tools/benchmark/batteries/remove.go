@@ -25,7 +25,7 @@ import (
 )
 
 // RemoveTreeTriplesBenchmark creates the benchmark.
-func RemoveTreeTriplesBenchmark(ctx context.Context, st storage.Store, chanSize int) ([]*runtime.BenchEntry, error) {
+func RemoveTreeTriplesBenchmark(ctx context.Context, st storage.Store, chanSize, bulkSize int) ([]*runtime.BenchEntry, error) {
 	bFactors := []int{2, 200}
 	sizes := []int{10, 1000, 100000}
 	var trplSets [][]*triple.Triple
@@ -78,7 +78,7 @@ func RemoveTreeTriplesBenchmark(ctx context.Context, st storage.Store, chanSize 
 }
 
 // RemoveExistingTreeTriplesBenchmark creates the benchmark.
-func RemoveExistingTreeTriplesBenchmark(ctx context.Context, st storage.Store, chanSize int) ([]*runtime.BenchEntry, error) {
+func RemoveExistingTreeTriplesBenchmark(ctx context.Context, st storage.Store, chanSize, bulkSize int) ([]*runtime.BenchEntry, error) {
 	bFactors := []int{2, 200}
 	sizes := []int{10, 1000, 100000}
 	var trplSets [][]*triple.Triple
@@ -134,7 +134,7 @@ func RemoveExistingTreeTriplesBenchmark(ctx context.Context, st storage.Store, c
 }
 
 // RemoveGraphTriplesBenchmark creates the benchmark.
-func RemoveGraphTriplesBenchmark(ctx context.Context, st storage.Store, chanSize int) ([]*runtime.BenchEntry, error) {
+func RemoveGraphTriplesBenchmark(ctx context.Context, st storage.Store, chanSize, bulkSize int) ([]*runtime.BenchEntry, error) {
 	nodes := []int{317, 1000}
 	sizes := []int{10, 1000, 100000}
 	var trplSets [][]*triple.Triple
@@ -187,7 +187,7 @@ func RemoveGraphTriplesBenchmark(ctx context.Context, st storage.Store, chanSize
 }
 
 // RemoveExistingGraphTriplesBenchmark creates the benchmark.
-func RemoveExistingGraphTriplesBenchmark(ctx context.Context, st storage.Store, chanSize int) ([]*runtime.BenchEntry, error) {
+func RemoveExistingGraphTriplesBenchmark(ctx context.Context, st storage.Store, chanSize, bulkSize int) ([]*runtime.BenchEntry, error) {
 	nodes := []int{317, 1000}
 	sizes := []int{10, 1000, 100000}
 	var trplSets [][]*triple.Triple

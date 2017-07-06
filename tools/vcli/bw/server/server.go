@@ -37,7 +37,7 @@ import (
 )
 
 // New creates the help command.
-func New(store storage.Store, chanSize int) *command.Command {
+func New(store storage.Store, chanSize, bulkSize int) *command.Command {
 	cmd := &command.Command{
 		UsageLine: "server port",
 		Short:     "runs a BQL endoint.",
@@ -45,7 +45,7 @@ func New(store storage.Store, chanSize int) *command.Command {
 all BQL queries and returns a JSON table with the results.`,
 	}
 	cmd.Run = func(ctx context.Context, args []string) int {
-		return runServer(ctx, cmd, args, store, chanSize)
+		return runServer(ctx, cmd, args, store, chanSize, bulkSize)
 	}
 	return cmd
 }
@@ -54,10 +54,11 @@ all BQL queries and returns a JSON table with the results.`,
 type serverConfig struct {
 	store    storage.Store
 	chanSize int
+	bulkSize int
 }
 
 // runServer runs the simple BQL endpoint.
-func runServer(ctx context.Context, cmd *command.Command, args []string, store storage.Store, chanSize int) int {
+func runServer(ctx context.Context, cmd *command.Command, args []string, store storage.Store, chanSize, bulkSize int) int {
 	// Check parameters.
 	if len(args) < 3 {
 		log.Printf("[%v] Missing required port number. ", time.Now())
@@ -78,6 +79,7 @@ func runServer(ctx context.Context, cmd *command.Command, args []string, store s
 	s := &serverConfig{
 		store:    store,
 		chanSize: chanSize,
+		bulkSize: bulkSize,
 	}
 	http.HandleFunc("/bql", s.bqlHandler)
 	http.HandleFunc("/", defaultHandler)
@@ -121,7 +123,7 @@ func (s *serverConfig) bqlHandler(w http.ResponseWriter, r *http.Request) {
 		if nq, err := url.QueryUnescape(q); err == nil {
 			q = strings.Replace(strings.Replace(nq, "\n", " ", -1), "\r", " ", -1)
 		}
-		t, err := BQL(ctx, q, s.store, s.chanSize)
+		t, err := BQL(ctx, q, s.store, s.chanSize, s.bulkSize)
 		r := &result{
 			Q: q,
 			T: t,
@@ -182,7 +184,7 @@ func getQueries(raw []string) []string {
 }
 
 // BQL attempts to execute the provided query against the given store.
-func BQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*table.Table, error) {
+func BQL(ctx context.Context, bql string, s storage.Store, chanSize, bulkSize int) (*table.Table, error) {
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		return nil, fmt.Errorf("[ERROR] Failed to initilize a valid BQL parser")
@@ -191,7 +193,7 @@ func BQL(ctx context.Context, bql string, s storage.Store, chanSize int) (*table
 	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		return nil, fmt.Errorf("[ERROR] Failed to parse BQL statement with error %v", err)
 	}
-	pln, err := planner.New(ctx, s, stm, chanSize, nil)
+	pln, err := planner.New(ctx, s, stm, chanSize, bulkSize, nil)
 	if err != nil {
 		return nil, fmt.Errorf("[ERROR] Should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}

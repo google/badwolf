@@ -25,7 +25,7 @@ import (
 )
 
 // AddTreeTriplesBenchmark creates the benchmark.
-func AddTreeTriplesBenchmark(ctx context.Context, st storage.Store, chanSize int) ([]*runtime.BenchEntry, error) {
+func AddTreeTriplesBenchmark(ctx context.Context, st storage.Store, chanSize, bulkSize int) ([]*runtime.BenchEntry, error) {
 	bFactors := []int{2, 200}
 	sizes := []int{10, 1000, 100000}
 	var trplSets [][]*triple.Triple
@@ -78,7 +78,7 @@ func AddTreeTriplesBenchmark(ctx context.Context, st storage.Store, chanSize int
 }
 
 // AddExistingTreeTriplesBenchmark creates the benchmark.
-func AddExistingTreeTriplesBenchmark(ctx context.Context, st storage.Store, chanSize int) ([]*runtime.BenchEntry, error) {
+func AddExistingTreeTriplesBenchmark(ctx context.Context, st storage.Store, chanSize, bulkSize int) ([]*runtime.BenchEntry, error) {
 	bFactors := []int{2, 200}
 	sizes := []int{10, 1000, 100000}
 	var trplSets [][]*triple.Triple
@@ -134,7 +134,7 @@ func AddExistingTreeTriplesBenchmark(ctx context.Context, st storage.Store, chan
 }
 
 // AddGraphTriplesBenchmark creates the benchmark.
-func AddGraphTriplesBenchmark(ctx context.Context, st storage.Store, chanSize int) ([]*runtime.BenchEntry, error) {
+func AddGraphTriplesBenchmark(ctx context.Context, st storage.Store, chanSize, bulkSize int) ([]*runtime.BenchEntry, error) {
 	nodes := []int{317, 1000}
 	sizes := []int{10, 1000, 100000}
 	var trplSets [][]*triple.Triple
@@ -187,7 +187,7 @@ func AddGraphTriplesBenchmark(ctx context.Context, st storage.Store, chanSize in
 }
 
 // AddExistingGraphTriplesBenchmark creates the benchmark.
-func AddExistingGraphTriplesBenchmark(ctx context.Context, st storage.Store, chanSize int) ([]*runtime.BenchEntry, error) {
+func AddExistingGraphTriplesBenchmark(ctx context.Context, st storage.Store, chanSize, bulkSize int) ([]*runtime.BenchEntry, error) {
 	nodes := []int{317, 1000}
 	sizes := []int{10, 1000, 100000}
 	var trplSets [][]*triple.Triple

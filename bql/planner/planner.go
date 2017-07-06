@@ -795,7 +795,79 @@ type constructPlan struct {
 	stm       *semantic.Statement
 	store     storage.Store
 	tracer    io.Writer
+	bulkSize  int
 	queryPlan *queryPlan
+}
+
+func (p *constructPlan) processConstructClause(cc *semantic.ConstructClause, tbl *table.Table, r table.Row) (*triple.Triple, error) {
+	var err error
+	sbj, prd, obj := cc.S, cc.P, cc.O
+	if sbj == nil && tbl.HasBinding(cc.SBinding) {
+		v, ok := r[cc.SBinding]
+		if !ok {
+			return nil, fmt.Errorf("row %+v misses binding %q", r, cc.SBinding)
+		}
+		if v.N == nil {
+			return nil, fmt.Errorf("binding %q requires a node, got %+v instead", cc.SBinding, v)
+		}
+		sbj = v.N
+	}
+	if prd == nil {
+		if tbl.HasBinding(cc.PBinding) {
+			// Try to bind the predicate.
+			v, ok := r[cc.PBinding]
+			if !ok {
+				return nil, fmt.Errorf("row %+v misses binding %q", r, cc.PBinding)
+			}
+			if v.P == nil {
+				return nil, fmt.Errorf("binding %q requires a predicate, got %+v instead", cc.PBinding, v)
+			}
+			prd = v.P
+		} else if cc.PTemporal && cc.PAnchorBinding != "" {
+			// Try to bind the predicate anchor.
+			v, ok := r[cc.PAnchorBinding]
+			if !ok {
+				return nil, fmt.Errorf("row %+v misses binding %q", r, cc.PAnchorBinding)
+			}
+			if v.T == nil {
+				return nil, fmt.Errorf("binding %q requires a time, got %+v instead", cc.PAnchorBinding, v)
+			}
+			prd, err = predicate.NewTemporal(cc.PID, *v.T)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	if obj == nil {
+		if tbl.HasBinding(cc.OBinding) {
+			// Try to bind the object
+			v, ok := r[cc.OBinding]
+			if !ok {
+				return nil, fmt.Errorf("row %+v misses binding %q", r, cc.OBinding)
+			}
+			co, err := cellToObject(v)
+			if err != nil {
+				return nil, err
+			}
+			obj = co
+		} else if cc.OTemporal && cc.OAnchorBinding != "" {
+			// Try to bind the object anchor.
+			v, ok := r[cc.OAnchorBinding]
+			if !ok {
+				return nil, fmt.Errorf("row %+v misses binding %q", r, cc.OAnchorBinding)
+			}
+			if v.T == nil {
+				return nil, fmt.Errorf("binding %q requires a time, got %+v instead", cc.OAnchorBinding, v)
+			}
+			op, err := predicate.NewTemporal(cc.OID, *v.T)
+			if err != nil {
+				return nil, err
+			}
+			obj = triple.NewPredicateObject(op)
+		}
+	}
+	t, err := triple.New(sbj, prd, obj)
+	return t, err
 }
 
 func (p *constructPlan) processReificationClause(rc *semantic.ReificationClause, tbl *table.Table, r table.Row) (*predicate.Predicate, *triple.Object, error) {
@@ -803,7 +875,6 @@ func (p *constructPlan) processReificationClause(rc *semantic.ReificationClause,
 	rprd, robj := rc.P, rc.O
 	if rprd == nil {
 		if tbl.HasBinding(rc.PBinding) {
-
 			// Try to bind the predicate.
 			v, ok := r[rc.PBinding]
 			if !ok {
@@ -814,7 +885,6 @@ func (p *constructPlan) processReificationClause(rc *semantic.ReificationClause,
 			}
 			rprd = v.P
 		} else if rc.PTemporal && rc.PAnchorBinding != "" {
-
 			// Try to bind the predicate anchor.
 			v, ok := r[rc.PAnchorBinding]
 			if !ok {
@@ -831,7 +901,6 @@ func (p *constructPlan) processReificationClause(rc *semantic.ReificationClause,
 	}
 	if robj == nil {
 		if tbl.HasBinding(rc.OBinding) {
-
 			// Try to bind the object
 			v, ok := r[rc.OBinding]
 			if !ok {
@@ -843,7 +912,6 @@ func (p *constructPlan) processReificationClause(rc *semantic.ReificationClause,
 			}
 			robj = co
 		} else if rc.OTemporal && rc.OAnchorBinding != "" {
-
 			// Try to bind the object anchor.
 			v, ok := r[rc.OAnchorBinding]
 			if !ok {
@@ -868,12 +936,12 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	tripChan := make(chan *triple.Triple, 10)
+	// The buffered channel has capacity to accommodate twice the amount of triples stored in a single call.
+	tripChan := make(chan *triple.Triple, 2*p.bulkSize)
 	done := make(chan bool)
 
 	go func() {
-		ts := []*triple.Triple{}
+		var ts []*triple.Triple
 		updateFunc := func(g storage.Graph, d []*triple.Triple) error {
 			trace(p.tracer, func() []string {
 				return []string{"Inserting triples to graph \"" + g.ID(ctx) + "\""}
@@ -882,7 +950,7 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 		}
 		for elem := range tripChan {
 			ts = append(ts, elem)
-			if len(ts) >= 10 {
+			if len(ts) >= p.bulkSize {
 				update(ctx, ts, p.stm.OutputGraphNames(), p.store, updateFunc)
 				ts = []*triple.Triple{}
 			}
@@ -895,81 +963,11 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 
 	for _, cc := range p.stm.ConstructClauses() {
 		for _, r := range tbl.Rows() {
-			sbj, prd, obj := cc.S, cc.P, cc.O
-			if sbj == nil && tbl.HasBinding(cc.SBinding) {
-				v, ok := r[cc.SBinding]
-				if !ok {
-					return nil, fmt.Errorf("row %+v misses binding %q", r, cc.SBinding)
-				}
-				if v.N == nil {
-					return nil, fmt.Errorf("binding %q requires a node, got %+v instead", cc.SBinding, v)
-				}
-				sbj = v.N
-			}
-			if prd == nil {
-				if tbl.HasBinding(cc.PBinding) {
-
-					// Try to bind the predicate.
-					v, ok := r[cc.PBinding]
-					if !ok {
-						return nil, fmt.Errorf("row %+v misses binding %q", r, cc.PBinding)
-					}
-					if v.P == nil {
-						return nil, fmt.Errorf("binding %q requires a predicate, got %+v instead", cc.PBinding, v)
-					}
-					prd = v.P
-				} else if cc.PTemporal && cc.PAnchorBinding != "" {
-
-					// Try to bind the predicate anchor.
-					v, ok := r[cc.PAnchorBinding]
-					if !ok {
-						return nil, fmt.Errorf("row %+v misses binding %q", r, cc.PAnchorBinding)
-					}
-					if v.T == nil {
-						return nil, fmt.Errorf("binding %q requires a time, got %+v instead", cc.PAnchorBinding, v)
-					}
-					prd, err = predicate.NewTemporal(cc.PID, *v.T)
-					if err != nil {
-						return nil, err
-					}
-				}
-			}
-			if obj == nil {
-				if tbl.HasBinding(cc.OBinding) {
-
-					// Try to bind the object
-					v, ok := r[cc.OBinding]
-					if !ok {
-						return nil, fmt.Errorf("row %+v misses binding %q", r, cc.OBinding)
-					}
-					co, err := cellToObject(v)
-					if err != nil {
-						return nil, err
-					}
-					obj = co
-				} else if cc.OTemporal && cc.OAnchorBinding != "" {
-
-					// Try to bind the object anchor.
-					v, ok := r[cc.OAnchorBinding]
-					if !ok {
-						return nil, fmt.Errorf("row %+v misses binding %q", r, cc.OAnchorBinding)
-					}
-					if v.T == nil {
-						return nil, fmt.Errorf("binding %q requires a time, got %+v instead", cc.OAnchorBinding, v)
-					}
-					op, err := predicate.NewTemporal(cc.OID, *v.T)
-					if err != nil {
-						return nil, err
-					}
-					obj = triple.NewPredicateObject(op)
-				}
-			}
-			t, err := triple.New(sbj, prd, obj)
+			t, err := p.processConstructClause(cc, tbl, r)
 			if err != nil {
 				return nil, err
 			}
 			if len(cc.ReificationClauses()) > 0 {
-
 				// We need to reify a blank node.
 				rts, bn, err := t.Reify()
 				if err != nil {
@@ -997,7 +995,6 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 		}
 	}
 	close(tripChan)
-
 	// Wait until all triples are added to the store.
 	<-done
 
@@ -1024,7 +1021,7 @@ func (p *constructPlan) String() string {
 }
 
 // New create a new executable plan given a semantic BQL statement.
-func New(ctx context.Context, store storage.Store, stm *semantic.Statement, chanSize int, w io.Writer) (Executor, error) {
+func New(ctx context.Context, store storage.Store, stm *semantic.Statement, chanSize, bulkSize int, w io.Writer) (Executor, error) {
 	switch stm.Type() {
 	case semantic.Query:
 		return newQueryPlan(ctx, store, stm, chanSize, w)
@@ -1058,6 +1055,7 @@ func New(ctx context.Context, store storage.Store, stm *semantic.Statement, chan
 			stm:       stm,
 			store:     store,
 			tracer:    w,
+			bulkSize:  bulkSize,
 			queryPlan: qp,
 		}, nil
 	default:

@@ -96,7 +96,7 @@ func insertAndDeleteTest(t *testing.T) {
 	if err = p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
-	pln, err := New(ctx, memory.DefaultStore, stm, 0, nil)
+	pln, err := New(ctx, memory.DefaultStore, stm, 0, 10, nil)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
@@ -133,7 +133,7 @@ func insertAndDeleteTest(t *testing.T) {
 	if err = p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
-	pln, err = New(ctx, memory.DefaultStore, stm, 0, nil)
+	pln, err = New(ctx, memory.DefaultStore, stm, 0, 10, nil)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
@@ -182,7 +182,7 @@ func TestPlannerCreateGraph(t *testing.T) {
 	if err = p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
-	pln, err := New(ctx, memory.DefaultStore, stm, 0, nil)
+	pln, err := New(ctx, memory.DefaultStore, stm, 0, 10, nil)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
@@ -213,7 +213,7 @@ func TestPlannerDropGraph(t *testing.T) {
 	if err = p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
-	pln, err := New(ctx, memory.DefaultStore, stm, 0, nil)
+	pln, err := New(ctx, memory.DefaultStore, stm, 0, 10, nil)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
@@ -462,7 +462,7 @@ func TestPlannerQuery(t *testing.T) {
 		if err := p.Parse(grammar.NewLLk(entry.q, 1), st); err != nil {
 			t.Errorf("Parser.consume: failed to parse query %q with error %v", entry.q, err)
 		}
-		plnr, err := New(ctx, s, st, 0, nil)
+		plnr, err := New(ctx, s, st, 0, 10, nil)
 		if err != nil {
 			t.Errorf("planner.New failed to create a valid query plan with error %v", err)
 		}
@@ -557,7 +557,7 @@ func TestPlannerConstructAddsCorrectNumberofTriples(t *testing.T) {
 		if err := p.Parse(grammar.NewLLk(entry.s, 1), st); err != nil {
 			t.Errorf("Parser.consume: failed to parse query %q with error %v", entry.s, err)
 		}
-		plnr, err := New(ctx, s, st, 0, nil)
+		plnr, err := New(ctx, s, st, 0, 10, nil)
 		if err != nil {
 			t.Errorf("planner.New failed to create a valid query plan with error %v", err)
 		}
@@ -593,7 +593,7 @@ func TestPlannerConstructAddsCorrectTriples(t *testing.T) {
 	bql := `construct {?s "met"@[?t] ?o; "location"@[] /city<New York>;
 	                                     "outcome"@[] "good"^^type:text.
 	                   ?s "connected_to"@[] ?o }
-                into ?dest
+	        into ?dest
 	        from ?src
 	        where {?s "met"@[] ?o.
 		       ?s "met_at"@[?t] ?o};`
@@ -609,7 +609,7 @@ func TestPlannerConstructAddsCorrectTriples(t *testing.T) {
 	if err := p.Parse(grammar.NewLLk(bql, 1), st); err != nil {
 		t.Errorf("Parser.consume: failed to parse query %q with error %v", bql, err)
 	}
-	plnr, err := New(ctx, s, st, 0, nil)
+	plnr, err := New(ctx, s, st, 0, 10, nil)
 	if err != nil {
 		t.Errorf("planner.New failed to create a valid query plan with error %v", err)
 	}
@@ -765,7 +765,7 @@ func TestTreeTraversalToRoot(t *testing.T) {
 	if err := p.Parse(grammar.NewLLk(traversalQuery, 1), st); err != nil {
 		t.Errorf("Parser.consume: failed to parse query %q with error %v", traversalQuery, err)
 	}
-	plnr, err := New(ctx, s, st, 0, nil)
+	plnr, err := New(ctx, s, st, 0, 10, nil)
 	if err != nil {
 		t.Errorf("planner.New failed to create a valid query plan with error %v", err)
 	}
@@ -812,7 +812,7 @@ func TestChaining(t *testing.T) {
 	if err := p.Parse(grammar.NewLLk(traversalQuery, 1), st); err != nil {
 		t.Errorf("Parser.consume: failed to parse query %q with error %v", traversalQuery, err)
 	}
-	plnr, err := New(ctx, s, st, 0, nil)
+	plnr, err := New(ctx, s, st, 0, 10, nil)
 	if err != nil {
 		t.Errorf("planner.New failed to create a valid query plan with error %v", err)
 	}
@@ -870,7 +870,7 @@ func TestReificationResolutionIssue70(t *testing.T) {
 	if err := p.Parse(grammar.NewLLk(query, 1), st); err != nil {
 		t.Errorf("Parser.consume: failed to parse query %q with error %v", query, err)
 	}
-	plnr, err := New(ctx, s, st, 0, nil)
+	plnr, err := New(ctx, s, st, 0, 10, nil)
 	if err != nil {
 		t.Errorf("planner.New failed to create a valid query plan with error %v", err)
 	}
@@ -902,7 +902,7 @@ func benchmarkQuery(query string, b *testing.B) {
 		if err := p.Parse(grammar.NewLLk(query, 1), st); err != nil {
 			b.Errorf("Parser.consume: failed to parse query %q with error %v", query, err)
 		}
-		plnr, err := New(ctx, s, st, 0, nil)
+		plnr, err := New(ctx, s, st, 0, 10, nil)
 		if err != nil {
 			b.Errorf("planner.New failed to create a valid query plan with error %v", err)
 		}

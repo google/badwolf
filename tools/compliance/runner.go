@@ -75,7 +75,7 @@ func (s *Story) cleanSources(ctx context.Context, st storage.Store) error {
 // runAssertion runs the assertion and compares the outcome. Returns the outcome
 // of comparing the obtained result table with the assertion table if there is
 // no error during the assertion.
-func (a *Assertion) runAssertion(ctx context.Context, st storage.Store, chanSize int) (bool, *table.Table, *table.Table, error) {
+func (a *Assertion) runAssertion(ctx context.Context, st storage.Store, chanSize, bulkSize int) (bool, *table.Table, *table.Table, error) {
 	errorizer := func(e error) (bool, *table.Table, *table.Table, error) {
 		if a.WillFail && e != nil {
 			return true, nil, nil, nil
@@ -92,7 +92,7 @@ func (a *Assertion) runAssertion(ctx context.Context, st storage.Store, chanSize
 	if err := p.Parse(grammar.NewLLk(a.Statement, 1), stm); err != nil {
 		return errorizer(fmt.Errorf("Failed to parse BQL statement with error %v", err))
 	}
-	pln, err := planner.New(ctx, st, stm, chanSize, nil)
+	pln, err := planner.New(ctx, st, stm, chanSize, bulkSize, nil)
 	if err != nil {
 		return errorizer(fmt.Errorf("Should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err))
 	}
@@ -116,7 +116,7 @@ func (a *Assertion) runAssertion(ctx context.Context, st storage.Store, chanSize
 // return an error if something wrong happen along the way. It is worth
 // mentioning that Run does not clear any data available in the provided
 // storage.
-func (s *Story) Run(ctx context.Context, st storage.Store, b literal.Builder, chanSize int) (map[string]*AssertionOutcome, error) {
+func (s *Story) Run(ctx context.Context, st storage.Store, b literal.Builder, chanSize, bulkSize int) (map[string]*AssertionOutcome, error) {
 	// Populate the sources.
 	if err := s.populateSources(ctx, st, b); err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func (s *Story) Run(ctx context.Context, st storage.Store, b literal.Builder, ch
 	// Run assertions.
 	m := make(map[string]*AssertionOutcome)
 	for _, a := range s.Assertions {
-		b, got, want, err := a.runAssertion(ctx, st, chanSize)
+		b, got, want, err := a.runAssertion(ctx, st, chanSize, bulkSize)
 		if err != nil {
 			return nil, err
 		}
@@ -156,10 +156,10 @@ type AssertionBatteryEntry struct {
 
 // RunStories runs a the provided stories and returns the outcome of each of
 // them.
-func RunStories(ctx context.Context, st storage.Store, b literal.Builder, stories []*Story, chanSize int) *AssertionBattery {
+func RunStories(ctx context.Context, st storage.Store, b literal.Builder, stories []*Story, chanSize, bulkSize int) *AssertionBattery {
 	results := &AssertionBattery{}
 	for _, s := range stories {
-		o, err := s.Run(ctx, st, b, chanSize)
+		o, err := s.Run(ctx, st, b, chanSize, bulkSize)
 		results.Entries = append(results.Entries, &AssertionBatteryEntry{
 			Story:   s,
 			Outcome: o,

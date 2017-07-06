@@ -31,10 +31,10 @@ import (
 )
 
 // New create the version command.
-func New(store storage.Store, chanSize int) *command.Command {
+func New(store storage.Store, chanSize, bulkSize int) *command.Command {
 	return &command.Command{
 		Run: func(ctx context.Context, args []string) int {
-			return runAll(ctx, store, chanSize)
+			return runAll(ctx, store, chanSize, bulkSize)
 		},
 		UsageLine: "benchmark",
 		Short:     "runs a set of precan benchmarks.",
@@ -46,7 +46,7 @@ a tree or a random graph generator.`,
 }
 
 // runAll executes all the canned benchmarks and prints out the stats.
-func runAll(ctx context.Context, st storage.Store, chanSize int) int {
+func runAll(ctx context.Context, st storage.Store, chanSize, bulkSize int) int {
 	//   - Add non existing triples.        (done)
 	//   - Add triples that already exist.  (done)
 	//   - Remove non existing triples.     (done)
@@ -62,32 +62,32 @@ func runAll(ctx context.Context, st storage.Store, chanSize int) int {
 
 	var out int
 	// Add non existing triples.
-	out += runBattery(ctx, st, "adding non existing tree triples", chanSize, batteries.AddTreeTriplesBenchmark)
-	out += runBattery(ctx, st, "adding non existing graph triples", chanSize, batteries.AddGraphTriplesBenchmark)
+	out += runBattery(ctx, st, "adding non existing tree triples", chanSize, bulkSize, batteries.AddTreeTriplesBenchmark)
+	out += runBattery(ctx, st, "adding non existing graph triples", chanSize, bulkSize, batteries.AddGraphTriplesBenchmark)
 
 	// Add existing triples.
-	out += runBattery(ctx, st, "adding existing tree triples", chanSize, batteries.AddExistingTreeTriplesBenchmark)
-	out += runBattery(ctx, st, "adding existing graph triples", chanSize, batteries.AddExistingGraphTriplesBenchmark)
+	out += runBattery(ctx, st, "adding existing tree triples", chanSize, bulkSize, batteries.AddExistingTreeTriplesBenchmark)
+	out += runBattery(ctx, st, "adding existing graph triples", chanSize, bulkSize, batteries.AddExistingGraphTriplesBenchmark)
 
 	// Remove non existing triples.
-	out += runBattery(ctx, st, "removing non existing tree triples", chanSize, batteries.RemoveTreeTriplesBenchmark)
-	out += runBattery(ctx, st, "removing non existing graph triples", chanSize, batteries.RemoveGraphTriplesBenchmark)
+	out += runBattery(ctx, st, "removing non existing tree triples", chanSize, bulkSize, batteries.RemoveTreeTriplesBenchmark)
+	out += runBattery(ctx, st, "removing non existing graph triples", chanSize, bulkSize, batteries.RemoveGraphTriplesBenchmark)
 
 	// Remove existing triples.
-	out += runBattery(ctx, st, "removing existing tree triples", chanSize, batteries.RemoveExistingTreeTriplesBenchmark)
-	out += runBattery(ctx, st, "removing existing graph triples", chanSize, batteries.RemoveExistingGraphTriplesBenchmark)
+	out += runBattery(ctx, st, "removing existing tree triples", chanSize, bulkSize, batteries.RemoveExistingTreeTriplesBenchmark)
+	out += runBattery(ctx, st, "removing existing graph triples", chanSize, bulkSize, batteries.RemoveExistingGraphTriplesBenchmark)
 
 	// BQL graph walking.
-	out += runBattery(ctx, st, "walking the tree graph with BQL", chanSize, batteries.BQLTreeGraphWalking)
-	out += runBattery(ctx, st, "walking the random graph with BQL", chanSize, batteries.BQLRandomGraphWalking)
+	out += runBattery(ctx, st, "walking the tree graph with BQL", chanSize, bulkSize, batteries.BQLTreeGraphWalking)
+	out += runBattery(ctx, st, "walking the random graph with BQL", chanSize, bulkSize, batteries.BQLRandomGraphWalking)
 	return out
 }
 
 // runBattery executes all the canned benchmarks and prints out the stats.
-func runBattery(ctx context.Context, st storage.Store, name string, chanSize int, f func(context.Context, storage.Store, int) ([]*runtime.BenchEntry, error)) int {
+func runBattery(ctx context.Context, st storage.Store, name string, chanSize, bulkSize int, f func(context.Context, storage.Store, int, int) ([]*runtime.BenchEntry, error)) int {
 	// Add triples.
 	fmt.Printf("Creating %s triples benchmark... ", name)
-	bes, err := f(ctx, st, chanSize)
+	bes, err := f(ctx, st, chanSize, bulkSize)
 	if err != nil {
 		log.Printf("[ERROR] %v\n", err)
 		return 2

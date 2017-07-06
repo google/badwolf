@@ -33,7 +33,7 @@ import (
 )
 
 // New creates the help command.
-func New(store storage.Store, builder literal.Builder, chanSize int) *command.Command {
+func New(store storage.Store, builder literal.Builder, chanSize, bulkSize int) *command.Command {
 	cmd := &command.Command{
 		UsageLine: "assert folder_path",
 		Short:     "asserts all the stories in the indicated folder.",
@@ -42,13 +42,13 @@ file containing all the sources and all the assertions to run.
 `,
 	}
 	cmd.Run = func(ctx context.Context, args []string) int {
-		return assertCommand(ctx, cmd, args, store, builder, chanSize)
+		return assertCommand(ctx, cmd, args, store, builder, chanSize, bulkSize)
 	}
 	return cmd
 }
 
 // assertCommand runs all the BQL statements available in the file.
-func assertCommand(ctx context.Context, cmd *command.Command, args []string, store storage.Store, builder literal.Builder, chanSize int) int {
+func assertCommand(ctx context.Context, cmd *command.Command, args []string, store storage.Store, builder literal.Builder, chanSize, bulkSize int) int {
 	if len(args) < 3 {
 		log.Printf("Missing required folder path. ")
 		cmd.Usage()
@@ -97,7 +97,7 @@ func assertCommand(ctx context.Context, cmd *command.Command, args []string, sto
 	}
 	fmt.Println("-------------------------------------------------------------")
 	fmt.Printf("Evaluating %d stories... ", len(stories))
-	results := compliance.RunStories(ctx, store, builder, stories, chanSize)
+	results := compliance.RunStories(ctx, store, builder, stories, chanSize, bulkSize)
 	fmt.Println("done.")
 	fmt.Println("-------------------------------------------------------------")
 	for i, entry := range results.Entries {
