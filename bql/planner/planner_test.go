@@ -16,6 +16,7 @@ package planner
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -479,44 +480,65 @@ func TestPlannerQuery(t *testing.T) {
 	}
 }
 
-func TestPlannerConstruct(t *testing.T) {
+func TestPlannerConstructAddsCorrectNumberofTriples(t *testing.T) {
 	sts, dts := len(strings.Split(constructTestSrcTriples, "\n"))-1, len(strings.Split(constructTestDestTriples, "\n"))-1
 	testTable := []struct {
 		s    string
 		trps int
 	}{
 		{
-			s:    `construct {?s ?p ?o} into ?dest from ?src where {?s ?p ?o};`,
+			s: `construct {?s ?p ?o}
+			    into ?dest
+			    from ?src
+			    where {?s ?p ?o};`,
 			trps: sts + dts,
 		},
 		{
-			s: `construct {?s "met"@[] ?o; "location"@[] /city<New York>} into ?dest from ?src where {?s "met"@[] ?o};`,
+			s: `construct {?s "met"@[] ?o; "location"@[] /city<New York>}
+			    into ?dest
+			    from ?src
+			    where {?s "met"@[] ?o};`,
 			// 3 matching triples * 4 new triples per matched triple due to reification + 1 triple in dest graph.
 			trps: 3*4 + dts,
 		},
 		{
 			s: `construct {?s "met"@[] ?o; "location"@[] /city<New York>;
-		                                          "outcome"@[] "good"^^type:text } into ?dest from ?src where {?s "met"@[] ?o};`,
+			                               "outcome"@[] "good"^^type:text }
+			    into ?dest
+			    from ?src
+			    where {?s "met"@[] ?o};`,
 			// 3 matching triples * 5 new triples per matched triple due to reification + 1 triple in dest graph.
 			trps: 3*5 + dts,
 		},
 		{
 			s: `construct {?s "met"@[?t] ?o; "location"@[] /city<New York>;
-			                                    "outcome"@[] "good"^^type:text .
-			                  ?s "connected_to"@[] ?o} into ?dest from ?src where {?s "met"@[] ?o. ?s "met_at"@[?t] ?o};`,
+			                                 "outcome"@[] "good"^^type:text .
+			               ?s "connected_to"@[] ?o}
+			    into ?dest
+			    from ?src
+			    where {?s "met"@[] ?o.
+			           ?s "met_at"@[?t] ?o};`,
 			// 2 matching triples * (5 new triples due to reification + 1 explictly constructed triple per matched triple) +
 			// 1 triple in dest graph.
 			trps: 2*6 + dts,
 		},
 		{
 			s: `construct {?s "met"@[?t] ?o; "location"@[] /city<New York>;
-			                                    "outcome"@[] "good"^^type:text .
-			                  ?s "connected_to"@[] ?o; "at"@[?t] /city<New York> } into ?dest from ?src where {?s "met"@[] ?o. ?s "met_at"@[?t] ?o};`,
+			                                 "outcome"@[] "good"^^type:text .
+			               ?s "connected_to"@[] ?o; "at"@[?t] /city<New York> }
+			    into ?dest
+			    from ?src
+			    where {?s "met"@[] ?o.
+			           ?s "met_at"@[?t] ?o};`,
 			// 2 matching triples * 9 new triples due to reification + 1 triple in dest graph.
 			trps: 2*9 + dts,
 		},
 		{
-			s: `construct {?d2 "is_2_hops_from"@[] ?s1 } into ?dest from ?src where {?s1 "is_connected_to"@[] ?d1. ?d1 "is_connected_to"@[] ?d2};`,
+			s: `construct {?d2 "is_2_hops_from"@[] ?s1 }
+			    into ?dest
+			    from ?src
+			    where {?s1 "is_connected_to"@[] ?d1.
+			           ?d1 "is_connected_to"@[] ?d2};`,
 			// 2 new triples (/city<A> "is_2_hops_from"@[] /city<D>, /city<A> "is_2_hops_from"@[] /city<E>) +  1 triple in dest graph.
 			trps: 3,
 		},
@@ -565,6 +587,149 @@ func TestPlannerConstruct(t *testing.T) {
 		}
 	}
 
+}
+
+func TestPlannerConstructAddsCorrectTriples(t *testing.T) {
+	bql := `construct {?s "met"@[?t] ?o; "location"@[] /city<New York>;
+	                                     "outcome"@[] "good"^^type:text.
+	                   ?s "connected_to"@[] ?o }
+                into ?dest
+	        from ?src
+	        where {?s "met"@[] ?o.
+		       ?s "met_at"@[?t] ?o};`
+	p, err := grammar.NewParser(grammar.SemanticBQL())
+	if err != nil {
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+	}
+	s, ctx := memory.NewStore(), context.Background()
+	populateStoreWithTriples(s, ctx, "?src", constructTestSrcTriples, t)
+	populateStoreWithTriples(s, ctx, "?dest", "", t)
+
+	st := &semantic.Statement{}
+	if err := p.Parse(grammar.NewLLk(bql, 1), st); err != nil {
+		t.Errorf("Parser.consume: failed to parse query %q with error %v", bql, err)
+	}
+	plnr, err := New(ctx, s, st, 0, nil)
+	if err != nil {
+		t.Errorf("planner.New failed to create a valid query plan with error %v", err)
+	}
+	_, err = plnr.Execute(ctx)
+	if err != nil {
+		t.Errorf("planner.Execute failed for query %q with error %v", bql, err)
+	}
+
+	g, err := s.Graph(ctx, "?dest")
+	if err != nil {
+		t.Errorf("memory.DefaultStore.Graph(%q) should have not fail with error %v", "?test", err)
+	}
+
+	ts := make(chan *triple.Triple)
+	go func() {
+		if err := g.Triples(ctx, storage.DefaultLookup, ts); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	bnm := make(map[string]map[string]bool)
+	bns := make(map[string]string)
+	bna := map[string]bool{
+		"/_<b1>": true,
+		"/_<b2>": true,
+	}
+	dtm := map[string]bool{
+		fmt.Sprintf("%s\t%s\t%s", `/person<A>`, `"connected_to"@[]`, `/person<B>`):                                 false,
+		fmt.Sprintf("%s\t%s\t%s", `/person<B>`, `"connected_to"@[]`, `/person<C>`):                                 false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b1>`, `"_subject"@[2016-04-10T04:25:00Z]`, `/person<A>`):                     false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b1>`, `"_predicate"@[2016-04-10T04:25:00Z]`, `"met"@[2016-04-10T04:25:00Z]`): false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b1>`, `"_object"@[2016-04-10T04:25:00Z]`, `/person<B>`):                      false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b1>`, `"location"@[]`, `/city<New York>`):                                    false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b1>`, `"outcome"@[]`, `"good"^^type:text`):                                   false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b2>`, `"_subject"@[2016-04-10T04:25:00Z]`, `/person<B>`):                     false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b2>`, `"_predicate"@[2016-04-10T04:25:00Z]`, `"met"@[2016-04-10T04:25:00Z]`): false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b2>`, `"_object"@[2016-04-10T04:25:00Z]`, `/person<C>`):                      false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b2>`, `"location"@[]`, `/city<New York>`):                                    false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b2>`, `"outcome"@[]`, `"good"^^type:text`):                                   false,
+	}
+
+	// First, we map each blank node generated to a potential blank node placeholder (such as b1 or b2.)
+	sts := []*triple.Triple{}
+	for elem := range ts {
+		sts = append(sts, elem)
+		if elem.Subject().Type().String() == "/_" {
+			for k, _ := range dtm {
+				trp, err := triple.Parse(k, literal.DefaultBuilder())
+				if err != nil {
+					t.Errorf("Unable to parse triple: %v with error %v", k, err)
+				}
+				if trp.Subject().Type().String() == "/_" &&
+					trp.Predicate().String() == elem.Predicate().String() &&
+					trp.Object().String() == elem.Object().String() {
+					if mp, ok := bnm[elem.Subject().String()]; !ok {
+						bnm[elem.Subject().String()] = map[string]bool{
+							trp.Subject().String(): true,
+						}
+					} else {
+						mp[trp.Subject().String()] = true
+					}
+				}
+			}
+
+		}
+	}
+
+	// Then, we decide which place holder blank nodes can be used to substiute for a given blank node
+	// by substituting the place holder in every triple where the given blank node is the subject and
+	// checking if the triple exists in the map of expected triples.
+	for _, t := range sts {
+		if t.Subject().Type().String() == "/_" {
+			for bn, _ := range bnm[t.Subject().String()] {
+				rep := fmt.Sprintf("%s\t%s\t%s", bn, t.Predicate().String(), t.Object().String())
+				if _, ok := dtm[rep]; !ok {
+					bnm[t.Subject().String()][bn] = false
+				}
+			}
+		}
+	}
+
+	// Finally, we assign a blank node to a place-holder blank node, if the place-holder blank node is
+	// not used to substitute any other blank node.
+	for k, v := range bnm {
+		for bn, p := range v {
+			if p && bna[bn] {
+				bns[k] = bn
+				bna[bn] = false
+				break
+			}
+		}
+	}
+	if len(sts) != len(dtm) {
+		t.Errorf("g.Triples should have returned %v triples, returned %v instead", len(dtm), len(sts))
+	}
+	for _, elem := range sts {
+		if elem.Subject().Type().String() == "/_" {
+			if val, ok := bns[elem.Subject().String()]; ok {
+				// Substitute the blank node with the mapped place holder blank node id.
+				rep := fmt.Sprintf("%s\t%s\t%s", val, elem.Predicate().String(), elem.Object().String())
+				if _, ok := dtm[rep]; !ok {
+					t.Errorf("unexpected triple: %v added to graph", elem)
+				}
+				dtm[rep] = true
+			} else {
+				t.Errorf("unexpected triple: %v added to graph", elem)
+			}
+		} else {
+			sr := elem.String()
+			if _, ok := dtm[sr]; !ok {
+				t.Errorf("unexpected triple: %v added to graph", elem)
+			}
+			dtm[sr] = true
+		}
+	}
+	for k, v := range dtm {
+		if v == false {
+			t.Errorf("g.Triples did not return triple: %v", k)
+		}
+	}
 }
 
 func TestTreeTraversalToRoot(t *testing.T) {

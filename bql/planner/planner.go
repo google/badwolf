@@ -798,12 +798,101 @@ type constructPlan struct {
 	queryPlan *queryPlan
 }
 
+func (p *constructPlan) processReificationClause(rc *semantic.ReificationClause, tbl *table.Table, r table.Row) (*predicate.Predicate, *triple.Object, error) {
+	var err error
+	rprd, robj := rc.P, rc.O
+	if rprd == nil {
+		if tbl.HasBinding(rc.PBinding) {
+
+			// Try to bind the predicate.
+			v, ok := r[rc.PBinding]
+			if !ok {
+				return nil, nil, fmt.Errorf("row %+v misses binding %q", r, rc.PBinding)
+			}
+			if v.P == nil {
+				return nil, nil, fmt.Errorf("binding %q requires a predicate, got %+v instead", rc.PBinding, v)
+			}
+			rprd = v.P
+		} else if rc.PTemporal && rc.PAnchorBinding != "" {
+
+			// Try to bind the predicate anchor.
+			v, ok := r[rc.PAnchorBinding]
+			if !ok {
+				return nil, nil, fmt.Errorf("row %+v misses binding %q", r, rc.PAnchorBinding)
+			}
+			if v.T == nil {
+				return nil, nil, fmt.Errorf("binding %q requires a time, got %+v instead", rc.PAnchorBinding, v)
+			}
+			rprd, err = predicate.NewTemporal(rc.PID, *v.T)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+	}
+	if robj == nil {
+		if tbl.HasBinding(rc.OBinding) {
+
+			// Try to bind the object
+			v, ok := r[rc.OBinding]
+			if !ok {
+				return nil, nil, fmt.Errorf("row %+v misses binding %q", r, rc.OBinding)
+			}
+			co, err := cellToObject(v)
+			if err != nil {
+				return nil, nil, err
+			}
+			robj = co
+		} else if rc.OTemporal && rc.OAnchorBinding != "" {
+
+			// Try to bind the object anchor.
+			v, ok := r[rc.OAnchorBinding]
+			if !ok {
+				return nil, nil, fmt.Errorf("row %+v misses binding %q", r, rc.OAnchorBinding)
+			}
+			if v.T == nil {
+				return nil, nil, fmt.Errorf("binding %q requires a time, got %+v instead", rc.OAnchorBinding, v)
+			}
+			rop, err := predicate.NewTemporal(rc.OID, *v.T)
+			if err != nil {
+				return nil, nil, err
+			}
+			robj = triple.NewPredicateObject(rop)
+		}
+
+	}
+	return rprd, robj, nil
+}
+
 func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 	tbl, err := p.queryPlan.Execute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var ts []*triple.Triple
+
+	tripChan := make(chan *triple.Triple, 10)
+	done := make(chan bool)
+
+	go func() {
+		ts := []*triple.Triple{}
+		updateFunc := func(g storage.Graph, d []*triple.Triple) error {
+			trace(p.tracer, func() []string {
+				return []string{"Inserting triples to graph \"" + g.ID(ctx) + "\""}
+			})
+			return g.AddTriples(ctx, d)
+		}
+		for elem := range tripChan {
+			ts = append(ts, elem)
+			if len(ts) >= 10 {
+				update(ctx, ts, p.stm.OutputGraphNames(), p.store, updateFunc)
+				ts = []*triple.Triple{}
+			}
+		}
+		if len(ts) > 0 {
+			update(ctx, ts, p.stm.OutputGraphNames(), p.store, updateFunc)
+		}
+		done <- true
+	}()
+
 	for _, cc := range p.stm.ConstructClauses() {
 		for _, r := range tbl.Rows() {
 			sbj, prd, obj := cc.S, cc.P, cc.O
@@ -880,95 +969,42 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 				return nil, err
 			}
 			if len(cc.ReificationClauses()) > 0 {
+
+				// We need to reify a blank node.
 				rts, bn, err := t.Reify()
 				if err != nil {
 					fmt.Errorf("triple.Reify failed to reify %v with error %v", t, err)
 					return nil, err
 				}
 				for _, trpl := range rts[1:] {
-					ts = append(ts, trpl)
+					tripChan <- trpl
 				}
 				for _, rc := range cc.ReificationClauses() {
-					rprd, robj := rc.P, rc.O
-					if rprd == nil {
-						if tbl.HasBinding(rc.PBinding) {
-
-							// Try to bind the predicate.
-							v, ok := r[rc.PBinding]
-							if !ok {
-								return nil, fmt.Errorf("row %+v misses binding %q", r, rc.PBinding)
-							}
-							if v.P == nil {
-								return nil, fmt.Errorf("binding %q requires a predicate, got %+v instead", rc.PBinding, v)
-							}
-							rprd = v.P
-						} else if rc.PTemporal && rc.PAnchorBinding != "" {
-
-							// Try to bind the predicate anchor.
-							v, ok := r[rc.PAnchorBinding]
-							if !ok {
-								return nil, fmt.Errorf("row %+v misses binding %q", r, rc.PAnchorBinding)
-							}
-							if v.T == nil {
-								return nil, fmt.Errorf("binding %q requires a time, got %+v instead", rc.PAnchorBinding, v)
-							}
-							rprd, err = predicate.NewTemporal(rc.PID, *v.T)
-							if err != nil {
-								return nil, err
-							}
-						}
-					}
-					if robj == nil {
-						if tbl.HasBinding(rc.OBinding) {
-
-							// Try to bind the object
-							v, ok := r[rc.OBinding]
-							if !ok {
-								return nil, fmt.Errorf("row %+v misses binding %q", r, rc.OBinding)
-							}
-							co, err := cellToObject(v)
-							if err != nil {
-								return nil, err
-							}
-							robj = co
-						} else if rc.OTemporal && rc.OAnchorBinding != "" {
-
-							// Try to bind the object anchor.
-							v, ok := r[rc.OAnchorBinding]
-							if !ok {
-								return nil, fmt.Errorf("row %+v misses binding %q", r, rc.OAnchorBinding)
-							}
-							if v.T == nil {
-								return nil, fmt.Errorf("binding %q requires a time, got %+v instead", rc.OAnchorBinding, v)
-							}
-							rop, err := predicate.NewTemporal(rc.OID, *v.T)
-							if err != nil {
-								return nil, err
-							}
-							robj = triple.NewPredicateObject(rop)
-						}
-
+					rprd, robj, err := p.processReificationClause(rc, tbl, r)
+					if err != nil {
+						return nil, err
 					}
 					rt, err := triple.New(bn, rprd, robj)
 					if err != nil {
 						return nil, err
 					}
-					ts = append(ts, rt)
+					tripChan <- rt
 				}
 
 			} else {
-				ts = append(ts, t)
+				tripChan <- t
 			}
 		}
 	}
-	return tbl, update(ctx, ts, p.stm.OutputGraphNames(), p.store, func(g storage.Graph, d []*triple.Triple) error {
-		trace(p.tracer, func() []string {
-			return []string{"Inserting triples to graph \"" + g.ID(ctx) + "\""}
-		})
-		return g.AddTriples(ctx, d)
-	})
+	close(tripChan)
+
+	// Wait until all triples are added to the store.
+	<-done
+
+	return tbl, nil
 }
 
+// String returns a readable description of the execution plan.
 func (p *constructPlan) String() string {
 	b := bytes.NewBufferString("CONSTRUCT plan:\n\n")
 	b.WriteString("Input graphs:\n")
