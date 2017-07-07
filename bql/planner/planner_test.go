@@ -16,6 +16,7 @@ package planner
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -28,6 +29,56 @@ import (
 	"github.com/google/badwolf/storage/memory"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/literal"
+)
+
+const (
+	originalTriples = `/u<joe> "parent_of"@[] /u<mary>
+		/u<joe> "parent_of"@[] /u<peter>
+		/u<peter> "parent_of"@[] /u<john>
+		/u<peter> "parent_of"@[] /u<eve>
+		/u<peter> "bought"@[2016-01-01T00:00:00-08:00] /c<mini>
+		/u<peter> "bought"@[2016-02-01T00:00:00-08:00] /c<model s>
+		/u<peter> "bought"@[2016-03-01T00:00:00-08:00] /c<model x>
+		/u<peter> "bought"@[2016-04-01T00:00:00-08:00] /c<model y>
+		/c<mini> "is_a"@[] /t<car>
+		/c<model s> "is_a"@[] /t<car>
+		/c<model x> "is_a"@[] /t<car>
+		/c<model y> "is_a"@[] /t<car>
+		/l<barcelona> "predicate"@[] "turned"@[2016-01-01T00:00:00-08:00]
+		/l<barcelona> "predicate"@[] "turned"@[2016-02-01T00:00:00-08:00]
+		/l<barcelona> "predicate"@[] "turned"@[2016-03-01T00:00:00-08:00]
+		/l<barcelona> "predicate"@[] "turned"@[2016-04-01T00:00:00-08:00]
+		`
+
+	tripleFromIssue40 = `/room<Hallway> "connects_to"@[] /room<Kitchen>
+		/room<Kitchen> "connects_to"@[] /room<Hallway>
+		/room<Kitchen> "connects_to"@[] /room<Bathroom>
+		/room<Kitchen> "connects_to"@[] /room<Bedroom>
+		/room<Bathroom> "connects_to"@[] /room<Kitchen>
+		/room<Bedroom> "connects_to"@[] /room<Kitchen>
+		/room<Bedroom> "connects_to"@[] /room<Fire Escape>
+		/room<Fire Escape> "connects_to"@[] /room<Kitchen>
+		/item/book<000> "in"@[2016-04-10T4:21:00.000000000Z] /room<Hallway>
+		/item/book<000> "in"@[2016-04-10T4:23:00.000000000Z] /room<Kitchen>
+		/item/book<000> "in"@[2016-04-10T4:25:00.000000000Z] /room<Bedroom>
+		`
+
+	constructTestSrcTriples = `/person<A> "met"@[] /person<B>
+		/person<B> "met"@[] /person<C>
+		/person<C> "met"@[] /person<D>
+		/person<A> "met_at"@[2016-04-10T4:25:00.000000000Z] /person<B>
+		/person<B> "met_at"@[2016-04-10T4:25:00.000000000Z] /person<C>
+		/city<A> "is_connected_to"@[] /city<B>
+		/city<A> "is_connected_to"@[] /city<C>
+		/city<B> "is_connected_to"@[] /city<D>
+		/city<B> "is_connected_to"@[] /city<E>
+		/city<C> "is_connected_to"@[] /city<D>
+		`
+
+	constructTestDestTriples = `/person<D> "met"@[] /person<E>
+	`
+
+	testTriples = originalTriples + tripleFromIssue40
 )
 
 func insertAndDeleteTest(t *testing.T) {
@@ -45,7 +96,7 @@ func insertAndDeleteTest(t *testing.T) {
 	if err = p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
-	pln, err := New(ctx, memory.DefaultStore, stm, 0, nil)
+	pln, err := New(ctx, memory.DefaultStore, stm, 0, 10, nil)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
@@ -82,7 +133,7 @@ func insertAndDeleteTest(t *testing.T) {
 	if err = p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
-	pln, err = New(ctx, memory.DefaultStore, stm, 0, nil)
+	pln, err = New(ctx, memory.DefaultStore, stm, 0, 10, nil)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
@@ -131,7 +182,7 @@ func TestPlannerCreateGraph(t *testing.T) {
 	if err = p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
-	pln, err := New(ctx, memory.DefaultStore, stm, 0, nil)
+	pln, err := New(ctx, memory.DefaultStore, stm, 0, 10, nil)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
@@ -162,7 +213,7 @@ func TestPlannerDropGraph(t *testing.T) {
 	if err = p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		t.Errorf("Parser.consume: failed to accept BQL %q with error %v", bql, err)
 	}
-	pln, err := New(ctx, memory.DefaultStore, stm, 0, nil)
+	pln, err := New(ctx, memory.DefaultStore, stm, 0, 10, nil)
 	if err != nil {
 		t.Errorf("planner.New: should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}
@@ -177,91 +228,28 @@ func TestPlannerDropGraph(t *testing.T) {
 	}
 }
 
-const (
-	originalTriples = `/u<joe> "parent_of"@[] /u<mary>
-		/u<joe> "parent_of"@[] /u<peter>
-		/u<peter> "parent_of"@[] /u<john>
-		/u<peter> "parent_of"@[] /u<eve>
-		/u<peter> "bought"@[2016-01-01T00:00:00-08:00] /c<mini>
-		/u<peter> "bought"@[2016-02-01T00:00:00-08:00] /c<model s>
-		/u<peter> "bought"@[2016-03-01T00:00:00-08:00] /c<model x>
-		/u<peter> "bought"@[2016-04-01T00:00:00-08:00] /c<model y>
-		/c<mini> "is_a"@[] /t<car>
-		/c<model s> "is_a"@[] /t<car>
-		/c<model x> "is_a"@[] /t<car>
-		/c<model y> "is_a"@[] /t<car>
-		/l<barcelona> "predicate"@[] "turned"@[2016-01-01T00:00:00-08:00]
-		/l<barcelona> "predicate"@[] "turned"@[2016-02-01T00:00:00-08:00]
-		/l<barcelona> "predicate"@[] "turned"@[2016-03-01T00:00:00-08:00]
-		/l<barcelona> "predicate"@[] "turned"@[2016-04-01T00:00:00-08:00]
-		`
-
-	tripleFromIssue40 = `/room<Hallway> "connects_to"@[] /room<Kitchen>
-		/room<Kitchen> "connects_to"@[] /room<Hallway>
-		/room<Kitchen> "connects_to"@[] /room<Bathroom>
-		/room<Kitchen> "connects_to"@[] /room<Bedroom>
-		/room<Bathroom> "connects_to"@[] /room<Kitchen>
-		/room<Bedroom> "connects_to"@[] /room<Kitchen>
-		/room<Bedroom> "connects_to"@[] /room<Fire Escape>
-		/room<Fire Escape> "connects_to"@[] /room<Kitchen>
-		/item/book<000> "in"@[2016-04-10T4:21:00.000000000Z] /room<Hallway>
-		/item/book<000> "in"@[2016-04-10T4:23:00.000000000Z] /room<Kitchen>
-		/item/book<000> "in"@[2016-04-10T4:25:00.000000000Z] /room<Bedroom>
-		`
-
-	testTriples = originalTriples + tripleFromIssue40
-)
-
-func populateTestStore(t *testing.T) storage.Store {
-	s, ctx := memory.NewStore(), context.Background()
-	g, err := s.NewGraph(ctx, "?test")
+func populateStoreWithTriples(s storage.Store, ctx context.Context, gn string, triples string, tb testing.TB) {
+	g, err := s.NewGraph(ctx, gn)
 	if err != nil {
-		t.Fatalf("memory.NewGraph failed to create \"?test\" with error %v", err)
+		tb.Fatalf("memory.NewGraph failed to create \"%v\" with error %v", gn, err)
 	}
-	b := bytes.NewBufferString(testTriples)
+	b := bytes.NewBufferString(triples)
 	if _, err := io.ReadIntoGraph(ctx, g, b, literal.DefaultBuilder()); err != nil {
-		t.Fatalf("io.ReadIntoGraph failed to read test graph with error %v", err)
+		tb.Fatalf("io.ReadIntoGraph failed to read test graph with error %v", err)
 	}
 	trpls := make(chan *triple.Triple)
 	go func() {
 		if err := g.Triples(ctx, storage.DefaultLookup, trpls); err != nil {
-			t.Fatal(err)
+			tb.Fatal(err)
 		}
 	}()
 	cnt := 0
 	for _ = range trpls {
 		cnt++
 	}
-	if got, want := cnt, len(strings.Split(testTriples, "\n"))-1; got != want {
-		t.Fatalf("Failed to import all test triples; got %v, want %v", got, want)
+	if got, want := cnt, len(strings.Split(triples, "\n"))-1; got != want {
+		tb.Fatalf("Failed to import all test triples; got %v, want %v", got, want)
 	}
-	return s
-}
-
-func populateBenchmarkStore(b *testing.B) storage.Store {
-	s, ctx := memory.NewStore(), context.Background()
-	g, err := s.NewGraph(ctx, "?test")
-	if err != nil {
-		b.Fatalf("memory.NewGraph failed to create \"?test\" with error %v", err)
-	}
-	buf := bytes.NewBufferString(testTriples)
-	if _, err := io.ReadIntoGraph(ctx, g, buf, literal.DefaultBuilder()); err != nil {
-		b.Fatalf("io.ReadIntoGraph failed to read test graph with error %v", err)
-	}
-	trpls := make(chan *triple.Triple)
-	go func() {
-		if err := g.Triples(ctx, storage.DefaultLookup, trpls); err != nil {
-			b.Fatal(err)
-		}
-	}()
-	cnt := 0
-	for _ = range trpls {
-		cnt++
-	}
-	if got, want := cnt, len(strings.Split(testTriples, "\n"))-1; got != want {
-		b.Fatalf("Failed to import all test triples; got %v, want %v", got, want)
-	}
-	return s
 }
 
 func TestPlannerQuery(t *testing.T) {
@@ -463,7 +451,8 @@ func TestPlannerQuery(t *testing.T) {
 		},
 	}
 
-	s := populateTestStore(t)
+	s, ctx := memory.NewStore(), context.Background()
+	populateStoreWithTriples(s, ctx, "?test", testTriples, t)
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		t.Fatalf("grammar.NewParser: should have produced a valid BQL parser with error %v", err)
@@ -473,7 +462,7 @@ func TestPlannerQuery(t *testing.T) {
 		if err := p.Parse(grammar.NewLLk(entry.q, 1), st); err != nil {
 			t.Errorf("Parser.consume: failed to parse query %q with error %v", entry.q, err)
 		}
-		plnr, err := New(ctx, s, st, 0, nil)
+		plnr, err := New(ctx, s, st, 0, 10, nil)
 		if err != nil {
 			t.Errorf("planner.New failed to create a valid query plan with error %v", err)
 		}
@@ -487,6 +476,258 @@ func TestPlannerQuery(t *testing.T) {
 		}
 		if got, want := len(tbl.Rows()), entry.nrws; got != want {
 			t.Errorf("planner.Execute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", entry.q, got, want, tbl)
+		}
+	}
+}
+
+func TestPlannerConstructAddsCorrectNumberofTriples(t *testing.T) {
+	sts, dts := len(strings.Split(constructTestSrcTriples, "\n"))-1, len(strings.Split(constructTestDestTriples, "\n"))-1
+	testTable := []struct {
+		s    string
+		trps int
+	}{
+		{
+			s: `construct {?s ?p ?o}
+			    into ?dest
+			    from ?src
+			    where {?s ?p ?o};`,
+			trps: sts + dts,
+		},
+		{
+			s: `construct {?s "met"@[] ?o; "location"@[] /city<New York>}
+			    into ?dest
+			    from ?src
+			    where {?s "met"@[] ?o};`,
+			// 3 matching triples * 4 new triples per matched triple due to reification + 1 triple in dest graph.
+			trps: 3*4 + dts,
+		},
+		{
+			s: `construct {?s "met"@[] ?o; "location"@[] /city<New York>;
+			                               "outcome"@[] "good"^^type:text }
+			    into ?dest
+			    from ?src
+			    where {?s "met"@[] ?o};`,
+			// 3 matching triples * 5 new triples per matched triple due to reification + 1 triple in dest graph.
+			trps: 3*5 + dts,
+		},
+		{
+			s: `construct {?s "met"@[?t] ?o; "location"@[] /city<New York>;
+			                                 "outcome"@[] "good"^^type:text .
+			               ?s "connected_to"@[] ?o}
+			    into ?dest
+			    from ?src
+			    where {?s "met"@[] ?o.
+			           ?s "met_at"@[?t] ?o};`,
+			// 2 matching triples * (5 new triples due to reification + 1 explictly constructed triple per matched triple) +
+			// 1 triple in dest graph.
+			trps: 2*6 + dts,
+		},
+		{
+			s: `construct {?s "met"@[?t] ?o; "location"@[] /city<New York>;
+			                                 "outcome"@[] "good"^^type:text .
+			               ?s "connected_to"@[] ?o; "at"@[?t] /city<New York> }
+			    into ?dest
+			    from ?src
+			    where {?s "met"@[] ?o.
+			           ?s "met_at"@[?t] ?o};`,
+			// 2 matching triples * 9 new triples due to reification + 1 triple in dest graph.
+			trps: 2*9 + dts,
+		},
+		{
+			s: `construct {?d2 "is_2_hops_from"@[] ?s1 }
+			    into ?dest
+			    from ?src
+			    where {?s1 "is_connected_to"@[] ?d1.
+			           ?d1 "is_connected_to"@[] ?d2};`,
+			// 2 new triples (/city<A> "is_2_hops_from"@[] /city<D>, /city<A> "is_2_hops_from"@[] /city<E>) +  1 triple in dest graph.
+			trps: 3,
+		},
+	}
+	p, err := grammar.NewParser(grammar.SemanticBQL())
+	if err != nil {
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+	}
+	for _, entry := range testTable {
+
+		s, ctx := memory.NewStore(), context.Background()
+		populateStoreWithTriples(s, ctx, "?src", constructTestSrcTriples, t)
+		populateStoreWithTriples(s, ctx, "?dest", constructTestDestTriples, t)
+
+		st := &semantic.Statement{}
+		if err := p.Parse(grammar.NewLLk(entry.s, 1), st); err != nil {
+			t.Errorf("Parser.consume: failed to parse query %q with error %v", entry.s, err)
+		}
+		plnr, err := New(ctx, s, st, 0, 10, nil)
+		if err != nil {
+			t.Errorf("planner.New failed to create a valid query plan with error %v", err)
+		}
+		_, err = plnr.Execute(ctx)
+		if err != nil {
+			t.Errorf("planner.Execute failed for query %q with error %v", entry.s, err)
+			continue
+		}
+
+		g, err := s.Graph(ctx, "?dest")
+		if err != nil {
+			t.Errorf("memory.DefaultStore.Graph(%q) should have not fail with error %v", "?test", err)
+		}
+
+		i := 0
+		ts := make(chan *triple.Triple)
+		go func() {
+			if err := g.Triples(ctx, storage.DefaultLookup, ts); err != nil {
+				t.Error(err)
+			}
+		}()
+		for range ts {
+			i++
+		}
+		if i != entry.trps {
+			t.Errorf("g.Triples should have returned %v triples, returned %v instead", entry.trps, i)
+		}
+	}
+
+}
+
+func TestPlannerConstructAddsCorrectTriples(t *testing.T) {
+	bql := `construct {?s "met"@[?t] ?o; "location"@[] /city<New York>;
+	                                     "outcome"@[] "good"^^type:text.
+	                   ?s "connected_to"@[] ?o }
+	        into ?dest
+	        from ?src
+	        where {?s "met"@[] ?o.
+		       ?s "met_at"@[?t] ?o};`
+	p, err := grammar.NewParser(grammar.SemanticBQL())
+	if err != nil {
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+	}
+	s, ctx := memory.NewStore(), context.Background()
+	populateStoreWithTriples(s, ctx, "?src", constructTestSrcTriples, t)
+	populateStoreWithTriples(s, ctx, "?dest", "", t)
+
+	st := &semantic.Statement{}
+	if err := p.Parse(grammar.NewLLk(bql, 1), st); err != nil {
+		t.Errorf("Parser.consume: failed to parse query %q with error %v", bql, err)
+	}
+	plnr, err := New(ctx, s, st, 0, 10, nil)
+	if err != nil {
+		t.Errorf("planner.New failed to create a valid query plan with error %v", err)
+	}
+	_, err = plnr.Execute(ctx)
+	if err != nil {
+		t.Errorf("planner.Execute failed for query %q with error %v", bql, err)
+	}
+
+	g, err := s.Graph(ctx, "?dest")
+	if err != nil {
+		t.Errorf("memory.DefaultStore.Graph(%q) should have not fail with error %v", "?test", err)
+	}
+
+	ts := make(chan *triple.Triple)
+	go func() {
+		if err := g.Triples(ctx, storage.DefaultLookup, ts); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	bnm := make(map[string]map[string]bool)
+	bns := make(map[string]string)
+	bna := map[string]bool{
+		"/_<b1>": true,
+		"/_<b2>": true,
+	}
+	dtm := map[string]bool{
+		fmt.Sprintf("%s\t%s\t%s", `/person<A>`, `"connected_to"@[]`, `/person<B>`):                                 false,
+		fmt.Sprintf("%s\t%s\t%s", `/person<B>`, `"connected_to"@[]`, `/person<C>`):                                 false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b1>`, `"_subject"@[2016-04-10T04:25:00Z]`, `/person<A>`):                     false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b1>`, `"_predicate"@[2016-04-10T04:25:00Z]`, `"met"@[2016-04-10T04:25:00Z]`): false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b1>`, `"_object"@[2016-04-10T04:25:00Z]`, `/person<B>`):                      false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b1>`, `"location"@[]`, `/city<New York>`):                                    false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b1>`, `"outcome"@[]`, `"good"^^type:text`):                                   false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b2>`, `"_subject"@[2016-04-10T04:25:00Z]`, `/person<B>`):                     false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b2>`, `"_predicate"@[2016-04-10T04:25:00Z]`, `"met"@[2016-04-10T04:25:00Z]`): false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b2>`, `"_object"@[2016-04-10T04:25:00Z]`, `/person<C>`):                      false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b2>`, `"location"@[]`, `/city<New York>`):                                    false,
+		fmt.Sprintf("%s\t%s\t%s", `/_<b2>`, `"outcome"@[]`, `"good"^^type:text`):                                   false,
+	}
+
+	// First, we map each blank node generated to a potential blank node placeholder (such as b1 or b2.)
+	sts := []*triple.Triple{}
+	for elem := range ts {
+		sts = append(sts, elem)
+		if elem.Subject().Type().String() == "/_" {
+			for k, _ := range dtm {
+				trp, err := triple.Parse(k, literal.DefaultBuilder())
+				if err != nil {
+					t.Errorf("Unable to parse triple: %v with error %v", k, err)
+				}
+				if trp.Subject().Type().String() == "/_" &&
+					trp.Predicate().String() == elem.Predicate().String() &&
+					trp.Object().String() == elem.Object().String() {
+					if mp, ok := bnm[elem.Subject().String()]; !ok {
+						bnm[elem.Subject().String()] = map[string]bool{
+							trp.Subject().String(): true,
+						}
+					} else {
+						mp[trp.Subject().String()] = true
+					}
+				}
+			}
+
+		}
+	}
+
+	// Then, we decide which place holder blank nodes can be used to substiute for a given blank node
+	// by substituting the place holder in every triple where the given blank node is the subject and
+	// checking if the triple exists in the map of expected triples.
+	for _, t := range sts {
+		if t.Subject().Type().String() == "/_" {
+			for bn, _ := range bnm[t.Subject().String()] {
+				rep := fmt.Sprintf("%s\t%s\t%s", bn, t.Predicate().String(), t.Object().String())
+				if _, ok := dtm[rep]; !ok {
+					bnm[t.Subject().String()][bn] = false
+				}
+			}
+		}
+	}
+
+	// Finally, we assign a blank node to a place-holder blank node, if the place-holder blank node is
+	// not used to substitute any other blank node.
+	for k, v := range bnm {
+		for bn, p := range v {
+			if p && bna[bn] {
+				bns[k] = bn
+				bna[bn] = false
+				break
+			}
+		}
+	}
+	if len(sts) != len(dtm) {
+		t.Errorf("g.Triples should have returned %v triples, returned %v instead", len(dtm), len(sts))
+	}
+	for _, elem := range sts {
+		if elem.Subject().Type().String() == "/_" {
+			if val, ok := bns[elem.Subject().String()]; ok {
+				// Substitute the blank node with the mapped place holder blank node id.
+				rep := fmt.Sprintf("%s\t%s\t%s", val, elem.Predicate().String(), elem.Object().String())
+				if _, ok := dtm[rep]; !ok {
+					t.Errorf("unexpected triple: %v added to graph", elem)
+				}
+				dtm[rep] = true
+			} else {
+				t.Errorf("unexpected triple: %v added to graph", elem)
+			}
+		} else {
+			sr := elem.String()
+			if _, ok := dtm[sr]; !ok {
+				t.Errorf("unexpected triple: %v added to graph", elem)
+			}
+			dtm[sr] = true
+		}
+	}
+	for k, v := range dtm {
+		if v == false {
+			t.Errorf("g.Triples did not return triple: %v", k)
 		}
 	}
 }
@@ -524,7 +765,7 @@ func TestTreeTraversalToRoot(t *testing.T) {
 	if err := p.Parse(grammar.NewLLk(traversalQuery, 1), st); err != nil {
 		t.Errorf("Parser.consume: failed to parse query %q with error %v", traversalQuery, err)
 	}
-	plnr, err := New(ctx, s, st, 0, nil)
+	plnr, err := New(ctx, s, st, 0, 10, nil)
 	if err != nil {
 		t.Errorf("planner.New failed to create a valid query plan with error %v", err)
 	}
@@ -547,7 +788,7 @@ func TestChaining(t *testing.T) {
 		/u<peter> "parent_of"@[] /u<john>
 		/u<peter> "parent_of"@[] /u<eve>`
 
-	traversalQuery := `SELECT ?o FROM ?test 
+	traversalQuery := `SELECT ?o FROM ?test
 	                   WHERE {
 	                       /u<joe> "parent_of"@[] ?o .
 		                   ?o "parent_of"@[] /u<john>
@@ -571,7 +812,7 @@ func TestChaining(t *testing.T) {
 	if err := p.Parse(grammar.NewLLk(traversalQuery, 1), st); err != nil {
 		t.Errorf("Parser.consume: failed to parse query %q with error %v", traversalQuery, err)
 	}
-	plnr, err := New(ctx, s, st, 0, nil)
+	plnr, err := New(ctx, s, st, 0, 10, nil)
 	if err != nil {
 		t.Errorf("planner.New failed to create a valid query plan with error %v", err)
 	}
@@ -629,7 +870,7 @@ func TestReificationResolutionIssue70(t *testing.T) {
 	if err := p.Parse(grammar.NewLLk(query, 1), st); err != nil {
 		t.Errorf("Parser.consume: failed to parse query %q with error %v", query, err)
 	}
-	plnr, err := New(ctx, s, st, 0, nil)
+	plnr, err := New(ctx, s, st, 0, 10, nil)
 	if err != nil {
 		t.Errorf("planner.New failed to create a valid query plan with error %v", err)
 	}
@@ -649,7 +890,8 @@ func TestReificationResolutionIssue70(t *testing.T) {
 func benchmarkQuery(query string, b *testing.B) {
 	ctx := context.Background()
 
-	s := populateBenchmarkStore(b)
+	s, ctx := memory.NewStore(), context.Background()
+	populateStoreWithTriples(s, ctx, "?test", testTriples, b)
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		b.Fatalf("grammar.NewParser: should have produced a valid BQL parser with error %v", err)
@@ -660,7 +902,7 @@ func benchmarkQuery(query string, b *testing.B) {
 		if err := p.Parse(grammar.NewLLk(query, 1), st); err != nil {
 			b.Errorf("Parser.consume: failed to parse query %q with error %v", query, err)
 		}
-		plnr, err := New(ctx, s, st, 0, nil)
+		plnr, err := New(ctx, s, st, 0, 10, nil)
 		if err != nil {
 			b.Errorf("planner.New failed to create a valid query plan with error %v", err)
 		}

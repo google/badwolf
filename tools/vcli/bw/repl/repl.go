@@ -168,7 +168,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			continue
 		}
 		if strings.HasPrefix(l, "desc") {
-			pln, err := planBQL(ctx, l[4:], driver, chanSize, nil)
+			pln, err := planBQL(ctx, l[4:], driver, chanSize, bulkSize, nil)
 			if err != nil {
 				fmt.Printf("[ERROR] %s\n\n", err)
 			} else {
@@ -180,7 +180,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 		}
 		if strings.HasPrefix(l, "run") {
 			now := time.Now()
-			path, cmds, err := runBQLFromFile(ctx, driver, chanSize, strings.TrimSpace(l[:len(l)-1]), tracer)
+			path, cmds, err := runBQLFromFile(ctx, driver, chanSize, bulkSize, strings.TrimSpace(l[:len(l)-1]), tracer)
 			if err != nil {
 				fmt.Printf("[ERROR] %s\n\n", err)
 			} else {
@@ -192,7 +192,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 		}
 
 		now := time.Now()
-		table, err := runBQL(ctx, l, driver, chanSize, tracer)
+		table, err := runBQL(ctx, l, driver, chanSize, bulkSize, tracer)
 		if err != nil {
 			fmt.Printf("[ERROR] %s\n", err)
 			fmt.Println("Time spent: ", time.Now().Sub(now))
@@ -222,7 +222,7 @@ func printHelp() {
 }
 
 // runBQLFromFile loads all the statements in the file and runs them.
-func runBQLFromFile(ctx context.Context, driver storage.Store, chanSize int, line string, w io.Writer) (string, int, error) {
+func runBQLFromFile(ctx context.Context, driver storage.Store, chanSize, bulkSize int, line string, w io.Writer) (string, int, error) {
 	ss := strings.Split(strings.TrimSpace(line), " ")
 	if len(ss) != 2 {
 		return "", 0, fmt.Errorf("wrong syntax: run <file_with_bql_statements>")
@@ -234,7 +234,7 @@ func runBQLFromFile(ctx context.Context, driver storage.Store, chanSize int, lin
 	}
 	for idx, stm := range lines {
 		fmt.Printf("Processing statement (%d/%d)\n", idx+1, len(lines))
-		_, err := runBQL(ctx, stm, driver, chanSize, w)
+		_, err := runBQL(ctx, stm, driver, chanSize, bulkSize, w)
 		if err != nil {
 			return "", 0, fmt.Errorf("%v on\n%s\n", err, stm)
 		}
@@ -244,8 +244,8 @@ func runBQLFromFile(ctx context.Context, driver storage.Store, chanSize int, lin
 }
 
 // runBQL attempts to execute the provided query against the given store.
-func runBQL(ctx context.Context, bql string, s storage.Store, chanSize int, w io.Writer) (*table.Table, error) {
-	pln, err := planBQL(ctx, bql, s, chanSize, w)
+func runBQL(ctx context.Context, bql string, s storage.Store, chanSize, bulkSize int, w io.Writer) (*table.Table, error) {
+	pln, err := planBQL(ctx, bql, s, chanSize, bulkSize, w)
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +257,7 @@ func runBQL(ctx context.Context, bql string, s storage.Store, chanSize int, w io
 }
 
 // planBQL attempts to create the execution plan for the provided query against the given store.
-func planBQL(ctx context.Context, bql string, s storage.Store, chanSize int, w io.Writer) (planner.Executor, error) {
+func planBQL(ctx context.Context, bql string, s storage.Store, chanSize, bulkSize int, w io.Writer) (planner.Executor, error) {
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		return nil, fmt.Errorf("failed to initilize a valid BQL parser")
@@ -266,7 +266,7 @@ func planBQL(ctx context.Context, bql string, s storage.Store, chanSize int, w i
 	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		return nil, fmt.Errorf("failed to parse BQL statement with error %v", err)
 	}
-	pln, err := planner.New(ctx, s, stm, chanSize, w)
+	pln, err := planner.New(ctx, s, stm, chanSize, bulkSize, w)
 	if err != nil {
 		return nil, fmt.Errorf("should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
 	}

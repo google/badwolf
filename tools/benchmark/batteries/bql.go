@@ -262,7 +262,7 @@ var randomGraphWalkingBQL = []string{
 }
 
 // BQLTreeGraphWalking creates the benchmark.
-func BQLTreeGraphWalking(ctx context.Context, st storage.Store, chanSize int) ([]*runtime.BenchEntry, error) {
+func BQLTreeGraphWalking(ctx context.Context, st storage.Store, chanSize, bulkSize int) ([]*runtime.BenchEntry, error) {
 	bFactors := []int{2, 200}
 	sizes := []int{10, 1000, 100000}
 	var trplSets [][]*triple.Triple
@@ -309,7 +309,7 @@ func BQLTreeGraphWalking(ctx context.Context, st storage.Store, chanSize int) ([
 					},
 					F: func() error {
 						query := fmt.Sprintf(bql, gID)
-						_, err := run.BQL(ctx, query, st, chanSize)
+						_, err := run.BQL(ctx, query, st, chanSize, bulkSize)
 						return err
 					},
 					TearDown: func() error {
@@ -323,7 +323,7 @@ func BQLTreeGraphWalking(ctx context.Context, st storage.Store, chanSize int) ([
 }
 
 // BQLRandomGraphWalking creates the benchmark.
-func BQLRandomGraphWalking(ctx context.Context, st storage.Store, chanSize int) ([]*runtime.BenchEntry, error) {
+func BQLRandomGraphWalking(ctx context.Context, st storage.Store, chanSize, bulkSize int) ([]*runtime.BenchEntry, error) {
 	rgSize := []int{1000, 10000}
 	sizes := []int{10, 1000, 100000}
 	var trplSets [][]*triple.Triple
@@ -370,7 +370,7 @@ func BQLRandomGraphWalking(ctx context.Context, st storage.Store, chanSize int) 
 					},
 					F: func() error {
 						query := fmt.Sprintf(bql, gID)
-						_, err := run.BQL(ctx, query, st, chanSize)
+						_, err := run.BQL(ctx, query, st, chanSize, bulkSize)
 						return err
 					},
 					TearDown: func() error {

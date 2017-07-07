@@ -240,7 +240,7 @@ func MergeRows(ms []Row) Row {
 // DotProduct does the dot product with the provided table
 func (t *Table) DotProduct(t2 *Table) error {
 	if !disjointBinding(t.mbs, t2.mbs) {
-		return fmt.Errorf("DotProduct operations requires disjoint bindingts; instead got %v and %v", t.mbs, t2.mbs)
+		return fmt.Errorf("DotProduct operations requires disjoint bindings; instead got %v and %v", t.mbs, t2.mbs)
 	}
 	// Update the table metadata.
 	m := make(map[string]bool)

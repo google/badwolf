@@ -270,7 +270,6 @@ func TestInputOutputBindings(t *testing.T) {
 						PBinding: "?foo9",
 						OBinding: "?foo10",
 					},
-
 				},
 			},
 			{
@@ -279,19 +278,20 @@ func TestInputOutputBindings(t *testing.T) {
 				reificationClauses: []*ReificationClause{
 					{
 						PAnchorBinding: "?foo13",
-						OAnchorBinding: "?foo14",
+						OAnchorBinding: "?foo13",
 					},
-
 				},
 			},
 		},
 	}
 	want := []string{"?foo", "?bar", "?foo1", "?foo2", "?foo3", "?foo4", "?foo5", "?foo6",
-	        "?foo7","?foo8", "?foo9", "?foo10", "?foo11", "?foo12", "?foo13", "?foo14"}
+		"?foo7", "?foo8", "?foo9", "?foo10", "?foo11", "?foo12", "?foo13", "?foo13"}
 	if got := s.InputBindings(); !reflect.DeepEqual(got, want) {
-		t.Errorf("s.InputBindings return the wrong input binding; got %v, want %v", got, want)
+		t.Errorf("s.InputBindings returned the wrong input bindings; got %v, want %v", got, want)
 	}
-	if got, want := s.OutputBindings(), []string{"?foo_alias", "?bar"}; !reflect.DeepEqual(got, want) {
-		t.Errorf("s.OutputBindings return the wrong input binding; got %v, want %v", got, want)
+	want = []string{"?foo_alias", "?bar", "?foo1", "?foo2", "?foo3", "?foo4", "?foo5", "?foo6",
+		"?foo7", "?foo8", "?foo9", "?foo10", "?foo11", "?foo12", "?foo13"}
+	if got := s.OutputBindings(); !reflect.DeepEqual(got, want) {
+		t.Errorf("s.OutputBindings returned the wrong output bindings; got %v, want %v", got, want)
 	}
 }
