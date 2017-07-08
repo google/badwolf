@@ -45,6 +45,9 @@ type Executor interface {
 
 	// String returns a readable description of the execution plan.
 	String() string
+
+	// Type returns the type of plan used by the executor.
+	Type() string
 }
 
 // trace attempts to write a trace if a valid writer is provided. The
@@ -69,6 +72,11 @@ type createPlan struct {
 	stm    *semantic.Statement
 	store  storage.Store
 	tracer io.Writer
+}
+
+// Type returns the type of plan used by the executor.
+func (p *createPlan) Type() string {
+	return "CREATE"
 }
 
 // Execute creates the indicated graphs.
@@ -105,6 +113,11 @@ type dropPlan struct {
 	tracer io.Writer
 }
 
+// Type returns the type of plan used by the executor.
+func (p *dropPlan) Type() string {
+	return "DROP"
+}
+
 // Execute drops the indicated graphs.
 func (p *dropPlan) Execute(ctx context.Context) (*table.Table, error) {
 	t, err := table.New([]string{})
@@ -137,6 +150,11 @@ type insertPlan struct {
 	stm    *semantic.Statement
 	store  storage.Store
 	tracer io.Writer
+}
+
+// Type returns the type of plan used by the executor.
+func (p *insertPlan) Type() string {
+	return "INSERT"
 }
 
 type updater func(storage.Graph, []*triple.Triple) error
@@ -212,6 +230,11 @@ type deletePlan struct {
 	tracer io.Writer
 }
 
+// Type returns the type of plan used by the executor.
+func (p *deletePlan) Type() string {
+	return "DELETE"
+}
+
 // Execute deletes the provided data into the indicated graphs.
 func (p *deletePlan) Execute(ctx context.Context) (*table.Table, error) {
 	t, err := table.New([]string{})
@@ -255,6 +278,11 @@ type queryPlan struct {
 	tbl       *table.Table
 	chanSize  int
 	tracer    io.Writer
+}
+
+// Type returns the type of plan used by the executor.
+func (p *queryPlan) Type() string {
+	return "SELECT"
 }
 
 // newQueryPlan returns a new query plan ready to be executed.
@@ -797,6 +825,11 @@ type constructPlan struct {
 	tracer    io.Writer
 	bulkSize  int
 	queryPlan *queryPlan
+}
+
+// Type returns the type of plan used by the executor.
+func (p *constructPlan) Type() string {
+	return "CONSTRUCT"
 }
 
 func (p *constructPlan) processConstructClause(cc *semantic.ConstructClause, tbl *table.Table, r table.Row) (*triple.Triple, error) {
