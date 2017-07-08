@@ -57,10 +57,10 @@ func New(driver storage.Store, chanSize, bulkSize, builderSize int, rl ReadLiner
 type ReadLiner func(done chan bool) <-chan string
 
 // SimpleReadLine reads a line from the provided file. This does not support
-// any advanced terminal functionalities.
+// any advanced terminal capabilities.
 //
-// TODO(xllora): Replace simple reader for function that supports advanced
-// terminal input.
+// This function can be replaced with more advanced functionality, as shown
+// https://github.com/xllora/bwdrivers/blob/master/bw/main.go.
 func SimpleReadLine(done chan bool) <-chan string {
 	c := make(chan string)
 	go func() {
@@ -89,7 +89,7 @@ func SimpleReadLine(done chan bool) <-chan string {
 // REPL starts a read-evaluation-print-loop to run BQL commands.
 func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, builderSize int, done chan bool) int {
 	var tracer io.Writer
-	ctx, isTracingToFile := context.Background(), false
+	ctx, isTracingToFile, sessionStart := context.Background(), false, time.Now()
 
 	stopTracing := func() {
 		if tracer != nil {
@@ -104,9 +104,9 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 
 	fmt.Printf("Welcome to BadWolf vCli (%d.%d.%d-%s)\n", version.Major, version.Minor, version.Patch, version.Release)
 	fmt.Printf("Using driver %q. Type quit; to exit\n", driver.Name(ctx))
-	fmt.Printf("Session started at %v\n\n", time.Now())
+	fmt.Printf("Session started at %v\n\n", sessionStart)
 	defer func() {
-		fmt.Printf("\n\nThanks for all those BQL queries!\n\n")
+		fmt.Printf("\n\nThanks for all those BQL queries!\nSession duration: %v\n\n", time.Now().Sub(sessionStart) )
 	}()
 
 	for l := range rl(done) {
