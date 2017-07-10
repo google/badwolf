@@ -118,34 +118,33 @@ func TestAcceptByParse(t *testing.T) {
 		`construct {?s "new_predicate"@[] ?o} into ?a from ?b where {?s "old_predicate"@[,] ?o} having ?s = ?o;`,
 		`construct {?s "new_predicate"@[] ?o} into ?a from ?b where {?s "old_predicate"@[,] ?o};`,
 		`construct {?s ?p ?o}
-     into ?a 
-     from ?b
-     where {?n "_subject"@[] ?s.
-					  ?n "_predicate"@[] ?p.
-						?n "_object"@[] ?o};`,
+		 into ?a
+		 from ?b
+		 where {?n "_subject"@[] ?s.
+			?n "_predicate"@[] ?p.
+			?n "_object"@[] ?o};`,
 		`construct {?s ?p ?o.
-                _:v "_subject"@[] ?s.
-                _:v "_predicate"@[] ?p.
-                _:v "_object"@[] ?o}
-     into ?a
-     from ?b
-     where {?n "_subject"@[] ?s.
-						?n "_predicate"@[] ?p.
-						?n "_object"@[] ?o};`,
+			    _:v "_subject"@[] ?s.
+			    _:v "_predicate"@[] ?p.
+			    _:v "_object"@[] ?o}
+		 into ?a
+		 from ?b
+		 where {?n "_subject"@[] ?s.
+			?n "_predicate"@[] ?p.
+			?n "_object"@[] ?o};`,
 		`construct {?s "predicate_1"@[] ?o1;
-			             "predicate_2"@[] ?o2}
-     into ?a
-     from ?b
-     where {?s "old_predicate_1"@[,] ?o1.
-						?s "old_predicate_2"@[,] ?o2};`,
-
+			       "predicate_2"@[] ?o2}
+		 into ?a
+		 from ?b
+		 where {?s "old_predicate_1"@[,] ?o1.
+			?s "old_predicate_2"@[,] ?o2};`,
 		`construct {?s "predicate_1"@[] ?o1;
-			             "predicate_2"@[] ?o2.
-		            ?s "predicate_3"@[] ?o3}
-     into ?a
-     from ?b where {?s "old_predicate_1"@[,] ?o1.
-									  ?s "old_predicate_2"@[,] ?o2.
-									  ?s "old_predicate_3"@[,] ?o3};`,
+			       "predicate_2"@[] ?o2.
+			    ?s "predicate_3"@[] ?o3}
+		 into ?a
+		 from ?b where {?s "old_predicate_1"@[,] ?o1.
+				?s "old_predicate_2"@[,] ?o2.
+				?s "old_predicate_3"@[,] ?o3};`,
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
@@ -246,23 +245,23 @@ func TestRejectByParse(t *testing.T) {
 		`construct {?s "foo"@[,] ?o} from ?b where{?s "foo"@[,] ?o} having ?s = ?o;`,
 		// Construct clause with badly formed blank node.
 		`construct {?s ?p ?o.
-                _v "some_pred"@[] ?k}
-     into ?a
-     from ?b
-     where {?s "foo"@[,] ?o};`,
+			    _v "some_pred"@[] ?k}
+		 into ?a
+		 from ?b
+		 where {?s "foo"@[,] ?o};`,
 		// Construct clause with badly formed triple.
 		`construct {?s ?p ?o.
-		            _:v "some_pred"@[]}
-     into ?a
-     from ?b
-     where {?s "foo"@[,] ?o};`,
+			    _:v "some_pred"@[]}
+		 into ?a
+		 from ?b
+		 where {?s "foo"@[,] ?o};`,
 		// Construct clause with badly formed predicate-object pair.
 		`construct {?s "predicate_1"@[] ?o1;
-		            ?s "predicate_2"@[] ?o2}
-     into ?a
-     from ?b
-     where {?s "old_predicate_1"@[,] ?o1.
-					  ?s "old_predicate_2"@[,] ?o2};`,
+			    ?s "predicate_2"@[] ?o2}
+		 into ?a
+		 from ?b
+		 where {?s "old_predicate_1"@[,] ?o1.
+			?s "old_predicate_2"@[,] ?o2};`,
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
@@ -313,21 +312,21 @@ func TestAcceptGraphOpsByParseAndSemantic(t *testing.T) {
 
 		// Construct data. Graphs can be input or output graphs.
 		{`construct {?s "predicate_1"@[] ?o1;
-		                "predicate_2"@[] ?o2}
-      into ?a
-      from ?b
-      where {?s "old_predicate_1"@[,] ?o1.
-					   ?s "old_predicate_2"@[,] ?o2.
-						 ?s "old_predicate_3"@[,] ?o3};`, empty, []string{"?b"}, []string{"?a"}, 0},
+				"predicate_2"@[] ?o2}
+		  into ?a
+		  from ?b
+		  where {?s "old_predicate_1"@[,] ?o1.
+			 ?s "old_predicate_2"@[,] ?o2.
+			 ?s "old_predicate_3"@[,] ?o3};`, empty, []string{"?b"}, []string{"?a"}, 0},
 
 		// construct data into multiple output graphs from multple input graphs.
 		{`construct {?s "predicate_1"@[] ?o1;
-		                "predicate_2"@[] ?o2}
-      into ?a, ?b
-      from ?c, ?d
-      where {?s "old_predicate_1"@[,] ?o1.
-						 ?s "old_predicate_2"@[,] ?o2.
-						 ?s "old_predicate_3"@[,] ?o3};`, empty, []string{"?c", "?d"}, []string{"?a", "?b"}, 0},
+				"predicate_2"@[] ?o2}
+		  into ?a, ?b
+		  from ?c, ?d
+		  where {?s "old_predicate_1"@[,] ?o1.
+			 ?s "old_predicate_2"@[,] ?o2.
+			 ?s "old_predicate_3"@[,] ?o3};`, empty, []string{"?c", "?d"}, []string{"?a", "?b"}, 0},
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
@@ -470,22 +469,22 @@ func TestSemanticStatementConstructClausesLengthCorrectness(t *testing.T) {
 		{
 			query: `construct {?s "predicate_1"@[] ?o1;
 			                      "predicate_2"@[] ?o2}
-              into ?a
-              from ?b
-              where {?s "old_predicate_1"@[,] ?o1.
-					           ?s "old_predicate_2"@[,] ?o2.
-										 ?s "old_predicate_3"@[,] ?o3};`,
+				into ?a
+				from ?b
+				where {?s "old_predicate_1"@[,] ?o1.
+				       ?s "old_predicate_2"@[,] ?o2.
+				       ?s "old_predicate_3"@[,] ?o3};`,
 			want: 1,
 		},
 		{
 			query: `construct {?s "predicate_1"@[] ?o1;
-			                      "predicate_2"@[] ?o2.
-			                   ?s "predicate_3"@[] ?o3}
-              into ?a
-              from ?b
-              where {?s "old_predicate_1"@[,] ?o1.
-					           ?s "old_predicate_2"@[,] ?o2.
-										 ?s "old_predicate_3"@[,] ?o3};`,
+					      "predicate_2"@[] ?o2.
+					   ?s "predicate_3"@[] ?o3}
+				into ?a
+				from ?b
+				where {?s "old_predicate_1"@[,] ?o1.
+				       ?s "old_predicate_2"@[,] ?o2.
+				       ?s "old_predicate_3"@[,] ?o3};`,
 			want: 2,
 		},
 	}
@@ -512,70 +511,70 @@ func TestSemanticStatementPredicateObjectPairsLengthCorrectness(t *testing.T) {
 	}{
 		{
 			query: `construct {?s "predicate_1"@[] ?o1;
-			                      "predicate_2"@[] ?o2.
-				                 ?s "predicate_3"@[] ?o3}
-              into ?a
-              from ?b
-              where {?s "old_predicate_1"@[,] ?o1.
-                     ?s "old_predicate_2"@[,] ?o2.
-                     ?s "old_predicate_3"@[,] ?o3};`,
+					      "predicate_2"@[] ?o2.
+					   ?s "predicate_3"@[] ?o3}
+				into ?a
+				from ?b
+				where {?s "old_predicate_1"@[,] ?o1.
+				       ?s "old_predicate_2"@[,] ?o2.
+				       ?s "old_predicate_3"@[,] ?o3};`,
 			want_one: 2,
 			want_two: 1,
 		},
 		{
 			query: `construct {?s "predicate_1"@[] ?o1;
-			                      "predicate_2"@[] ?o2;
-			                      "predicate_3"@[] ?o3.
-				                 ?s1 "predicate_1"@[] ?o1;
-                             "predicate_2"@[] ?o2;
-				                     "predicate_3"@[] ?o3}
-              into ?a
-              from ?b
-              where {?s "old_predicate_1"@[,] ?o1.
-					           ?s "old_predicate_2"@[,] ?o2.
-										 ?s1 "old_predicate_3"@[,] ?o3};`,
+					      "predicate_2"@[] ?o2;
+					      "predicate_3"@[] ?o3.
+					   ?s1 "predicate_1"@[] ?o1;
+					       "predicate_2"@[] ?o2;
+					       "predicate_3"@[] ?o3}
+				into ?a
+				from ?b
+				where {?s "old_predicate_1"@[,] ?o1.
+				       ?s "old_predicate_2"@[,] ?o2.
+				       ?s1 "old_predicate_3"@[,] ?o3};`,
 			want_one: 3,
 			want_two: 3,
 		},
 		{
 			query: `construct {?s "predicate_1"@[2015-07-19T13:12:04.669618843-07:00] ?o1;
-			                      "predicate_2"@[2015-07-19T13:12:04.669618843-07:00] ?o2.
-				                 ?s "predicate_3"@[2015-07-19T13:12:04.669618843-07:00] ?o3}
-              into ?a
-              from ?b
-              where {?s "old_predicate_1"@[,] ?o1.
-					           ?s "old_predicate_2"@[,] ?o2.
-										 ?s "old_predicate_3"@[,] ?o3};`,
+					      "predicate_2"@[2015-07-19T13:12:04.669618843-07:00] ?o2.
+					   ?s "predicate_3"@[2015-07-19T13:12:04.669618843-07:00] ?o3}
+				into ?a
+				from ?b
+				where {?s "old_predicate_1"@[,] ?o1.
+				       ?s "old_predicate_2"@[,] ?o2.
+				       ?s "old_predicate_3"@[,] ?o3};`,
 			want_one: 2,
 			want_two: 1,
 		},
 		{
 			query: `construct {?s "predicate_1"@[2015-07-19T13:12:04.669618843-07:00] ?o1;
-			                      "predicate_2"@[2015-07-19T13:12:04.669618843-07:00] ?o2;
-			                      "predicate_3"@[2015-07-19T13:12:04.669618843-07:00] ?o3.
-				                 ?s1 "predicate_1"@[2015-07-19T13:12:04.669618843-07:00] ?o1;
-				                     "predicate_2"@[2015-07-19T13:12:04.669618843-07:00] ?o2;
-				                     "predicate_3"@[2015-07-19T13:12:04.669618843-07:00] ?o3}
-              into ?a
-              from ?b
-              where {?s "old_predicate_1"@[,] ?o1.
-										 ?s "old_predicate_2"@[,] ?o2.
-										 ?s1 "old_predicate_3"@[,] ?o3};`,
+					      "predicate_2"@[2015-07-19T13:12:04.669618843-07:00] ?o2;
+					      "predicate_3"@[2015-07-19T13:12:04.669618843-07:00] ?o3.
+					   ?s1 "predicate_1"@[2015-07-19T13:12:04.669618843-07:00] ?o1;
+					       "predicate_2"@[2015-07-19T13:12:04.669618843-07:00] ?o2;
+					       "predicate_3"@[2015-07-19T13:12:04.669618843-07:00] ?o3}
+				into ?a
+				from ?b
+				where {?s "old_predicate_1"@[,] ?o1.
+				       ?s "old_predicate_2"@[,] ?o2.
+				       ?s1 "old_predicate_3"@[,] ?o3};`,
 			want_one: 3,
 			want_two: 3,
 		},
 		{
 			query: `construct {?s "predicate_1"@[] ?o1;
-			                      "predicate_2"@[] ?o2;
-			                      "predicate_3"@[?t] ?o3.
-                         ?s1 "predicate_1"@[] ?o1;
-                             "predicate_2"@[] ?o2;
-				                     "predicate_3"@[?t] ?o3}
-              into ?a
-              from ?b
-              where {?s "old_predicate_1"@[,] ?o1.
-										 ?s "old_predicate_2"@[,] ?o2.
-										 ?s1 "old_predicate_3"@[,] AT ?t ?o3};`,
+					      "predicate_2"@[] ?o2;
+					      "predicate_3"@[?t] ?o3.
+					   ?s1 "predicate_1"@[] ?o1;
+					       "predicate_2"@[] ?o2;
+					       "predicate_3"@[?t] ?o3}
+				into ?a
+				from ?b
+				where {?s "old_predicate_1"@[,] ?o1.
+				       ?s "old_predicate_2"@[,] ?o2.
+				       ?s1 "old_predicate_3"@[,] AT ?t ?o3};`,
 			want_one: 3,
 			want_two: 3,
 		},
