@@ -138,24 +138,12 @@ type ConstructClause struct {
 	S        *node.Node
 	SBinding string
 
-	P              *predicate.Predicate
-	PBinding       string
-	PID            string
-	PAnchorBinding string
-	PTemporal      bool
-
-	O              *triple.Object
-	OBinding       string
-	OID            string
-	OAnchorBinding string
-	OTemporal      bool
-
-	reificationClauses       []*ReificationClause
-	workingReificationClause *ReificationClause
+  predicateObjectPairs []*ConstructPredicateObjectPair
+	workingPredicateObjectPair *ConstructPredicateObjectPair
 }
 
-// ReificationClause represents a clause used to reify a triple.
-type ReificationClause struct {
+// ConstructPredicateObjectPair represents a predicate-object pair within a CONSTRUCT clause.
+type ConstructPredicateObjectPair struct {
 	P              *predicate.Predicate
 	PBinding       string
 	PID            string
@@ -395,72 +383,11 @@ func (c *ConstructClause) String() string {
 		b.WriteString(c.SBinding)
 	}
 
-	// Predicate section.
-	predicate := false
-	if c.P != nil {
-		b.WriteString(" ")
-		b.WriteString(c.P.String())
-		predicate = true
+	// Predicate-object pairs section.
+	for _, pop := range c.PredicateObjectPairs() {
+		b.WriteString(fmt.Sprintf("%v;", pop))
 	}
-	if c.PBinding != "" {
-		b.WriteString(" ")
-		b.WriteString(c.PBinding)
-	}
-	if c.PID != "" {
-		b.WriteString(" \"")
-		b.WriteString(c.PID)
-		b.WriteString("\"")
-	}
-	if !predicate {
-		if !c.PTemporal {
-			b.WriteString("@[]")
-		} else {
-			b.WriteString("@[")
-			if c.PAnchorBinding != "" {
-				b.WriteString(c.PAnchorBinding)
-			}
-		}
-		b.WriteString("]")
-	}
-
-	// Object section.
-	// Node portion.
-	object := false
-	if c.O != nil {
-		b.WriteString(" ")
-		b.WriteString(c.O.String())
-		object = true
-	} else {
-		b.WriteString(" ")
-		b.WriteString(c.OBinding)
-		object = true
-	}
-	// Predicate portion.
-	if !object {
-		if c.OBinding != "" {
-			b.WriteString(" ")
-			b.WriteString(c.OBinding)
-		}
-		if c.OID != "" {
-			b.WriteString(" \"")
-			b.WriteString(c.OID)
-			b.WriteString("\"")
-		}
-		if !c.OTemporal {
-			b.WriteString("[]")
-		} else {
-			b.WriteString("[")
-			if c.OAnchorBinding != "" {
-				b.WriteString(c.OAnchorBinding)
-			}
-			b.WriteString("]")
-		}
-	}
-
-	// Reification clauses portion.
-	for _, rc := range c.ReificationClauses() {
-		b.WriteString(fmt.Sprintf(";%v", rc))
-	}
+  b.Truncate(b.Len()-1)
 	b.WriteString(" }")
 	return b.String()
 }
@@ -470,8 +397,8 @@ func (c *ConstructClause) IsEmpty() bool {
 	return reflect.DeepEqual(c, &ConstructClause{})
 }
 
-// String returns a readable representation of a reification clause.
-func (c *ReificationClause) String() string {
+// String returns a readable representation of a ConstructPredicateObjectPair.
+func (c *ConstructPredicateObjectPair) String() string {
 	b := bytes.NewBufferString("")
 
 	// Predicate section.
@@ -538,9 +465,9 @@ func (c *ReificationClause) String() string {
 	return b.String()
 }
 
-// IsEmpty will return true if there are no set values in the reification clause.
-func (c *ReificationClause) IsEmpty() bool {
-	return reflect.DeepEqual(c, &ReificationClause{})
+// IsEmpty will return true if there are no set values in the predicate-object pair.
+func (c *ConstructPredicateObjectPair) IsEmpty() bool {
+	return reflect.DeepEqual(c, &ConstructPredicateObjectPair{})
 }
 
 // BindType sets the type of a statement.
@@ -832,30 +759,18 @@ func (s *Statement) InputBindings() []string {
 		if c.SBinding != "" {
 			res = append(res, c.SBinding)
 		}
-		if c.PBinding != "" {
-			res = append(res, c.PBinding)
-		}
-		if c.PAnchorBinding != "" {
-			res = append(res, c.PAnchorBinding)
-		}
-		if c.OBinding != "" {
-			res = append(res, c.OBinding)
-		}
-		if c.OAnchorBinding != "" {
-			res = append(res, c.OAnchorBinding)
-		}
-		for _, r := range c.reificationClauses {
-			if r.PBinding != "" {
-				res = append(res, r.PBinding)
+		for _, p := range c.predicateObjectPairs {
+			if p.PBinding != "" {
+				res = append(res, p.PBinding)
 			}
-			if r.PAnchorBinding != "" {
-				res = append(res, r.PAnchorBinding)
+			if p.PAnchorBinding != "" {
+				res = append(res, p.PAnchorBinding)
 			}
-			if r.OBinding != "" {
-				res = append(res, r.OBinding)
+			if p.OBinding != "" {
+				res = append(res, p.OBinding)
 			}
-			if r.OAnchorBinding != "" {
-				res = append(res, r.OAnchorBinding)
+			if p.OAnchorBinding != "" {
+				res = append(res, p.OAnchorBinding)
 			}
 		}
 	}
@@ -881,38 +796,22 @@ func (s *Statement) OutputBindings() []string {
 			res = append(res, c.SBinding)
 			set[c.SBinding] = true
 		}
-		if _, ok := set[c.PBinding]; !ok {
-			res = append(res, c.PBinding)
-			set[c.PBinding] = true
-		}
-		if _, ok := set[c.PAnchorBinding]; !ok {
-			res = append(res, c.PAnchorBinding)
-			set[c.PAnchorBinding] = true
-		}
-		if _, ok := set[c.OBinding]; !ok {
-			res = append(res, c.OBinding)
-			set[c.OBinding] = true
-		}
-		if _, ok := set[c.OAnchorBinding]; !ok {
-			res = append(res, c.OAnchorBinding)
-			set[c.OAnchorBinding] = true
-		}
-		for _, r := range c.reificationClauses {
-			if _, ok := set[r.PBinding]; !ok {
-				res = append(res, r.PBinding)
-				set[r.PBinding] = true
+		for _, p := range c.predicateObjectPairs {
+			if _, ok := set[p.PBinding]; !ok {
+				res = append(res, p.PBinding)
+				set[p.PBinding] = true
 			}
-			if _, ok := set[r.PAnchorBinding]; !ok {
-				res = append(res, r.PAnchorBinding)
-				set[r.PAnchorBinding] = true
+			if _, ok := set[p.PAnchorBinding]; !ok {
+				res = append(res, p.PAnchorBinding)
+				set[p.PAnchorBinding] = true
 			}
-			if _, ok := set[r.OBinding]; !ok {
-				res = append(res, r.OBinding)
-				set[r.OBinding] = true
+			if _, ok := set[p.OBinding]; !ok {
+				res = append(res, p.OBinding)
+				set[p.OBinding] = true
 			}
-			if _, ok := set[r.OAnchorBinding]; !ok {
-				res = append(res, r.OAnchorBinding)
-				set[r.OAnchorBinding] = true
+			if _, ok := set[p.OAnchorBinding]; !ok {
+				res = append(res, p.OAnchorBinding)
+				set[p.OAnchorBinding] = true
 			}
 		}
 	}
@@ -982,29 +881,29 @@ func (s *Statement) AddWorkingConstructClause() {
 	s.ResetWorkingConstructClause()
 }
 
-// ReificationClauses returns the list of reification clauses within the construct
+// PredicateObjectPairs returns the list of predicate-object pairs within the construct
 // clause.
-func (c *ConstructClause) ReificationClauses() []*ReificationClause {
-	return c.reificationClauses
+func (c *ConstructClause) PredicateObjectPairs() []*ConstructPredicateObjectPair {
+	return c.predicateObjectPairs
 }
 
-// ResetWorkingReificationClause resets the working reification clause in the
+// ResetWorkingPredicateObjectPair resets the working predicate-object pair in the
 // construct clause.
-func (c *ConstructClause) ResetWorkingReificationClause() {
-	c.workingReificationClause = &ReificationClause{}
+func (c *ConstructClause) ResetWorkingPredicateObjectPair() {
+	c.workingPredicateObjectPair = &ConstructPredicateObjectPair{}
 }
 
-// WorkingReificationClause returns the working reification clause in the
+// WorkingPredicateObjectPair returns the working predicate-object pair in the
 // construct clause.
-func (c *ConstructClause) WorkingReificationClause() *ReificationClause {
-	return c.workingReificationClause
+func (c *ConstructClause) WorkingPredicateObjectPair() *ConstructPredicateObjectPair {
+	return c.workingPredicateObjectPair
 }
 
-// AddWorkingReificationClause adds the working  reification clause to the set
-// of reification clauses belonging to the construct clause.
-func (c *ConstructClause) AddWorkingReificationClause() {
-	if c.workingReificationClause != nil && !c.workingReificationClause.IsEmpty() {
-		c.reificationClauses = append(c.reificationClauses, c.workingReificationClause)
+// AddWorkingPredicateObjectPair adds the working predicate-object pair to the set
+// of predicate-object pairs belonging to the construct clause.
+func (c *ConstructClause) AddWorkingPredicateObjectPair() {
+	if c.workingPredicateObjectPair != nil && !c.workingPredicateObjectPair.IsEmpty() {
+		c.predicateObjectPairs = append(c.predicateObjectPairs, c.workingPredicateObjectPair)
 	}
-	c.ResetWorkingReificationClause()
+	c.ResetWorkingPredicateObjectPair()
 }

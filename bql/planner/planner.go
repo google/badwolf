@@ -832,9 +832,69 @@ func (p *constructPlan) Type() string {
 	return "CONSTRUCT"
 }
 
+func (p *constructPlan) processPredicateObjectPair(pop *semantic.ConstructPredicateObjectPair, tbl *table.Table, r table.Row) (*predicate.Predicate, *triple.Object, error) {
+	var err error
+	rprd, robj := pop.P, pop.O
+	if rprd == nil {
+		if tbl.HasBinding(pop.PBinding) {
+			// Try to bind the predicate.
+			v, ok := r[pop.PBinding]
+			if !ok {
+				return nil, nil, fmt.Errorf("row %+v misses binding %q", r, pop.PBinding)
+			}
+			if v.P == nil {
+				return nil, nil, fmt.Errorf("binding %q requires a predicate, got %+v instead", pop.PBinding, v)
+			}
+			rprd = v.P
+		} else if pop.PTemporal && pop.PAnchorBinding != "" {
+			// Try to bind the predicate anchor.
+			v, ok := r[pop.PAnchorBinding]
+			if !ok {
+				return nil, nil, fmt.Errorf("row %+v misses binding %q", r, pop.PAnchorBinding)
+			}
+			if v.T == nil {
+				return nil, nil, fmt.Errorf("binding %q requires a time, got %+v instead", pop.PAnchorBinding, v)
+			}
+			rprd, err = predicate.NewTemporal(pop.PID, *v.T)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+	}
+	if robj == nil {
+		if tbl.HasBinding(pop.OBinding) {
+			// Try to bind the object
+			v, ok := r[pop.OBinding]
+			if !ok {
+				return nil, nil, fmt.Errorf("row %+v misses binding %q", r, pop.OBinding)
+			}
+			co, err := cellToObject(v)
+			if err != nil {
+				return nil, nil, err
+			}
+			robj = co
+		} else if pop.OTemporal && pop.OAnchorBinding != "" {
+			// Try to bind the object anchor.
+			v, ok := r[pop.OAnchorBinding]
+			if !ok {
+				return nil, nil, fmt.Errorf("row %+v misses binding %q", r, pop.OAnchorBinding)
+			}
+			if v.T == nil {
+				return nil, nil, fmt.Errorf("binding %q requires a time, got %+v instead", pop.OAnchorBinding, v)
+			}
+			rop, err := predicate.NewTemporal(pop.OID, *v.T)
+			if err != nil {
+				return nil, nil, err
+			}
+			robj = triple.NewPredicateObject(rop)
+		}
+	}
+	return rprd, robj, nil
+}
+
 func (p *constructPlan) processConstructClause(cc *semantic.ConstructClause, tbl *table.Table, r table.Row) (*triple.Triple, error) {
 	var err error
-	sbj, prd, obj := cc.S, cc.P, cc.O
+	sbj := cc.S
 	if sbj == nil && tbl.HasBinding(cc.SBinding) {
 		v, ok := r[cc.SBinding]
 		if !ok {
@@ -845,123 +905,12 @@ func (p *constructPlan) processConstructClause(cc *semantic.ConstructClause, tbl
 		}
 		sbj = v.N
 	}
-	if prd == nil {
-		if tbl.HasBinding(cc.PBinding) {
-			// Try to bind the predicate.
-			v, ok := r[cc.PBinding]
-			if !ok {
-				return nil, fmt.Errorf("row %+v misses binding %q", r, cc.PBinding)
-			}
-			if v.P == nil {
-				return nil, fmt.Errorf("binding %q requires a predicate, got %+v instead", cc.PBinding, v)
-			}
-			prd = v.P
-		} else if cc.PTemporal && cc.PAnchorBinding != "" {
-			// Try to bind the predicate anchor.
-			v, ok := r[cc.PAnchorBinding]
-			if !ok {
-				return nil, fmt.Errorf("row %+v misses binding %q", r, cc.PAnchorBinding)
-			}
-			if v.T == nil {
-				return nil, fmt.Errorf("binding %q requires a time, got %+v instead", cc.PAnchorBinding, v)
-			}
-			prd, err = predicate.NewTemporal(cc.PID, *v.T)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	if obj == nil {
-		if tbl.HasBinding(cc.OBinding) {
-			// Try to bind the object
-			v, ok := r[cc.OBinding]
-			if !ok {
-				return nil, fmt.Errorf("row %+v misses binding %q", r, cc.OBinding)
-			}
-			co, err := cellToObject(v)
-			if err != nil {
-				return nil, err
-			}
-			obj = co
-		} else if cc.OTemporal && cc.OAnchorBinding != "" {
-			// Try to bind the object anchor.
-			v, ok := r[cc.OAnchorBinding]
-			if !ok {
-				return nil, fmt.Errorf("row %+v misses binding %q", r, cc.OAnchorBinding)
-			}
-			if v.T == nil {
-				return nil, fmt.Errorf("binding %q requires a time, got %+v instead", cc.OAnchorBinding, v)
-			}
-			op, err := predicate.NewTemporal(cc.OID, *v.T)
-			if err != nil {
-				return nil, err
-			}
-			obj = triple.NewPredicateObject(op)
-		}
+	prd, obj, err := p.processPredicateObjectPair(cc.PredicateObjectPairs()[0], tbl, r)
+	if err != nil {
+		return nil, err
 	}
 	t, err := triple.New(sbj, prd, obj)
 	return t, err
-}
-
-func (p *constructPlan) processReificationClause(rc *semantic.ReificationClause, tbl *table.Table, r table.Row) (*predicate.Predicate, *triple.Object, error) {
-	var err error
-	rprd, robj := rc.P, rc.O
-	if rprd == nil {
-		if tbl.HasBinding(rc.PBinding) {
-			// Try to bind the predicate.
-			v, ok := r[rc.PBinding]
-			if !ok {
-				return nil, nil, fmt.Errorf("row %+v misses binding %q", r, rc.PBinding)
-			}
-			if v.P == nil {
-				return nil, nil, fmt.Errorf("binding %q requires a predicate, got %+v instead", rc.PBinding, v)
-			}
-			rprd = v.P
-		} else if rc.PTemporal && rc.PAnchorBinding != "" {
-			// Try to bind the predicate anchor.
-			v, ok := r[rc.PAnchorBinding]
-			if !ok {
-				return nil, nil, fmt.Errorf("row %+v misses binding %q", r, rc.PAnchorBinding)
-			}
-			if v.T == nil {
-				return nil, nil, fmt.Errorf("binding %q requires a time, got %+v instead", rc.PAnchorBinding, v)
-			}
-			rprd, err = predicate.NewTemporal(rc.PID, *v.T)
-			if err != nil {
-				return nil, nil, err
-			}
-		}
-	}
-	if robj == nil {
-		if tbl.HasBinding(rc.OBinding) {
-			// Try to bind the object
-			v, ok := r[rc.OBinding]
-			if !ok {
-				return nil, nil, fmt.Errorf("row %+v misses binding %q", r, rc.OBinding)
-			}
-			co, err := cellToObject(v)
-			if err != nil {
-				return nil, nil, err
-			}
-			robj = co
-		} else if rc.OTemporal && rc.OAnchorBinding != "" {
-			// Try to bind the object anchor.
-			v, ok := r[rc.OAnchorBinding]
-			if !ok {
-				return nil, nil, fmt.Errorf("row %+v misses binding %q", r, rc.OAnchorBinding)
-			}
-			if v.T == nil {
-				return nil, nil, fmt.Errorf("binding %q requires a time, got %+v instead", rc.OAnchorBinding, v)
-			}
-			rop, err := predicate.NewTemporal(rc.OID, *v.T)
-			if err != nil {
-				return nil, nil, err
-			}
-			robj = triple.NewPredicateObject(rop)
-		}
-
-	}
-	return rprd, robj, nil
 }
 
 func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
@@ -1000,7 +949,7 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 			if err != nil {
 				return nil, err
 			}
-			if len(cc.ReificationClauses()) > 0 {
+			if len(cc.PredicateObjectPairs()) > 1 {
 				// We need to reify a blank node.
 				rts, bn, err := t.Reify()
 				if err != nil {
@@ -1010,8 +959,8 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 				for _, trpl := range rts[1:] {
 					tripChan <- trpl
 				}
-				for _, rc := range cc.ReificationClauses() {
-					rprd, robj, err := p.processReificationClause(rc, tbl, r)
+				for _, pop := range cc.PredicateObjectPairs()[1:] {
+					rprd, robj, err := p.processPredicateObjectPair(pop, tbl, r)
 					if err != nil {
 						return nil, err
 					}
@@ -1021,7 +970,6 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 					}
 					tripChan <- rt
 				}
-
 			} else {
 				tripChan <- t
 			}
@@ -1030,7 +978,6 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 	close(tripChan)
 	// Wait until all triples are added to the store.
 	<-done
-
 	return tbl, nil
 }
 

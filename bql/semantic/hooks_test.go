@@ -1974,18 +1974,35 @@ func TestNextWorkingConstructClauseHook(t *testing.T) {
 	wcs.SBinding = "?b"
 	f(st, Symbol("FOO"))
 	if got, want := len(st.ConstructClauses()), 2; got != want {
-		t.Errorf("semantic.NextConstructWorkingClause should have returned two clauses for statement %v; got %d, want %d", st, got, want)
+		t.Errorf("semantic.NextWorkingConstructClause should have returned two clauses for statement %v; got %d, want %d", st, got, want)
 	}
 }
 
-type testConstructClauseTable struct {
+func TestNextWorkingConstructPredicateObjectPairClauseHook(t *testing.T) {
+	f := NextWorkingConstructPredicateObjectPair()
+	st := &Statement{}
+	st.ResetWorkingConstructClause()
+	wcc := st.WorkingConstructClause()
+	wcc.ResetWorkingPredicateObjectPair()
+	wrs := wcc.WorkingPredicateObjectPair()
+	wrs.PBinding = "?a"
+	f(st, Symbol("FOO"))
+	wrs = wcc.WorkingPredicateObjectPair()
+	wrs.PBinding = "?b"
+	f(st, Symbol("FOO"))
+	if got, want := len(wcc.PredicateObjectPairs()), 2; got != want {
+		t.Errorf("semantic.NextWorkingConstructPredicateObjectPair should have returned two clauses for statement %v; got %d, want %d", st, got, want)
+	}
+}
+
+type testConstructSubjectHookTable struct {
 	valid bool
 	id    string
 	ces   []ConsumedElement
 	want  *ConstructClause
 }
 
-func runTabulatedConstructClauseHookTest(t *testing.T, testName string, f ElementHook, table []testConstructClauseTable) {
+func runTabulatedConstructSubjectHookTest(t *testing.T, testName string, f ElementHook, table []testConstructSubjectHookTable) {
 	st := &Statement{}
 	st.ResetWorkingConstructClause()
 	failed := false
@@ -2012,9 +2029,9 @@ func runTabulatedConstructClauseHookTest(t *testing.T, testName string, f Elemen
 	}
 }
 
-func TestConstructSubjectClauseHook(t *testing.T) {
+func TestConstructSubjectHook(t *testing.T) {
 	st := &Statement{}
-	f := constructSubjectClause()
+	f := constructSubject()
 	st.ResetWorkingConstructClause()
 	n, err := node.Parse("/_<foo>")
 	if err != nil {
@@ -2024,7 +2041,7 @@ func TestConstructSubjectClauseHook(t *testing.T) {
 	if err != nil {
 		t.Fatalf("node.Parse called for '_:v1' failed with error %v", err)
 	}
-	runTabulatedConstructClauseHookTest(t, "semantic.constructSubjectClause", f, []testConstructClauseTable{
+	runTabulatedConstructSubjectHookTest(t, "semantic.constructSubject", f, []testConstructSubjectHookTable{
 		{
 			valid: true,
 			id:    "valid node",
@@ -2064,7 +2081,7 @@ func TestConstructSubjectClauseHook(t *testing.T) {
 				}),
 			},
 			want: &ConstructClause{
-				SBinding:   "?foo",
+				SBinding: "?foo",
 			},
 		},
 		{
@@ -2087,279 +2104,18 @@ func TestConstructSubjectClauseHook(t *testing.T) {
 	})
 }
 
-func TestConstructPredicateClauseHook(t *testing.T) {
-	st := &Statement{}
-	f := constructPredicateClause()
-	st.ResetWorkingConstructClause()
-	ip, err := predicate.Parse(`"foo"@[]`)
-	if err != nil {
-		t.Fatalf("predicate.Parse failed with error %v", err)
-	}
-	tp, err := predicate.Parse(`"foo"@[2015-07-19T13:12:04.669618843-07:00]`)
-	if err != nil {
-		t.Fatalf("predicate.Parse failed with error %v", err)
-	}
-	runTabulatedConstructClauseHookTest(t, "semantic.constructPredicateClause", f, []testConstructClauseTable{
-		{
-			valid: true,
-			id:    "valid immutable predicate",
-			ces: []ConsumedElement{
-				NewConsumedSymbol("CONSTRUCT_PREDICATE"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemPredicate,
-					Text: `"foo"@[]`,
-				}),
-			},
-			want: &ConstructClause{
-				P:         ip,
-				PTemporal: false,
-			},
-		},
-		{
-			valid: true,
-			id:    "valid temporal predicate",
-			ces: []ConsumedElement{
-				NewConsumedSymbol("CONSTRUCT_PREDICATE"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemPredicate,
-					Text: `"foo"@[2015-07-19T13:12:04.669618843-07:00]`,
-				}),
-			},
-			want: &ConstructClause{
-				P:         tp,
-				PTemporal: true,
-			},
-		},
-		{
-			valid: true,
-			id:    "valid temporal predicate with bound time anchor",
-			ces: []ConsumedElement{
-				NewConsumedSymbol("CONSTRUCT_PREDICATE"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemPredicate,
-					Text: `"foo"@[?bar]`,
-				}),
-			},
-			want: &ConstructClause{
-				PID:            "foo",
-				PAnchorBinding: "?bar",
-				PTemporal:      true,
-			},
-		},
-		{
-			valid: true,
-			id:    "valid binding",
-			ces: []ConsumedElement{
-				NewConsumedSymbol("CONSTRUCT_PREDICATE"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemBinding,
-					Text: "?foo",
-				}),
-			},
-			want: &ConstructClause{
-				PBinding: "?foo",
-			},
-		},
-		{
-			valid: false,
-			id:    "invalid temporal predicate and binding",
-			ces: []ConsumedElement{
-				NewConsumedSymbol("CONSTRUCT_PREDICATE"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemPredicate,
-					Text: `"foo"@[?bar]`,
-				}),
-				NewConsumedSymbol("FOO"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemBinding,
-					Text: "?foo",
-				}),
-			},
-			want: &ConstructClause{},
-		},
-	})
-}
-
-func TestConstructObjectClauseHook(t *testing.T) {
-	st := &Statement{}
-	f := constructObjectClause()
-	st.ResetWorkingConstructClause()
-	n, err := node.Parse("/_<foo>")
-	if err != nil {
-		t.Fatalf("node.Parse failed with error %v", err)
-	}
-	no := triple.NewNodeObject(n)
-	bn, err := node.Parse("_:v1")
-	if err != nil {
-		t.Fatalf("node.Parse failed with error %v", err)
-	}
-	bno := triple.NewNodeObject(bn)
-	ip, err := predicate.Parse(`"foo"@[]`)
-	if err != nil {
-		t.Fatalf("predicate.Parse failed with error %v", err)
-	}
-	ipo := triple.NewPredicateObject(ip)
-	tp, err := predicate.Parse(`"foo"@[2015-07-19T13:12:04.669618843-07:00]`)
-	if err != nil {
-		t.Fatalf("predicate.Parse failed with error %v", err)
-	}
-	tpo := triple.NewPredicateObject(tp)
-	l, err := triple.ParseObject(`"1"^^type:int64`, literal.DefaultBuilder())
-	if err != nil {
-		t.Fatalf("literal.Parse should never fail to parse %s with error %v", `"1"^^type:int64`, err)
-	}
-	runTabulatedConstructClauseHookTest(t, "semantic.constructObjectClause", f, []testConstructClauseTable{
-		{
-			valid: true,
-			id:    "valid node object",
-			ces: []ConsumedElement{
-				NewConsumedSymbol("CONSTRUCT_OBJECT"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemNode,
-					Text: "/_<foo>",
-				}),
-			},
-			want: &ConstructClause{
-				O: no,
-			},
-		},
-		{
-			valid: true,
-			id:    "valid blank node object",
-			ces: []ConsumedElement{
-				NewConsumedSymbol("CONSTRUCT_OBJECT"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemBlankNode,
-					Text: "_:v1",
-				}),
-			},
-			want: &ConstructClause{
-				O: bno,
-			},
-		},
-		{
-			valid: true,
-			id:    "valid literal object",
-			ces: []ConsumedElement{
-				NewConsumedSymbol("CONSTRUCT_OBJECT"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemLiteral,
-					Text: `"1"^^type:int64`,
-				}),
-			},
-			want: &ConstructClause{
-				O: l,
-			},
-		},
-		{
-			valid: true,
-			id:    "valid immutable predicate object",
-			ces: []ConsumedElement{
-				NewConsumedSymbol("CONSTRUCT_OBJECT"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemPredicate,
-					Text: `"foo"@[]`,
-				}),
-			},
-			want: &ConstructClause{
-				O:         ipo,
-				OTemporal: false,
-			},
-		},
-		{
-			valid: true,
-			id:    "valid temporal predicate object",
-			ces: []ConsumedElement{
-				NewConsumedSymbol("CONSTRUCT_OBJECT"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemPredicate,
-					Text: `"foo"@[2015-07-19T13:12:04.669618843-07:00]`,
-				}),
-			},
-			want: &ConstructClause{
-				O:         tpo,
-				OTemporal: true,
-			},
-		},
-		{
-			valid: true,
-			id:    "valid temporal predicate object with bound time anchor",
-			ces: []ConsumedElement{
-				NewConsumedSymbol("CONSTRUCT_OBJECT"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemPredicate,
-					Text: `"foo"@[?bar]`,
-				}),
-			},
-			want: &ConstructClause{
-				OID:            "foo",
-				OAnchorBinding: "?bar",
-				OTemporal:      true,
-			},
-		},
-		{
-			valid: true,
-			id:    "valid binding",
-			ces: []ConsumedElement{
-				NewConsumedSymbol("CONSTRUCT_OBJECT"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemBinding,
-					Text: "?foo",
-				}),
-			},
-			want: &ConstructClause{
-				OBinding: "?foo",
-			},
-		},
-		{
-			valid: false,
-			id:    "invalid temporal predicate and binding objects",
-			ces: []ConsumedElement{
-				NewConsumedSymbol("CONSTRUCT_OBJECT"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemPredicate,
-					Text: `"foo"@[?bar]`,
-				}),
-				NewConsumedSymbol("FOO"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemBinding,
-					Text: "?foo",
-				}),
-			},
-			want: &ConstructClause{},
-		},
-	})
-}
-
-func TestNextWorkingReificationClauseHook(t *testing.T) {
-	f := NextWorkingReificationClause()
-	st := &Statement{}
-	st.ResetWorkingConstructClause()
-	wcc := st.WorkingConstructClause()
-	wcc.ResetWorkingReificationClause()
-	wrs := wcc.WorkingReificationClause()
-	wrs.PBinding = "?a"
-	f(st, Symbol("FOO"))
-	wrs = wcc.WorkingReificationClause()
-	wrs.PBinding = "?b"
-	f(st, Symbol("FOO"))
-	if got, want := len(wcc.ReificationClauses()), 2; got != want {
-		t.Errorf("semantic.NextReificationWorkingClause should have returned two clauses for statement %v; got %d, want %d", st, got, want)
-	}
-}
-
-type testReificationClauseTable struct {
+type testConstructPredicateObjectHooksTable struct {
 	valid bool
 	id    string
 	ces   []ConsumedElement
-	want  *ReificationClause
+	want  *ConstructPredicateObjectPair
 }
 
-func runTabulatedReificationClauseHookTest(t *testing.T, testName string, f ElementHook, table []testReificationClauseTable) {
+func runTabulatedConstructPredicateObjectHooksTest(t *testing.T, testName string, f ElementHook, table []testConstructPredicateObjectHooksTable) {
 	st := &Statement{}
 	st.ResetWorkingConstructClause()
 	wcc := st.WorkingConstructClause()
-	wcc.ResetWorkingReificationClause()
+	wcc.ResetWorkingPredicateObjectPair()
 	failed := false
 	for _, entry := range table {
 		for _, ce := range entry.ces {
@@ -2372,7 +2128,7 @@ func runTabulatedReificationClauseHookTest(t *testing.T, testName string, f Elem
 			}
 		}
 		if entry.valid {
-			if got, want := wcc.WorkingReificationClause(), entry.want; !reflect.DeepEqual(got, want) {
+			if got, want := wcc.WorkingPredicateObjectPair(), entry.want; !reflect.DeepEqual(got, want) {
 				t.Errorf("%s case %q should have populated all required fields; got %+v, want %+v", testName, entry.id, got, want)
 			}
 		} else {
@@ -2380,16 +2136,16 @@ func runTabulatedReificationClauseHookTest(t *testing.T, testName string, f Elem
 				t.Errorf("%s failed to reject invalid case %q", testName, entry.id)
 			}
 		}
-		wcc.ResetWorkingReificationClause()
+		wcc.ResetWorkingPredicateObjectPair()
 	}
 }
 
-func TestReificationPredicateClauseHook(t *testing.T) {
+func TestConstructPredicateHook(t *testing.T) {
 	st := &Statement{}
-	f := reificationPredicateClause()
+	f := constructPredicate()
 	st.ResetWorkingConstructClause()
 	wcc := st.WorkingConstructClause()
-	wcc.ResetWorkingReificationClause()
+	wcc.ResetWorkingPredicateObjectPair()
 	ip, err := predicate.Parse(`"foo"@[]`)
 	if err != nil {
 		t.Fatalf("predicate.Parse failed with error %v", err)
@@ -2398,18 +2154,18 @@ func TestReificationPredicateClauseHook(t *testing.T) {
 	if err != nil {
 		t.Fatalf("predicate.Parse failed with error %v", err)
 	}
-	runTabulatedReificationClauseHookTest(t, "semantic.reificationPredicateClause", f, []testReificationClauseTable{
+	runTabulatedConstructPredicateObjectHooksTest(t, "semantic.constructPredicateClause", f, []testConstructPredicateObjectHooksTable{
 		{
 			valid: true,
 			id:    "valid immutable predicate",
 			ces: []ConsumedElement{
-				NewConsumedSymbol("REIFICATION_PREDICATE"),
+				NewConsumedSymbol("CONSTRUCT_PREDICATE"),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemPredicate,
 					Text: `"foo"@[]`,
 				}),
 			},
-			want: &ReificationClause{
+			want: &ConstructPredicateObjectPair{
 				P:         ip,
 				PTemporal: false,
 			},
@@ -2418,13 +2174,13 @@ func TestReificationPredicateClauseHook(t *testing.T) {
 			valid: true,
 			id:    "valid temporal predicate",
 			ces: []ConsumedElement{
-				NewConsumedSymbol("REIFICATION_PREDICATE"),
+				NewConsumedSymbol("CONSTRUCT_PREDICATE"),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemPredicate,
 					Text: `"foo"@[2015-07-19T13:12:04.669618843-07:00]`,
 				}),
 			},
-			want: &ReificationClause{
+			want: &ConstructPredicateObjectPair{
 				P:         tp,
 				PTemporal: true,
 			},
@@ -2433,13 +2189,13 @@ func TestReificationPredicateClauseHook(t *testing.T) {
 			valid: true,
 			id:    "valid temporal predicate with bound time anchor",
 			ces: []ConsumedElement{
-				NewConsumedSymbol("REIFICATION_PREDICATE"),
+				NewConsumedSymbol("CONSTRUCT_PREDICATE"),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemPredicate,
 					Text: `"foo"@[?bar]`,
 				}),
 			},
-			want: &ReificationClause{
+			want: &ConstructPredicateObjectPair{
 				PID:            "foo",
 				PAnchorBinding: "?bar",
 				PTemporal:      true,
@@ -2449,13 +2205,13 @@ func TestReificationPredicateClauseHook(t *testing.T) {
 			valid: true,
 			id:    "valid binding",
 			ces: []ConsumedElement{
-				NewConsumedSymbol("REIFICATION_PREDICATE"),
+				NewConsumedSymbol("CONSTRUCT_PREDICATE"),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?foo",
 				}),
 			},
-			want: &ReificationClause{
+			want: &ConstructPredicateObjectPair{
 				PBinding: "?foo",
 			},
 		},
@@ -2463,7 +2219,7 @@ func TestReificationPredicateClauseHook(t *testing.T) {
 			valid: false,
 			id:    "invalid temporal predicate and binding",
 			ces: []ConsumedElement{
-				NewConsumedSymbol("REIFICATION_PREDICATE"),
+				NewConsumedSymbol("CONSTRUCT_PREDICATE"),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemPredicate,
 					Text: `"foo"@[?bar]`,
@@ -2474,17 +2230,17 @@ func TestReificationPredicateClauseHook(t *testing.T) {
 					Text: "?foo",
 				}),
 			},
-			want: &ReificationClause{},
+			want: &ConstructPredicateObjectPair{},
 		},
 	})
 }
 
-func TestReificationObjectClauseHook(t *testing.T) {
+func TestConstructObjectHook(t *testing.T) {
 	st := &Statement{}
-	f := reificationObjectClause()
+	f := constructObject()
 	st.ResetWorkingConstructClause()
 	wcc := st.WorkingConstructClause()
-	wcc.ResetWorkingReificationClause()
+	wcc.ResetWorkingPredicateObjectPair()
 	n, err := node.Parse("/_<foo>")
 	if err != nil {
 		t.Fatalf("node.Parse failed with error %v", err)
@@ -2509,18 +2265,18 @@ func TestReificationObjectClauseHook(t *testing.T) {
 	if err != nil {
 		t.Fatalf("literal.Parse should never fail to parse %s with error %v", `"1"^^type:int64`, err)
 	}
-	runTabulatedReificationClauseHookTest(t, "semantic.reificationObjectClause", f, []testReificationClauseTable{
+	runTabulatedConstructPredicateObjectHooksTest(t, "semantic.constructObjectClause", f, []testConstructPredicateObjectHooksTable{
 		{
 			valid: true,
 			id:    "valid node object",
 			ces: []ConsumedElement{
-				NewConsumedSymbol("REIFICATION_OBJECT"),
+				NewConsumedSymbol("CONSTRUCT_OBJECT"),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemNode,
 					Text: "/_<foo>",
 				}),
 			},
-			want: &ReificationClause{
+			want: &ConstructPredicateObjectPair{
 				O: no,
 			},
 		},
@@ -2528,13 +2284,13 @@ func TestReificationObjectClauseHook(t *testing.T) {
 			valid: true,
 			id:    "valid blank node object",
 			ces: []ConsumedElement{
-				NewConsumedSymbol("REIFICATION_OBJECT"),
+				NewConsumedSymbol("CONSTRUCT_OBJECT"),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBlankNode,
 					Text: "_:v1",
 				}),
 			},
-			want: &ReificationClause{
+			want: &ConstructPredicateObjectPair{
 				O: bno,
 			},
 		},
@@ -2542,13 +2298,13 @@ func TestReificationObjectClauseHook(t *testing.T) {
 			valid: true,
 			id:    "valid literal object",
 			ces: []ConsumedElement{
-				NewConsumedSymbol("REIFICATION_OBJECT"),
+				NewConsumedSymbol("CONSTRUCT_OBJECT"),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLiteral,
 					Text: `"1"^^type:int64`,
 				}),
 			},
-			want: &ReificationClause{
+			want: &ConstructPredicateObjectPair{
 				O: l,
 			},
 		},
@@ -2556,13 +2312,13 @@ func TestReificationObjectClauseHook(t *testing.T) {
 			valid: true,
 			id:    "valid immutable predicate object",
 			ces: []ConsumedElement{
-				NewConsumedSymbol("REIFICATION_OBJECT"),
+				NewConsumedSymbol("CONSTRUCT_OBJECT"),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemPredicate,
 					Text: `"foo"@[]`,
 				}),
 			},
-			want: &ReificationClause{
+			want: &ConstructPredicateObjectPair{
 				O:         ipo,
 				OTemporal: false,
 			},
@@ -2571,13 +2327,13 @@ func TestReificationObjectClauseHook(t *testing.T) {
 			valid: true,
 			id:    "valid temporal predicate object",
 			ces: []ConsumedElement{
-				NewConsumedSymbol("REIFICATION_OBJECT"),
+				NewConsumedSymbol("CONSTRUCT_OBJECT"),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemPredicate,
 					Text: `"foo"@[2015-07-19T13:12:04.669618843-07:00]`,
 				}),
 			},
-			want: &ReificationClause{
+			want: &ConstructPredicateObjectPair{
 				O:         tpo,
 				OTemporal: true,
 			},
@@ -2586,13 +2342,13 @@ func TestReificationObjectClauseHook(t *testing.T) {
 			valid: true,
 			id:    "valid temporal predicate object with bound time anchor",
 			ces: []ConsumedElement{
-				NewConsumedSymbol("REIFICATION_OBJECT"),
+				NewConsumedSymbol("CONSTRUCT_OBJECT"),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemPredicate,
 					Text: `"foo"@[?bar]`,
 				}),
 			},
-			want: &ReificationClause{
+			want: &ConstructPredicateObjectPair{
 				OID:            "foo",
 				OAnchorBinding: "?bar",
 				OTemporal:      true,
@@ -2602,13 +2358,13 @@ func TestReificationObjectClauseHook(t *testing.T) {
 			valid: true,
 			id:    "valid binding",
 			ces: []ConsumedElement{
-				NewConsumedSymbol("REIFICATION_OBJECT"),
+				NewConsumedSymbol("CONSTRUCT_OBJECT"),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
 					Text: "?foo",
 				}),
 			},
-			want: &ReificationClause{
+			want: &ConstructPredicateObjectPair{
 				OBinding: "?foo",
 			},
 		},
@@ -2616,7 +2372,7 @@ func TestReificationObjectClauseHook(t *testing.T) {
 			valid: false,
 			id:    "invalid temporal predicate and binding objects",
 			ces: []ConsumedElement{
-				NewConsumedSymbol("REIFICATION_OBJECT"),
+				NewConsumedSymbol("CONSTRUCT_OBJECT"),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemPredicate,
 					Text: `"foo"@[?bar]`,
@@ -2627,7 +2383,7 @@ func TestReificationObjectClauseHook(t *testing.T) {
 					Text: "?foo",
 				}),
 			},
-			want: &ReificationClause{},
+			want: &ConstructPredicateObjectPair{},
 		},
 	})
 }
