@@ -38,7 +38,7 @@ type Table struct {
 	AvailableBindings []string `json:"bindings,omitempty"`
 	// Data that form the table.
 	Data []Row `json:"rows,omitempty"`
-	// mbs is an internal map for bindings existance.
+	// mbs is an internal map for bindings existence.
 	mbs map[string]bool
 }
 
