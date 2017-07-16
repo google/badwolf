@@ -223,20 +223,20 @@ func TestConstructClauseManipulation(t *testing.T) {
 	}
 }
 
-func TestReificationClauseManipulation(t *testing.T) {
+func TestConstructPredicateObjectPairsManipulation(t *testing.T) {
 	st := &Statement{}
 	st.ResetWorkingConstructClause()
 	wcc := st.WorkingConstructClause()
-	if wcc.WorkingReificationClause() != nil {
-		t.Fatalf("semantic.ConstructClause.WorkingReificationClause should not return a working reification clause without initialization in %v", st)
+	if wcc.WorkingPredicateObjectPair() != nil {
+		t.Fatalf("semantic.ConstructClause.WorkingPredicateObjectPair should not return a working predicate-object pair without initialization in %v", st)
 	}
-	wcc.ResetWorkingReificationClause()
-	if wcc.WorkingReificationClause() == nil {
-		t.Fatalf("semantic.ConstructClause.WorkingReificationClause should return a working reification clause after initialization in %v", st)
+	wcc.ResetWorkingPredicateObjectPair()
+	if wcc.WorkingPredicateObjectPair() == nil {
+		t.Fatalf("semantic.ConstructClause.WorkingPredicateObjectPair should return a working predicate-object pair after initialization in %v", st)
 	}
-	wcc.AddWorkingReificationClause()
-	if got, want := len(wcc.ReificationClauses()), 0; got != want {
-		t.Fatalf("semantic.ConstructClause.WorkingReificationClauses returns wrong number of clauses in %v; got %d, want %d", st, got, want)
+	wcc.AddWorkingPredicateObjectPair()
+	if got, want := len(wcc.PredicateObjectPairs()), 0; got != want {
+		t.Fatalf("semantic.ConstructClause.PredicateObjectPairs returns wrong number of predicate-object pairs in %v; got %d, want %d", st, got, want)
 	}
 }
 
@@ -254,14 +254,20 @@ func TestInputOutputBindings(t *testing.T) {
 		constructClauses: []*ConstructClause{
 			{
 				SBinding: "?foo1",
-				PBinding: "?foo2",
-				OBinding: "?foo3",
+				predicateObjectPairs: []*ConstructPredicateObjectPair{
+					{
+						PBinding: "?foo2",
+						OBinding: "?foo3",
+					},
+				},
 			},
 			{
 				SBinding: "?foo4",
-				PBinding: "?foo5",
-				OBinding: "?foo6",
-				reificationClauses: []*ReificationClause{
+				predicateObjectPairs: []*ConstructPredicateObjectPair{
+					{
+						PBinding: "?foo5",
+						OBinding: "?foo6",
+					},
 					{
 						PBinding: "?foo7",
 						OBinding: "?foo8",
@@ -273,9 +279,11 @@ func TestInputOutputBindings(t *testing.T) {
 				},
 			},
 			{
-				PAnchorBinding: "?foo11",
-				OAnchorBinding: "?foo12",
-				reificationClauses: []*ReificationClause{
+				predicateObjectPairs: []*ConstructPredicateObjectPair{
+					{
+						PAnchorBinding: "?foo11",
+						OAnchorBinding: "?foo12",
+					},
 					{
 						PAnchorBinding: "?foo13",
 						OAnchorBinding: "?foo13",

@@ -797,7 +797,7 @@ func BQL() *Grammar {
 					NewTokenType(lexer.ItemNode),
 					NewSymbol("CONSTRUCT_PREDICATE"),
 					NewSymbol("CONSTRUCT_OBJECT"),
-					NewSymbol("REIFICATION_CLAUSE"),
+					NewSymbol("MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS"),
 					NewSymbol("MORE_CONSTRUCT_TRIPLES"),
 				},
 			},
@@ -806,7 +806,7 @@ func BQL() *Grammar {
 					NewTokenType(lexer.ItemBlankNode),
 					NewSymbol("CONSTRUCT_PREDICATE"),
 					NewSymbol("CONSTRUCT_OBJECT"),
-					NewSymbol("REIFICATION_CLAUSE"),
+					NewSymbol("MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS"),
 					NewSymbol("MORE_CONSTRUCT_TRIPLES"),
 				},
 			},
@@ -815,7 +815,7 @@ func BQL() *Grammar {
 					NewTokenType(lexer.ItemBinding),
 					NewSymbol("CONSTRUCT_PREDICATE"),
 					NewSymbol("CONSTRUCT_OBJECT"),
-					NewSymbol("REIFICATION_CLAUSE"),
+					NewSymbol("MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS"),
 					NewSymbol("MORE_CONSTRUCT_TRIPLES"),
 				},
 			},
@@ -859,55 +859,16 @@ func BQL() *Grammar {
 				},
 			},
 		},
-		"REIFICATION_CLAUSE": []*Clause{
+		"MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS": []*Clause{
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemSemicolon),
-					NewSymbol("REIFICATION_PREDICATE"),
-					NewSymbol("REIFICATION_OBJECT"),
-					NewSymbol("REIFICATION_CLAUSE"),
+					NewSymbol("CONSTRUCT_PREDICATE"),
+					NewSymbol("CONSTRUCT_OBJECT"),
+					NewSymbol("MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS"),
 				},
 			},
 			{},
-		},
-		"REIFICATION_PREDICATE": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemPredicate),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-		},
-		"REIFICATION_OBJECT": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemNode),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBlankNode),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemPredicate),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemLiteral),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
 		},
 		"MORE_CONSTRUCT_TRIPLES": []*Clause{
 			{
@@ -1042,17 +1003,14 @@ func SemanticBQL() *Grammar {
 
 	// CONSTRUCT clause semantic hooks.
 	setClauseHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_FACTS"}, semantic.InitWorkingConstructClauseHook(), semantic.TypeBindingClauseHook(semantic.Construct))
-
 	constructTriplesSymbols := []semantic.Symbol{"CONSTRUCT_TRIPLES", "MORE_CONSTRUCT_TRIPLES"}
 	setClauseHook(semanticBQL, constructTriplesSymbols, semantic.NextWorkingConstructClauseHook(), semantic.NextWorkingConstructClauseHook())
+	setClauseHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_PREDICATE"}, semantic.NextWorkingConstructPredicateObjectPairClauseHook(), nil)
+	setClauseHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_OBJECT"}, nil, semantic.NextWorkingConstructPredicateObjectPairClauseHook())
 
-	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_TRIPLES"}, semantic.ConstructSubjectClauseHook(), nil)
-	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_PREDICATE"}, semantic.ConstructPredicateClauseHook(), nil)
-	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_OBJECT"}, semantic.ConstructObjectClauseHook(), nil)
-
-	setClauseHook(semanticBQL, []semantic.Symbol{"REIFICATION_CLAUSE"}, semantic.NextWorkingReificationClauseHook(), semantic.NextWorkingReificationClauseHook())
-	setElementHook(semanticBQL, []semantic.Symbol{"REIFICATION_PREDICATE"}, semantic.ReificationPredicateClauseHook(), nil)
-	setElementHook(semanticBQL, []semantic.Symbol{"REIFICATION_OBJECT"}, semantic.ReificationObjectClauseHook(), nil)
+	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_TRIPLES"}, semantic.ConstructSubjectHook(), nil)
+	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_PREDICATE"}, semantic.ConstructPredicateHook(), nil)
+	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_OBJECT"}, semantic.ConstructObjectHook(), nil)
 
 	return semanticBQL
 }

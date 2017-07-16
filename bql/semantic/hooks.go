@@ -160,40 +160,29 @@ func NextWorkingConstructClauseHook() ClauseHook {
 	return NextWorkingConstructClause()
 }
 
-// ConstructSubjectClauseHook returns the singleton for populating the subject in the
+// ConstructSubjectHook returns the singleton for populating the subject in the
 // working construct clause.
-func ConstructSubjectClauseHook() ElementHook {
-	return constructSubjectClause()
+func ConstructSubjectHook() ElementHook {
+	return constructSubject()
 }
 
-// ConstructPredicateClauseHook returns the singleton for populating the predicate in the
-// working construct clause.
-func ConstructPredicateClauseHook() ElementHook {
-	return constructPredicateClause()
+// ConstructPredicateHook returns the singleton for populating the predicate in the
+// current predicate-object pair in the working construct clause.
+func ConstructPredicateHook() ElementHook {
+	return constructPredicate()
 }
 
-// ConstructObjectClauseHook returns the singleton for populating the object in the
-// working construct clause.
-func ConstructObjectClauseHook() ElementHook {
-	return constructObjectClause()
+// ConstructObjectHook returns the singleton for populating the object in the
+// current predicate-object pair in the working construct clause.
+func ConstructObjectHook() ElementHook {
+	return constructObject()
 }
 
-// NextWorkingReificationClauseHook returns the singleton for adding the current reification clause
-// and initializing a new reification clause within the working construct statement.
-func NextWorkingReificationClauseHook() ClauseHook {
-	return NextWorkingReificationClause()
-}
-
-// ReificationPredicateClauseHook returns the singleton for populating the predicate in the
-// current reification clause within the working construct clause.
-func ReificationPredicateClauseHook() ElementHook {
-	return reificationPredicateClause()
-}
-
-// ReificationPredicateClauseHook returns the singleton for populating the object in the
-// current reification clause within the working construct clause.
-func ReificationObjectClauseHook() ElementHook {
-	return reificationObjectClause()
+// NextWorkingConstructPredicateObjectPairClauseHook returns the singleton for adding the current predicate-object pair
+// to the set of predicate-objects pairs within the working construct statement and initializing a new
+// working predicate-object pair.
+func NextWorkingConstructPredicateObjectPairClauseHook() ClauseHook {
+	return NextWorkingConstructPredicateObjectPair()
 }
 
 // TypeBindingClauseHook returns a ClauseHook that sets the binding type.
@@ -972,7 +961,6 @@ func InitWorkingConstructClause() ClauseHook {
 	return f
 }
 
-
 // NextWorkingConstructClause returns a clause hook to close the current working
 // construct clause and start a new working construct clause.
 func NextWorkingConstructClause() ClauseHook {
@@ -984,9 +972,9 @@ func NextWorkingConstructClause() ClauseHook {
 	return f
 }
 
-// constructSubjectClause returns an element hook that updates the subject
+// constructSubject returns an element hook that updates the subject
 // modifiers on the working construct clause.
-func constructSubjectClause() ElementHook {
+func constructSubject() ElementHook {
 	var f ElementHook
 	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
 		if ce.IsSymbol() {
@@ -1015,58 +1003,58 @@ func constructSubjectClause() ElementHook {
 	return f
 }
 
-// constructPredicateClause returns an element hook that updates the predicate
-// modifiers on the working construct clause.
-func constructPredicateClause() ElementHook {
+// constructPredicate returns an element hook that updates the predicate
+// modifiers on the current predicate-object pair of the working graph clause.
+func constructPredicate() ElementHook {
 	var f ElementHook
 	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
 		if ce.IsSymbol() {
 			return f, nil
 		}
 		tkn := ce.Token()
-		c := st.WorkingConstructClause()
-		if c.P != nil {
-			return nil, fmt.Errorf("invalid predicate %v in construct clause, predicate already set to %v", tkn.Type, c.P)
+		p := st.WorkingConstructClause().WorkingPredicateObjectPair()
+		if p.P != nil {
+			return nil, fmt.Errorf("invalid predicate %v in construct clause, predicate already set to %v", tkn.Type, p.P)
 		}
-		if c.PID != "" {
-			return nil, fmt.Errorf("invalid predicate %v in construct clause, predicate already set to %v", tkn.Type, c.PID)
+		if p.PID != "" {
+			return nil, fmt.Errorf("invalid predicate %v in construct clause, predicate already set to %v", tkn.Type, p.PID)
 		}
-		if c.PBinding != "" {
-			return nil, fmt.Errorf("invalid predicate %v in construct clause, predicate already set to %v", tkn.Type, c.PBinding)
+		if p.PBinding != "" {
+			return nil, fmt.Errorf("invalid predicate %v in construct clause, predicate already set to %v", tkn.Type, p.PBinding)
 		}
 		switch tkn.Type {
 		case lexer.ItemPredicate:
-			p, pID, pAnchorBinding, pTemporal, err := processPredicate(ce)
+			pred, pID, pAnchorBinding, pTemporal, err := processPredicate(ce)
 			if err != nil {
 				return nil, err
 			}
-			c.P, c.PID, c.PAnchorBinding, c.PTemporal = p, pID, pAnchorBinding, pTemporal
+			p.P, p.PID, p.PAnchorBinding, p.PTemporal = pred, pID, pAnchorBinding, pTemporal
 		case lexer.ItemBinding:
-			c.PBinding = tkn.Text
+			p.PBinding = tkn.Text
 		}
 		return f, nil
 	}
 	return f
 }
 
-// constructObjectClause returns an element hook that updates the object
-// modifiers on the working graph clause.
-func constructObjectClause() ElementHook {
+// constructObject returns an element hook that updates the object
+// modifiers on the current predicate-object pair of the working graph clause.
+func constructObject() ElementHook {
 	var f ElementHook
 	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
 		if ce.IsSymbol() {
 			return f, nil
 		}
 		tkn := ce.Token()
-		c := st.WorkingConstructClause()
-		if c.O != nil {
-			return nil, fmt.Errorf("invalid object %v in construct clause, object already set to %v", tkn.Text, c.O)
+		p := st.WorkingConstructClause().WorkingPredicateObjectPair()
+		if p.O != nil {
+			return nil, fmt.Errorf("invalid object %v in construct clause, object already set to %v", tkn.Text, p.O)
 		}
-		if c.OID != "" {
-			return nil, fmt.Errorf("invalid object %v in construct clause, objct already set to %v", tkn.Type, c.OID)
+		if p.OID != "" {
+			return nil, fmt.Errorf("invalid object %v in construct clause, object already set to %v", tkn.Type, p.OID)
 		}
-		if c.OBinding != "" {
-			return nil, fmt.Errorf("invalid object %v in construct clause, object already set to %v", tkn.Type, c.OBinding)
+		if p.OBinding != "" {
+			return nil, fmt.Errorf("invalid object %v in construct clause, object already set to %v", tkn.Type, p.OBinding)
 		}
 		switch tkn.Type {
 		case lexer.ItemNode, lexer.ItemBlankNode, lexer.ItemLiteral:
@@ -1074,109 +1062,34 @@ func constructObjectClause() ElementHook {
 			if err != nil {
 				return nil, err
 			}
-			c.O = obj
+			p.O = obj
 		case lexer.ItemPredicate:
 			var (
 				pred *predicate.Predicate
 				err  error
 			)
-			pred, c.OID, c.OAnchorBinding, c.OTemporal, err = processPredicate(ce)
+			pred, p.OID, p.OAnchorBinding, p.OTemporal, err = processPredicate(ce)
 			if err != nil {
 				return nil, err
 			}
 			if pred != nil {
-				c.O = triple.NewPredicateObject(pred)
+				p.O = triple.NewPredicateObject(pred)
 			}
 		case lexer.ItemBinding:
-			c.OBinding = tkn.Text
+			p.OBinding = tkn.Text
 		}
 		return f, nil
 	}
 	return f
 }
 
-// NextWorkingReificationClause returns a clause hook to close the current reifcation
-// clause and start a new reification clause within the working construct clause.
-func NextWorkingReificationClause() ClauseHook {
+// NextWorkingConstructPredicateObjectPair returns a clause hook to close the current
+// predicate-object pair and start a new predicate-object pair within the working
+// construct clause.
+func NextWorkingConstructPredicateObjectPair() ClauseHook {
 	var f ClauseHook
 	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
-		s.WorkingConstructClause().AddWorkingReificationClause()
-		return f, nil
-	}
-	return f
-}
-
-func reificationPredicateClause() ElementHook {
-	var f ElementHook
-	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
-		if ce.IsSymbol() {
-			return f, nil
-		}
-		tkn := ce.Token()
-		c := st.WorkingConstructClause().WorkingReificationClause()
-		if c.P != nil {
-			return nil, fmt.Errorf("invalid predicate %v in construct clause, predicate already set to %v", tkn.Type, c.P)
-		}
-		if c.PID != "" {
-			return nil, fmt.Errorf("invalid predicate %v in construct clause, predicate already set to %v", tkn.Type, c.PID)
-		}
-		if c.PBinding != "" {
-			return nil, fmt.Errorf("invalid predicate %v in construct clause, predicate already set to %v", tkn.Type, c.PBinding)
-		}
-		switch tkn.Type {
-		case lexer.ItemPredicate:
-			p, pID, pAnchorBinding, pTemporal, err := processPredicate(ce)
-			if err != nil {
-				return nil, err
-			}
-			c.P, c.PID, c.PAnchorBinding, c.PTemporal = p, pID, pAnchorBinding, pTemporal
-		case lexer.ItemBinding:
-			c.PBinding = tkn.Text
-		}
-		return f, nil
-	}
-	return f
-}
-
-func reificationObjectClause() ElementHook {
-	var f ElementHook
-	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
-		if ce.IsSymbol() {
-			return f, nil
-		}
-		tkn := ce.Token()
-		c := st.WorkingConstructClause().WorkingReificationClause()
-		if c.O != nil {
-			return nil, fmt.Errorf("invalid object %v in construct clause, object already set to %v", tkn.Text, c.O)
-		}
-		if c.OID != "" {
-			return nil, fmt.Errorf("invalid object %v in construct clause, objct already set to %v", tkn.Type, c.OID)
-		}
-		if c.OBinding != "" {
-			return nil, fmt.Errorf("invalid object %v in construct clause, object already set to %v", tkn.Type, c.OBinding)
-		}
-		switch tkn.Type {
-		case lexer.ItemNode, lexer.ItemBlankNode, lexer.ItemLiteral:
-			obj, err := triple.ParseObject(tkn.Text, literal.DefaultBuilder())
-			if err != nil {
-				return nil, err
-			}
-			c.O = obj
-		case lexer.ItemPredicate:
-			var (
-				pred *predicate.Predicate
-				err  error
-			)
-			pred, c.OID, c.OAnchorBinding, c.OTemporal, err = processPredicate(ce)
-			if err != nil {
-				return nil, err
-			}
-			if pred != nil {
-				c.O = triple.NewPredicateObject(pred)
-			}
-		case lexer.ItemBinding:
-			c.OBinding = tkn.Text
-		}
+		s.WorkingConstructClause().AddWorkingPredicateObjectPair()
 		return f, nil
 	}
 	return f

@@ -95,7 +95,7 @@ func TestReifyImmutable(t *testing.T) {
 	for _, trpl := range rts[1:] {
 		ps := string(trpl.Predicate().ID())
 		if ps != "_subject" && ps != "_predicate" && ps != "_object" {
-			t.Errorf("Inalid reification predicate; found %q", ps)
+			t.Errorf("Invalid reification predicate; found %q", ps)
 		}
 	}
 }
@@ -115,7 +115,7 @@ func TestReifyTemporal(t *testing.T) {
 	for _, trpl := range rts[1:] {
 		ps := string(trpl.Predicate().ID())
 		if ps != "_subject" && ps != "_predicate" && ps != "_object" {
-			t.Errorf("Inalid reification predicate; found %q", ps)
+			t.Errorf("Invalid reification predicate; found %q", ps)
 		}
 	}
 }

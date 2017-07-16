@@ -206,7 +206,7 @@ func Parse(line string, b literal.Builder) (*Triple, error) {
 // Reify given the current triple it returns the original triple and the newly
 // reified ones. It also returns the newly created blank node.
 func (t *Triple) Reify() ([]*Triple, *node.Node, error) {
-	// Function that create the proper reification predicates.
+	// Function that creates the proper reification predicates.
 	rp := func(id string, p *predicate.Predicate) (*predicate.Predicate, error) {
 		if p.Type() == predicate.Temporal {
 			ta, _ := p.TimeAnchor()
