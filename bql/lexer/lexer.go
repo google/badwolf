@@ -43,6 +43,8 @@ const (
 	ItemCreate
 	// ItemConstruct represents the construct keyword in BQL.
 	ItemConstruct
+	// ItemDeconstruct represents the deconstruct keyword in BQL.
+	ItemDeconstruct
 	// ItemDrop represent the destruction of a graph in BQL.
 	ItemDrop
 	// ItemGraph represent the graph to be created of destroyed in BQL.
@@ -145,6 +147,8 @@ func (tt TokenType) String() string {
 		return "CREATE"
 	case ItemConstruct:
 		return "CONSTRUCT"
+	case ItemDeconstruct:
+		return "DECONSTRUCT"
 	case ItemDrop:
 		return "DROP"
 	case ItemGraph:
@@ -262,6 +266,7 @@ const (
 	delete         = "delete"
 	create         = "create"
 	construct      = "construct"
+	deconstruct    = "deconstruct"
 	drop           = "drop"
 	graph          = "graph"
 	data           = "data"
@@ -473,6 +478,10 @@ func lexKeyword(l *lexer) stateFn {
 	}
 	if strings.EqualFold(input, construct) {
 		consumeKeyword(l, ItemConstruct)
+		return lexSpace
+	}
+	if strings.EqualFold(input, deconstruct) {
+		consumeKeyword(l, ItemDeconstruct)
 		return lexSpace
 	}
 	if strings.EqualFold(input, drop) {

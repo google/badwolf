@@ -145,6 +145,18 @@ func TestAcceptByParse(t *testing.T) {
 		 from ?b where {?s "old_predicate_1"@[,] ?o1.
 				?s "old_predicate_2"@[,] ?o2.
 				?s "old_predicate_3"@[,] ?o3};`,
+		// Test Deconstruct clause.
+		`deconstruct {?s "new_predicate"@[] ?o} at ?a from ?b where {?s "old_predicate"@[,] ?o} having ?s = ?o;`,
+		`deconstruct {?s "new_predicate"@[] ?o} at ?a from ?b where {?s "old_predicate"@[,] ?o};`,
+		`deconstruct {?s ?p ?o.
+			      _:v "_subject"@[] ?s.
+			      _:v "_predicate"@[] ?p.
+			      _:v "_object"@[] ?o}
+		 at ?a, ?b
+		 from ?c, ?d
+		 where {?n "_subject"@[] ?s.
+			?n "_predicate"@[] ?p.
+			?n "_object"@[] ?o};`,
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
@@ -262,6 +274,29 @@ func TestRejectByParse(t *testing.T) {
 		 from ?b
 		 where {?s "old_predicate_1"@[,] ?o1.
 			?s "old_predicate_2"@[,] ?o2};`,
+		// Deconstruct clause without source.
+		`deconstruct {?s "foo"@[,] ?o} at ?a where{?s "foo"@[,] ?o} having ?s = ?o;`,
+		// Deconstruct clause without destination.
+		`deconstruct {?s "foo"@[,] ?o} from ?b where{?s "foo"@[,] ?o} having ?s = ?o;`,
+		// Deconstruct clause with badly formed blank node.
+		`deconstruct {?s ?p ?o.
+			      _v "some_pred"@[] ?k}
+		 at ?a
+		 from ?b
+		 where {?s "foo"@[,] ?o};`,
+		// Deconstruct clause with badly formed triple.
+		`deconstruct {?s ?p ?o.
+			      _:v "some_pred"@[]}
+		 at ?a
+		 from ?b
+		 where {?s "foo"@[,] ?o};`,
+		// Deconstruct clause with multiple predicate-object pairs.
+		`deconstruct {?s "predicate_1"@[] ?o1;
+				 "predicate_1"@[] ?o1}
+		 at ?a
+		 from ?b
+		 where {?s "old_predicate_1"@[,] ?o1.
+			?s "old_predicate_2"@[,] ?o2};`,
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
@@ -319,10 +354,26 @@ func TestAcceptGraphOpsByParseAndSemantic(t *testing.T) {
 			 ?s "old_predicate_2"@[,] ?o2.
 			 ?s "old_predicate_3"@[,] ?o3};`, empty, []string{"?b"}, []string{"?a"}, 0},
 
-		// construct data into multiple output graphs from multple input graphs.
+		// Construct data into multiple output graphs from multple input graphs.
 		{`construct {?s "predicate_1"@[] ?o1;
 				"predicate_2"@[] ?o2}
 		  into ?a, ?b
+		  from ?c, ?d
+		  where {?s "old_predicate_1"@[,] ?o1.
+			 ?s "old_predicate_2"@[,] ?o2.
+			 ?s "old_predicate_3"@[,] ?o3};`, empty, []string{"?c", "?d"}, []string{"?a", "?b"}, 0},
+
+		// Deconstruct data. Graphs can be input or output graphs.
+		{`deconstruct {?s "predicate_1"@[] ?o1}
+		  at ?a
+		  from ?b
+		  where {?s "old_predicate_1"@[,] ?o1.
+			 ?s "old_predicate_2"@[,] ?o2.
+			 ?s "old_predicate_3"@[,] ?o3};`, empty, []string{"?b"}, []string{"?a"}, 0},
+
+		// Construct data into multiple output graphs from multple input graphs.
+		{`deconstruct {?s "predicate_1"@[] ?o1}
+		  at ?a, ?b
 		  from ?c, ?d
 		  where {?s "old_predicate_1"@[,] ?o1.
 			 ?s "old_predicate_2"@[,] ?o2.
@@ -461,7 +512,7 @@ func TestSemanticStatementGraphClausesLengthCorrectness(t *testing.T) {
 	}
 }
 
-func TestSemanticStatementConstructClausesLengthCorrectness(t *testing.T) {
+func TestSemanticStatementConstructDeconstructClausesLengthCorrectness(t *testing.T) {
 	table := []struct {
 		query string
 		want  int
@@ -481,6 +532,25 @@ func TestSemanticStatementConstructClausesLengthCorrectness(t *testing.T) {
 					      "predicate_2"@[] ?o2.
 					   ?s "predicate_3"@[] ?o3}
 				into ?a
+				from ?b
+				where {?s "old_predicate_1"@[,] ?o1.
+				       ?s "old_predicate_2"@[,] ?o2.
+				       ?s "old_predicate_3"@[,] ?o3};`,
+			want: 2,
+		},
+		{
+			query: `deconstruct {?s "predicate_1"@[] ?o1}
+				at ?a
+				from ?b
+				where {?s "old_predicate_1"@[,] ?o1.
+				       ?s "old_predicate_2"@[,] ?o2.
+				       ?s "old_predicate_3"@[,] ?o3};`,
+			want: 1,
+		},
+		{
+			query: `deconstruct {?s "predicate_1"@[] ?o1.
+					     ?s "predicate_3"@[] ?o3}
+				at ?a
 				from ?b
 				where {?s "old_predicate_1"@[,] ?o1.
 				       ?s "old_predicate_2"@[,] ?o2.
@@ -577,6 +647,17 @@ func TestSemanticStatementPredicateObjectPairsLengthCorrectness(t *testing.T) {
 				       ?s1 "old_predicate_3"@[,] AT ?t ?o3};`,
 			wantOne: 3,
 			wantTwo: 3,
+		},
+		{
+			query: `deconstruct {?s "predicate_1"@[] ?o1.
+					     ?s1 "predicate_1"@[] ?o1}
+				at ?a
+				from ?b
+				where {?s "old_predicate_1"@[,] ?o1.
+				       ?s "old_predicate_2"@[,] ?o2.
+				       ?s1 "old_predicate_3"@[,] AT ?t ?o3};`,
+			want_one: 1,
+			want_two: 1,
 		},
 	}
 	p, err := NewParser(SemanticBQL())

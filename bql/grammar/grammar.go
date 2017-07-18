@@ -101,6 +101,19 @@ func BQL() *Grammar {
 					NewTokenType(lexer.ItemSemicolon),
 				},
 			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemDeconstruct),
+					NewSymbol("DECONSTRUCT_FACTS"),
+					NewTokenType(lexer.ItemAt),
+					NewSymbol("OUTPUT_GRAPHS"),
+					NewTokenType(lexer.ItemFrom),
+					NewSymbol("INPUT_GRAPHS"),
+					NewSymbol("WHERE"),
+					NewSymbol("HAVING"),
+					NewTokenType(lexer.ItemSemicolon),
+				},
+			},
 		},
 		"CREATE_GRAPHS": []*Clause{
 			{
@@ -879,6 +892,50 @@ func BQL() *Grammar {
 			},
 			{},
 		},
+		"DECONSTRUCT_FACTS": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemLBracket),
+					NewSymbol("DECONSTRUCT_TRIPLES"),
+					NewTokenType(lexer.ItemRBracket),
+				},
+			},
+		},
+		"DECONSTRUCT_TRIPLES": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemNode),
+					NewSymbol("CONSTRUCT_PREDICATE"),
+					NewSymbol("CONSTRUCT_OBJECT"),
+					NewSymbol("MORE_DECONSTRUCT_TRIPLES"),
+				},
+			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemBlankNode),
+					NewSymbol("CONSTRUCT_PREDICATE"),
+					NewSymbol("CONSTRUCT_OBJECT"),
+					NewSymbol("MORE_DECONSTRUCT_TRIPLES"),
+				},
+			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemBinding),
+					NewSymbol("CONSTRUCT_PREDICATE"),
+					NewSymbol("CONSTRUCT_OBJECT"),
+					NewSymbol("MORE_DECONSTRUCT_TRIPLES"),
+				},
+			},
+		},
+		"MORE_DECONSTRUCT_TRIPLES": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemDot),
+					NewSymbol("DECONSTRUCT_TRIPLES"),
+				},
+			},
+			{},
+		},
 	}
 }
 
@@ -1003,7 +1060,7 @@ func SemanticBQL() *Grammar {
 
 	// CONSTRUCT clause semantic hooks.
 	setClauseHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_FACTS"}, semantic.InitWorkingConstructClauseHook(), semantic.TypeBindingClauseHook(semantic.Construct))
-	constructTriplesSymbols := []semantic.Symbol{"CONSTRUCT_TRIPLES", "MORE_CONSTRUCT_TRIPLES"}
+	constructTriplesSymbols := []semantic.Symbol{"CONSTRUCT_TRIPLES", "MORE_CONSTRUCT_TRIPLES", "DECONSTRUCT_TRIPLES", "MORE_DECONSTRUCT_TRIPLES"}
 	setClauseHook(semanticBQL, constructTriplesSymbols, semantic.NextWorkingConstructClauseHook(), semantic.NextWorkingConstructClauseHook())
 	setClauseHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_PREDICATE"}, semantic.NextWorkingConstructPredicateObjectPairClauseHook(), nil)
 	setClauseHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_OBJECT"}, nil, semantic.NextWorkingConstructPredicateObjectPairClauseHook())
@@ -1011,6 +1068,9 @@ func SemanticBQL() *Grammar {
 	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_TRIPLES"}, semantic.ConstructSubjectHook(), nil)
 	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_PREDICATE"}, semantic.ConstructPredicateHook(), nil)
 	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_OBJECT"}, semantic.ConstructObjectHook(), nil)
+
+	// DECONSTRUCT clause semantic hooks.
+	setClauseHook(semanticBQL, []semantic.Symbol{"DECONSTRUCT_FACTS"}, semantic.InitWorkingConstructClauseHook(), semantic.TypeBindingClauseHook(semantic.Deconstruct))
 
 	return semanticBQL
 }
