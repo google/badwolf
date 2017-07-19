@@ -818,18 +818,23 @@ func (p *queryPlan) String() string {
 }
 
 // constructPlan encapsulates the sequence of instructions that need to be
-// executed in order to satisfy the execution of a valid construct BQL statement.
+// executed in order to satisfy the execution of a valid construct or deconstruct
+// BQL statement.
 type constructPlan struct {
 	stm       *semantic.Statement
 	store     storage.Store
 	tracer    io.Writer
 	bulkSize  int
 	queryPlan *queryPlan
+	construct bool
 }
 
 // Type returns the type of plan used by the executor.
 func (p *constructPlan) Type() string {
-	return "CONSTRUCT"
+	if p.construct {
+		return "CONSTRUCT"
+	}
+	return "DECONSTRUCT"
 }
 
 func (p *constructPlan) processPredicateObjectPair(pop *semantic.ConstructPredicateObjectPair, tbl *table.Table, r table.Row) (*predicate.Predicate, *triple.Object, error) {
@@ -926,9 +931,17 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 		var ts []*triple.Triple
 		updateFunc := func(g storage.Graph, d []*triple.Triple) error {
 			trace(p.tracer, func() []string {
-				return []string{"Inserting triples to graph \"" + g.ID(ctx) + "\""}
+				return []string{"removing triples from graph \"" + g.ID(ctx) + "\""}
 			})
-			return g.AddTriples(ctx, d)
+			return g.RemoveTriples(ctx, d)
+		}
+		if p.construct {
+			updateFunc = func(g storage.Graph, d []*triple.Triple) error {
+				trace(p.tracer, func() []string {
+					return []string{"Inserting triples to graph \"" + g.ID(ctx) + "\""}
+				})
+				return g.AddTriples(ctx, d)
+			}
 		}
 		for elem := range tripChan {
 			ts = append(ts, elem)
@@ -982,7 +995,10 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 
 // String returns a readable description of the execution plan.
 func (p *constructPlan) String() string {
-	b := bytes.NewBufferString("CONSTRUCT plan:\n\n")
+	b := bytes.NewBufferString("DECONSTRUCT plan:\n\n")
+	if p.construct {
+		b = bytes.NewBufferString("CONSTRUCT plan:\n\n")
+	}
 	b.WriteString("Input graphs:\n")
 	for _, gn := range p.stm.InputGraphNames() {
 		b.WriteString(fmt.Sprintf("\t%v\n", gn))
@@ -1036,6 +1052,17 @@ func New(ctx context.Context, store storage.Store, stm *semantic.Statement, chan
 			tracer:    w,
 			bulkSize:  bulkSize,
 			queryPlan: qp,
+			construct: true,
+		}, nil
+	case semantic.Deconstruct:
+		qp, _ := newQueryPlan(ctx, store, stm, chanSize, w)
+		return &constructPlan{
+			stm:       stm,
+			store:     store,
+			tracer:    w,
+			bulkSize:  bulkSize,
+			queryPlan: qp,
+			construct: false,
 		}, nil
 	default:
 		return nil, fmt.Errorf("planner.New: unknown statement type in statement %v", stm)
