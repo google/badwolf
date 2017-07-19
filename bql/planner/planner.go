@@ -953,8 +953,7 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 				// We need to reify a blank node.
 				rts, bn, err := t.Reify()
 				if err != nil {
-					fmt.Errorf("triple.Reify failed to reify %v with error %v", t, err)
-					return nil, err
+					return nil, fmt.Errorf("triple.Reify failed to reify %v with error %v", t, err)
 				}
 				for _, trpl := range rts[1:] {
 					tripChan <- trpl

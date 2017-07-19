@@ -228,7 +228,7 @@ func TestPlannerDropGraph(t *testing.T) {
 	}
 }
 
-func populateStoreWithTriples(s storage.Store, ctx context.Context, gn string, triples string, tb testing.TB) {
+func populateStoreWithTriples(ctx context.Context, s storage.Store, gn string, triples string, tb testing.TB) {
 	g, err := s.NewGraph(ctx, gn)
 	if err != nil {
 		tb.Fatalf("memory.NewGraph failed to create \"%v\" with error %v", gn, err)
@@ -452,7 +452,7 @@ func TestPlannerQuery(t *testing.T) {
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
-	populateStoreWithTriples(s, ctx, "?test", testTriples, t)
+	populateStoreWithTriples(ctx, s, "?test", testTriples, t)
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		t.Fatalf("grammar.NewParser: should have produced a valid BQL parser with error %v", err)
@@ -550,8 +550,8 @@ func TestPlannerConstructAddsCorrectNumberofTriples(t *testing.T) {
 	for _, entry := range testTable {
 
 		s, ctx := memory.NewStore(), context.Background()
-		populateStoreWithTriples(s, ctx, "?src", constructTestSrcTriples, t)
-		populateStoreWithTriples(s, ctx, "?dest", constructTestDestTriples, t)
+		populateStoreWithTriples(ctx, s, "?src", constructTestSrcTriples, t)
+		populateStoreWithTriples(ctx, s, "?dest", constructTestDestTriples, t)
 
 		st := &semantic.Statement{}
 		if err := p.Parse(grammar.NewLLk(entry.s, 1), st); err != nil {
@@ -602,8 +602,8 @@ func TestPlannerConstructAddsCorrectTriples(t *testing.T) {
 		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
 	}
 	s, ctx := memory.NewStore(), context.Background()
-	populateStoreWithTriples(s, ctx, "?src", constructTestSrcTriples, t)
-	populateStoreWithTriples(s, ctx, "?dest", "", t)
+	populateStoreWithTriples(ctx, s, "?src", constructTestSrcTriples, t)
+	populateStoreWithTriples(ctx, s, "?dest", "", t)
 
 	st := &semantic.Statement{}
 	if err := p.Parse(grammar.NewLLk(bql, 1), st); err != nil {
@@ -656,7 +656,7 @@ func TestPlannerConstructAddsCorrectTriples(t *testing.T) {
 	for elem := range ts {
 		sts = append(sts, elem)
 		if elem.Subject().Type().String() == "/_" {
-			for k, _ := range dtm {
+			for k := range dtm {
 				trp, err := triple.Parse(k, literal.DefaultBuilder())
 				if err != nil {
 					t.Errorf("Unable to parse triple: %v with error %v", k, err)
@@ -682,7 +682,7 @@ func TestPlannerConstructAddsCorrectTriples(t *testing.T) {
 	// checking if the triple exists in the map of expected triples.
 	for _, t := range sts {
 		if t.Subject().Type().String() == "/_" {
-			for bn, _ := range bnm[t.Subject().String()] {
+			for bn := range bnm[t.Subject().String()] {
 				rep := fmt.Sprintf("%s\t%s\t%s", bn, t.Predicate().String(), t.Object().String())
 				if _, ok := dtm[rep]; !ok {
 					bnm[t.Subject().String()][bn] = false
@@ -891,7 +891,7 @@ func benchmarkQuery(query string, b *testing.B) {
 	ctx := context.Background()
 
 	s, ctx := memory.NewStore(), context.Background()
-	populateStoreWithTriples(s, ctx, "?test", testTriples, b)
+	populateStoreWithTriples(ctx, s, "?test", testTriples, b)
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		b.Fatalf("grammar.NewParser: should have produced a valid BQL parser with error %v", err)

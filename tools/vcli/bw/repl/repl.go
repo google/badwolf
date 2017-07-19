@@ -106,7 +106,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 	fmt.Printf("Using driver %q. Type quit; to exit\n", driver.Name(ctx))
 	fmt.Printf("Session started at %v\n\n", sessionStart)
 	defer func() {
-		fmt.Printf("\n\nThanks for all those BQL queries!\nSession duration: %v\n\n", time.Now().Sub(sessionStart) )
+		fmt.Printf("\n\nThanks for all those BQL queries!\nSession duration: %v\n\n", time.Now().Sub(sessionStart))
 	}()
 
 	for l := range rl(done) {

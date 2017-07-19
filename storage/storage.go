@@ -126,7 +126,7 @@ type Graph interface {
 	Objects(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *LookupOptions, objs chan<- *triple.Object) error
 
 	// Subject pushes to the provided channel the subjects for the give predicate
-	// and object. The function does not return immediately. The caller is 
+	// and object. The function does not return immediately. The caller is
 	// expected to detach them into a go routine.
 	//
 	// Given a predicate and an object, this method retrieves the subjects of
@@ -180,7 +180,7 @@ type Graph interface {
 	PredicatesForSubjectAndObject(ctx context.Context, s *node.Node, o *triple.Object, lo *LookupOptions, prds chan<- *predicate.Predicate) error
 
 	// TriplesForSubject pushes to the provided channel all triples available for
-	// the given subject. The function does not return immediately. The caller 
+	// the given subject. The function does not return immediately. The caller
 	// is expected to detach them into a go routine.
 	//
 	// If the lookup options provide a max number of elements the function will
@@ -191,7 +191,7 @@ type Graph interface {
 	TriplesForSubject(ctx context.Context, s *node.Node, lo *LookupOptions, trpls chan<- *triple.Triple) error
 
 	// TriplesForPredicate pushes to the provided channel all triples available
-	// for the given predicate.The function does not return immediatel. The 
+	// for the given predicate.The function does not return immediatel. The
 	// caller is expected to detach them into a go routine.
 	//
 	// If the lookup options provide a max number of elements the function will

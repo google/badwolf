@@ -338,16 +338,16 @@ func TestAcceptGraphOpsByParseAndSemantic(t *testing.T) {
 			t.Errorf("Parser.consume: Failed to accept entry %q with error %v", entry, err)
 		}
 		if got, want := st.GraphNames(), entry.graphs; !reflect.DeepEqual(got, want) {
-			t.Errorf("Parser.consume: Failed to collect the right graphs for case %v; got %d, want %d", entry, got, want)
+			t.Errorf("Parser.consume: Failed to collect the right graphs for case %v; got %v, want %v", entry, got, want)
 		}
 		if got, want := st.InputGraphNames(), entry.inputGraphs; !reflect.DeepEqual(got, want) {
-			t.Errorf("Parser.consume: Failed to collect the right input graphs for case %v; got %d, want %d", entry, got, want)
+			t.Errorf("Parser.consume: Failed to collect the right input graphs for case %v; got %v, want %v", entry, got, want)
 		}
 		if got, want := st.OutputGraphNames(), entry.outputGraphs; !reflect.DeepEqual(got, want) {
-			t.Errorf("Parser.consume: Failed to collect the right output graphs for case %v; got %d, want %d", entry, got, want)
+			t.Errorf("Parser.consume: Failed to collect the right output graphs for case %v; got %v, want %v", entry, got, want)
 		}
 		if got, want := len(st.Data()), entry.triples; got != want {
-			t.Errorf("Parser.consume: Failed to collect right number of triples for case %v; got %d, want %d", entry, got, want)
+			t.Errorf("Parser.consume: Failed to collect right number of triples for case %v; got %v, want %v", entry, got, want)
 		}
 	}
 }
@@ -505,9 +505,9 @@ func TestSemanticStatementConstructClausesLengthCorrectness(t *testing.T) {
 
 func TestSemanticStatementPredicateObjectPairsLengthCorrectness(t *testing.T) {
 	table := []struct {
-		query    string
-		want_one int
-		want_two int
+		query   string
+		wantOne int
+		wantTwo int
 	}{
 		{
 			query: `construct {?s "predicate_1"@[] ?o1;
@@ -518,8 +518,8 @@ func TestSemanticStatementPredicateObjectPairsLengthCorrectness(t *testing.T) {
 				where {?s "old_predicate_1"@[,] ?o1.
 				       ?s "old_predicate_2"@[,] ?o2.
 				       ?s "old_predicate_3"@[,] ?o3};`,
-			want_one: 2,
-			want_two: 1,
+			wantOne: 2,
+			wantTwo: 1,
 		},
 		{
 			query: `construct {?s "predicate_1"@[] ?o1;
@@ -533,8 +533,8 @@ func TestSemanticStatementPredicateObjectPairsLengthCorrectness(t *testing.T) {
 				where {?s "old_predicate_1"@[,] ?o1.
 				       ?s "old_predicate_2"@[,] ?o2.
 				       ?s1 "old_predicate_3"@[,] ?o3};`,
-			want_one: 3,
-			want_two: 3,
+			wantOne: 3,
+			wantTwo: 3,
 		},
 		{
 			query: `construct {?s "predicate_1"@[2015-07-19T13:12:04.669618843-07:00] ?o1;
@@ -545,8 +545,8 @@ func TestSemanticStatementPredicateObjectPairsLengthCorrectness(t *testing.T) {
 				where {?s "old_predicate_1"@[,] ?o1.
 				       ?s "old_predicate_2"@[,] ?o2.
 				       ?s "old_predicate_3"@[,] ?o3};`,
-			want_one: 2,
-			want_two: 1,
+			wantOne: 2,
+			wantTwo: 1,
 		},
 		{
 			query: `construct {?s "predicate_1"@[2015-07-19T13:12:04.669618843-07:00] ?o1;
@@ -560,8 +560,8 @@ func TestSemanticStatementPredicateObjectPairsLengthCorrectness(t *testing.T) {
 				where {?s "old_predicate_1"@[,] ?o1.
 				       ?s "old_predicate_2"@[,] ?o2.
 				       ?s1 "old_predicate_3"@[,] ?o3};`,
-			want_one: 3,
-			want_two: 3,
+			wantOne: 3,
+			wantTwo: 3,
 		},
 		{
 			query: `construct {?s "predicate_1"@[] ?o1;
@@ -575,8 +575,8 @@ func TestSemanticStatementPredicateObjectPairsLengthCorrectness(t *testing.T) {
 				where {?s "old_predicate_1"@[,] ?o1.
 				       ?s "old_predicate_2"@[,] ?o2.
 				       ?s1 "old_predicate_3"@[,] AT ?t ?o3};`,
-			want_one: 3,
-			want_two: 3,
+			wantOne: 3,
+			wantTwo: 3,
 		},
 	}
 	p, err := NewParser(SemanticBQL())
@@ -588,10 +588,10 @@ func TestSemanticStatementPredicateObjectPairsLengthCorrectness(t *testing.T) {
 		if err := p.Parse(NewLLk(entry.query, 1), st); err != nil {
 			t.Errorf("Parser.consume: Failed to accept valid semantic entry %q", entry.query)
 		}
-		if got, want := len(st.ConstructClauses()[0].PredicateObjectPairs()), entry.want_one; got != want {
+		if got, want := len(st.ConstructClauses()[0].PredicateObjectPairs()), entry.wantOne; got != want {
 			t.Errorf("Invalid number of predicate-object pairs for query %q; got %d, want %d; %v", entry.query, got, want, st.ConstructClauses()[0].PredicateObjectPairs())
 		}
-		if got, want := len(st.ConstructClauses()[1].PredicateObjectPairs()), entry.want_two; got != want {
+		if got, want := len(st.ConstructClauses()[1].PredicateObjectPairs()), entry.wantTwo; got != want {
 			t.Errorf("Invalid number of predicate-object pairs for query %q; got %d, want %d; %v", entry.query, got, want, st.ConstructClauses()[0].PredicateObjectPairs())
 		}
 	}

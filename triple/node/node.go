@@ -105,7 +105,7 @@ func Parse(s string) (*Node, error) {
 		if err != nil {
 			return nil, fmt.Errorf("node.Parse: invalid ID in %q, %v", raw, err)
 		}
-		t, _ :=  NewType("/_")
+		t, _ := NewType("/_")
 		return NewNode(t, id), nil
 	default:
 		return nil, fmt.Errorf("node.Parse: node representation should start with '/' or '_' in %v", raw)

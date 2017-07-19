@@ -378,7 +378,7 @@ $ badwolf export ?graph1,?graph2,?grpah3 ./triples.txt
 ## Command: Server
 
 Ther ```server``` command starts a simple HTTP endpoint for BQL commands on
-the provided port. 
+the provided port.
 
 ```
 $ bw server 1234

@@ -138,7 +138,7 @@ type ConstructClause struct {
 	S        *node.Node
 	SBinding string
 
-  predicateObjectPairs []*ConstructPredicateObjectPair
+	predicateObjectPairs       []*ConstructPredicateObjectPair
 	workingPredicateObjectPair *ConstructPredicateObjectPair
 }
 
@@ -387,7 +387,7 @@ func (c *ConstructClause) String() string {
 	for _, pop := range c.PredicateObjectPairs() {
 		b.WriteString(fmt.Sprintf("%v;", pop))
 	}
-  b.Truncate(b.Len()-1)
+	b.Truncate(b.Len() - 1)
 	b.WriteString(" }")
 	return b.String()
 }
