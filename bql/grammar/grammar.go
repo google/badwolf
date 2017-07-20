@@ -1058,19 +1058,17 @@ func SemanticBQL() *Grammar {
 		})
 	setClauseHook(semanticBQL, []semantic.Symbol{"START"}, nil, semantic.GroupByBindingsChecker())
 
-	// CONSTRUCT clause semantic hooks.
+	// CONSTRUCT and DECONSTRUCT clauses semantic hooks.
 	setClauseHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_FACTS"}, semantic.InitWorkingConstructClauseHook(), semantic.TypeBindingClauseHook(semantic.Construct))
-	constructTriplesSymbols := []semantic.Symbol{"CONSTRUCT_TRIPLES", "MORE_CONSTRUCT_TRIPLES", "DECONSTRUCT_TRIPLES", "MORE_DECONSTRUCT_TRIPLES"}
-	setClauseHook(semanticBQL, constructTriplesSymbols, semantic.NextWorkingConstructClauseHook(), semantic.NextWorkingConstructClauseHook())
+	setClauseHook(semanticBQL, []semantic.Symbol{"DECONSTRUCT_FACTS"}, semantic.InitWorkingConstructClauseHook(), semantic.TypeBindingClauseHook(semantic.Deconstruct))
+	constructAndDeconstructTriplesSymbols := []semantic.Symbol{"CONSTRUCT_TRIPLES", "MORE_CONSTRUCT_TRIPLES", "DECONSTRUCT_TRIPLES", "MORE_DECONSTRUCT_TRIPLES"}
+	setClauseHook(semanticBQL, constructAndDeconstructTriplesSymbols, semantic.NextWorkingConstructClauseHook(), semantic.NextWorkingConstructClauseHook())
 	setClauseHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_PREDICATE"}, semantic.NextWorkingConstructPredicateObjectPairClauseHook(), nil)
 	setClauseHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_OBJECT"}, nil, semantic.NextWorkingConstructPredicateObjectPairClauseHook())
 
-	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_TRIPLES"}, semantic.ConstructSubjectHook(), nil)
+	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_TRIPLES", "DECONSTRUCT_TRIPLES"}, semantic.ConstructSubjectHook(), nil)
 	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_PREDICATE"}, semantic.ConstructPredicateHook(), nil)
 	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_OBJECT"}, semantic.ConstructObjectHook(), nil)
-
-	// DECONSTRUCT clause semantic hooks.
-	setClauseHook(semanticBQL, []semantic.Symbol{"DECONSTRUCT_FACTS"}, semantic.InitWorkingConstructClauseHook(), semantic.TypeBindingClauseHook(semantic.Deconstruct))
 
 	return semanticBQL
 }

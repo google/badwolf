@@ -931,7 +931,7 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 		var ts []*triple.Triple
 		updateFunc := func(g storage.Graph, d []*triple.Triple) error {
 			trace(p.tracer, func() []string {
-				return []string{"removing triples from graph \"" + g.ID(ctx) + "\""}
+				return []string{"Removing triples from graph \"" + g.ID(ctx) + "\""}
 			})
 			return g.RemoveTriples(ctx, d)
 		}

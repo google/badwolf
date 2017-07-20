@@ -371,7 +371,7 @@ func TestAcceptGraphOpsByParseAndSemantic(t *testing.T) {
 			 ?s "old_predicate_2"@[,] ?o2.
 			 ?s "old_predicate_3"@[,] ?o3};`, empty, []string{"?b"}, []string{"?a"}, 0},
 
-		// Construct data into multiple output graphs from multple input graphs.
+		// Deconstruct data at multiple output graphs from multple input graphs.
 		{`deconstruct {?s "predicate_1"@[] ?o1}
 		  at ?a, ?b
 		  from ?c, ?d
@@ -656,8 +656,8 @@ func TestSemanticStatementPredicateObjectPairsLengthCorrectness(t *testing.T) {
 				where {?s "old_predicate_1"@[,] ?o1.
 				       ?s "old_predicate_2"@[,] ?o2.
 				       ?s1 "old_predicate_3"@[,] AT ?t ?o3};`,
-			want_one: 1,
-			want_two: 1,
+			wantOne: 1,
+			wantTwo: 1,
 		},
 	}
 	p, err := NewParser(SemanticBQL())
