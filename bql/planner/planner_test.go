@@ -753,7 +753,7 @@ func TestPlannerDeconstructRemovesCorrectTriples(t *testing.T) {
 	}{
 		{
 			s: `deconstruct {?p1 "met"@[] ?p2}
-			    at ?dest
+			    in ?dest
 			    from ?src
 			    where {?p1 "lives_in"@[] /city<A>.
 				   ?p2 "lives_in"@[] /city<B>};`,
@@ -765,7 +765,7 @@ func TestPlannerDeconstructRemovesCorrectTriples(t *testing.T) {
 		{
 			s: `deconstruct {?p1 "met"@[] ?p2.
 		                         ?p2 "met"@[] ?p1}
-			    at ?dest
+			    in ?dest
 			    from ?src
 			    where {?p1 "lives_in"@[] /city<A>.
 				   ?p2 "lives_in"@[] /city<B>};`,
@@ -822,7 +822,7 @@ func TestPlannerDeconstructRemovesCorrectTriples(t *testing.T) {
 				}
 				dt[trp.String()] = true
 			} else {
-				t.Errorf("unexpected triple: %v added to graph", t)
+				t.Errorf("unexpected triple: %v added to graph", trp)
 			}
 		}
 		if i != len(entry.trps) {

@@ -65,6 +65,8 @@ const (
 	ItemID
 	// ItemAt represents at keyword in BQL.
 	ItemAt
+	// ItemIn represents in keyword in BQL.
+	ItemIn
 	// ItemBefore represents the before keyword in BQL.
 	ItemBefore
 	// ItemAfter represents the after keyword in BQL.
@@ -231,6 +233,8 @@ func (tt TokenType) String() string {
 		return "TYPE"
 	case ItemAt:
 		return "AT"
+	case ItemIn:
+		return "IN"
 	case ItemDistinct:
 		return "DISTINCT"
 	default:
@@ -293,6 +297,7 @@ const (
 	id             = "id"
 	typeKeyword    = "type"
 	atKeyword      = "at"
+	inKeyword      = "in"
 	anchor         = "\"@["
 	literalType    = "\"^^type:"
 	literalBool    = "bool"
@@ -586,6 +591,10 @@ func lexKeyword(l *lexer) stateFn {
 	}
 	if strings.EqualFold(input, atKeyword) {
 		consumeKeyword(l, ItemAt)
+		return lexSpace
+	}
+	if strings.EqualFold(input, inKeyword) {
+		consumeKeyword(l, ItemIn)
 		return lexSpace
 	}
 	for {

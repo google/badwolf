@@ -146,13 +146,13 @@ func TestAcceptByParse(t *testing.T) {
 				?s "old_predicate_2"@[,] ?o2.
 				?s "old_predicate_3"@[,] ?o3};`,
 		// Test Deconstruct clause.
-		`deconstruct {?s "new_predicate"@[] ?o} at ?a from ?b where {?s "old_predicate"@[,] ?o} having ?s = ?o;`,
-		`deconstruct {?s "new_predicate"@[] ?o} at ?a from ?b where {?s "old_predicate"@[,] ?o};`,
+		`deconstruct {?s "new_predicate"@[] ?o} in ?a from ?b where {?s "old_predicate"@[,] ?o} having ?s = ?o;`,
+		`deconstruct {?s "new_predicate"@[] ?o} in ?a from ?b where {?s "old_predicate"@[,] ?o};`,
 		`deconstruct {?s ?p ?o.
 			      _:v "_subject"@[] ?s.
 			      _:v "_predicate"@[] ?p.
 			      _:v "_object"@[] ?o}
-		 at ?a, ?b
+		 in ?a, ?b
 		 from ?c, ?d
 		 where {?n "_subject"@[] ?s.
 			?n "_predicate"@[] ?p.
@@ -275,25 +275,25 @@ func TestRejectByParse(t *testing.T) {
 		 where {?s "old_predicate_1"@[,] ?o1.
 			?s "old_predicate_2"@[,] ?o2};`,
 		// Deconstruct clause without source.
-		`deconstruct {?s "foo"@[,] ?o} at ?a where{?s "foo"@[,] ?o} having ?s = ?o;`,
+		`deconstruct {?s "foo"@[,] ?o} in ?a where{?s "foo"@[,] ?o} having ?s = ?o;`,
 		// Deconstruct clause without destination.
 		`deconstruct {?s "foo"@[,] ?o} from ?b where{?s "foo"@[,] ?o} having ?s = ?o;`,
 		// Deconstruct clause with badly formed blank node.
 		`deconstruct {?s ?p ?o.
 			      _v "some_pred"@[] ?k}
-		 at ?a
+		 in ?a
 		 from ?b
 		 where {?s "foo"@[,] ?o};`,
 		// Deconstruct clause with badly formed triple.
 		`deconstruct {?s ?p ?o.
 			      _:v "some_pred"@[]}
-		 at ?a
+		 in ?a
 		 from ?b
 		 where {?s "foo"@[,] ?o};`,
 		// Deconstruct clause with multiple predicate-object pairs.
 		`deconstruct {?s "predicate_1"@[] ?o1;
 				 "predicate_1"@[] ?o1}
-		 at ?a
+		 in ?a
 		 from ?b
 		 where {?s "old_predicate_1"@[,] ?o1.
 			?s "old_predicate_2"@[,] ?o2};`,
@@ -365,7 +365,7 @@ func TestAcceptGraphOpsByParseAndSemantic(t *testing.T) {
 
 		// Deconstruct data. Graphs can be input or output graphs.
 		{`deconstruct {?s "predicate_1"@[] ?o1}
-		  at ?a
+		  in ?a
 		  from ?b
 		  where {?s "old_predicate_1"@[,] ?o1.
 			 ?s "old_predicate_2"@[,] ?o2.
@@ -373,7 +373,7 @@ func TestAcceptGraphOpsByParseAndSemantic(t *testing.T) {
 
 		// Deconstruct data at multiple output graphs from multple input graphs.
 		{`deconstruct {?s "predicate_1"@[] ?o1}
-		  at ?a, ?b
+		  in ?a, ?b
 		  from ?c, ?d
 		  where {?s "old_predicate_1"@[,] ?o1.
 			 ?s "old_predicate_2"@[,] ?o2.
@@ -540,7 +540,7 @@ func TestSemanticStatementConstructDeconstructClausesLengthCorrectness(t *testin
 		},
 		{
 			query: `deconstruct {?s "predicate_1"@[] ?o1}
-				at ?a
+				in ?a
 				from ?b
 				where {?s "old_predicate_1"@[,] ?o1.
 				       ?s "old_predicate_2"@[,] ?o2.
@@ -550,7 +550,7 @@ func TestSemanticStatementConstructDeconstructClausesLengthCorrectness(t *testin
 		{
 			query: `deconstruct {?s "predicate_1"@[] ?o1.
 					     ?s "predicate_3"@[] ?o3}
-				at ?a
+				in ?a
 				from ?b
 				where {?s "old_predicate_1"@[,] ?o1.
 				       ?s "old_predicate_2"@[,] ?o2.
@@ -651,7 +651,7 @@ func TestSemanticStatementPredicateObjectPairsLengthCorrectness(t *testing.T) {
 		{
 			query: `deconstruct {?s "predicate_1"@[] ?o1.
 					     ?s1 "predicate_1"@[] ?o1}
-				at ?a
+				in ?a
 				from ?b
 				where {?s "old_predicate_1"@[,] ?o1.
 				       ?s "old_predicate_2"@[,] ?o2.

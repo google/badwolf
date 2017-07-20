@@ -105,7 +105,7 @@ func BQL() *Grammar {
 				Elements: []Element{
 					NewTokenType(lexer.ItemDeconstruct),
 					NewSymbol("DECONSTRUCT_FACTS"),
-					NewTokenType(lexer.ItemAt),
+					NewTokenType(lexer.ItemIn),
 					NewSymbol("OUTPUT_GRAPHS"),
 					NewTokenType(lexer.ItemFrom),
 					NewSymbol("INPUT_GRAPHS"),
