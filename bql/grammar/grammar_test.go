@@ -352,7 +352,11 @@ func TestAcceptGraphOpsByParseAndSemantic(t *testing.T) {
 		  from ?b
 		  where {?s "old_predicate_1"@[,] ?o1.
 			 ?s "old_predicate_2"@[,] ?o2.
-			 ?s "old_predicate_3"@[,] ?o3};`, empty, []string{"?b"}, []string{"?a"}, 0},
+			 ?s "old_predicate_3"@[,] ?o3};`,
+			empty,
+			[]string{"?b"},
+			[]string{"?a"},
+			0},
 
 		// Construct data into multiple output graphs from multple input graphs.
 		{`construct {?s "predicate_1"@[] ?o1;
@@ -361,7 +365,11 @@ func TestAcceptGraphOpsByParseAndSemantic(t *testing.T) {
 		  from ?c, ?d
 		  where {?s "old_predicate_1"@[,] ?o1.
 			 ?s "old_predicate_2"@[,] ?o2.
-			 ?s "old_predicate_3"@[,] ?o3};`, empty, []string{"?c", "?d"}, []string{"?a", "?b"}, 0},
+			 ?s "old_predicate_3"@[,] ?o3};`,
+			empty,
+			[]string{"?c", "?d"},
+			[]string{"?a", "?b"},
+			0},
 
 		// Deconstruct data. Graphs can be input or output graphs.
 		{`deconstruct {?s "predicate_1"@[] ?o1}
@@ -369,7 +377,11 @@ func TestAcceptGraphOpsByParseAndSemantic(t *testing.T) {
 		  from ?b
 		  where {?s "old_predicate_1"@[,] ?o1.
 			 ?s "old_predicate_2"@[,] ?o2.
-			 ?s "old_predicate_3"@[,] ?o3};`, empty, []string{"?b"}, []string{"?a"}, 0},
+			 ?s "old_predicate_3"@[,] ?o3};`,
+			empty,
+			[]string{"?b"},
+			[]string{"?a"},
+			0},
 
 		// Deconstruct data at multiple output graphs from multple input graphs.
 		{`deconstruct {?s "predicate_1"@[] ?o1}
@@ -377,7 +389,11 @@ func TestAcceptGraphOpsByParseAndSemantic(t *testing.T) {
 		  from ?c, ?d
 		  where {?s "old_predicate_1"@[,] ?o1.
 			 ?s "old_predicate_2"@[,] ?o2.
-			 ?s "old_predicate_3"@[,] ?o3};`, empty, []string{"?c", "?d"}, []string{"?a", "?b"}, 0},
+			 ?s "old_predicate_3"@[,] ?o3};`,
+			empty,
+			[]string{"?c", "?d"},
+			[]string{"?a", "?b"},
+			0},
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
