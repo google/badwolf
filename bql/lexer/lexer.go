@@ -43,6 +43,8 @@ const (
 	ItemCreate
 	// ItemConstruct represents the construct keyword in BQL.
 	ItemConstruct
+	// ItemDeconstruct represents the deconstruct keyword in BQL.
+	ItemDeconstruct
 	// ItemDrop represent the destruction of a graph in BQL.
 	ItemDrop
 	// ItemGraph represent the graph to be created of destroyed in BQL.
@@ -63,6 +65,8 @@ const (
 	ItemID
 	// ItemAt represents at keyword in BQL.
 	ItemAt
+	// ItemIn represents in keyword in BQL.
+	ItemIn
 	// ItemBefore represents the before keyword in BQL.
 	ItemBefore
 	// ItemAfter represents the after keyword in BQL.
@@ -145,6 +149,8 @@ func (tt TokenType) String() string {
 		return "CREATE"
 	case ItemConstruct:
 		return "CONSTRUCT"
+	case ItemDeconstruct:
+		return "DECONSTRUCT"
 	case ItemDrop:
 		return "DROP"
 	case ItemGraph:
@@ -227,6 +233,8 @@ func (tt TokenType) String() string {
 		return "TYPE"
 	case ItemAt:
 		return "AT"
+	case ItemIn:
+		return "IN"
 	case ItemDistinct:
 		return "DISTINCT"
 	default:
@@ -262,6 +270,7 @@ const (
 	delete         = "delete"
 	create         = "create"
 	construct      = "construct"
+	deconstruct    = "deconstruct"
 	drop           = "drop"
 	graph          = "graph"
 	data           = "data"
@@ -288,6 +297,7 @@ const (
 	id             = "id"
 	typeKeyword    = "type"
 	atKeyword      = "at"
+	inKeyword      = "in"
 	anchor         = "\"@["
 	literalType    = "\"^^type:"
 	literalBool    = "bool"
@@ -475,6 +485,10 @@ func lexKeyword(l *lexer) stateFn {
 		consumeKeyword(l, ItemConstruct)
 		return lexSpace
 	}
+	if strings.EqualFold(input, deconstruct) {
+		consumeKeyword(l, ItemDeconstruct)
+		return lexSpace
+	}
 	if strings.EqualFold(input, drop) {
 		consumeKeyword(l, ItemDrop)
 		return lexSpace
@@ -577,6 +591,10 @@ func lexKeyword(l *lexer) stateFn {
 	}
 	if strings.EqualFold(input, atKeyword) {
 		consumeKeyword(l, ItemAt)
+		return lexSpace
+	}
+	if strings.EqualFold(input, inKeyword) {
+		consumeKeyword(l, ItemIn)
 		return lexSpace
 	}
 	for {

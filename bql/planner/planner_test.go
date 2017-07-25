@@ -78,6 +78,20 @@ const (
 	constructTestDestTriples = `/person<D> "met"@[] /person<E>
 	`
 
+	deconstructTestSrcTriples = `/person<A> "lives_in"@[] /city<A>
+		/person<B> "lives_in"@[] /city<B>
+		/person<C> "lives_in"@[] /city<A>
+		/person<D> "lives_in"@[] /city<B>
+		`
+
+	deconstructTestDestTriples = `/person<A> "met"@[] /person<B>
+		/person<B> "met"@[] /person<C>
+		/person<C> "met"@[] /person<D>
+		/person<D> "met"@[] /person<A>
+		/person<A> "met"@[] /person<C>
+		/person<B> "met"@[] /person<D>
+		`
+
 	testTriples = originalTriples + tripleFromIssue40
 )
 
@@ -730,6 +744,92 @@ func TestPlannerConstructAddsCorrectTriples(t *testing.T) {
 			t.Errorf("g.Triples did not return triple: %v", k)
 		}
 	}
+}
+
+func TestPlannerDeconstructRemovesCorrectTriples(t *testing.T) {
+	testTable := []struct {
+		s    string
+		trps []string
+	}{
+		{
+			s: `deconstruct {?p1 "met"@[] ?p2}
+			    in ?dest
+			    from ?src
+			    where {?p1 "lives_in"@[] /city<A>.
+				   ?p2 "lives_in"@[] /city<B>};`,
+			trps: []string{fmt.Sprintf("%s\t%s\t%s", `/person<B>`, `"met"@[]`, `/person<C>`),
+				fmt.Sprintf("%s\t%s\t%s", `/person<D>`, `"met"@[]`, `/person<A>`),
+				fmt.Sprintf("%s\t%s\t%s", `/person<A>`, `"met"@[]`, `/person<C>`),
+				fmt.Sprintf("%s\t%s\t%s", `/person<B>`, `"met"@[]`, `/person<D>`)},
+		},
+		{
+			s: `deconstruct {?p1 "met"@[] ?p2.
+		                         ?p2 "met"@[] ?p1}
+			    in ?dest
+			    from ?src
+			    where {?p1 "lives_in"@[] /city<A>.
+				   ?p2 "lives_in"@[] /city<B>};`,
+			trps: []string{fmt.Sprintf("%s\t%s\t%s", `/person<A>`, `"met"@[]`, `/person<C>`),
+				fmt.Sprintf("%s\t%s\t%s", `/person<B>`, `"met"@[]`, `/person<D>`)},
+		},
+	}
+	p, err := grammar.NewParser(grammar.SemanticBQL())
+	if err != nil {
+		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+	}
+	for _, entry := range testTable {
+
+		s, ctx := memory.NewStore(), context.Background()
+		populateStoreWithTriples(ctx, s, "?src", deconstructTestSrcTriples, t)
+		populateStoreWithTriples(ctx, s, "?dest", deconstructTestDestTriples, t)
+
+		st := &semantic.Statement{}
+		if err := p.Parse(grammar.NewLLk(entry.s, 1), st); err != nil {
+			t.Errorf("Parser.consume: failed to parse query %q with error %v", entry.s, err)
+		}
+		plnr, err := New(ctx, s, st, 0, 10, nil)
+		if err != nil {
+			t.Errorf("planner.New failed to create a valid query plan with error %v", err)
+		}
+		_, err = plnr.Execute(ctx)
+		if err != nil {
+			t.Errorf("planner.Execute failed for query %q with error %v", entry.s, err)
+			continue
+		}
+
+		g, err := s.Graph(ctx, "?dest")
+		if err != nil {
+			t.Errorf("memory.DefaultStore.Graph(%q) should have not fail with error %v", "?test", err)
+		}
+
+		ts := make(chan *triple.Triple)
+		go func() {
+			if err := g.Triples(ctx, storage.DefaultLookup, ts); err != nil {
+				t.Error(err)
+			}
+		}()
+
+		dt := make(map[string]bool)
+		for _, trp := range entry.trps {
+			dt[trp] = false
+		}
+
+		i := 0
+		for trp := range ts {
+			if val, ok := dt[trp.String()]; ok {
+				if !val {
+					i++
+				}
+				dt[trp.String()] = true
+			} else {
+				t.Errorf("unexpected triple: %v added to graph", trp)
+			}
+		}
+		if i != len(entry.trps) {
+			t.Errorf("g.Triples did not return some of the triples.")
+		}
+	}
+
 }
 
 func TestTreeTraversalToRoot(t *testing.T) {

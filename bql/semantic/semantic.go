@@ -50,6 +50,8 @@ const (
 	Drop
 	// Construct statement.
 	Construct
+	// Deconstruct statement.
+	Deconstruct
 )
 
 // String provides a readable version of the StatementType.
@@ -67,6 +69,8 @@ func (t StatementType) String() string {
 		return "DROP"
 	case Construct:
 		return "CONSTRUCT"
+	case Deconstruct:
+		return "DECONSTRUCT"
 	default:
 		return "UNKNOWN"
 	}
