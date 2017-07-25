@@ -912,14 +912,6 @@ func BQL() *Grammar {
 			},
 			{
 				Elements: []Element{
-					NewTokenType(lexer.ItemBlankNode),
-					NewSymbol("CONSTRUCT_PREDICATE"),
-					NewSymbol("CONSTRUCT_OBJECT"),
-					NewSymbol("MORE_DECONSTRUCT_TRIPLES"),
-				},
-			},
-			{
-				Elements: []Element{
 					NewTokenType(lexer.ItemBinding),
 					NewSymbol("CONSTRUCT_PREDICATE"),
 					NewSymbol("CONSTRUCT_OBJECT"),

@@ -149,9 +149,9 @@ func TestAcceptByParse(t *testing.T) {
 		`deconstruct {?s "new_predicate"@[] ?o} in ?a from ?b where {?s "old_predicate"@[,] ?o} having ?s = ?o;`,
 		`deconstruct {?s "new_predicate"@[] ?o} in ?a from ?b where {?s "old_predicate"@[,] ?o};`,
 		`deconstruct {?s ?p ?o.
-			      _:v "_subject"@[] ?s.
-			      _:v "_predicate"@[] ?p.
-			      _:v "_object"@[] ?o}
+			      ?n "_subject"@[] ?s.
+			      ?n "_predicate"@[] ?p.
+			      ?n "_object"@[] ?o}
 		 in ?a, ?b
 		 from ?c, ?d
 		 where {?n "_subject"@[] ?s.
@@ -297,6 +297,16 @@ func TestRejectByParse(t *testing.T) {
 		 from ?b
 		 where {?s "old_predicate_1"@[,] ?o1.
 			?s "old_predicate_2"@[,] ?o2};`,
+		// Deconstruct clause with blank nodes.
+		`deconstruct {?s ?p ?o.
+		              _:v "_subject"@[] ?s.
+			      _:v "_predicate"@[] ?p.
+			      _:v "_object"@[] ?o}
+		 in ?a, ?b
+		 from ?c, ?d
+		 where {?n "_subject"@[] ?s.
+			?n "_predicate"@[] ?p.
+			?n "_object"@[] ?o};`,
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
