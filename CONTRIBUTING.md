@@ -28,7 +28,7 @@ again.
 Once your CLA is submitted (or if you already submitted one for
 another Google project), make a commit adding yourself to the
 [AUTHORS][] and [CONTRIBUTORS][] files. This commit can be part
-of your first [Differential][] code review.
+of your first code review.
 
 [AUTHORS]: AUTHORS
 [CONTRIBUTORS]: CONTRIBUTORS
