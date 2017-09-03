@@ -149,6 +149,5 @@ func Run(driverName string, drivers map[string]StoreGenerator, chanSize, bulkTri
 		fmt.Fprintln(os.Stderr, err)
 		return 2
 	}
-	fmt.Println(flag.Args())
 	return Eval(context.Background(), flag.Args(), InitializeCommands(driver, chanSize, bulkTripleOpSize, builderSize, rl, make(chan bool)))
 }
