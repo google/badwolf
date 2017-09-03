@@ -552,7 +552,7 @@ clause.
   DECONSTRUCT {
     ?ancestor "grandparent"@[] ?grandchildren
   }
-  INTO ?dest
+  IN ?dest
   FROM ?src
   WHERE {
     ?ancestor "parent"@[] ?c .
