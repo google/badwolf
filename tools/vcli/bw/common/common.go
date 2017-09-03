@@ -151,8 +151,16 @@ func Run(driverName string, drivers map[string]StoreGenerator, chanSize, bulkTri
 		return 2
 	}
 	var args []string
+	skipFlagValue := false
 	for _, s := range os.Args {
 		if strings.HasPrefix(s, "-") {
+			if !strings.HasPrefix(s, "=") {
+				skipFlagValue = true
+			}
+			continue
+		}
+		if skipFlagValue {
+			skipFlagValue = false
 			continue
 		}
 		args = append(args, s)
