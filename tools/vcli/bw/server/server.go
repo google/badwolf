@@ -60,7 +60,7 @@ type serverConfig struct {
 // runServer runs the simple BQL endpoint.
 func runServer(ctx context.Context, cmd *command.Command, args []string, store storage.Store, chanSize, bulkSize int) int {
 	// Check parameters.
-	if len(args) < 3 {
+	if len(args) < 2 {
 		log.Printf("[%v] Missing required port number. ", time.Now())
 		cmd.Usage()
 		return 2

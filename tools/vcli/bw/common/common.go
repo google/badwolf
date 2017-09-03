@@ -17,6 +17,7 @@
 package common
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"sort"
@@ -120,10 +121,10 @@ func InitializeCommands(driver storage.Store, chanSize, bulkTripleOpSize, builde
 // drivers.
 func Eval(ctx context.Context, args []string, cmds []*command.Command) int {
 	// Retrieve the provided command.
-	cmd := ""
-	if len(args) >= 2 {
-		cmd = args[1]
+	if len(args) < 1 {
+		return Help(args, cmds)
 	}
+	cmd := args[0]
 	// Check for help request.
 	if cmd == "help" {
 		return Help(args, cmds)
@@ -135,9 +136,7 @@ func Eval(ctx context.Context, args []string, cmds []*command.Command) int {
 		}
 	}
 	// The command was not found.
-	if cmd == "" {
-		fmt.Fprintf(os.Stderr, "missing command. Usage:\n\n\t$ bw [command]\n\nPlease run\n\n\t$ bw help\n\n")
-	} else {
+	if cmd != "" {
 		fmt.Fprintf(os.Stderr, "command %q not recognized. Usage:\n\n\t$ bw [command]\n\nPlease run\n\n\t$ bw help\n\n", cmd)
 	}
 	return 1
@@ -150,20 +149,6 @@ func Run(driverName string, drivers map[string]StoreGenerator, chanSize, bulkTri
 		fmt.Fprintln(os.Stderr, err)
 		return 2
 	}
-	var args []string
-	skipFlagValue := false
-	for _, s := range os.Args {
-		if strings.HasPrefix(s, "-") {
-			if !strings.HasPrefix(s, "=") {
-				skipFlagValue = true
-			}
-			continue
-		}
-		if skipFlagValue {
-			skipFlagValue = false
-			continue
-		}
-		args = append(args, s)
-	}
-	return Eval(context.Background(), args, InitializeCommands(driver, chanSize, bulkTripleOpSize, builderSize, rl, make(chan bool)))
+	fmt.Println(flag.Args())
+	return Eval(context.Background(), flag.Args(), InitializeCommands(driver, chanSize, bulkTripleOpSize, builderSize, rl, make(chan bool)))
 }

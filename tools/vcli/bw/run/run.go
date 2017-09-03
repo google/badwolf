@@ -50,7 +50,7 @@ sequentially.
 
 // runCommand runs all the BQL statements available in the file.
 func runCommand(ctx context.Context, cmd *command.Command, args []string, store storage.Store, chanSize, bulkSize int) int {
-	if len(args) < 3 {
+	if len(args) < 2 {
 		log.Printf("[ERROR] Missing required file path. ")
 		cmd.Usage()
 		return 2

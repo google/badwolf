@@ -52,7 +52,7 @@ loaded data.
 
 // Eval loads the triples in the file against as indicated by the command.
 func Eval(ctx context.Context, usage string, args []string, store storage.Store, bulkSize, builderSize int) int {
-	if len(args) <= 3 {
+	if len(args) < 3 {
 		log.Printf("[ERROR] Missing required file path and/or graph names.\n\n%s", usage)
 		return 2
 	}
