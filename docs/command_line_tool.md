@@ -32,8 +32,10 @@ available for the `bw` tool. To list them just type:
 $ bw -h
 ```
 
-Keep in mind that all flags should be listed before you enter the command
-you want to run.
+> Keep in mind that all flags should be listed before you enter the command
+> you want to run. If you attempt to set the flags after the command they
+> will be be treated as arguments of it and, hence, they will not be 
+> properly set and likely get unexpected results.
 
 ## Command: Version
 
