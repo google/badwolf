@@ -17,7 +17,6 @@
 package common
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"sort"
@@ -143,11 +142,11 @@ func Eval(ctx context.Context, args []string, cmds []*command.Command) int {
 }
 
 // Run executes the main of the command line tool.
-func Run(driverName string, drivers map[string]StoreGenerator, chanSize, bulkTripleOpSize, builderSize int, rl repl.ReadLiner) int {
+func Run(driverName string, args []string, drivers map[string]StoreGenerator, chanSize, bulkTripleOpSize, builderSize int, rl repl.ReadLiner) int {
 	driver, err := InitializeDriver(driverName, drivers)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 2
 	}
-	return Eval(context.Background(), flag.Args(), InitializeCommands(driver, chanSize, bulkTripleOpSize, builderSize, rl, make(chan bool)))
+	return Eval(context.Background(), args, InitializeCommands(driver, chanSize, bulkTripleOpSize, builderSize, rl, make(chan bool)))
 }

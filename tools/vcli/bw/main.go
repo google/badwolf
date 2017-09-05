@@ -55,5 +55,5 @@ func registerDrivers() {
 func main() {
 	flag.Parse()
 	registerDrivers()
-	os.Exit(common.Run(*driver, registeredDrivers, *bqlChannelSize, *bulkTripleOpSize, *bulkTripleBuilderSize, repl.SimpleReadLine))
+	os.Exit(common.Run(*driver, flag.Args(), registeredDrivers, *bqlChannelSize, *bulkTripleOpSize, *bulkTripleBuilderSize, repl.SimpleReadLine))
 }
