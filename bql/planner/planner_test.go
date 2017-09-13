@@ -463,6 +463,11 @@ func TestPlannerQuery(t *testing.T) {
 			nbs:  2,
 			nrws: 1,
 		},
+		{
+			q:    `SHOW GRAPHS;`,
+			nbs:  1,
+			nrws: 1,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()

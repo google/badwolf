@@ -1015,6 +1015,48 @@ func (p *constructPlan) String() string {
 	return b.String()
 }
 
+// showPlan creates a plan to show all the graphs available.
+type showPlan struct {
+	stm    *semantic.Statement
+	store  storage.Store
+	tracer io.Writer
+}
+
+// Type returns the type of plan used by the executor.
+func (p *showPlan) Type() string {
+	return "SHOW"
+}
+
+// Execute the show statement.
+func (p *showPlan) Execute(ctx context.Context) (*table.Table, error) {
+	t, err := table.New([]string{"?graph_id"})
+	if err != nil {
+		return nil, err
+	}
+	names := make(chan string)
+	go func() {
+		err = p.store.GraphNames(ctx, names)
+	}()
+
+	for name := range names {
+		id := name
+		t.AddRow(table.Row{
+			"?graph_id": &table.Cell{
+				S: &id,
+			},
+		})
+	}
+	if err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
+// String returns a readable description of the execution plan.
+func (p *showPlan) String() string {
+	return fmt.Sprintf("SHOW plan:\n\nstore(%q).GraphNames(_, _)", p.store.Name(nil))
+}
+
 // New create a new executable plan given a semantic BQL statement.
 func New(ctx context.Context, store storage.Store, stm *semantic.Statement, chanSize, bulkSize int, w io.Writer) (Executor, error) {
 	switch stm.Type() {
@@ -1063,6 +1105,12 @@ func New(ctx context.Context, store storage.Store, stm *semantic.Statement, chan
 			bulkSize:  bulkSize,
 			queryPlan: qp,
 			construct: false,
+		}, nil
+	case semantic.Show:
+		return &showPlan{
+			stm:    stm,
+			store:  store,
+			tracer: w,
 		}, nil
 	default:
 		return nil, fmt.Errorf("planner.New: unknown statement type in statement %v", stm)
