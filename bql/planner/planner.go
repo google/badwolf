@@ -1033,9 +1033,11 @@ func (p *showPlan) Execute(ctx context.Context) (*table.Table, error) {
 	if err != nil {
 		return nil, err
 	}
+	errs := make(chan error)
 	names := make(chan string)
 	go func() {
-		err = p.store.GraphNames(ctx, names)
+		errs<- p.store.GraphNames(ctx, names)
+		close(errs)
 	}()
 
 	for name := range names {
@@ -1046,7 +1048,7 @@ func (p *showPlan) Execute(ctx context.Context) (*table.Table, error) {
 			},
 		})
 	}
-	if err != nil {
+	if <-errs != nil {
 		return nil, err
 	}
 	return t, nil
