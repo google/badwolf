@@ -75,6 +75,17 @@ the graph does not exist. You should not expect dropping multiple graphs to be
 atomic. If one of the graphs fails, there is no guarantee that others will have
 been created, usually failing fast and not even attempting to create the rest.
 
+## Listing all the available graphs
+
+There is a simple way to get a list of all the available graph in a store.
+Just run:
+
+```
+SHOW GRAPHS;
+```
+
+This will return the list af available graphs currently available in the
+store.
 
 ## Bindings and Graph Patterns
 
