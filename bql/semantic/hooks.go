@@ -1094,3 +1094,13 @@ func NextWorkingConstructPredicateObjectPair() ClauseHook {
 	}
 	return f
 }
+
+// ShowClauseHook returns a clause hook for the show statement.
+func ShowClauseHook() ClauseHook {
+	var f ClauseHook
+	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+		s.sType = Show
+		return f, nil
+	}
+	return f
+}

@@ -1076,5 +1076,8 @@ func SemanticBQL() *Grammar {
 	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_PREDICATE"}, semantic.ConstructPredicateHook(), nil)
 	setElementHook(semanticBQL, []semantic.Symbol{"CONSTRUCT_OBJECT"}, semantic.ConstructObjectHook(), nil)
 
+	// SHOW GRAPHS clause semantic hooks.
+	setClauseHook(semanticBQL, []semantic.Symbol{"GRAPH_SHOW"}, nil, semantic.ShowClauseHook())
+
 	return semanticBQL
 }
