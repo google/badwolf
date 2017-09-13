@@ -157,6 +157,8 @@ func TestAcceptByParse(t *testing.T) {
 		 where {?n "_subject"@[] ?s.
 			?n "_predicate"@[] ?p.
 			?n "_object"@[] ?o};`,
+		// Show the graphs.
+		`show graphs;`,
 	}
 	p, err := NewParser(BQL())
 	if err != nil {

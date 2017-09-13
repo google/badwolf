@@ -131,6 +131,10 @@ const (
 	ItemAnd
 	// ItemOr represents keyword or in BQL.
 	ItemOr
+	// ItemShow represents the show keyword.
+	ItemShow
+	// ItemGraphs represent the graphs keyword.
+	ItemGraphs
 )
 
 func (tt TokenType) String() string {
@@ -237,6 +241,10 @@ func (tt TokenType) String() string {
 		return "IN"
 	case ItemDistinct:
 		return "DISTINCT"
+	case ItemShow:
+		return "SHOW"
+	case ItemGraphs:
+		return "GRAPHS"
 	default:
 		return "UNKNOWN"
 	}
@@ -298,6 +306,8 @@ const (
 	typeKeyword    = "type"
 	atKeyword      = "at"
 	inKeyword      = "in"
+	showKeyword    = "show"
+	graphsKeyword  = "graphs"
 	anchor         = "\"@["
 	literalType    = "\"^^type:"
 	literalBool    = "bool"
@@ -595,6 +605,14 @@ func lexKeyword(l *lexer) stateFn {
 	}
 	if strings.EqualFold(input, inKeyword) {
 		consumeKeyword(l, ItemIn)
+		return lexSpace
+	}
+	if strings.EqualFold(input, showKeyword) {
+		consumeKeyword(l, ItemShow)
+		return lexSpace
+	}
+	if strings.EqualFold(input, graphsKeyword) {
+		consumeKeyword(l, ItemGraphs)
 		return lexSpace
 	}
 	for {
