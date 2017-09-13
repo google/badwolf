@@ -117,7 +117,7 @@ func BQL() *Grammar {
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemShow),
-					NewTokenType(lexer.ItemGraphs),
+					NewSymbol("GRAPH_SHOW"),
 					NewTokenType(lexer.ItemSemicolon),
 				},
 			},
@@ -934,6 +934,13 @@ func BQL() *Grammar {
 				},
 			},
 			{},
+		},
+		"GRAPH_SHOW": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemGraphs),
+				},
+			},
 		},
 	}
 }
