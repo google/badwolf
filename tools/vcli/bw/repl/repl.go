@@ -193,6 +193,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 
 		now := time.Now()
 		table, err := runBQL(ctx, l, driver, chanSize, bulkSize, tracer)
+		bqlDiff := time.Now().Sub(now)
 		if err != nil {
 			fmt.Printf("[ERROR] %s\n", err)
 			fmt.Println("Time spent: ", time.Now().Sub(now))
@@ -201,7 +202,8 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			if len(table.Bindings()) > 0 {
 				fmt.Println(table.String())
 			}
-			fmt.Printf("[OK] %d rows retrived. Time spent: %v.\n", table.NumRows(), time.Now().Sub(now))
+			fmt.Printf("[OK] %d rows retrived. BQL time: %v. Display time: %v\n",
+				table.NumRows(), bqlDiff, time.Now().Sub(now)-bqlDiff)
 		}
 		done <- false
 	}
