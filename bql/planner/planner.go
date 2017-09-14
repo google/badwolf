@@ -44,7 +44,7 @@ type Executor interface {
 	Execute(ctx context.Context) (*table.Table, error)
 
 	// String returns a readable description of the execution plan.
-	String() string
+	String(ctx context.Context) string
 
 	// Type returns the type of plan used by the executor.
 	Type() string
@@ -101,7 +101,7 @@ func (p *createPlan) Execute(ctx context.Context) (*table.Table, error) {
 }
 
 // String returns a readable description of the execution plan.
-func (p *createPlan) String() string {
+func (p *createPlan) String(ctx context.Context) string {
 	return fmt.Sprintf("CREATE plan:\n\nstore(%q).NewGraph(_, %v)", p.store.Name(nil), p.stm.Graphs())
 }
 
@@ -140,7 +140,7 @@ func (p *dropPlan) Execute(ctx context.Context) (*table.Table, error) {
 }
 
 // String returns a readable description of the execution plan.
-func (p *dropPlan) String() string {
+func (p *dropPlan) String(ctx context.Context) string {
 	return fmt.Sprintf("DROP plan:\n\nstore(%q).DeleteGraph(_, %v)", p.store.Name(nil), p.stm.Graphs())
 }
 
@@ -208,7 +208,7 @@ func (p *insertPlan) Execute(ctx context.Context) (*table.Table, error) {
 }
 
 // String returns a readable description of the execution plan.
-func (p *insertPlan) String() string {
+func (p *insertPlan) String(ctx context.Context) string {
 	b := bytes.NewBufferString("INSERT plan:\n\n")
 	for _, g := range p.stm.OutputGraphs() {
 		b.WriteString(fmt.Sprintf("store(%q).Graph(%q).AddTriples(_, data)\n", p.store.Name(nil), g))
@@ -250,7 +250,7 @@ func (p *deletePlan) Execute(ctx context.Context) (*table.Table, error) {
 }
 
 // String returns a readable description of the execution plan.
-func (p *deletePlan) String() string {
+func (p *deletePlan) String(ctx context.Context) string {
 	b := bytes.NewBufferString("DELETE plan:\n\n")
 	for _, g := range p.stm.InputGraphs() {
 		b.WriteString(fmt.Sprintf("store(%q).Graph(%q).RemoveTriples(_, data)\n", p.store.Name(nil), g))
@@ -772,7 +772,7 @@ func (p *queryPlan) Execute(ctx context.Context) (*table.Table, error) {
 }
 
 // String returns a readable description of the execution plan.
-func (p *queryPlan) String() string {
+func (p *queryPlan) String(ctx context.Context) string {
 	b := bytes.NewBufferString("QUERY plan:\n\n")
 	b.WriteString("using store(\"")
 	b.WriteString(p.store.Name(nil))
@@ -994,7 +994,7 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 }
 
 // String returns a readable description of the execution plan.
-func (p *constructPlan) String() string {
+func (p *constructPlan) String(ctx context.Context) string {
 	b := bytes.NewBufferString("DECONSTRUCT plan:\n\n")
 	if p.construct {
 		b = bytes.NewBufferString("CONSTRUCT plan:\n\n")
@@ -1011,7 +1011,7 @@ func (p *constructPlan) String() string {
 	for _, cc := range p.stm.ConstructClauses() {
 		b.WriteString(fmt.Sprintf("\t%v\n", cc))
 	}
-	b.WriteString(fmt.Sprintf("\n%v", p.queryPlan.String()))
+	b.WriteString(fmt.Sprintf("\n%v", p.queryPlan.String(ctx)))
 	return b.String()
 }
 
@@ -1055,8 +1055,8 @@ func (p *showPlan) Execute(ctx context.Context) (*table.Table, error) {
 }
 
 // String returns a readable description of the execution plan.
-func (p *showPlan) String() string {
-	return fmt.Sprintf("SHOW plan:\n\nstore(%q).GraphNames(_, _)", p.store.Name(nil))
+func (p *showPlan) String(ctx context.Context) string {
+	return fmt.Sprintf("SHOW plan:\n\nstore(%q).GraphNames(_, _)", p.store.Name(ctx))
 }
 
 // New create a new executable plan given a semantic BQL statement.

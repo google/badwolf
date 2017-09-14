@@ -172,7 +172,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			if err != nil {
 				fmt.Printf("[ERROR] %s\n\n", err)
 			} else {
-				fmt.Println(pln.String())
+				fmt.Println(pln.String(ctx))
 				fmt.Println("[OK]")
 			}
 			done <- false
