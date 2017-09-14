@@ -201,7 +201,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			if len(table.Bindings()) > 0 {
 				fmt.Println(table.String())
 			}
-			fmt.Println("[OK] Time spent: ", time.Now().Sub(now))
+			fmt.Printf("[OK] %d rows retrived. Time spent: %v.\n", table.NumRows(), time.Now().Sub(now))
 		}
 		done <- false
 	}
