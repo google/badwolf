@@ -1036,7 +1036,7 @@ func (p *showPlan) Execute(ctx context.Context) (*table.Table, error) {
 	errs := make(chan error)
 	names := make(chan string)
 	go func() {
-		errs<- p.store.GraphNames(ctx, names)
+		errs <- p.store.GraphNames(ctx, names)
 		close(errs)
 	}()
 

@@ -202,7 +202,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			if len(table.Bindings()) > 0 {
 				fmt.Println(table.String())
 			}
-			fmt.Printf("[OK] %d rows retrived. BQL time: %v. Display time: %v\n",
+			fmt.Printf("[OK] %d rows retrieved. BQL time: %v. Display time: %v\n",
 				table.NumRows(), bqlDiff, time.Now().Sub(now)-bqlDiff)
 		}
 		done <- false
