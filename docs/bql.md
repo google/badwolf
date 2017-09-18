@@ -23,6 +23,8 @@ graphs:
 * _Select_: Allows querying data form one or more graphs.
 * _Insert_: Allows inserting data form one or more graphs.
 * _Delete_: Allows deleting data form one or more graphs.
+* _Construct_: Allows creating new statements into graphs by querying existing statements.
+* _Destruct_: Allows remove statements from graphs by querying existing statements.
 
 Currently _insert_ and _delete_ operations require you to explicitly state
 the fully qualified triple. In its current form it is not intended to deal with
