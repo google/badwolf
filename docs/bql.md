@@ -20,6 +20,7 @@ graphs:
 
 * _Create_: Creates a new graph in the store you are connected to.
 * _Drop_: Drops an existing graph in the store you are connected to.
+* _Shows_: Shows the list of available graphs.
 * _Select_: Allows querying data form one or more graphs.
 * _Insert_: Allows inserting data form one or more graphs.
 * _Delete_: Allows deleting data form one or more graphs.
