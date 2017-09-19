@@ -203,7 +203,6 @@ func TestEqualBindings(t *testing.T) {
 				"?bar": true,
 			},
 			b2: map[string]bool{
-				"?foo":   true,
 				"?bar":   true,
 				"?other": true,
 			},
@@ -642,7 +641,7 @@ func TestSumAccumulators(t *testing.T) {
 	)
 	for i := int64(0); i < 5; i++ {
 		l, _ := literal.DefaultBuilder().Build(literal.Int64, i)
-		iv, _ = ia.Accumulate(l)
+		iv, _ = ia.Accumulate(&Cell{L: l})
 	}
 	if got, want := iv.(int64), int64(10); got != want {
 		t.Errorf("Int64 sum accumulator failed; got %d, want %d", got, want)
@@ -654,7 +653,7 @@ func TestSumAccumulators(t *testing.T) {
 	)
 	for i := float64(0); i < 5; i += 1.0 {
 		l, _ := literal.DefaultBuilder().Build(literal.Float64, i)
-		fv, _ = fa.Accumulate(l)
+		fv, _ = fa.Accumulate(&Cell{L: l})
 	}
 	if got, want := fv.(float64), float64(10); got != want {
 		t.Errorf("Int64 sum accumulator failed; got %f, want %f", got, want)

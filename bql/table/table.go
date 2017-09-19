@@ -430,7 +430,11 @@ type sumInt64 struct {
 
 // Accumulate takes the given value and accumulates it to the current state.
 func (s *sumInt64) Accumulate(v interface{}) (interface{}, error) {
-	l := v.(*literal.Literal)
+	c := v.(*Cell)
+	l := c.L
+	if l == nil {
+		return nil, fmt.Errorf("not a valid literal it cell %v", c)
+	}
 	iv, err := l.Int64()
 	if err != nil {
 		return s.state, err
@@ -457,7 +461,11 @@ type sumFloat64 struct {
 
 // Accumulate takes the given value and accumulates it to the current state.
 func (s *sumFloat64) Accumulate(v interface{}) (interface{}, error) {
-	l := v.(*literal.Literal)
+	c := v.(*Cell)
+	l := c.L
+	if l == nil {
+		return nil, fmt.Errorf("not a valid literal it cell %v", c)
+	}
 	iv, err := l.Float64()
 	if err != nil {
 		return s.state, err
