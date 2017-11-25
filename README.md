@@ -36,6 +36,8 @@ Please keep in mind that this project is under active development and there
 will be no guarantees on API stability till the first stable 1.0 release.
 
 You can reach us here or via
-[@badwolf_project](https://twitter.com/badwolf_project) on Twitter. For
-more information or to find other related projects that using BadWolf check the
+[@badwolf_project](https://twitter.com/badwolf_project) on Twitter. 
+
+For more information, presentation, or to find other related projects that 
+using BadWolf check the
 [project website](http://google.github.io/badwolf/).

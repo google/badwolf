@@ -1,0 +1,506 @@
+The BadWolf Project
+Temporal Graph Store
+19:00 19 Sep 2017
+Tags: badwolf, graph store
+
+Xavier Llorà
+SWE, Google Inc.
+@badwolf_project
+@xllora
+
+* What will we cover today?
+
+What is BW and what is not
+
+Why we needed BW
+
+Concepts tour by example
+
+BadWolf architecture overview
+
+Demo
+
+
+* What is BW and what is not
+
+BadWolf is a temporal graph store abstraction loosely modeled as a triple store
+
+Priorities:
+- Easy modeling changing and ill-defined data
+- Statement oriented data modeling
+- Build on the graph nature of statements
+- Bake basic time reasoning into it
+- Production serving path
+
+Not on the radar:
+- Bulk analysis tool (but can feed it)
+- Tailor it around any specific storage backend
+- Provide it as a service
+
+* Why we needed BW
+
+Ill-defined problems with changing landscapes
+
+New concepts frequently added or removed
+
+Statements that change over time
+
+Flexibility to model and reason without schema/code changes
+
+
+* Modeling by example
+
+
+* A simple statement
+
+A simple example of a statement
+
+  Charles Darwin was born in Shrewsbury
+
+A statement describes some truth about something
+
+Deconstructing a statement
+
+- _Subject_: The main actor on the statement (`Charles` `Darwin`)
+- _Predicate_: The verb qualifying the statement (`born` `in`)
+- _Object_: What is being predicated (`Shrewsbury`)
+
+There are two entities (`Charles` `Darwin` and `Shrewsbury`) linked by a verb
+
+* Another statement
+
+  Shrewsbury population 6,000
+
+This statement is build using
+
+- _Subject_: (`Shrewsbury`)
+- _Predicate_: A property (`population`)
+- _Object_: The value of the property (`6,000`)
+
+A statement may not define a relation, but describe a _property_
+
+The object of properties are primitive data types. Some examples
+
+- _Text_
+- _Numbers_
+- `...`
+
+* Statements about statements
+
+This is also a simple statement, but with a twist
+
+  Nikola Tesla knew Charles Darwin was born in Shrewsbury
+
+The above example links an entity with another entity (another statement)
+
+  Nikola Tesla knew [Charles Darwin was born in Shrewsbury]
+
+A possible way of desconstructing the statement
+
+- _Subject_: `Nikola` `Tesla`
+- _Predicate_: `knew`
+- _Object_: `Charles` `Darwin` `was` `born` `in` `Shrewsbury`
+
+You can have entities in a statement, but you can also have other statements
+
+* Visualizing statements
+
+The previous statements can be visualized as a graph
+
+.image images/ogm-statement-property-reified.jpg
+
+* A recurrent caveat: Statements change over time
+
+* Owning pencils
+
+Imagine the simple question:
+
+- Can you model how many pencils do you have on your desk?
+
+You can model it as the following statement
+
+  MyDesk pencils 10
+
+Is this a universal statement?
+
+- What about now?
+- What about an hour ago?
+- What about two days ago?
+
+* I know the answer
+
+I can predicate a property about the statement
+
+  I have 10 at 2016/06/21T19:00PST
+
+or
+
+  [I have 10] at 2017/09/19T19:00PST
+
+And we know how to decompose it
+
+- _Subject_: `I` `have` `10`
+- _Predicate_: `at`
+- _Object_: `2016/06/21T19:00PST`
+
+Yes, we can model it
+
+Some facts change over time by nature
+
+There should be an easier way to express it
+
+* BadWolf and extending predicate semantics
+
+- _Immutable_: Predicates that do not change with time
+
+  Charles Darwin was born in Shrewsbury
+
+- _Temporal_: Predicates only true a some point in time
+
+  Shrewsbury population 6,000
+
+* BadWolf modeling summary
+
+
+* BadWolf Predicates
+
+Predicates are defined by an `ID` and a `TIME_ANCHOR`
+
+- _Immutable_: Predicates that do have `ID` but do not have `TIME_ANCHOR`
+
+  "born_in"@[]
+
+- _Temporal_: Predicates that have both `ID` and a `TIME_ANCHOR`
+
+  "population"@[1860]
+
+* BadWolf Entities
+
+Entities are defined by a `TYPE` and a `ID`
+
+- `TYPE` is an hierarchical construct
+
+- `ID` is a unique value that identifies the entity
+
+For convenience, you can write them as follows
+
+  /person<Charles Darwin>
+  /person<Nikola Tesla>
+
+* BadWolf Literals
+
+- `bool`: A simple boolean
+
+   "true"^^type:bool
+
+- `int64`: A 64 bit signed integer
+
+   "-1"^^type:int64
+
+- `Float64`: A 64 bit float
+
+   "1.23"^^type:float64
+
+- `Text`: An arbitrary UTF-8 text
+
+   "foo bar"^^type:text
+
+- `Blob`: An arbitrary byte array
+
+   "[ 1 2 3 ]"^^type:blob
+
+* BadWolf Triples
+
+A triple is just a subject + predicate + object
+
+- _Subject_: An entity
+- _Predicate_: An immutable or a temporal predicate
+- _Object_: Either an entity or a literal or a predicate
+
+Triples in BadWolf are _immutable_
+
+* Remember this graph of statements?
+
+.image images/ogm-statement-property-reified.jpg
+
+* Expressing it with BadWolf triples
+
+Each of the edges in that graph represent a triple.
+
+  /person<Charles Darwin>  "born_in"@[]         /city<Shrewsbury>
+  /city<Shrewsbury>        "population"@[1860]  "6000"^^type:int64
+  /person<Nikola Tesla>    "knew"@[]            /_<UUID>
+  /_<UUID>                 "_subject"@[]        /person<Charles Darwin>
+  /_<UUID>                 "_predicate"@[]      "born_in"@[]
+  /_<UUID>                 "_object"@[]         /city<Shrewsbury>
+
+This format also represent how data can be shared
+
+
+
+
+
+
+* BadWolf architecture overview
+
+* Barebones view
+
+At is core BadWolf in an embeddable library in Go
+- A lexer
+- A parser
+- A semantic checker
+- A planer
+- A plan executor
+
+And a command line tool `bw` that allows
+- Data import/export
+- A REPL
+- A simple JSON endpoint
+
+* A driver definition
+
+Two well defined interfaces to define storage drivers
+
+The basic graph management is defined at
+
+  type Store interface {..}
+
+Whereas statement management and querying is defined at
+
+  type Graph interface {..}
+
+Both interface definitions can be found at
+
+.link https://github.com/google/badwolf/blob/master/storage/storage.go storage.go
+
+* Driver implementations
+
+A volatile in memory implementation is provided with BadWolf
+.link https://github.com/google/badwolf/blob/master/storage/memory/memory.go memory.go
+
+The are existing persistent implementations also. For instance, an efficient
+and straight forward implementation of a driver using `Bolt DB` can be
+found at
+
+.link https://github.com/xllora/bwdrivers github.com/xllora/bwdrivers
+.link https://github.com/boltdb/bolt github.com/boltdb/bolt
+
+* BQL
+
+* BadWolf Query Language
+
+SPARQL flavor with the required modifications.
+
+- _Create_: Creates a new graph in the store you are connected to.
+- _Drop_: Drops an existing graph in the store you are connected to.
+- _Shows_: Shows the list of available graphs.
+- _Select_: Allows querying data form one or more graphs.
+- _Insert_: Allows inserting data form one or more graphs.
+- _Delete_: Allows deleting data form one or more graphs.
+- _Construct_: Allows creating new statements into graphs by querying existing statements.
+- _Destruct_: Allows remove statements from graphs by querying existing statements.
+
+* Demo time
+
+* Some public data to play with
+
+Stanford Network Analysis Project (SNAP)
+- Social network datasets trivial to convert to triples
+- Usual suspects of different sizes
+
+    @misc{snapnets,
+      author       = {Jure Leskovec and Andrej Krevl},
+      title        = {{SNAP Datasets}: {Stanford} Large Network Dataset Collection},
+      howpublished = {\url{http://snap.stanford.edu/data}},
+      month        = jun,
+      year         = 2014
+    }
+
+.link http://snap.stanford.edu/data SNAP data sets
+
+UN population data sets
+- Population break down per country and city
+- Breakdown per gender also
+- Changes with time
+
+.link http://data.un.org/Data.aspx?q=population&d=PopDiv&f=variableID%3a12 UN data sets
+
+* Getting it up and running
+
+* Loading the two data sets
+
+    Welcome to BadWolf vCli (0.9.1-dev)
+    Using driver "bwbolt//home/xllora/bw.bolt". Type quit; to exit
+    Session started at 2017-09-14 22:48:41.657251445 -0700 PDT m=+0.007695510
+
+    bql> create graph ?snap,?un;
+    [OK] 0 rows retrieved. BQL time: 14.188453ms. Display time: 144ns
+
+    bql> load /home/xllora/un_pop.bw ?un;
+    Successfully processed 39110 lines from file "/home/xllora/un_pop.bw".
+    Triples loaded into graphs:
+        - ?un
+    [OK] Time spent:  3.953789155s
+
+    bql> load /home/xllora/un_gplus.bw ?snap;
+    Successfully processed 1756938 lines from file "/home/xllora/un_gplus.bw".
+    Triples loaded into graphs:
+        - ?gp
+    [OK] Time spent:  5m51.557471279s
+
+* Some questions we could ask
+
+- What are the most popular last names?
+- What universities have more Davids?
+- Top universities of folks followed by UIUC folks
+- Top 10 US cities by accumulated population
+- Top 10 US cities by accumulated population before 2005
+- Populations on the cities the user in SN network stayed after 2014
+
+
+* What are the most popular last names?
+
+    bql> select ?o, count(?o) as ?cnt
+         from ?snap
+         where{
+            ?s "last_name"@[] ?o
+         }
+         group by ?o
+         order by ?cnt desc
+         limit "10"^^type:int64;
+
+    ?o	?cnt
+    /last_name<david>	"1019"^^type:int64
+    /last_name<michael>	"971"^^type:int64
+    /last_name<chris>	"839"^^type:int64
+    /last_name<john>	"812"^^type:int64
+    /last_name<mike>	"572"^^type:int64
+    /last_name<mark>	"569"^^type:int64
+    /last_name<paul>	"535"^^type:int64
+    /last_name<jason>	"520"^^type:int64
+    /last_name<brian>	"493"^^type:int64
+    /last_name<daniel>	"490"^^type:int64
+
+    [OK] 10 rows retrieved. BQL time: 1.073698788s. Display time: 51.354µs
+
+* What universities have more Davids?
+
+    bql> select ?u, count(?u) as ?cnt
+         from ?snap
+         where{
+            ?s "last_name"@[] /last_name<david> .
+            ?s "university"@[] ?u
+         }
+         group by ?u
+         order by ?cnt desc
+         limit "10"^^type:int64;
+
+    ?u	?cnt
+    /institution<Northwestern University>	"6"^^type:int64
+    /institution<EMPTY>	"6"^^type:int64
+    /institution<Columbia University>	"5"^^type:int64
+    /institution<University of Waterloo>	"5"^^type:int64
+    /institution<Stanford University>	"5"^^type:int64
+    /institution<University of Florida>	"4"^^type:int64
+    /institution<Indiana University>	"4"^^type:int64
+    /institution<New York University>	"4"^^type:int64
+    /institution<Purdue University>	"4"^^type:int64
+    /institution<University of Michigan>	"4"^^type:int64
+
+    [OK] 10 rows retrieved. BQL time: 39.384897ms. Display time: 133.869µs
+
+* Top universities of folks followed by UIUC folks
+
+    bql> select ?u, count(?u) as ?cnt
+         from ?snap
+         where{
+            ?s "university"@[] /institution<University of Illinois at Urbana-Champaign> .
+            ?s "follows"@[] ?f .
+            ?f "university"@[] ?u
+         }
+         group by ?u
+         order by ?cnt desc
+         limit "10"^^type:int64;
+
+    ?u	?cnt
+    /institution<Sonoma State University>	"6"^^type:int64
+    /institution<University of the Philippines, Diliman>	"6"^^type:int64
+    /institution<San Jose State University>	"5"^^type:int64
+    /institution<Prospect High School>	"5"^^type:int64
+    /institution<Swarthmore College>	"5"^^type:int64
+    /institution<University of British Columbia>	"4"^^type:int64
+    /institution<California Polytechnic State University>	"4"^^type:int64
+    /institution<University of Cincinnati>	"4"^^type:int64
+    /institution<University of New Mexico>	"3"^^type:int64
+    /institution<Liverpool John Moores University>	"3"^^type:int64
+
+    [OK] 10 rows retrieved. BQL time: 17.630468ms. Display time: 1.397735ms
+
+* Top 10 US cities by accumulated population
+
+    bql> select ?a, sum(?p) as ?sum
+         from ?un
+         where{
+            /country<United States of America> "area"@[,] ?a .
+            ?a "population"@[,] ?p
+         }
+         group by ?a
+         order by ?sum desc
+         limit "10"^^type:int64;
+
+    ?a	?sum
+    /location<new york, ny>	"6.72349512e+08"^^type:float64
+    /location<los angeles, ca>	"3.39613136e+08"^^type:float64
+    /location<chicago, il>	"2.45747824e+08"^^type:float64
+    /location<houston, tx>	"1.68460136e+08"^^type:float64
+    /location<philadelphia, pa>	"1.37722328e+08"^^type:float64
+    /location<phoenix, az>	"1.19207344e+08"^^type:float64
+    /location<dallas, tx>	"1.1285668e+08"^^type:float64
+    /location<san diego, ca>	"1.04371312e+08"^^type:float64
+    /location<san antonio, tx>	"9.5702952e+07"^^type:float64
+    /location<detroit, mi>	"8.4588968e+07"^^type:float64
+
+    [OK] 10 rows retrieved. BQL time: 548.691651ms. Display time: 48.41µs
+
+* Top 10 US cities by accumulated population before 2005
+
+    bql> select ?a, sum(?p) as ?sum
+         from ?un
+         where{
+            /country<United States of America> "area"@[,2005-04-10T4:21:00.000000000Z] ?a .
+            ?a "population"@[,2005-04-10T4:21:00.000000000Z] ?p
+         }
+         group by ?a
+         order by ?sum desc
+         limit "10"^^type:int64;
+
+    ?a	?sum
+    /location<new york, ny>	"6.7902672e+07"^^type:float64
+    /location<los angeles, ca>	"3.8658272e+07"^^type:float64
+    /location<chicago, il>	"2.8092876e+07"^^type:float64
+    /location<philadelphia, pa>	"1.625982e+07"^^type:float64
+    /location<houston, tx>	"1.5585444e+07"^^type:float64
+    /location<dallas, tx>	"1.3096128e+07"^^type:float64
+    /location<detroit, mi>	"1.1482636e+07"^^type:float64
+    /location<phoenix, az>	"1.1379338e+07"^^type:float64
+    /location<miami, fl>	"1.1335846e+07"^^type:float64
+    /location<boston, ma>	"1.0361318e+07"^^type:float64
+
+    [OK] 10 rows retrieved. BQL time: 105.431853ms. Display time: 37.244µs
+
+* Populations on the cities the user in SN network stayed after 2014
+
+    bql> select ?c, ?ta, ?p
+         from ?snap, ?un
+         where{
+            /u<113440662290312901074> "place"@[] ?c .
+            ?c "population"@[2014-04-10T4:21:00.000000000Z,] at ?ta ?p
+         };
+
+    ?c	?ta	?p
+    /location<toronto>	2015-01-01T01:00:00Z	"2.808503e+06"^^type:float64
+    /location<toronto>	2015-01-01T01:00:00Z	"6.055724e+06"^^type:float64
+    /location<vancouver>	2015-01-01T01:00:00Z	"2.470289e+06"^^type:float64
+    /location<vancouver>	2015-01-01T01:00:00Z	"647540"^^type:float64
+
+    [OK] 4 rows retrieved. BQL time: 657.859µs. Display time: 33.721µs
