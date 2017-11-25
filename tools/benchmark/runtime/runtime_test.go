@@ -40,7 +40,7 @@ func TestIncreasingMonotonicTimeNowIncrease(t *testing.T) {
 	for i := 0; i <= 100; i++ {
 		tn := timeNow()
 		if got, old := tn, to; !got.After(old) {
-			t.Fatalf("mock timeNow() should be monoticly ascending, got %d vs old %v instead", got, old)
+			t.Fatalf("mock timeNow() should be monoticly ascending, got %v vs old %v instead", got, old)
 		}
 		to = tn
 	}
