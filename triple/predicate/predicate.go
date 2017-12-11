@@ -170,3 +170,14 @@ func (p *Predicate) UUID() uuid.UUID {
 
 	return uuid.NewSHA1(uuid.NIL, buffer.Bytes())
 }
+
+// PartialUUID returns a global unique identifier for the given predicate but it
+// only takes into account the predicate ID. Usually you do not want to use this
+// partial UUID and likely you want to use the standard UUID. This partial UUID
+// is only useful for driver implementers when they want to take advantage
+// of range reads.
+func (p *Predicate) PartialUUID() uuid.UUID {
+	var buffer bytes.Buffer
+	buffer.WriteString(string(p.id))
+	return uuid.NewSHA1(uuid.NIL, buffer.Bytes())
+}

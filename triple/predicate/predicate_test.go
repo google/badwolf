@@ -147,3 +147,20 @@ func TestQuotedID(t *testing.T) {
 		t.Errorf("predicate.Parse failed to parse immutable predicate %v; got %v instead", pretty, immut)
 	}
 }
+
+func TestPartialUUID(t *testing.T) {
+	p1, err := NewTemporal("foo", time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	p2, err := NewTemporal("foo", time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if uuid1, uuid2 := p1.UUID(), p2.UUID(); reflect.DeepEqual(uuid1, uuid2) {
+		t.Errorf("predicates %v and %v should have different UUID; got %q=%q", p1, p2, uuid1.String(), uuid2.String())
+	}
+	if uuid1, uuid2 := p1.PartialUUID(), p2.PartialUUID(); !reflect.DeepEqual(uuid1, uuid2) {
+		t.Errorf("predicates %v and %v should have identical partial UUID; got %q=%q", p1, p2, uuid1.String(), uuid2.String())
+	}
+}
