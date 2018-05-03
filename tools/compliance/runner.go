@@ -15,10 +15,9 @@
 package compliance
 
 import (
+	"context"
 	"fmt"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"github.com/google/badwolf/bql/grammar"
 	"github.com/google/badwolf/bql/planner"

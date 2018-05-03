@@ -15,12 +15,11 @@
 package planner
 
 import (
+	"context"
 	"errors"
 	"reflect"
 	"sync"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"github.com/google/badwolf/bql/semantic"
 	"github.com/google/badwolf/bql/table"

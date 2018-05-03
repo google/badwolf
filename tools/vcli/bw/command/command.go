@@ -17,11 +17,10 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
-
-	"golang.org/x/net/context"
 )
 
 // Command is an implementation of a BadWolf command. It is model after the

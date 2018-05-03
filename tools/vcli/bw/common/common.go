@@ -17,13 +17,12 @@
 package common
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/tools/vcli/bw/assert"

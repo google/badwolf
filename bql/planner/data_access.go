@@ -18,8 +18,7 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
-
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/google/badwolf/bql/semantic"
 	"github.com/google/badwolf/bql/table"

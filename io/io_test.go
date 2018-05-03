@@ -16,10 +16,9 @@ package io
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/storage/memory"

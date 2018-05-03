@@ -18,6 +18,7 @@ package planner
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -26,8 +27,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/bql/semantic"

@@ -17,13 +17,13 @@ package storage
 
 import (
 	"bytes"
+	"context"
 	"strconv"
 	"time"
 
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/node"
 	"github.com/google/badwolf/triple/predicate"
-	"golang.org/x/net/context"
 )
 
 // LookupOptions allows to specify the behavior of the lookup operations.

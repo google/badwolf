@@ -17,11 +17,11 @@ package batteries
 
 import (
 	"fmt"
+	"context"
 
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/tools/benchmark/runtime"
 	"github.com/google/badwolf/triple"
-	"golang.org/x/net/context"
 )
 
 // AddTreeTriplesBenchmark creates the benchmark.

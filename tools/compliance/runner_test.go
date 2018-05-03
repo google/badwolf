@@ -15,9 +15,8 @@
 package compliance
 
 import (
+	"context"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"github.com/google/badwolf/storage/memory"
 	"github.com/google/badwolf/triple/literal"

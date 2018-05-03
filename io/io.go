@@ -17,12 +17,11 @@ package io
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"strings"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"

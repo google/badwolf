@@ -17,11 +17,10 @@
 package run
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"github.com/google/badwolf/bql/grammar"
 	"github.com/google/badwolf/bql/planner"

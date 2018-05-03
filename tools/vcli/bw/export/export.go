@@ -17,13 +17,12 @@
 package export
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/tools/vcli/bw/command"

@@ -16,12 +16,12 @@
 package batteries
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/tools/benchmark/runtime"
 	"github.com/google/badwolf/triple"
-	"golang.org/x/net/context"
 )
 
 // RemoveTreeTriplesBenchmark creates the benchmark.

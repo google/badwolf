@@ -20,8 +20,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
-
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/tools/vcli/bw/command"

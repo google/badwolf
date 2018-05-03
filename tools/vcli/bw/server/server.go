@@ -17,6 +17,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"log"
@@ -25,8 +26,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/google/badwolf/bql/grammar"
 	"github.com/google/badwolf/bql/planner"

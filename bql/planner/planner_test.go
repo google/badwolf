@@ -16,11 +16,10 @@ package planner
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strings"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"github.com/google/badwolf/bql/grammar"
 	"github.com/google/badwolf/bql/semantic"

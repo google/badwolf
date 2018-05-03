@@ -17,9 +17,8 @@
 package version
 
 import (
+	"context"
 	"log"
-
-	"golang.org/x/net/context"
 
 	"github.com/google/badwolf/bql/version"
 	"github.com/google/badwolf/tools/vcli/bw/command"

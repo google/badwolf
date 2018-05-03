@@ -15,10 +15,9 @@
 package memory
 
 import (
+	"context"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"

@@ -17,12 +17,11 @@
 package benchmark
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"sort"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/tools/benchmark/batteries"
