@@ -536,7 +536,7 @@ func TestPlannerConstructAddsCorrectNumberofTriples(t *testing.T) {
 			    from ?src
 			    where {?s "met"@[] ?o.
 			           ?s "met_at"@[?t] ?o};`,
-			// 2 matching triples * (5 new triples due to reification + 1 explictly constructed triple per matched triple) +
+			// 2 matching triples * (5 new triples due to reification + 1 explicitly constructed triple per matched triple) +
 			// 1 triple in dest graph.
 			trps: 2*6 + dts,
 		},

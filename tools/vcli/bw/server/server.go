@@ -167,7 +167,7 @@ type result struct {
 	T   *table.Table `json:"table,omitempty"`
 }
 
-// getQueries retuns the list of queries found. It will split them if needed.
+// getQueries returns the list of queries found. It will split them if needed.
 func getQueries(raw []string) []string {
 	var res []string
 

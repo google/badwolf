@@ -92,10 +92,7 @@ func (s *Story) Marshal() (string, error) {
 
 // Unmarshal rebuilds a story from a JSON readable string.
 func (s *Story) Unmarshal(ss string) error {
-	if err := json.Unmarshal([]byte(ss), s); err != nil {
-		return err
-	}
-	return nil
+	return json.Unmarshal([]byte(ss), s)
 }
 
 // inferCell builds a Cell out of the provided string.
