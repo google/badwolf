@@ -153,7 +153,7 @@ func TestPartialUUID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p2, err := NewTemporal("foo", time.Now())
+	p2, err := NewTemporal("foo", time.Now().Add(time.Nanosecond))
 	if err != nil {
 		t.Fatal(err)
 	}
