@@ -91,7 +91,7 @@ func TestDataAccessSimpleFetch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tbl, err := simpleFetch(ctx, []storage.Graph{g}, cls, &storage.LookupOptions{}, 0, 0)
+	tbl, err := simpleFetch(ctx, []storage.Graph{g}, cls, &storage.LookupOptions{}, 0, 0, nil)
 	if err != nil {
 		t.Errorf("simpleFetch failed with errorf %v", err)
 	}
@@ -126,7 +126,7 @@ func TestDataAccessSimpleFetchIssue40(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tbl, err := simpleFetch(ctx, []storage.Graph{g}, cls, &storage.LookupOptions{}, 0, 0)
+	tbl, err := simpleFetch(ctx, []storage.Graph{g}, cls, &storage.LookupOptions{}, 0, 0, nil)
 	if err != nil {
 		t.Errorf("simpleFetch failed with errorf %v", err)
 	}
