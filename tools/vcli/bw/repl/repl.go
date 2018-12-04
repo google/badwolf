@@ -18,12 +18,14 @@ package repl
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 	"time"
-	"context"
+
+	"github.com/google/badwolf/bql/planner/tracer"
 
 	"github.com/google/badwolf/bql/grammar"
 	"github.com/google/badwolf/bql/planner"
@@ -171,7 +173,9 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			if err != nil {
 				fmt.Printf("[ERROR] %s\n\n", err)
 			} else {
-				fmt.Println(pln.String(ctx))
+				if pln != nil {
+					fmt.Println(pln.String(ctx))
+				}
 				fmt.Println("[OK]")
 			}
 			done <- false
@@ -198,11 +202,16 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			fmt.Println("Time spent: ", time.Now().Sub(now))
 			fmt.Println()
 		} else {
-			if len(table.Bindings()) > 0 {
-				fmt.Println(table.String())
+			if table == nil {
+				fmt.Printf("[OK] 0 rows retrieved. BQL time: %v. Display time: %v\n",
+					bqlDiff, time.Now().Sub(now)-bqlDiff)
+			} else {
+				if len(table.Bindings()) > 0 {
+					fmt.Println(table.String())
+				}
+				fmt.Printf("[OK] %d rows retrieved. BQL time: %v. Display time: %v\n",
+					table.NumRows(), bqlDiff, time.Now().Sub(now)-bqlDiff)
 			}
-			fmt.Printf("[OK] %d rows retrieved. BQL time: %v. Display time: %v\n",
-				table.NumRows(), bqlDiff, time.Now().Sub(now)-bqlDiff)
 		}
 		done <- false
 	}
@@ -229,15 +238,26 @@ func runBQLFromFile(ctx context.Context, driver storage.Store, chanSize, bulkSiz
 		return "", 0, fmt.Errorf("wrong syntax: run <file_with_bql_statements>")
 	}
 	path := ss[1]
+	tracer.Trace(w, func() []string {
+		return []string{fmt.Sprintf("Attempting to read file %q", path)}
+	})
 	lines, err := bio.GetStatementsFromFile(path)
 	if err != nil {
-		return "", 0, fmt.Errorf("failed to read file %q with error %v on\n", path, err)
+		msg := fmt.Errorf("failed to read file %q; error %v", path, err)
+		tracer.Trace(w, func() []string {
+			return []string{msg.Error()}
+		})
+		return "", 0, msg
 	}
 	for idx, stm := range lines {
 		fmt.Printf("Processing statement (%d/%d)\n", idx+1, len(lines))
 		_, err := runBQL(ctx, stm, driver, chanSize, bulkSize, w)
 		if err != nil {
-			return "", 0, fmt.Errorf("%v on\n%s\n", err, stm)
+			msg := fmt.Errorf("%q; %v", stm, err)
+			tracer.Trace(w, func() []string {
+				return []string{msg.Error()}
+			})
+			return "", 0, msg
 		}
 	}
 	fmt.Println()
@@ -246,30 +266,65 @@ func runBQLFromFile(ctx context.Context, driver storage.Store, chanSize, bulkSiz
 
 // runBQL attempts to execute the provided query against the given store.
 func runBQL(ctx context.Context, bql string, s storage.Store, chanSize, bulkSize int, w io.Writer) (*table.Table, error) {
+	tracer.Trace(w, func() []string {
+		return []string{fmt.Sprintf("Executing query: %s", bql)}
+	})
 	pln, err := planBQL(ctx, bql, s, chanSize, bulkSize, w)
 	if err != nil {
 		return nil, err
 	}
+	if pln == nil {
+		return nil, nil
+	}
 	res, err := pln.Execute(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("planner.Execute: failed to execute query plan with error %v", err)
+		msg := fmt.Errorf("planner.Execute: failed to execute; %v", err)
+		tracer.Trace(w, func() []string {
+			return []string{msg.Error()}
+		})
+		return nil, msg
 	}
+	tracer.Trace(w, func() []string {
+		return []string{fmt.Sprintf("planner execute returned %d rows", res.NumRows())}
+	})
 	return res, nil
 }
 
 // planBQL attempts to create the execution plan for the provided query against the given store.
 func planBQL(ctx context.Context, bql string, s storage.Store, chanSize, bulkSize int, w io.Writer) (planner.Executor, error) {
+	bql = strings.TrimSpace(bql)
+	if bql == ";" {
+		tracer.Trace(w, func() []string {
+			return []string{"Empty statement found"}
+		})
+		return nil, nil
+	}
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
-		return nil, fmt.Errorf("failed to initilize a valid BQL parser")
+		msg := fmt.Errorf("NewParser failed; %v", err)
+		tracer.Trace(w, func() []string {
+			return []string{msg.Error()}
+		})
+		return nil, msg
 	}
 	stm := &semantic.Statement{}
 	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
-		return nil, fmt.Errorf("failed to parse BQL statement with error %v", err)
+		msg := fmt.Errorf("NewLLk parser failed; %v", err)
+		tracer.Trace(w, func() []string {
+			return []string{msg.Error()}
+		})
+		return nil, msg
 	}
 	pln, err := planner.New(ctx, s, stm, chanSize, bulkSize, w)
 	if err != nil {
-		return nil, fmt.Errorf("should have not failed to create a plan using memory.DefaultStorage for statement %v with error %v", stm, err)
+		msg := fmt.Errorf("planer.New failed failed; %v", err)
+		tracer.Trace(w, func() []string {
+			return []string{msg.Error()}
+		})
+		return nil, msg
 	}
+	tracer.Trace(w, func() []string {
+		return []string{"Plan successfuly created"}
+	})
 	return pln, nil
 }

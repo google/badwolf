@@ -26,9 +26,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/google/badwolf/bql/lexer"
+	"github.com/google/badwolf/bql/planner/tracer"
 	"github.com/google/badwolf/bql/semantic"
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/storage"
@@ -47,22 +47,6 @@ type Executor interface {
 
 	// Type returns the type of plan used by the executor.
 	Type() string
-}
-
-// trace attempts to write a trace if a valid writer is provided. The
-// tracer is lazy on the string generation to avoid adding too much
-// overhead when tracing ins not on.
-func trace(w io.Writer, msgs func() []string) {
-	if w == nil {
-		return
-	}
-	for _, msg := range msgs() {
-		w.Write([]byte("["))
-		w.Write([]byte(time.Now().String()))
-		w.Write([]byte("] "))
-		w.Write([]byte(msg))
-		w.Write([]byte("\n"))
-	}
 }
 
 // createPlan encapsulates the sequence of instructions that need to be
@@ -86,7 +70,7 @@ func (p *createPlan) Execute(ctx context.Context) (*table.Table, error) {
 	}
 	errs := []string{}
 	for _, g := range p.stm.GraphNames() {
-		trace(p.tracer, func() []string {
+		tracer.Trace(p.tracer, func() []string {
 			return []string{"Creating new graph \"" + g + "\""}
 		})
 		if _, err := p.store.NewGraph(ctx, g); err != nil {
@@ -125,7 +109,7 @@ func (p *dropPlan) Execute(ctx context.Context) (*table.Table, error) {
 	}
 	errs := []string{}
 	for _, g := range p.stm.GraphNames() {
-		trace(p.tracer, func() []string {
+		tracer.Trace(p.tracer, func() []string {
 			return []string{"Deleting graph \"" + g + "\""}
 		})
 		if err := p.store.DeleteGraph(ctx, g); err != nil {
@@ -199,7 +183,7 @@ func (p *insertPlan) Execute(ctx context.Context) (*table.Table, error) {
 		return nil, err
 	}
 	return t, update(ctx, p.stm.Data(), p.stm.OutputGraphNames(), p.store, func(g storage.Graph, d []*triple.Triple) error {
-		trace(p.tracer, func() []string {
+		tracer.Trace(p.tracer, func() []string {
 			return []string{"Inserting triples to graph \"" + g.ID(ctx) + "\""}
 		})
 		return g.AddTriples(ctx, d)
@@ -241,7 +225,7 @@ func (p *deletePlan) Execute(ctx context.Context) (*table.Table, error) {
 		return nil, err
 	}
 	return t, update(ctx, p.stm.Data(), p.stm.InputGraphNames(), p.store, func(g storage.Graph, d []*triple.Triple) error {
-		trace(p.tracer, func() []string {
+		tracer.Trace(p.tracer, func() []string {
 			return []string{"Removing triples from graph \"" + g.ID(ctx) + "\""}
 		})
 		return g.RemoveTriples(ctx, d)
@@ -577,7 +561,7 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 // data from the specified graphs.
 func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupOptions) error {
 	for _, cls := range p.cls {
-		trace(p.tracer, func() []string {
+		tracer.Trace(p.tracer, func() []string {
 			return []string{"Processing graph clause " + cls.String()}
 		})
 		// The current planner is based on naively executing clauses by
@@ -599,7 +583,7 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 func (p *queryPlan) projectAndGroupBy() error {
 	grp := p.stm.GroupByBindings()
 	if len(grp) == 0 { // The table only needs to be projected.
-		trace(p.tracer, func() []string {
+		tracer.Trace(p.tracer, func() []string {
 			return []string{fmt.Sprintf("Running projection for %v", grp)}
 		})
 		p.tbl.AddBindings(p.stm.OutputBindings())
@@ -609,12 +593,12 @@ func (p *queryPlan) projectAndGroupBy() error {
 				row[prj.Alias] = row[prj.Binding]
 			}
 		}
-		trace(p.tracer, func() []string {
+		tracer.Trace(p.tracer, func() []string {
 			return []string{fmt.Sprintf("Output bindings projected %v", p.stm.OutputBindings())}
 		})
 		return p.tbl.ProjectBindings(p.stm.OutputBindings())
 	}
-	trace(p.tracer, func() []string {
+	tracer.Trace(p.tracer, func() []string {
 		return []string{"Starting group reduce and projection"}
 	})
 	// The table needs to be group reduced.
@@ -625,7 +609,7 @@ func (p *queryPlan) projectAndGroupBy() error {
 	cfg := table.SortConfig{}
 	aaps := []table.AliasAccPair{}
 	for _, prj := range p.stm.Projections() {
-		trace(p.tracer, func() []string {
+		tracer.Trace(p.tracer, func() []string {
 			return []string{"Analysing projection " + prj.String()}
 		})
 		// Only include used incoming bindings.
@@ -673,13 +657,13 @@ func (p *queryPlan) projectAndGroupBy() error {
 		}
 		aaps = append(aaps, aap)
 	}
-	trace(p.tracer, func() []string {
+	tracer.Trace(p.tracer, func() []string {
 		return []string{fmt.Sprintf("Projecting %v", tmpBindings)}
 	})
 	if err := p.tbl.ProjectBindings(tmpBindings); err != nil {
 		return err
 	}
-	trace(p.tracer, func() []string {
+	tracer.Trace(p.tracer, func() []string {
 		return []string{"Reducing the table using configuration " + cfg.String()}
 	})
 	p.tbl.Reduce(cfg, aaps)
@@ -693,7 +677,7 @@ func (p *queryPlan) orderBy() {
 	if len(order) <= 0 {
 		return
 	}
-	trace(p.tracer, func() []string {
+	tracer.Trace(p.tracer, func() []string {
 		return []string{"Ordering by " + order.String()}
 	})
 	p.tbl.Sort(order)
@@ -702,7 +686,7 @@ func (p *queryPlan) orderBy() {
 // having runs the filtering based on the having clause if needed.
 func (p *queryPlan) having() error {
 	if p.stm.HasHavingClause() {
-		trace(p.tracer, func() []string {
+		tracer.Trace(p.tracer, func() []string {
 			return []string{"Having filtering"}
 		})
 		eval := p.stm.HavingEvaluator()
@@ -725,7 +709,7 @@ func (p *queryPlan) having() error {
 // limit truncates the table if the limit clause if available.
 func (p *queryPlan) limit() {
 	if p.stm.IsLimitSet() {
-		trace(p.tracer, func() []string {
+		tracer.Trace(p.tracer, func() []string {
 			return []string{"Limit results to " + strconv.Itoa(int(p.stm.Limit()))}
 		})
 		p.tbl.Limit(p.stm.Limit())
@@ -735,7 +719,7 @@ func (p *queryPlan) limit() {
 // Execute queries the indicated graphs.
 func (p *queryPlan) Execute(ctx context.Context) (*table.Table, error) {
 	// Fetch and cache graph instances.
-	trace(p.tracer, func() []string {
+	tracer.Trace(p.tracer, func() []string {
 		return []string{fmt.Sprintf("Caching graph instances for graphs %v", p.stm.InputGraphNames())}
 	})
 	if err := p.stm.Init(ctx, p.store); err != nil {
@@ -744,7 +728,7 @@ func (p *queryPlan) Execute(ctx context.Context) (*table.Table, error) {
 	p.grfs = p.stm.InputGraphs()
 	// Retrieve the data.
 	lo := p.stm.GlobalLookupOptions()
-	trace(p.tracer, func() []string {
+	tracer.Trace(p.tracer, func() []string {
 		return []string{"Setting global lookup options to " + lo.String()}
 	})
 	if err := p.processGraphPattern(ctx, lo); err != nil {
@@ -929,14 +913,14 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 	go func() {
 		var ts []*triple.Triple
 		updateFunc := func(g storage.Graph, d []*triple.Triple) error {
-			trace(p.tracer, func() []string {
+			tracer.Trace(p.tracer, func() []string {
 				return []string{"Removing triples from graph \"" + g.ID(ctx) + "\""}
 			})
 			return g.RemoveTriples(ctx, d)
 		}
 		if p.construct {
 			updateFunc = func(g storage.Graph, d []*triple.Triple) error {
-				trace(p.tracer, func() []string {
+				tracer.Trace(p.tracer, func() []string {
 					return []string{"Inserting triples to graph \"" + g.ID(ctx) + "\""}
 				})
 				return g.AddTriples(ctx, d)
