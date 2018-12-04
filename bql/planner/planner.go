@@ -322,7 +322,7 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 		if len(p.stm.GraphPatternClauses()) == 1 && len(p.stm.GroupBy()) == 0 && len(p.stm.HavingExpression()) == 0 {
 			stmLimit = p.stm.Limit()
 		}
-		tbl, err := simpleFetch(ctx, p.grfs, cls, lo, stmLimit, p.chanSize)
+		tbl, err := simpleFetch(ctx, p.grfs, cls, lo, stmLimit, p.chanSize, p.tracer)
 		if err != nil {
 			return false, err
 		}
@@ -406,7 +406,7 @@ func (p *queryPlan) addSpecifiedData(ctx context.Context, r table.Row, cls *sema
 	if len(p.stm.GraphPatternClauses()) == 1 && len(p.stm.GroupBy()) == 0 && len(p.stm.HavingExpression()) == 0 {
 		stmLimit = p.stm.Limit()
 	}
-	tbl, err := simpleFetch(ctx, p.grfs, cls, lo, stmLimit, p.chanSize)
+	tbl, err := simpleFetch(ctx, p.grfs, cls, lo, stmLimit, p.chanSize, p.tracer)
 	if err != nil {
 		return err
 	}

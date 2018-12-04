@@ -15,11 +15,13 @@
 package planner
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"reflect"
 	"sync"
-	"context"
 
+	"github.com/google/badwolf/bql/planner/tracer"
 	"github.com/google/badwolf/bql/semantic"
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/storage"
@@ -104,7 +106,7 @@ func simpleExist(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 // simpleFetch returns a table containing the data specified by the graph
 // clause by querying the provided stora. Will return an error if it had poblems
 // retrieveing the data.
-func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphClause, lo *storage.LookupOptions, stmLimit int64, chanSize int) (*table.Table, error) {
+func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphClause, lo *storage.LookupOptions, stmLimit int64, chanSize int, w io.Writer) (*table.Table, error) {
 	s, p, o := cls.S, cls.P, cls.O
 	lo = updateTimeBounds(lo, cls)
 	tbl, err := table.New(cls.Bindings())
@@ -117,6 +119,9 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 		if err != nil {
 			return nil, err
 		}
+		tracer.Trace(w, func() []string {
+			return []string{fmt.Sprintf("g.Exist(%v, %v)", t, lo)}
+		})
 		for _, g := range gs {
 			b, err := g.Exist(ctx, t)
 			if err != nil {
@@ -142,6 +147,9 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				lErr error
 				wg   sync.WaitGroup
 			)
+			tracer.Trace(w, func() []string {
+				return []string{fmt.Sprintf("g.Objects(%v, %v, %v)", s, p, lo)}
+			})
 			wg.Add(2)
 			os := make(chan *triple.Object, chanSize)
 			go func() {
@@ -188,6 +196,9 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				lErr error
 				wg   sync.WaitGroup
 			)
+			tracer.Trace(w, func() []string {
+				return []string{fmt.Sprintf("g.PredicatesForSubjectAndObject(%v, %v, %v)", s, o, lo)}
+			})
 			wg.Add(2)
 			ps := make(chan *predicate.Predicate, chanSize)
 			go func() {
@@ -234,6 +245,9 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				lErr error
 				wg   sync.WaitGroup
 			)
+			tracer.Trace(w, func() []string {
+				return []string{fmt.Sprintf("g.Subjects(%v, %v, %v)", p, o, lo)}
+			})
 			wg.Add(2)
 			ss := make(chan *node.Node, chanSize)
 			go func() {
@@ -279,6 +293,9 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				aErr error
 				wg   sync.WaitGroup
 			)
+			tracer.Trace(w, func() []string {
+				return []string{fmt.Sprintf("g.TriplesForSubject(%v, %v)", s, lo)}
+			})
 			ts := make(chan *triple.Triple, chanSize)
 			wg.Add(1)
 			go func() {
@@ -304,6 +321,9 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				aErr error
 				wg   sync.WaitGroup
 			)
+			tracer.Trace(w, func() []string {
+				return []string{fmt.Sprintf("g.TriplesForPredicate(%v, %v)", p, lo)}
+			})
 			ts := make(chan *triple.Triple, chanSize)
 			wg.Add(1)
 			go func() {
@@ -328,6 +348,9 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				tErr error
 				wg   sync.WaitGroup
 			)
+			tracer.Trace(w, func() []string {
+				return []string{fmt.Sprintf("g.TriplesForObject(%v, %v)", o, lo)}
+			})
 			ts := make(chan *triple.Triple, chanSize)
 			wg.Add(1)
 			go func() {
@@ -353,6 +376,9 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				aErr error
 				wg   sync.WaitGroup
 			)
+			tracer.Trace(w, func() []string {
+				return []string{fmt.Sprintf("g.Triples(%v)", lo)}
+			})
 			ts := make(chan *triple.Triple, chanSize)
 			wg.Add(1)
 			go func() {
