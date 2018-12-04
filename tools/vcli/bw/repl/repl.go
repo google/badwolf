@@ -104,8 +104,8 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 	defer stopTracing()
 
 	fmt.Printf("Welcome to BadWolf vCli (%d.%d.%d-%s)\n", version.Major, version.Minor, version.Patch, version.Release)
-	fmt.Printf("Using driver %q. Type quit; to exit\n", driver.Name(ctx))
-	fmt.Printf("Session started at %v\n\n", sessionStart)
+	fmt.Printf("Using driver %s/%s. Type quit; to exit\n", driver.Name(ctx), driver.Version(ctx))
+	fmt.Printf("Session started at %v\n\n", sessionStart.Format("2006-01-02T15:04:05.999999-07:00"))
 	defer func() {
 		fmt.Printf("\n\nThanks for all those BQL queries!\nSession duration: %v\n\n", time.Now().Sub(sessionStart))
 	}()
