@@ -55,7 +55,7 @@ func (s *memoryStore) Name(ctx context.Context) string {
 
 // Version returns the version of the driver implementation.
 func (s *memoryStore) Version(ctx context.Context) string {
-	return "0.1.vcli"
+	return "0.2.vcli"
 }
 
 // NewGraph creates a new graph.
@@ -142,7 +142,7 @@ func (m *memory) AddTriples(ctx context.Context, ts []*triple.Triple) error {
 	for _, t := range ts {
 		suuid := UUIDToByteString(t.UUID())
 		sUUID := UUIDToByteString(t.Subject().UUID())
-		pUUID := UUIDToByteString(t.Predicate().UUID())
+		pUUID := UUIDToByteString(t.Predicate().PartialUUID())
 		oUUID := UUIDToByteString(t.Object().UUID())
 		// Update master index
 		m.idx[suuid] = t
@@ -188,7 +188,7 @@ func (m *memory) RemoveTriples(ctx context.Context, ts []*triple.Triple) error {
 	for _, t := range ts {
 		suuid := UUIDToByteString(t.UUID())
 		sUUID := UUIDToByteString(t.Subject().UUID())
-		pUUID := UUIDToByteString(t.Predicate().UUID())
+		pUUID := UUIDToByteString(t.Predicate().PartialUUID())
 		oUUID := UUIDToByteString(t.Object().UUID())
 		// Update master index
 		m.rwmu.Lock()
@@ -263,7 +263,7 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions, objs chan<- *triple.Object) error {
 
 	sUUID := UUIDToByteString(s.UUID())
-	pUUID := UUIDToByteString(p.UUID())
+	pUUID := UUIDToByteString(p.PartialUUID())
 	spIdx := sUUID + pUUID
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
@@ -284,7 +284,7 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 	if subjs == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	pUUID := UUIDToByteString(p.UUID())
+	pUUID := UUIDToByteString(p.PartialUUID())
 	oUUID := UUIDToByteString(o.UUID())
 	poIdx := pUUID + oUUID
 	m.rwmu.RLock()
@@ -386,7 +386,7 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	pUUID := UUIDToByteString(p.UUID())
+	pUUID := UUIDToByteString(p.PartialUUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
@@ -427,7 +427,7 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 		return fmt.Errorf("cannot provide an empty channel")
 	}
 	sUUID := UUIDToByteString(s.UUID())
-	pUUID := UUIDToByteString(p.UUID())
+	pUUID := UUIDToByteString(p.PartialUUID())
 	spIdx := sUUID + pUUID
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
@@ -448,7 +448,7 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
-	pUUID := UUIDToByteString(p.UUID())
+	pUUID := UUIDToByteString(p.PartialUUID())
 	oUUID := UUIDToByteString(o.UUID())
 	poIdx := pUUID + oUUID
 	m.rwmu.RLock()
