@@ -37,6 +37,10 @@ type LookupOptions struct {
 
 	// UpperAnchor, if provided, represents the upper time anchor to be considered.
 	UpperAnchor *time.Time
+
+	// LatestAnchor only. If set, it will ignro the time boundaries provided and
+	// just use the last available anchor.
+	LatestAnchor bool
 }
 
 // String returns a readable version of the LookupOptions instance.

@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"
@@ -140,45 +141,45 @@ func (m *memory) AddTriples(ctx context.Context, ts []*triple.Triple) error {
 	m.rwmu.Lock()
 	defer m.rwmu.Unlock()
 	for _, t := range ts {
-		suuid := UUIDToByteString(t.UUID())
+		tuuid := UUIDToByteString(t.UUID())
 		sUUID := UUIDToByteString(t.Subject().UUID())
 		pUUID := UUIDToByteString(t.Predicate().PartialUUID())
 		oUUID := UUIDToByteString(t.Object().UUID())
 		// Update master index
-		m.idx[suuid] = t
+		m.idx[tuuid] = t
 
 		if _, ok := m.idxS[sUUID]; !ok {
 			m.idxS[sUUID] = make(map[string]*triple.Triple)
 		}
-		m.idxS[sUUID][suuid] = t
+		m.idxS[sUUID][tuuid] = t
 
 		if _, ok := m.idxP[pUUID]; !ok {
 			m.idxP[pUUID] = make(map[string]*triple.Triple)
 		}
-		m.idxP[pUUID][suuid] = t
+		m.idxP[pUUID][tuuid] = t
 
 		if _, ok := m.idxO[oUUID]; !ok {
 			m.idxO[oUUID] = make(map[string]*triple.Triple)
 		}
-		m.idxO[oUUID][suuid] = t
+		m.idxO[oUUID][tuuid] = t
 
 		key := sUUID + pUUID
 		if _, ok := m.idxSP[key]; !ok {
 			m.idxSP[key] = make(map[string]*triple.Triple)
 		}
-		m.idxSP[key][suuid] = t
+		m.idxSP[key][tuuid] = t
 
 		key = pUUID + oUUID
 		if _, ok := m.idxPO[key]; !ok {
 			m.idxPO[key] = make(map[string]*triple.Triple)
 		}
-		m.idxPO[key][suuid] = t
+		m.idxPO[key][tuuid] = t
 
 		key = sUUID + oUUID
 		if _, ok := m.idxSO[key]; !ok {
 			m.idxSO[key] = make(map[string]*triple.Triple)
 		}
-		m.idxSO[key][suuid] = t
+		m.idxSO[key][tuuid] = t
 	}
 	return nil
 }
@@ -226,14 +227,24 @@ type checker struct {
 	max bool
 	c   int
 	o   *storage.LookupOptions
+	op  *predicate.Predicate
+	ota *time.Time
 }
 
 // newChecker creates a new checker for a given LookupOptions configuration.
-func newChecker(o *storage.LookupOptions) *checker {
+func newChecker(o *storage.LookupOptions, op *predicate.Predicate) *checker {
+	var ta *time.Time
+	if op != nil {
+		if t, err := op.TimeAnchor(); err == nil {
+			ta = t
+		}
+	}
 	return &checker{
 		max: o.MaxElements > 0,
 		c:   o.MaxElements,
 		o:   o,
+		op:  op,
+		ota: ta,
 	}
 }
 
@@ -247,12 +258,17 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 		c.c--
 		return true
 	}
-	t, _ := p.TimeAnchor()
-	if c.o.LowerAnchor != nil && t.Before(*c.o.LowerAnchor) {
-		return false
-	}
-	if c.o.UpperAnchor != nil && t.After(*c.o.UpperAnchor) {
-		return false
+
+	if t, err := p.TimeAnchor(); err == nil {
+		if c.ota != nil && !c.ota.Equal(*t) {
+			return false
+		}
+		if c.o.LowerAnchor != nil && t.Before(*c.o.LowerAnchor) {
+			return false
+		}
+		if c.o.UpperAnchor != nil && t.After(*c.o.UpperAnchor) {
+			return false
+		}
 	}
 	c.c--
 	return true
@@ -261,6 +277,9 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 // Objects published the objects for the give object and predicate to the
 // provided channel.
 func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions, objs chan<- *triple.Object) error {
+	if objs == nil {
+		return fmt.Errorf("cannot provide an empty channel")
+	}
 
 	sUUID := UUIDToByteString(s.UUID())
 	pUUID := UUIDToByteString(p.PartialUUID())
@@ -269,7 +288,31 @@ func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predica
 	defer m.rwmu.RUnlock()
 	defer close(objs)
 
-	ckr := newChecker(lo)
+	if lo.LatestAnchor {
+		lastTA := make(map[string]*time.Time)
+		trps := make(map[string]*triple.Triple)
+		for _, t := range m.idxSP[spIdx] {
+			p := t.Predicate()
+			ppUUID := p.PartialUUID().String()
+			if p.Type() == predicate.Temporal {
+				ta, err := p.TimeAnchor()
+				if err != nil {
+					return err
+				}
+				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
+					trps[ppUUID] = t
+					lastTA[ppUUID] = ta
+				}
+			}
+		}
+		for _, trp := range trps {
+			if trp != nil {
+				objs <- trp.Object()
+			}
+		}
+		return nil
+	}
+	ckr := newChecker(lo, p)
 	for _, t := range m.idxSP[spIdx] {
 		if ckr.CheckAndUpdate(t.Predicate()) {
 			objs <- t.Object()
@@ -291,7 +334,31 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 	defer m.rwmu.RUnlock()
 	defer close(subjs)
 
-	ckr := newChecker(lo)
+	if lo.LatestAnchor {
+		lastTA := make(map[string]*time.Time)
+		trps := make(map[string]*triple.Triple)
+		for _, t := range m.idxPO[poIdx] {
+			p := t.Predicate()
+			ppUUID := p.PartialUUID().String()
+			if p.Type() == predicate.Temporal {
+				ta, err := p.TimeAnchor()
+				if err != nil {
+					return err
+				}
+				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
+					trps[ppUUID] = t
+					lastTA[ppUUID] = ta
+				}
+			}
+		}
+		for _, trp := range trps {
+			if trp != nil {
+				subjs <- trp.Subject()
+			}
+		}
+		return nil
+	}
+	ckr := newChecker(lo, p)
 	for _, t := range m.idxPO[poIdx] {
 		if ckr.CheckAndUpdate(t.Predicate()) {
 			subjs <- t.Subject()
@@ -313,7 +380,31 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 	defer m.rwmu.RUnlock()
 	defer close(prds)
 
-	ckr := newChecker(lo)
+	if lo.LatestAnchor {
+		lastTA := make(map[string]*time.Time)
+		trps := make(map[string]*triple.Triple)
+		for _, t := range m.idxSO[soIdx] {
+			p := t.Predicate()
+			ppUUID := p.PartialUUID().String()
+			if p.Type() == predicate.Temporal {
+				ta, err := p.TimeAnchor()
+				if err != nil {
+					return err
+				}
+				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
+					trps[ppUUID] = t
+					lastTA[ppUUID] = ta
+				}
+			}
+		}
+		for _, trp := range trps {
+			if trp != nil {
+				prds <- trp.Predicate()
+			}
+		}
+		return nil
+	}
+	ckr := newChecker(lo, nil)
 	for _, t := range m.idxSO[soIdx] {
 		if ckr.CheckAndUpdate(t.Predicate()) {
 			prds <- t.Predicate()
@@ -332,7 +423,32 @@ func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *sto
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(prds)
-	ckr := newChecker(lo)
+
+	if lo.LatestAnchor {
+		lastTA := make(map[string]*time.Time)
+		trps := make(map[string]*triple.Triple)
+		for _, t := range m.idxS[sUUID] {
+			p := t.Predicate()
+			ppUUID := p.PartialUUID().String()
+			if p.Type() == predicate.Temporal {
+				ta, err := p.TimeAnchor()
+				if err != nil {
+					return err
+				}
+				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
+					trps[ppUUID] = t
+					lastTA[ppUUID] = ta
+				}
+			}
+		}
+		for _, trp := range trps {
+			if trp != nil {
+				prds <- trp.Predicate()
+			}
+		}
+		return nil
+	}
+	ckr := newChecker(lo, nil)
 	for _, t := range m.idxS[sUUID] {
 		if ckr.CheckAndUpdate(t.Predicate()) {
 			prds <- t.Predicate()
@@ -351,7 +467,32 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(prds)
-	ckr := newChecker(lo)
+
+	if lo.LatestAnchor {
+		lastTA := make(map[string]*time.Time)
+		trps := make(map[string]*triple.Triple)
+		for _, t := range m.idxO[oUUID] {
+			p := t.Predicate()
+			ppUUID := p.PartialUUID().String()
+			if p.Type() == predicate.Temporal {
+				ta, err := p.TimeAnchor()
+				if err != nil {
+					return err
+				}
+				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
+					trps[ppUUID] = t
+					lastTA[ppUUID] = ta
+				}
+			}
+		}
+		for _, trp := range trps {
+			if trp != nil {
+				prds <- trp.Predicate()
+			}
+		}
+		return nil
+	}
+	ckr := newChecker(lo, nil)
 	for _, t := range m.idxO[oUUID] {
 		if ckr.CheckAndUpdate(t.Predicate()) {
 			prds <- t.Predicate()
@@ -371,7 +512,31 @@ func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storag
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
-	ckr := newChecker(lo)
+	if lo.LatestAnchor {
+		lastTA := make(map[string]*time.Time)
+		trps := make(map[string]*triple.Triple)
+		for _, t := range m.idxS[sUUID] {
+			p := t.Predicate()
+			ppUUID := p.PartialUUID().String()
+			if p.Type() == predicate.Temporal {
+				ta, err := p.TimeAnchor()
+				if err != nil {
+					return err
+				}
+				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
+					trps[ppUUID] = t
+					lastTA[ppUUID] = ta
+				}
+			}
+		}
+		for _, trp := range trps {
+			if trp != nil {
+				trpls <- trp
+			}
+		}
+		return nil
+	}
+	ckr := newChecker(lo, nil)
 	for _, t := range m.idxS[sUUID] {
 		if ckr.CheckAndUpdate(t.Predicate()) {
 			trpls <- t
@@ -391,7 +556,31 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
-	ckr := newChecker(lo)
+	if lo.LatestAnchor {
+		lastTA := make(map[string]*time.Time)
+		trps := make(map[string]*triple.Triple)
+		for _, t := range m.idxP[pUUID] {
+			p := t.Predicate()
+			ppUUID := p.PartialUUID().String()
+			if p.Type() == predicate.Temporal {
+				ta, err := p.TimeAnchor()
+				if err != nil {
+					return err
+				}
+				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
+					trps[ppUUID] = t
+					lastTA[ppUUID] = ta
+				}
+			}
+		}
+		for _, trp := range trps {
+			if trp != nil {
+				trpls <- trp
+			}
+		}
+		return nil
+	}
+	ckr := newChecker(lo, p)
 	for _, t := range m.idxP[pUUID] {
 		if ckr.CheckAndUpdate(t.Predicate()) {
 			trpls <- t
@@ -411,7 +600,31 @@ func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *sto
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
-	ckr := newChecker(lo)
+	if lo.LatestAnchor {
+		lastTA := make(map[string]*time.Time)
+		trps := make(map[string]*triple.Triple)
+		for _, t := range m.idxO[oUUID] {
+			p := t.Predicate()
+			ppUUID := p.PartialUUID().String()
+			if p.Type() == predicate.Temporal {
+				ta, err := p.TimeAnchor()
+				if err != nil {
+					return err
+				}
+				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
+					trps[ppUUID] = t
+					lastTA[ppUUID] = ta
+				}
+			}
+		}
+		for _, trp := range trps {
+			if trp != nil {
+				trpls <- trp
+			}
+		}
+		return nil
+	}
+	ckr := newChecker(lo, nil)
 	for _, t := range m.idxO[oUUID] {
 		if ckr.CheckAndUpdate(t.Predicate()) {
 			trpls <- t
@@ -433,7 +646,31 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
-	ckr := newChecker(lo)
+	if lo.LatestAnchor {
+		lastTA := make(map[string]*time.Time)
+		trps := make(map[string]*triple.Triple)
+		for _, t := range m.idxSP[spIdx] {
+			p := t.Predicate()
+			ppUUID := p.PartialUUID().String()
+			if p.Type() == predicate.Temporal {
+				ta, err := p.TimeAnchor()
+				if err != nil {
+					return err
+				}
+				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
+					trps[ppUUID] = t
+					lastTA[ppUUID] = ta
+				}
+			}
+		}
+		for _, trp := range trps {
+			if trp != nil {
+				trpls <- trp
+			}
+		}
+		return nil
+	}
+	ckr := newChecker(lo, p)
 	for _, t := range m.idxSP[spIdx] {
 		if ckr.CheckAndUpdate(t.Predicate()) {
 			trpls <- t
@@ -455,7 +692,31 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
-	ckr := newChecker(lo)
+	if lo.LatestAnchor {
+		lastTA := make(map[string]*time.Time)
+		trps := make(map[string]*triple.Triple)
+		for _, t := range m.idxPO[poIdx] {
+			p := t.Predicate()
+			ppUUID := p.PartialUUID().String()
+			if p.Type() == predicate.Temporal {
+				ta, err := p.TimeAnchor()
+				if err != nil {
+					return err
+				}
+				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
+					trps[ppUUID] = t
+					lastTA[ppUUID] = ta
+				}
+			}
+		}
+		for _, trp := range trps {
+			if trp != nil {
+				trpls <- trp
+			}
+		}
+		return nil
+	}
+	ckr := newChecker(lo, p)
 	for _, t := range m.idxPO[poIdx] {
 		if ckr.CheckAndUpdate(t.Predicate()) {
 			trpls <- t
@@ -483,7 +744,31 @@ func (m *memory) Triples(ctx context.Context, lo *storage.LookupOptions, trpls c
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
-	ckr := newChecker(lo)
+	if lo.LatestAnchor {
+		lastTA := make(map[string]*time.Time)
+		trps := make(map[string]*triple.Triple)
+		for _, t := range m.idx {
+			p := t.Predicate()
+			ppUUID := p.PartialUUID().String()
+			if p.Type() == predicate.Temporal {
+				ta, err := p.TimeAnchor()
+				if err != nil {
+					return err
+				}
+				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
+					trps[ppUUID] = t
+					lastTA[ppUUID] = ta
+				}
+			}
+		}
+		for _, trp := range trps {
+			if trp != nil {
+				trpls <- trp
+			}
+		}
+		return nil
+	}
+	ckr := newChecker(lo, nil)
 	for _, t := range m.idx {
 		if ckr.CheckAndUpdate(t.Predicate()) {
 			trpls <- t

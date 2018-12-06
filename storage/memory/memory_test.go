@@ -16,6 +16,7 @@ package memory
 
 import (
 	"context"
+	"reflect"
 	"testing"
 	"time"
 
@@ -86,7 +87,7 @@ func TestGraphNames(t *testing.T) {
 
 func TestDefaultLookupChecker(t *testing.T) {
 	dlu := storage.DefaultLookup
-	c := newChecker(dlu)
+	c := newChecker(dlu, nil)
 	ip, err := predicate.NewImmutable("foo")
 	if err != nil {
 		t.Fatal(err)
@@ -105,7 +106,7 @@ func TestDefaultLookupChecker(t *testing.T) {
 
 func TestLimitedItemsLookupChecker(t *testing.T) {
 	blu := &storage.LookupOptions{MaxElements: 1}
-	c := newChecker(blu)
+	c := newChecker(blu, nil)
 	ip, err := predicate.NewImmutable("foo")
 	if err != nil {
 		t.Fatal(err)
@@ -136,27 +137,62 @@ func TestTemporalBoundedLookupChecker(t *testing.T) {
 	// Check lower bound
 	lb, _ := lpa.TimeAnchor()
 	blu := &storage.LookupOptions{LowerAnchor: lb}
-	clu := newChecker(blu)
+	clu := newChecker(blu, nil)
 	if !clu.CheckAndUpdate(mpa) {
 		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, clu)
 	}
 	lb, _ = mpa.TimeAnchor()
 	blu = &storage.LookupOptions{LowerAnchor: lb}
-	clu = newChecker(blu)
+	clu = newChecker(blu, nil)
 	if clu.CheckAndUpdate(lpa) {
 		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, clu)
 	}
 	// Check upper bound.
 	ub, _ := upa.TimeAnchor()
 	buu := &storage.LookupOptions{UpperAnchor: ub}
-	cuu := newChecker(buu)
+	cuu := newChecker(buu, nil)
 	if !cuu.CheckAndUpdate(mpa) {
 		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, cuu)
 	}
 	ub, _ = mpa.TimeAnchor()
 	buu = &storage.LookupOptions{UpperAnchor: ub}
-	cuu = newChecker(buu)
+	cuu = newChecker(buu, nil)
 	if cuu.CheckAndUpdate(upa) {
+		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, cuu)
+	}
+}
+
+func TestTemporalExactChecker(t *testing.T) {
+	lpa, err := predicate.Parse("\"foo\"@[2013-07-19T13:12:04.669618843-07:00]")
+	if err != nil {
+		t.Fatalf("Failed to parse fixture predicate with error %v", err)
+	}
+	mpa, err := predicate.Parse("\"foo\"@[2014-07-19T13:12:04.669618843-07:00]")
+	if err != nil {
+		t.Fatalf("Failed to parse fixture predicate with error %v", err)
+	}
+	upa, err := predicate.Parse("\"foo\"@[2015-07-19T13:12:04.669618843-07:00]")
+	if err != nil {
+		t.Fatalf("Failed to parse fixture predicate with error %v", err)
+	}
+	// Check lower bound
+	lb, _ := lpa.TimeAnchor()
+	blu := &storage.LookupOptions{LowerAnchor: lb}
+	clu := newChecker(blu, mpa)
+	if !clu.CheckAndUpdate(mpa) {
+		t.Errorf("Failed to accept predicate %v by checker %v", mpa, clu)
+	}
+	lb, _ = mpa.TimeAnchor()
+	blu = &storage.LookupOptions{LowerAnchor: lb}
+	clu = newChecker(blu, mpa)
+	if clu.CheckAndUpdate(lpa) {
+		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, clu)
+	}
+	// Check upper bound.
+	ub, _ := upa.TimeAnchor()
+	buu := &storage.LookupOptions{UpperAnchor: ub}
+	cuu := newChecker(buu, mpa)
+	if !cuu.CheckAndUpdate(mpa) {
 		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, cuu)
 	}
 }
@@ -182,6 +218,21 @@ func getTestTriples(t *testing.T) []*triple.Triple {
 		"/u<mary>\t\"knows\"@[]\t/u<andrew>",
 		"/u<mary>\t\"knows\"@[]\t/u<kim>",
 		"/u<mary>\t\"knows\"@[]\t/u<alice>",
+	})
+}
+
+func getTestTemporalTriples(t *testing.T) []*triple.Triple {
+	return createTriples(t, []string{
+		"/u<john>\t\"meet\"@[2010-04-10T4:21:00.000000000Z]\t/u<mary>",
+		"/u<john>\t\"meet\"@[2011-04-10T4:21:00.000000000Z]\t/u<mary>",
+		"/u<john>\t\"meet\"@[2012-04-10T4:21:00.000000000Z]\t/u<mary>",
+		"/u<john>\t\"meet\"@[2013-04-10T4:21:00.000000000Z]\t/u<mary>",
+		"/u<john>\t\"meet\"@[2014-04-10T4:21:00.000000000Z]\t/u<mary>",
+		"/u<john>\t\"meet\"@[2015-04-10T4:21:00.000000000Z]\t/u<mary>",
+		"/u<john>\t\"meet\"@[2016-04-10T4:21:00.000000000Z]\t/u<mary>",
+		"/u<john>\t\"meet\"@[2017-04-10T4:21:00.000000000Z]\t/u<mary>",
+		"/u<john>\t\"meet\"@[2018-04-10T4:21:00.000000000Z]\t/u<mary>",
+		"/u<john>\t\"meet\"@[2019-04-10T4:21:00.000000000Z]\t/u<mary>",
 	})
 }
 
@@ -223,6 +274,34 @@ func TestObjects(t *testing.T) {
 	}
 }
 
+func TestObjectsLastestTemporal(t *testing.T) {
+	ts, ctx := getTestTemporalTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	os := make(chan *triple.Object, 100)
+	lo := &storage.LookupOptions{LatestAnchor: true}
+	if err := g.Objects(ctx, ts[0].Subject(), ts[0].Predicate(), lo, os); err != nil {
+		t.Errorf("g.Objects(%s, %s) failed with error %v", ts[0].Subject(), ts[0].Predicate(), err)
+	}
+	cnt := 0
+	for o := range os {
+		cnt++
+		n, _ := o.Node()
+		ty, id := n.Type().String(), n.ID().String()
+		if ty != "/u" || (id != "mary" && id != "peter" && id != "alice") {
+			t.Errorf("g.Objects(%s, %s) failed to return a valid object; returned %s instead", ts[0].Subject(), ts[0].Predicate(), n)
+		}
+	}
+	if cnt != 1 {
+		t.Errorf("g.Objects(%s, %s) failed to retrieve 3 objects, got %d instead", ts[0].Subject(), ts[0].Predicate(), cnt)
+	}
+}
+
 func TestSubjects(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
@@ -234,6 +313,33 @@ func TestSubjects(t *testing.T) {
 	// to collect the error code eventually.
 	ss := make(chan *node.Node, 100)
 	if err := g.Subjects(ctx, ts[0].Predicate(), ts[0].Object(), storage.DefaultLookup, ss); err != nil {
+		t.Errorf("g.Subjects(%s, %s) failed with error %v", ts[0].Predicate(), ts[0].Object(), err)
+	}
+	cnt := 0
+	for s := range ss {
+		cnt++
+		ty, id := s.Type().String(), s.ID().String()
+		if ty != "/u" || id != "john" {
+			t.Errorf("g.Subjects(%s, %s) failed to return a valid subject; returned %s instead", ts[0].Predicate(), ts[0].Object(), s)
+		}
+	}
+	if cnt != 1 {
+		t.Errorf("g.Objects(%s, %s) failed to retrieve 1 objects, got %d instead", ts[0].Subject(), ts[0].Predicate(), cnt)
+	}
+}
+
+func TestSubjectsLatestTemporal(t *testing.T) {
+	ts, ctx := getTestTemporalTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	ss := make(chan *node.Node, 100)
+	lo := &storage.LookupOptions{LatestAnchor: true}
+	if err := g.Subjects(ctx, ts[0].Predicate(), ts[0].Object(), lo, ss); err != nil {
 		t.Errorf("g.Subjects(%s, %s) failed with error %v", ts[0].Predicate(), ts[0].Object(), err)
 	}
 	cnt := 0
@@ -273,6 +379,31 @@ func TestPredicatesForSubjectAndObject(t *testing.T) {
 		t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) failed to retrieve 1 predicate, got %d instead", ts[0].Subject(), ts[0].Object(), cnt)
 	}
 }
+func TestPredicatesForSubjectAndObjectLatestTemporal(t *testing.T) {
+	ts, ctx := getTestTemporalTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	ps := make(chan *predicate.Predicate, 100)
+	lo := &storage.LookupOptions{LatestAnchor: true}
+	if err := g.PredicatesForSubjectAndObject(ctx, ts[0].Subject(), ts[0].Object(), lo, ps); err != nil {
+		t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) failed with error %v", ts[0].Subject(), ts[0].Object(), err)
+	}
+	cnt := 0
+	for p := range ps {
+		cnt++
+		if !reflect.DeepEqual(p.UUID(), ts[len(ts)-1].Predicate().UUID()) {
+			t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) failed to return a valid subject; returned %s instead", ts[0].Subject(), ts[0].Object(), p)
+		}
+	}
+	if cnt != 1 {
+		t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) failed to retrieve 1 predicate, got %d instead", ts[0].Subject(), ts[0].Object(), cnt)
+	}
+}
 
 func TestPredicatesForSubject(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
@@ -295,6 +426,32 @@ func TestPredicatesForSubject(t *testing.T) {
 		}
 	}
 	if cnt != 3 {
+		t.Errorf("g.PredicatesForSubjectAndObject(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), cnt)
+	}
+}
+
+func TestPredicatesForSubjectLatestTemporal(t *testing.T) {
+	ts, ctx := getTestTemporalTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	ps := make(chan *predicate.Predicate, 100)
+	lo := &storage.LookupOptions{LatestAnchor: true}
+	if err := g.PredicatesForSubject(ctx, ts[0].Subject(), lo, ps); err != nil {
+		t.Errorf("g.PredicatesForSubject(%s) failed with error %v", ts[0].Subject(), err)
+	}
+	cnt := 0
+	for p := range ps {
+		cnt++
+		if !reflect.DeepEqual(p.UUID(), ts[len(ts)-1].Predicate().UUID()) {
+			t.Errorf("g.PredicatesForSubject(%s) failed to return a valid predicate; returned %s instead", ts[0].Subject(), p)
+		}
+	}
+	if cnt != 1 {
 		t.Errorf("g.PredicatesForSubjectAndObject(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), cnt)
 	}
 }
@@ -323,6 +480,31 @@ func TestPredicatesForObject(t *testing.T) {
 		t.Errorf("g.PredicatesForObject(%s) failed to retrieve 1 predicate, got %d instead", ts[0].Object(), cnt)
 	}
 }
+func TestPredicatesForObjectLatestTemporal(t *testing.T) {
+	ts, ctx := getTestTemporalTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	ps := make(chan *predicate.Predicate, 100)
+	lo := &storage.LookupOptions{LatestAnchor: true}
+	if err := g.PredicatesForObject(ctx, ts[0].Object(), lo, ps); err != nil {
+		t.Errorf("g.PredicatesForObject(%s) failed with error %v", ts[0].Object(), err)
+	}
+	cnt := 0
+	for p := range ps {
+		cnt++
+		if !reflect.DeepEqual(p.UUID(), ts[len(ts)-1].Predicate().UUID()) {
+			t.Errorf("g.PredicatesForObject(%s) failed to return a valid predicate; returned %s instead", ts[0].Object(), p)
+		}
+	}
+	if cnt != 1 {
+		t.Errorf("g.PredicatesForObject(%s) failed to retrieve 1 predicate, got %d instead", ts[0].Object(), cnt)
+	}
+}
 
 func TestTriplesForSubject(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
@@ -338,10 +520,36 @@ func TestTriplesForSubject(t *testing.T) {
 		t.Errorf("g.TriplesForSubject(%s) failed with error %v", ts[0].Subject(), err)
 	}
 	cnt := 0
-	for _ = range trpls {
+	for range trpls {
 		cnt++
 	}
 	if cnt != 3 {
+		t.Errorf("g.triplesForSubject(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), cnt)
+	}
+}
+
+func TestTriplesForSubjectLatestTemporal(t *testing.T) {
+	ts, ctx := getTestTemporalTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	trpls := make(chan *triple.Triple, 100)
+	lo := &storage.LookupOptions{LatestAnchor: true}
+	if err := g.TriplesForSubject(ctx, ts[0].Subject(), lo, trpls); err != nil {
+		t.Errorf("g.TriplesForSubject(%s) failed with error %v", ts[0].Subject(), err)
+	}
+	cnt := 0
+	for rts := range trpls {
+		cnt++
+		if !reflect.DeepEqual(rts.Predicate().UUID(), ts[len(ts)-1].Predicate().UUID()) {
+			t.Errorf("g.PredicatesForObject(%s) failed to return a valid predicate; returned %s instead", ts[0].Object(), rts.Predicate())
+		}
+	}
+	if cnt != 1 {
 		t.Errorf("g.triplesForSubject(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), cnt)
 	}
 }
@@ -367,6 +575,31 @@ func TestTriplesForPredicate(t *testing.T) {
 		t.Errorf("g.triplesForPredicate(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Predicate(), cnt)
 	}
 }
+func TestTriplesForPredicateLatestTemporal(t *testing.T) {
+	ts, ctx := getTestTemporalTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	trpls := make(chan *triple.Triple, 100)
+	lo := &storage.LookupOptions{LatestAnchor: true}
+	if err := g.TriplesForPredicate(ctx, ts[0].Predicate(), lo, trpls); err != nil {
+		t.Errorf("g.TriplesForPredicate(%s) failed with error %v", ts[0].Subject(), err)
+	}
+	cnt := 0
+	for rts := range trpls {
+		cnt++
+		if !reflect.DeepEqual(rts.Predicate().UUID(), ts[len(ts)-1].Predicate().UUID()) {
+			t.Errorf("g.PredicatesForObject(%s) failed to return a valid predicate; returned %s instead", ts[0].Object(), rts.Predicate())
+		}
+	}
+	if cnt != 1 {
+		t.Errorf("g.triplesForPredicate(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Predicate(), cnt)
+	}
+}
 
 func TestTriplesForObject(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
@@ -384,6 +617,32 @@ func TestTriplesForObject(t *testing.T) {
 	cnt := 0
 	for _ = range trpls {
 		cnt++
+	}
+	if cnt != 1 {
+		t.Errorf("g.TriplesForObject(%s) failed to retrieve 1 predicates, got %d instead", ts[0].Object(), cnt)
+	}
+}
+
+func TestTriplesForObjectLatestTemporal(t *testing.T) {
+	ts, ctx := getTestTemporalTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	trpls := make(chan *triple.Triple, 100)
+	lo := &storage.LookupOptions{LatestAnchor: true}
+	if err := g.TriplesForObject(ctx, ts[0].Object(), lo, trpls); err != nil {
+		t.Errorf("g.TriplesForObject(%s) failed with error %v", ts[0].Object(), err)
+	}
+	cnt := 0
+	for rts := range trpls {
+		cnt++
+		if !reflect.DeepEqual(rts.Predicate().UUID(), ts[len(ts)-1].Predicate().UUID()) {
+			t.Errorf("g.PredicatesForObject(%s) failed to return a valid predicate; returned %s instead", ts[0].Object(), rts.Predicate())
+		}
 	}
 	if cnt != 1 {
 		t.Errorf("g.TriplesForObject(%s) failed to retrieve 1 predicates, got %d instead", ts[0].Object(), cnt)
@@ -462,6 +721,31 @@ func TestTriplesForSubjectAndPredicate(t *testing.T) {
 		t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), ts[0].Predicate(), cnt)
 	}
 }
+func TestTriplesForSubjectAndPredicateLatestTemporal(t *testing.T) {
+	ts, ctx := getTestTemporalTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	trpls := make(chan *triple.Triple, 100)
+	lo := &storage.LookupOptions{LatestAnchor: true}
+	if err := g.TriplesForSubjectAndPredicate(ctx, ts[0].Subject(), ts[0].Predicate(), lo, trpls); err != nil {
+		t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s) failed with error %v", ts[0].Subject(), ts[0].Predicate(), err)
+	}
+	cnt := 0
+	for rts := range trpls {
+		cnt++
+		if !reflect.DeepEqual(rts.Predicate().UUID(), ts[len(ts)-1].Predicate().UUID()) {
+			t.Errorf("g.PredicatesForObject(%s) failed to return a valid predicate; returned %s instead", ts[0].Object(), rts.Predicate())
+		}
+	}
+	if cnt != 1 {
+		t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), ts[0].Predicate(), cnt)
+	}
+}
 
 func TestTriplesForPredicateAndObject(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
@@ -479,6 +763,32 @@ func TestTriplesForPredicateAndObject(t *testing.T) {
 	cnt := 0
 	for _ = range trpls {
 		cnt++
+	}
+	if cnt != 1 {
+		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed to retrieve 1 predicates, got %d instead", ts[0].Predicate(), ts[0].Object(), cnt)
+	}
+}
+
+func TestTriplesForPredicateAndObjectLatestTemporal(t *testing.T) {
+	ts, ctx := getTestTemporalTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	trpls := make(chan *triple.Triple, 100)
+	lo := &storage.LookupOptions{LatestAnchor: true}
+	if err := g.TriplesForPredicateAndObject(ctx, ts[0].Predicate(), ts[0].Object(), lo, trpls); err != nil {
+		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed with error %v", ts[0].Predicate(), ts[0].Object(), err)
+	}
+	cnt := 0
+	for rts := range trpls {
+		cnt++
+		if !reflect.DeepEqual(rts.Predicate().UUID(), ts[len(ts)-1].Predicate().UUID()) {
+			t.Errorf("g.PredicatesForObject(%s) failed to return a valid predicate; returned %s instead", ts[0].Object(), rts.Predicate())
+		}
 	}
 	if cnt != 1 {
 		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed to retrieve 1 predicates, got %d instead", ts[0].Predicate(), ts[0].Object(), cnt)
@@ -520,6 +830,32 @@ func TestTriples(t *testing.T) {
 		cnt++
 	}
 	if cnt != 6 {
+		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed to retrieve 1 predicates, got %d instead", ts[0].Predicate(), ts[0].Object(), cnt)
+	}
+}
+
+func TestTriplesLastestTemporal(t *testing.T) {
+	ts, ctx := getTestTemporalTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	trpls := make(chan *triple.Triple, 100)
+	lo := &storage.LookupOptions{LatestAnchor: true}
+	if err := g.Triples(ctx, lo, trpls); err != nil {
+		t.Fatal(err)
+	}
+	cnt := 0
+	for rts := range trpls {
+		cnt++
+		if !reflect.DeepEqual(rts.Predicate().UUID(), ts[len(ts)-1].Predicate().UUID()) {
+			t.Errorf("g.PredicatesForObject(%s) failed to return a valid predicate; returned %s instead", ts[0].Object(), rts.Predicate())
+		}
+	}
+	if cnt != 1 {
 		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed to retrieve 1 predicates, got %d instead", ts[0].Predicate(), ts[0].Object(), cnt)
 	}
 }
