@@ -240,12 +240,16 @@ is currently no support for cursor keys or history of past BQL statements.
 
 ```
 $ bw bql
-Welcome to BadWolf vCli (0.6.1-dev)
-Using driver "VOLATILE". Type quit; to exit
-Session started at 2017-01-06 10:02:39.985364721 -0800 PST
+Welcome to BadWolf vCli (0.9.1-dev)
+Using driver VOLATILE/0.2.vcli. Type quit; to exit.
+Session started at 2018-12-09T00:33:15.126414-08:00.
+Memoization enabled. Type help; to print help.
 
 bql> help;
+
 help                                                  - prints help for the bw console.
+disable memoization                                   - disables partial result memoization on query resolution.
+enable memoization                                    - enables partial result memoization of partial query results.
 export <graph_names_separated_by_commas> <file_path>  - dumps triples from graphs into a file path.
 desc <BQL>                                            - prints the execution plan for a BQL statement.
 load <file_path> <graph_names_separated_by_commas>    - load triples into the specified graphs.
@@ -253,7 +257,6 @@ run <file_with_bql_statements>                        - runs all the BQL stateme
 start tracing [trace_file]                            - starts tracing queries.
 stop tracing                                          - stops tracing queries.
 quit                                                  - quits the console.
-
 bql> 
 ```
 
