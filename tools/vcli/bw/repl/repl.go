@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/google/badwolf/bql/planner/tracer"
+	"github.com/google/badwolf/storage/memoization"
 
 	"github.com/google/badwolf/bql/grammar"
 	"github.com/google/badwolf/bql/planner"
@@ -107,7 +108,7 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 	}
 
 	driverWithMemoization := func() storage.Store {
-		return od
+		return memoization.New(od)
 	}
 
 	driver := driverWithMemoization

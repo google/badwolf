@@ -24,6 +24,7 @@ import (
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/node"
 	"github.com/google/badwolf/triple/predicate"
+	"github.com/pborman/uuid"
 )
 
 // LookupOptions allows to specify the behavior of the lookup operations.
@@ -61,6 +62,13 @@ func (l *LookupOptions) String() string {
 	}
 	b.WriteString(">")
 	return b.String()
+}
+
+// UUID return the UUID of the lookup option.
+func (l *LookupOptions) UUID() uuid.UUID {
+	var buffer bytes.Buffer
+	buffer.WriteString(l.String())
+	return uuid.NewSHA1(uuid.NIL, buffer.Bytes())
 }
 
 // DefaultLookup provides the default lookup behavior.
