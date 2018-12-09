@@ -87,10 +87,30 @@ func SimpleReadLine(done chan bool) <-chan string {
 	return c
 }
 
+// driver returns the original driver.
+func driver(driver storage.Store) storage.Store {
+	return driver
+}
+
+// driverWithMemoization returns a driver with memoization.
+func driverWithMemoization(driver storage.Store) storage.Store {
+	return driver
+}
+
 // REPL starts a read-evaluation-print-loop to run BQL commands.
-func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, builderSize int, done chan bool) int {
+func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, builderSize int, done chan bool) int {
 	var tracer io.Writer
 	ctx, isTracingToFile, sessionStart := context.Background(), false, time.Now()
+
+	driverPlain := func() storage.Store {
+		return od
+	}
+
+	driverWithMemoization := func() storage.Store {
+		return od
+	}
+
+	driver := driverWithMemoization
 
 	stopTracing := func() {
 		if tracer != nil {
@@ -104,8 +124,10 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 	defer stopTracing()
 
 	fmt.Printf("Welcome to BadWolf vCli (%d.%d.%d-%s)\n", version.Major, version.Minor, version.Patch, version.Release)
-	fmt.Printf("Using driver %s/%s. Type quit; to exit\n", driver.Name(ctx), driver.Version(ctx))
-	fmt.Printf("Session started at %v\n\n", sessionStart.Format("2006-01-02T15:04:05.999999-07:00"))
+	fmt.Printf("Using driver %s/%s. Type quit; to exit.\n", driver().Name(ctx), driver().Version(ctx))
+	fmt.Printf("Session started at %v.\n", sessionStart.Format("2006-01-02T15:04:05.999999-07:00"))
+	fmt.Println("Memoization enabled. Type help; to print help.")
+	fmt.Println()
 	defer func() {
 		fmt.Printf("\n\nThanks for all those BQL queries!\nSession duration: %v\n\n", time.Now().Sub(sessionStart))
 	}()
@@ -117,6 +139,18 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 		}
 		if strings.HasPrefix(l, "help") {
 			printHelp()
+			done <- false
+			continue
+		}
+		if strings.HasPrefix(l, "enable memoization") {
+			driver = driverWithMemoization
+			fmt.Println("[OK] Partial query memoization is on.")
+			done <- false
+			continue
+		}
+		if strings.HasPrefix(l, "disable memoization") {
+			driver = driverPlain
+			fmt.Println("[OK] Partial query memoization is off.")
 			done <- false
 			continue
 		}
@@ -154,7 +188,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			now := time.Now()
 			args := strings.Split("bw "+strings.TrimSpace(l)[:len(l)-1], " ")
 			usage := "Wrong syntax\n\n\tload <graph_names_separated_by_commas> <file_path>\n"
-			export.Eval(ctx, usage, args, driver, bulkSize)
+			export.Eval(ctx, usage, args, driver(), bulkSize)
 			fmt.Println("[OK] Time spent: ", time.Now().Sub(now))
 			done <- false
 			continue
@@ -163,13 +197,13 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 			now := time.Now()
 			args := strings.Split("bw "+strings.TrimSpace(l[:len(l)-1]), " ")
 			usage := "Wrong syntax\n\n\tload <file_path> <graph_names_separated_by_commas>\n"
-			load.Eval(ctx, usage, args, driver, bulkSize, builderSize)
+			load.Eval(ctx, usage, args, driver(), bulkSize, builderSize)
 			fmt.Println("[OK] Time spent: ", time.Now().Sub(now))
 			done <- false
 			continue
 		}
 		if strings.HasPrefix(l, "desc") {
-			pln, err := planBQL(ctx, l[4:], driver, chanSize, bulkSize, nil)
+			pln, err := planBQL(ctx, l[4:], driver(), chanSize, bulkSize, nil)
 			if err != nil {
 				fmt.Printf("[ERROR] %s\n\n", err)
 			} else {
@@ -183,7 +217,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 		}
 		if strings.HasPrefix(l, "run") {
 			now := time.Now()
-			path, cmds, err := runBQLFromFile(ctx, driver, chanSize, bulkSize, strings.TrimSpace(l[:len(l)-1]), tracer)
+			path, cmds, err := runBQLFromFile(ctx, driver(), chanSize, bulkSize, strings.TrimSpace(l[:len(l)-1]), tracer)
 			if err != nil {
 				fmt.Printf("[ERROR] %s\n\n", err)
 			} else {
@@ -195,7 +229,7 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 		}
 
 		now := time.Now()
-		table, err := runBQL(ctx, l, driver, chanSize, bulkSize, tracer)
+		table, err := runBQL(ctx, l, driver(), chanSize, bulkSize, tracer)
 		bqlDiff := time.Now().Sub(now)
 		if err != nil {
 			fmt.Printf("[ERROR] %s\n", err)
@@ -220,7 +254,10 @@ func REPL(driver storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize
 
 // printHelp prints help for the console commands.
 func printHelp() {
+	fmt.Println()
 	fmt.Println("help                                                  - prints help for the bw console.")
+	fmt.Println("disable memoization                                   - disables partial result memoization on query resolution.")
+	fmt.Println("enable memoization                                    - enables partial result memoization of partial query results.")
 	fmt.Println("export <graph_names_separated_by_commas> <file_path>  - dumps triples from graphs into a file path.")
 	fmt.Println("desc <BQL>                                            - prints the execution plan for a BQL statement.")
 	fmt.Println("load <file_path> <graph_names_separated_by_commas>    - load triples into the specified graphs.")
