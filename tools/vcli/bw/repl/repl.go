@@ -88,16 +88,6 @@ func SimpleReadLine(done chan bool) <-chan string {
 	return c
 }
 
-// driver returns the original driver.
-func driver(driver storage.Store) storage.Store {
-	return driver
-}
-
-// driverWithMemoization returns a driver with memoization.
-func driverWithMemoization(driver storage.Store) storage.Store {
-	return driver
-}
-
 // REPL starts a read-evaluation-print-loop to run BQL commands.
 func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, builderSize int, done chan bool) int {
 	var tracer io.Writer
