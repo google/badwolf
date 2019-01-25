@@ -60,6 +60,7 @@ func (l *LookupOptions) String() string {
 	} else {
 		b.WriteString("nil")
 	}
+	b.WriteString(fmt.Sprintf(", LatestAnchor=%v", l.LatestAnchor))
 	b.WriteString(">")
 	return b.String()
 }
