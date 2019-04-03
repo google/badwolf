@@ -285,7 +285,7 @@ These two generators create graphs with very different structural properties.
 
 All benchmarks consist of generating random triple sets using both generators
 and using them as the graphs on which to run the operations. Each benchmark is
-run 10 times and the the average and standard deviation of the time spent to
+run 10 times and the average and standard deviation of the time spent to
 run the operation is computed. Also, the benchmark runner computes an
 approximation of how many triples per second were processed.
 

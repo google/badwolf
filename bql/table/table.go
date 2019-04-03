@@ -45,7 +45,7 @@ type Table struct {
 	mu sync.RWMutex
 }
 
-// New returns a new table that can hold data for the the given bindings. The,
+// New returns a new table that can hold data for the given bindings. The,
 // table creation will fail if there are repeated bindings.
 func New(bs []string) (*Table, error) {
 	m := make(map[string]bool)
