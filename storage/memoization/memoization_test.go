@@ -31,7 +31,7 @@ import (
 )
 
 func TestCombinedUUID(t *testing.T) {
-	want := "op:9f54490c-8f9e-5624-af2c-c991d64927e7:00000000-0000-0000-0000-000000000000:00000000-0000-0000-0000-000000000000"
+	want := "op:9dae52f4-9b35-5d5f-bd8e-195d4b16fc30:00000000-0000-0000-0000-000000000000:00000000-0000-0000-0000-000000000000"
 	if got := combinedUUID("op", storage.DefaultLookup, uuid.NIL, uuid.NIL); got != want {
 		t.Errorf("combinedUUID returned the wrong value; got %v, want %v", got, want)
 	}
