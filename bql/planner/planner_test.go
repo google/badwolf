@@ -162,7 +162,7 @@ func insertAndDeleteTest(t *testing.T) {
 	if err = g.Triples(ctx, storage.DefaultLookup, ts); err != nil {
 		t.Error(err)
 	}
-	for _ = range ts {
+	for range ts {
 		i++
 	}
 	if i != 0 {
@@ -257,7 +257,7 @@ func populateStoreWithTriples(ctx context.Context, s storage.Store, gn string, t
 		}
 	}()
 	cnt := 0
-	for _ = range trpls {
+	for range trpls {
 		cnt++
 	}
 	if got, want := cnt, len(strings.Split(triples, "\n"))-1; got != want {
