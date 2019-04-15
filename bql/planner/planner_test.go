@@ -20,18 +20,14 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/google/badwolf/bql/grammar"
 	"github.com/google/badwolf/bql/semantic"
-	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/io"
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/storage/memory"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/literal"
-	"github.com/google/badwolf/triple/predicate"
-	"github.com/pborman/uuid"
 )
 
 const (
@@ -499,26 +495,6 @@ func TestPlannerQuery(t *testing.T) {
 		if got, want := len(tbl.Rows()), entry.nrws; got != want {
 			t.Errorf("planner.Execute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", entry.q, got, want, tbl)
 		}
-	}
-}
-
-func TestRefineTemporalPredicateIfNeeded(t *testing.T) {
-	now := time.Now()
-	p, err := predicate.NewTemporal("foo", now)
-	if err != nil {
-		t.Fatal(err)
-	}
-	cls := &semantic.GraphClause{
-		PTemporal:    true,
-		PID:          "foo",
-		PAnchorAlias: "?ta",
-	}
-	r := table.Row{
-		"?ta": &table.Cell{T: &now},
-	}
-	refineTemporalPredicateIfNeeded(cls, r)
-	if got, want := cls.P, p; !uuid.Equal(got.UUID(), want.UUID()) {
-		t.Errorf("failed to refine clause with row; got %v, want %v", got, want)
 	}
 }
 

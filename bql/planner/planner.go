@@ -441,23 +441,6 @@ func (p *queryPlan) addSpecifiedData(ctx context.Context, r table.Row, cls *sema
 	return nil
 }
 
-// refineTemporalPredicateIfNeeded attempts to instantiate a temporal table out
-// of the information available in the table.
-func refineTemporalPredicateIfNeeded(cls *semantic.GraphClause, r table.Row) {
-	if !cls.PTemporal || cls.PID == "" || cls.PAnchorAlias == "" {
-		return
-	}
-	v := r[cls.PAnchorAlias]
-	if v == nil || v.T == nil {
-		return
-	}
-	// We can instatiate the predicate out of the data provided.
-	p, err := predicate.NewTemporal(cls.PID, *v.T)
-	if err == nil {
-		cls.P = p
-	}
-}
-
 // specifyClauseWithTable runs the clause, but it specifies it further based on
 // the current row being processed.
 func (p *queryPlan) specifyClauseWithTable(ctx context.Context, cls *semantic.GraphClause, lo *storage.LookupOptions) error {
