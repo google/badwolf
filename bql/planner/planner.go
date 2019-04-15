@@ -35,6 +35,7 @@ import (
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/literal"
 	"github.com/google/badwolf/triple/predicate"
+	"golang.org/x/sync/errgroup"
 )
 
 // Executor interface unifies the execution of statements.
@@ -471,26 +472,16 @@ func (p *queryPlan) addSpecifiedData(ctx context.Context, r table.Row, cls *sema
 func (p *queryPlan) specifyClauseWithTable(ctx context.Context, cls *semantic.GraphClause, lo *storage.LookupOptions) error {
 	rws := p.tbl.Rows()
 	p.tbl.Truncate()
-	var (
-		gErr error
-		mu   sync.Mutex
-		wg   sync.WaitGroup
-	)
+	grp, gCtx := errgroup.WithContext(ctx)
 	for _, tmpRow := range rws {
-		wg.Add(1)
-		go func(r table.Row) {
-			defer wg.Done()
+		r := tmpRow
+		grp.Go(func() error {
 			var tmpCls = *cls
 			// The table manipulations are now thread safe.
-			if err := p.addSpecifiedData(ctx, r, &tmpCls, lo); err != nil {
-				mu.Lock()
-				gErr = err
-				mu.Unlock()
-			}
-		}(tmpRow)
+			return p.addSpecifiedData(gCtx, r, &tmpCls, lo)
+		})
 	}
-	wg.Wait()
-	return gErr
+	return grp.Wait()
 }
 
 // cellToObject returns an object for the given cell.
@@ -522,53 +513,31 @@ func cellToObject(c *table.Cell) (*triple.Object, error) {
 func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphClause, lo *storage.LookupOptions) error {
 	data := p.tbl.Rows()
 	p.tbl.Truncate()
-	var (
-		gErr error
-		mu   sync.RWMutex
-		wg   sync.WaitGroup
-	)
+	ocls := *cls
+	grp, gCtx := errgroup.WithContext(ctx)
 	for _, tmp := range data {
-		mu.RLock()
-		if gErr != nil {
-			// Try to stop early if an error occurred and we are still ussuing requests.
-			mu.RUnlock()
-			break
-		}
-		mu.RUnlock()
-		wg.Add(1)
-		go func(r table.Row, cls semantic.GraphClause) {
-			defer wg.Done()
+		r := tmp
+		cls := ocls
+		grp.Go(func() error {
 			sbj, prd, obj := cls.S, cls.P, cls.O
 			// Attempt to rebind the subject.
 			if sbj == nil && p.tbl.HasBinding(cls.SBinding) {
 				v, ok := r[cls.SBinding]
 				if !ok {
-					mu.Lock()
-					gErr = fmt.Errorf("row %+v misses binding %q", r, cls.SBinding)
-					mu.Unlock()
-					return
+					return fmt.Errorf("row %+v misses binding %q", r, cls.SBinding)
 				}
 				if v.N == nil {
-					mu.Lock()
-					gErr = fmt.Errorf("binding %q requires a node, got %+v instead", cls.SBinding, v)
-					mu.Unlock()
-					return
+					return fmt.Errorf("binding %q requires a node, got %+v instead", cls.SBinding, v)
 				}
 				sbj = v.N
 			}
 			if sbj == nil && p.tbl.HasBinding(cls.SAlias) {
 				v, ok := r[cls.SAlias]
 				if !ok {
-					mu.Lock()
-					gErr = fmt.Errorf("row %+v misses binding %q", r, cls.SAlias)
-					mu.Unlock()
-					return
+					return fmt.Errorf("row %+v misses binding %q", r, cls.SAlias)
 				}
 				if v.N == nil {
-					mu.Lock()
-					gErr = fmt.Errorf("binding %q requires a node, got %+v instead", cls.SAlias, v)
-					mu.Unlock()
-					return
+					return fmt.Errorf("binding %q requires a node, got %+v instead", cls.SAlias, v)
 				}
 				sbj = v.N
 			}
@@ -576,32 +545,20 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 			if prd == nil && p.tbl.HasBinding(cls.PBinding) {
 				v, ok := r[cls.PBinding]
 				if !ok {
-					mu.Lock()
-					gErr = fmt.Errorf("row %+v misses binding %q", r, cls.PBinding)
-					mu.Unlock()
-					return
+					return fmt.Errorf("row %+v misses binding %q", r, cls.PBinding)
 				}
 				if v.P == nil {
-					mu.Lock()
-					gErr = fmt.Errorf("binding %q requires a predicate, got %+v instead", cls.PBinding, v)
-					mu.Unlock()
-					return
+					return fmt.Errorf("binding %q requires a predicate, got %+v instead", cls.PBinding, v)
 				}
 				prd = v.P
 			}
 			if prd == nil && p.tbl.HasBinding(cls.PAlias) {
 				v, ok := r[cls.PAlias]
 				if !ok {
-					mu.Lock()
-					gErr = fmt.Errorf("row %+v misses binding %q", r, cls.SAlias)
-					mu.Unlock()
-					return
+					return fmt.Errorf("row %+v misses binding %q", r, cls.SAlias)
 				}
 				if v.N == nil {
-					mu.Lock()
-					gErr = fmt.Errorf("binding %q requires a predicate, got %+v instead", cls.SAlias, v)
-					mu.Unlock()
-					return
+					return fmt.Errorf("binding %q requires a predicate, got %+v instead", cls.SAlias, v)
 				}
 				prd = v.P
 			}
@@ -609,64 +566,41 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 			if obj == nil && p.tbl.HasBinding(cls.OBinding) {
 				v, ok := r[cls.OBinding]
 				if !ok {
-					mu.Lock()
-					gErr = fmt.Errorf("row %+v misses binding %q", r, cls.OBinding)
-					mu.Unlock()
-					return
+					return fmt.Errorf("row %+v misses binding %q", r, cls.OBinding)
 				}
 				co, err := cellToObject(v)
 				if err != nil {
-					mu.Lock()
-					gErr = err
-					mu.Unlock()
+					return err
 				}
 				obj = co
 			}
 			if obj == nil && p.tbl.HasBinding(cls.OAlias) {
 				v, ok := r[cls.OAlias]
 				if !ok {
-					mu.Unlock()
-					gErr = fmt.Errorf("row %+v misses binding %q", r, cls.OAlias)
-					mu.Unlock()
-					return
+					return fmt.Errorf("row %+v misses binding %q", r, cls.OAlias)
 				}
 				if v.N == nil {
-					mu.Lock()
-					gErr = fmt.Errorf("binding %q requires a object, got %+v instead", cls.OAlias, v)
-					mu.Unlock()
-					return
+					return fmt.Errorf("binding %q requires a object, got %+v instead", cls.OAlias, v)
 				}
 				co, err := cellToObject(v)
 				if err != nil {
-					mu.Lock()
-					gErr = err
-					mu.Unlock()
-					return
+					return err
 				}
 				obj = co
 			}
 			// Attempt to filter.
 			if sbj == nil || prd == nil || obj == nil {
-				mu.Lock()
-				gErr = fmt.Errorf("failed to fully specify clause %v for row %+v", cls, r)
-				mu.Unlock()
-				return
+				return fmt.Errorf("failed to fully specify clause %v for row %+v", cls, r)
 			}
 			exist := false
 			for _, g := range p.stm.InputGraphs() {
 				t, err := triple.New(sbj, prd, obj)
 				if err != nil {
-					mu.Lock()
-					gErr = err
-					mu.Unlock()
-					return
+					return err
 				}
-				b, err := g.Exist(ctx, t)
+				b, err := g.Exist(gCtx, t)
 				if err != nil {
-					mu.Lock()
-					gErr = err
-					mu.Unlock()
-					return
+					return err
 				}
 				exist = exist || b
 				if exist {
@@ -676,10 +610,10 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 			if exist {
 				p.tbl.AddRow(r)
 			}
-		}(tmp, *cls)
+			return nil
+		})
 	}
-	wg.Wait()
-	return gErr
+	return grp.Wait()
 }
 
 // processGraphPattern process the query graph pattern to retrieve the
