@@ -23,6 +23,7 @@ import (
 	"log"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/badwolf/triple/literal"
@@ -40,6 +41,8 @@ type Table struct {
 	Data []Row `json:"rows,omitempty"`
 	// mbs is an internal map for bindings existence.
 	mbs map[string]bool
+	// mu provides a RW mutex for safe table manipulation operations.
+	mu sync.RWMutex
 }
 
 // New returns a new table that can hold data for the the given bindings. The,
@@ -119,20 +122,26 @@ func (r Row) ToTextLine(res *bytes.Buffer, bs []string, sep string) error {
 // creation. BQL builds valid tables, if you plan to create tables on your own
 // you should be careful to provide valid rows.
 func (t *Table) AddRow(r Row) {
+	t.mu.Lock()
 	if len(r) > 0 {
 		delete(r, "")
 		t.Data = append(t.Data, r)
 	}
+	t.mu.Unlock()
 }
 
 // NumRows returns the number of rows currently available on the table.
 func (t *Table) NumRows() int {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	return len(t.Data)
 }
 
 // Row returns the requested row. Rows start at 0. Also, if you request a row
 // beyond it will return nil, and the ok boolean will be false.
 func (t *Table) Row(i int) (Row, bool) {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	if i < 0 || i >= len(t.Data) {
 		return nil, false
 	}
@@ -141,11 +150,13 @@ func (t *Table) Row(i int) (Row, bool) {
 
 // Rows returns all the available rows.
 func (t *Table) Rows() []Row {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	return t.Data
 }
 
-// AddBindings add the new bindings provided to the table.
-func (t *Table) AddBindings(bs []string) {
+// unsafeAddBindings add the new bindings provided to the table bypassing the lock.
+func (t *Table) unsafeAddBindings(bs []string) {
 	for _, b := range bs {
 		if !t.mbs[b] {
 			t.mbs[b] = true
@@ -154,33 +165,46 @@ func (t *Table) AddBindings(bs []string) {
 	}
 }
 
+// AddBindings add the new bindings provided to the table.
+func (t *Table) AddBindings(bs []string) {
+	t.mu.Lock()
+	t.unsafeAddBindings(bs)
+	t.mu.Unlock()
+}
+
 // ProjectBindings replaces the current bindings with the projected one. The
 // provided bindings needs to be a subset of the original bindings. If the
 // provided bindings are not a subset of the original ones, the projection will
 // fail, leave the table unmodified, and return an error. The projection only
 // modify the bindings, but does not drop non projected data.
 func (t *Table) ProjectBindings(bs []string) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	if len(t.Data) == 0 || len(t.mbs) == 0 {
 		return nil
 	}
 	for _, b := range bs {
 		if !t.mbs[b] {
-			return fmt.Errorf("cannot project against unknow binding %s; known bindinds are %v", b, t.Bindings())
+			return fmt.Errorf("cannot project against unknow binding %s; known bindinds are %v", b, t.AvailableBindings)
 		}
 	}
 	t.AvailableBindings = []string{}
 	t.mbs = make(map[string]bool)
-	t.AddBindings(bs)
+	t.unsafeAddBindings(bs)
 	return nil
 }
 
 // HasBinding returns true if the binding currently exist on the table.
 func (t *Table) HasBinding(b string) bool {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	return t.mbs[b]
 }
 
 // Bindings returns the bindings contained on the tables.
 func (t *Table) Bindings() []string {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	return t.AvailableBindings
 }
 
@@ -200,13 +224,15 @@ func equalBindings(b1, b2 map[string]bool) bool {
 // AppendTable appends the content of the provided table. It will fail it the
 // target table is not empty and the bindings do not match.
 func (t *Table) AppendTable(t2 *Table) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	if t2 == nil {
 		return nil
 	}
-	if len(t.Bindings()) > 0 && !equalBindings(t.mbs, t2.mbs) {
+	if len(t.AvailableBindings) > 0 && !equalBindings(t.mbs, t2.mbs) {
 		return fmt.Errorf("AppendTable can only append to an empty table or equally binded table; intead got %v and %v", t.AvailableBindings, t2.AvailableBindings)
 	}
-	if len(t.Bindings()) == 0 {
+	if len(t.AvailableBindings) == 0 {
 		t.AvailableBindings, t.mbs = t2.AvailableBindings, t2.mbs
 	}
 	t.Data = append(t.Data, t2.Data...)
@@ -239,6 +265,8 @@ func MergeRows(ms []Row) Row {
 
 // DotProduct does the dot product with the provided table
 func (t *Table) DotProduct(t2 *Table) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	if !disjointBinding(t.mbs, t2.mbs) {
 		return fmt.Errorf("DotProduct operations requires disjoint bindings; instead got %v and %v", t.mbs, t2.mbs)
 	}
@@ -275,6 +303,8 @@ func (t *Table) DotProduct(t2 *Table) error {
 // see https://blog.golang.org/go-slices-usage-and-internals for a detailed
 // explanation.
 func (t *Table) DeleteRow(i int) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	if i < 0 || i >= len(t.Data) {
 		return fmt.Errorf("cannot delete row %d from a table with %d rows", i, len(t.Data))
 	}
@@ -284,11 +314,15 @@ func (t *Table) DeleteRow(i int) error {
 
 // Truncate flushes all the data away. It still retains all set bindings.
 func (t *Table) Truncate() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.Data = nil
 }
 
 // Limit keeps the initial ith rows.
 func (t *Table) Limit(i int64) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	if int64(len(t.Data)) > i {
 		td := make([]Row, i, i) // Preallocate resulting table.
 		copy(td, t.Data[:i])
@@ -402,12 +436,19 @@ func (c bySortConfig) Less(i, j int) bool {
 	return rowLess(ri, rj, cfg)
 }
 
-// Sort sorts the table given a sort configuration.
-func (t *Table) Sort(cfg SortConfig) {
+// unsafeSort sorts the table given a sort configuration bypassing the lock.
+func (t *Table) unsafeSort(cfg SortConfig) {
 	if cfg == nil {
 		return
 	}
 	sort.Sort(bySortConfig{t.Data, cfg})
+}
+
+// Sort sorts the table given a sort configuration.
+func (t *Table) Sort(cfg SortConfig) {
+	t.mu.Lock()
+	t.unsafeSort(cfg)
+	t.mu.Unlock()
 }
 
 // Accumulator type represents a generic accumulator for independent values
@@ -531,6 +572,8 @@ func NewCountDistinctAccumulator() Accumulator {
 // groupRangeReduce takes a sorted range and generates a new row containing
 // the aggregated columns and the non aggregated ones.
 func (t *Table) groupRangeReduce(i, j int, alias map[string]string, acc map[string]Accumulator) (Row, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	if i > j {
 		return nil, fmt.Errorf("cannot aggregate empty ranges [%d, %d)", i, j)
 	}
@@ -596,9 +639,9 @@ type AliasAccPair struct {
 	Acc      Accumulator
 }
 
-// fullGroupRangeReduce takes a sorted range and generates a new row containing
-// the aggregated columns and the non aggregated ones.
-func (t *Table) fullGroupRangeReduce(i, j int, acc map[string]map[string]AliasAccPair) (Row, error) {
+// unsafeFullGroupRangeReduce takes a sorted range and generates a new row containing
+// the aggregated columns and the non aggregated ones. This call bypasses the lock.
+func (t *Table) unsafeFullGroupRangeReduce(i, j int, acc map[string]map[string]AliasAccPair) (Row, error) {
 	if i > j {
 		return nil, fmt.Errorf("cannot aggregate empty ranges [%d, %d)", i, j)
 	}
@@ -685,6 +728,8 @@ func toMap(aaps []AliasAccPair) map[string]map[string]AliasAccPair {
 // accumulator functions to each group. Finally, the table metadata gets
 // updated to reflect the reduce operation.
 func (t *Table) Reduce(cfg SortConfig, aaps []AliasAccPair) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	maaps := toMap(aaps)
 	// Input validation tests.
 	if len(t.AvailableBindings) != len(maaps) {
@@ -707,10 +752,10 @@ func (t *Table) Reduce(cfg SortConfig, aaps []AliasAccPair) error {
 	}
 	// Valid reduce configuration. Reduce sorts the table and then reduces
 	// contiguous groups row groups.
-	if t.NumRows() == 0 {
+	if len(t.Data) == 0 {
 		return nil
 	}
-	t.Sort(cfg)
+	t.unsafeSort(cfg)
 	last, lastIdx, current, newData := "", 0, "", []Row{}
 	id := func(r Row) string {
 		res := bytes.NewBufferString("")
@@ -732,14 +777,14 @@ func (t *Table) Reduce(cfg SortConfig, aaps []AliasAccPair) error {
 			continue
 		}
 		// A group reduce operation is needed.
-		nr, err := t.fullGroupRangeReduce(lastIdx, idx, maaps)
+		nr, err := t.unsafeFullGroupRangeReduce(lastIdx, idx, maaps)
 		if err != nil {
 			return err
 		}
 		newData = append(newData, nr)
 		last, lastIdx = current, idx
 	}
-	nr, err := t.fullGroupRangeReduce(lastIdx, len(t.Data), maaps)
+	nr, err := t.unsafeFullGroupRangeReduce(lastIdx, len(t.Data), maaps)
 	if err != nil {
 		return err
 	}
@@ -758,6 +803,8 @@ func (t *Table) Reduce(cfg SortConfig, aaps []AliasAccPair) error {
 
 // Filter removes all the rows where the provided function returns true.
 func (t *Table) Filter(f func(Row) bool) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	var newData []Row
 	for _, r := range t.Data {
 		if !f(r) {
@@ -770,6 +817,8 @@ func (t *Table) Filter(f func(Row) bool) {
 // ToText convert the table into a readable text versions. It requires the
 // separator to be used between cells.
 func (t *Table) ToText(sep string) (*bytes.Buffer, error) {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	res, row := &bytes.Buffer{}, &bytes.Buffer{}
 	res.WriteString(strings.Join(t.AvailableBindings, sep))
 	res.WriteString("\n")
@@ -791,6 +840,8 @@ func (t *Table) ToText(sep string) (*bytes.Buffer, error) {
 
 // String attempts to force serialize the table into a string.
 func (t *Table) String() string {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	b, err := t.ToText("\t")
 	if err != nil {
 		return fmt.Sprintf("Failed to serialize to text! Error: %s", err)
@@ -801,6 +852,8 @@ func (t *Table) String() string {
 // ToJSON convert the table intotext versions. It requires the
 // separator to be used between cells JSON.
 func (t *Table) ToJSON(w io.Writer) {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	w.Write([]byte(`{ "bindings": [`))
 
 	if len(t.AvailableBindings) > 0 {
