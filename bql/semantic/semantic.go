@@ -217,7 +217,7 @@ func (c *GraphClause) String() string {
 				}
 			} else {
 				if c.PLowerBound != nil {
-					b.WriteString(c.PLowerBound.String())
+					b.WriteString(c.PLowerBound.Format(time.RFC3339Nano))
 				} else {
 					if c.PLowerBoundAlias != "" {
 						b.WriteString(c.PLowerBoundAlias)
@@ -225,7 +225,7 @@ func (c *GraphClause) String() string {
 				}
 				b.WriteString(",")
 				if c.PUpperBound != nil {
-					b.WriteString(c.PUpperBound.String())
+					b.WriteString(c.PUpperBound.Format(time.RFC3339Nano))
 				} else {
 					if c.PUpperBoundAlias != "" {
 						b.WriteString(c.PUpperBoundAlias)
@@ -292,7 +292,7 @@ func (c *GraphClause) String() string {
 				}
 			} else {
 				if c.OLowerBound != nil {
-					b.WriteString(c.OLowerBound.String())
+					b.WriteString(c.OLowerBound.Format(time.RFC3339Nano))
 				} else {
 					if c.OLowerBoundAlias != "" {
 						b.WriteString(c.OLowerBoundAlias)
@@ -300,7 +300,7 @@ func (c *GraphClause) String() string {
 				}
 				b.WriteString(",")
 				if c.OUpperBound != nil {
-					b.WriteString(c.OUpperBound.String())
+					b.WriteString(c.OUpperBound.Format(time.RFC3339Nano))
 				} else {
 					if c.OUpperBoundAlias != "" {
 						b.WriteString(c.OUpperBoundAlias)

@@ -422,14 +422,26 @@ func (p *queryPlan) addSpecifiedData(ctx context.Context, r table.Row, cls *sema
 func (p *queryPlan) specifyClauseWithTable(ctx context.Context, cls *semantic.GraphClause, lo *storage.LookupOptions) error {
 	rws := p.tbl.Rows()
 	p.tbl.Truncate()
-	for _, r := range rws {
-		tmpCls := &semantic.GraphClause{}
-		*tmpCls = *cls
-		if err := p.addSpecifiedData(ctx, r, tmpCls, lo); err != nil {
-			return err
-		}
+	var (
+		gErr error
+		mu   sync.Mutex
+		wg   sync.WaitGroup
+	)
+	for _, tmpRow := range rws {
+		wg.Add(1)
+		go func(r table.Row) {
+			defer wg.Done()
+			tmpCls := &semantic.GraphClause{}
+			*tmpCls = *cls
+			if err := p.addSpecifiedData(ctx, r, tmpCls, lo); err != nil {
+				mu.Lock()
+				gErr = err
+				mu.Unlock()
+			}
+		}(tmpRow)
 	}
-	return nil
+	wg.Wait()
+	return gErr
 }
 
 // cellToObject returns an object for the given cell.
@@ -461,100 +473,164 @@ func cellToObject(c *table.Cell) (*triple.Object, error) {
 func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphClause, lo *storage.LookupOptions) error {
 	data := p.tbl.Rows()
 	p.tbl.Truncate()
-	for _, r := range data {
-		sbj, prd, obj := cls.S, cls.P, cls.O
-		// Attempt to rebind the subject.
-		if sbj == nil && p.tbl.HasBinding(cls.SBinding) {
-			v, ok := r[cls.SBinding]
-			if !ok {
-				return fmt.Errorf("row %+v misses binding %q", r, cls.SBinding)
-			}
-			if v.N == nil {
-				return fmt.Errorf("binding %q requires a node, got %+v instead", cls.SBinding, v)
-			}
-			sbj = v.N
+	var (
+		gErr error
+		mu   sync.RWMutex
+		wg   sync.WaitGroup
+	)
+	for _, tmp := range data {
+		mu.RLock()
+		if gErr != nil {
+			// Try to stop early if an error occurred and we are still ussuing requests.
+			mu.RUnlock()
+			break
 		}
-		if sbj == nil && p.tbl.HasBinding(cls.SAlias) {
-			v, ok := r[cls.SAlias]
-			if !ok {
-				return fmt.Errorf("row %+v misses binding %q", r, cls.SAlias)
+		mu.RUnlock()
+		wg.Add(1)
+		go func(r table.Row, cls semantic.GraphClause) {
+			defer wg.Done()
+			sbj, prd, obj := cls.S, cls.P, cls.O
+			// Attempt to rebind the subject.
+			if sbj == nil && p.tbl.HasBinding(cls.SBinding) {
+				v, ok := r[cls.SBinding]
+				if !ok {
+					mu.Lock()
+					gErr = fmt.Errorf("row %+v misses binding %q", r, cls.SBinding)
+					mu.Unlock()
+					return
+				}
+				if v.N == nil {
+					mu.Lock()
+					gErr = fmt.Errorf("binding %q requires a node, got %+v instead", cls.SBinding, v)
+					mu.Unlock()
+					return
+				}
+				sbj = v.N
 			}
-			if v.N == nil {
-				return fmt.Errorf("binding %q requires a node, got %+v instead", cls.SAlias, v)
+			if sbj == nil && p.tbl.HasBinding(cls.SAlias) {
+				v, ok := r[cls.SAlias]
+				if !ok {
+					mu.Lock()
+					gErr = fmt.Errorf("row %+v misses binding %q", r, cls.SAlias)
+					mu.Unlock()
+					return
+				}
+				if v.N == nil {
+					mu.Lock()
+					gErr = fmt.Errorf("binding %q requires a node, got %+v instead", cls.SAlias, v)
+					mu.Unlock()
+					return
+				}
+				sbj = v.N
 			}
-			sbj = v.N
-		}
-		// Attempt to rebind the predicate.
-		if prd == nil && p.tbl.HasBinding(cls.PBinding) {
-			v, ok := r[cls.PBinding]
-			if !ok {
-				return fmt.Errorf("row %+v misses binding %q", r, cls.PBinding)
+			// Attempt to rebind the predicate.
+			if prd == nil && p.tbl.HasBinding(cls.PBinding) {
+				v, ok := r[cls.PBinding]
+				if !ok {
+					mu.Lock()
+					gErr = fmt.Errorf("row %+v misses binding %q", r, cls.PBinding)
+					mu.Unlock()
+					return
+				}
+				if v.P == nil {
+					mu.Lock()
+					gErr = fmt.Errorf("binding %q requires a predicate, got %+v instead", cls.PBinding, v)
+					mu.Unlock()
+					return
+				}
+				prd = v.P
 			}
-			if v.P == nil {
-				return fmt.Errorf("binding %q requires a predicate, got %+v instead", cls.PBinding, v)
+			if prd == nil && p.tbl.HasBinding(cls.PAlias) {
+				v, ok := r[cls.PAlias]
+				if !ok {
+					mu.Lock()
+					gErr = fmt.Errorf("row %+v misses binding %q", r, cls.SAlias)
+					mu.Unlock()
+					return
+				}
+				if v.N == nil {
+					mu.Lock()
+					gErr = fmt.Errorf("binding %q requires a predicate, got %+v instead", cls.SAlias, v)
+					mu.Unlock()
+					return
+				}
+				prd = v.P
 			}
-			prd = v.P
-		}
-		if prd == nil && p.tbl.HasBinding(cls.PAlias) {
-			v, ok := r[cls.PAlias]
-			if !ok {
-				return fmt.Errorf("row %+v misses binding %q", r, cls.SAlias)
+			// Attempt to rebind the object.
+			if obj == nil && p.tbl.HasBinding(cls.OBinding) {
+				v, ok := r[cls.OBinding]
+				if !ok {
+					mu.Lock()
+					gErr = fmt.Errorf("row %+v misses binding %q", r, cls.OBinding)
+					mu.Unlock()
+					return
+				}
+				co, err := cellToObject(v)
+				if err != nil {
+					mu.Lock()
+					gErr = err
+					mu.Unlock()
+				}
+				obj = co
 			}
-			if v.N == nil {
-				return fmt.Errorf("binding %q requires a predicate, got %+v instead", cls.SAlias, v)
+			if obj == nil && p.tbl.HasBinding(cls.OAlias) {
+				v, ok := r[cls.OAlias]
+				if !ok {
+					mu.Unlock()
+					gErr = fmt.Errorf("row %+v misses binding %q", r, cls.OAlias)
+					mu.Unlock()
+					return
+				}
+				if v.N == nil {
+					mu.Lock()
+					gErr = fmt.Errorf("binding %q requires a object, got %+v instead", cls.OAlias, v)
+					mu.Unlock()
+					return
+				}
+				co, err := cellToObject(v)
+				if err != nil {
+					mu.Lock()
+					gErr = err
+					mu.Unlock()
+					return
+				}
+				obj = co
 			}
-			prd = v.P
-		}
-		// Attempt to rebind the object.
-		if obj == nil && p.tbl.HasBinding(cls.OBinding) {
-			v, ok := r[cls.OBinding]
-			if !ok {
-				return fmt.Errorf("row %+v misses binding %q", r, cls.OBinding)
+			// Attempt to filter.
+			if sbj == nil || prd == nil || obj == nil {
+				mu.Lock()
+				gErr = fmt.Errorf("failed to fully specify clause %v for row %+v", cls, r)
+				mu.Unlock()
+				return
 			}
-			co, err := cellToObject(v)
-			if err != nil {
-				return err
+			exist := false
+			for _, g := range p.stm.InputGraphs() {
+				t, err := triple.New(sbj, prd, obj)
+				if err != nil {
+					mu.Lock()
+					gErr = err
+					mu.Unlock()
+					return
+				}
+				b, err := g.Exist(ctx, t)
+				if err != nil {
+					mu.Lock()
+					gErr = err
+					mu.Unlock()
+					return
+				}
+				exist = exist || b
+				if exist {
+					break
+				}
 			}
-			obj = co
-		}
-		if obj == nil && p.tbl.HasBinding(cls.OAlias) {
-			v, ok := r[cls.OAlias]
-			if !ok {
-				return fmt.Errorf("row %+v misses binding %q", r, cls.OAlias)
-			}
-			if v.N == nil {
-				return fmt.Errorf("binding %q requires a object, got %+v instead", cls.OAlias, v)
-			}
-			co, err := cellToObject(v)
-			if err != nil {
-				return err
-			}
-			obj = co
-		}
-		// Attempt to filter.
-		if sbj == nil || prd == nil || obj == nil {
-			return fmt.Errorf("failed to fully specify clause %v for row %+v", cls, r)
-		}
-		exist := false
-		for _, g := range p.stm.InputGraphs() {
-			t, err := triple.New(sbj, prd, obj)
-			if err != nil {
-				return err
-			}
-			b, err := g.Exist(ctx, t)
-			if err != nil {
-				return err
-			}
-			exist = exist || b
 			if exist {
-				break
+				p.tbl.AddRow(r)
 			}
-		}
-		if exist {
-			p.tbl.AddRow(r)
-		}
+		}(tmp, *cls)
 	}
-	return nil
+	wg.Wait()
+	return gErr
 }
 
 // processGraphPattern process the query graph pattern to retrieve the

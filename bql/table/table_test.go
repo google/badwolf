@@ -827,16 +827,16 @@ func TestFullGroupRangeReduce(t *testing.T) {
 		},
 	}
 	for _, entry := range testTable {
-		got, err := entry.tbl.fullGroupRangeReduce(0, entry.tbl.NumRows(), entry.red)
+		got, err := entry.tbl.unsafeFullGroupRangeReduce(0, entry.tbl.NumRows(), entry.red)
 		want := entry.want
 		if want != nil && err != nil {
-			t.Errorf("table.fullGroupRangeReduce failed %q to compute reduced row with error %v", entry.id, err)
+			t.Errorf("table.unsafeFullGroupRangeReduce failed %q to compute reduced row with error %v", entry.id, err)
 		}
 		if want == nil && err == nil {
-			t.Errorf("table.fullGroupRangeReduce should have failed %q to reduced row; instead it produced\n%v", entry.id, got)
+			t.Errorf("table.unsafeFullGroupRangeReduce should have failed %q to reduced row; instead it produced\n%v", entry.id, got)
 		}
 		if want != nil && !reflect.DeepEqual(got, want) {
-			t.Errorf("table.fullGroupRangeReduce failed to produce correct reduce row in %q; got\n%s, want\n%s", entry.id, got, want)
+			t.Errorf("table.unsafeFullGroupRangeReduce failed to produce correct reduce row in %q; got\n%s, want\n%s", entry.id, got, want)
 		}
 	}
 }
