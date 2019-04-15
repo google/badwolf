@@ -20,6 +20,29 @@ import (
 	"time"
 )
 
+type event struct {
+	w    io.Writer
+	msgs func() []string
+}
+
+var c chan *event
+
+func init() {
+	c = make(chan *event, 10000) // Large enought to avoid blocking as much as possible.
+
+	go func() {
+		for e := range c {
+			for _, msg := range e.msgs() {
+				e.w.Write([]byte("["))
+				e.w.Write([]byte(time.Now().Format("2006-01-02T15:04:05.999999-07:00")))
+				e.w.Write([]byte("] "))
+				e.w.Write([]byte(msg))
+				e.w.Write([]byte("\n"))
+			}
+		}
+	}()
+}
+
 // Trace attempts to write a trace if a valid writer is provided. The
 // tracer is lazy on the string generation to avoid adding too much
 // overhead when tracing ins not on.
@@ -27,11 +50,5 @@ func Trace(w io.Writer, msgs func() []string) {
 	if w == nil {
 		return
 	}
-	for _, msg := range msgs() {
-		w.Write([]byte("["))
-		w.Write([]byte(time.Now().Format("2006-01-02T15:04:05.999999-07:00")))
-		w.Write([]byte("] "))
-		w.Write([]byte(msg))
-		w.Write([]byte("\n"))
-	}
+	c <- &event{w, msgs}
 }
