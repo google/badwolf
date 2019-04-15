@@ -185,7 +185,7 @@ func (t *Table) ProjectBindings(bs []string) error {
 	}
 	for _, b := range bs {
 		if !t.mbs[b] {
-			return fmt.Errorf("cannot project against unknow binding %s; known bindinds are %v", b, t.AvailableBindings)
+			return fmt.Errorf("cannot project against unknown binding %s; known bindinds are %v", b, t.AvailableBindings)
 		}
 	}
 	t.AvailableBindings = []string{}
