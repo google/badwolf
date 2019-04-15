@@ -932,6 +932,55 @@ func TestChaining(t *testing.T) {
 	}
 }
 
+func BenchmarkChaining(b *testing.B) {
+	// Graph traversal data.
+	traversalTriples := `/u<joe> "parent_of"@[] /u<mary>
+		/u<joe> "parent_of"@[] /u<peter>
+		/u<peter> "parent_of"@[] /u<john>
+		/u<peter> "parent_of"@[] /u<eve>`
+
+	traversalQuery := `SELECT ?o FROM ?test
+	                   WHERE {
+	                       /u<joe> "parent_of"@[] ?o .
+		                   ?o "parent_of"@[] /u<john>
+	                   };`
+
+	// Load traversing data
+	s, ctx := memory.NewStore(), context.Background()
+	g, gErr := s.NewGraph(ctx, "?test")
+	if gErr != nil {
+		b.Fatalf("memory.NewGraph failed to create \"?test\" with error %v", gErr)
+	}
+	buf := bytes.NewBufferString(traversalTriples)
+	if _, err := io.ReadIntoGraph(ctx, g, buf, literal.DefaultBuilder()); err != nil {
+		b.Fatalf("io.ReadIntoGraph failed to read test graph with error %v", err)
+	}
+	for n := 0; n < b.N; n++ {
+		p, pErr := grammar.NewParser(grammar.SemanticBQL())
+		if pErr != nil {
+			b.Fatalf("grammar.NewParser: should have produced a valid BQL parser with error %v", pErr)
+		}
+		st := &semantic.Statement{}
+		if err := p.Parse(grammar.NewLLk(traversalQuery, 1), st); err != nil {
+			b.Errorf("Parser.consume: failed to parse query %q with error %v", traversalQuery, err)
+		}
+		plnr, err := New(ctx, s, st, 0, 10, nil)
+		if err != nil {
+			b.Errorf("planner.New failed to create a valid query plan with error %v", err)
+		}
+		tbl, err := plnr.Execute(ctx)
+		if err != nil {
+			b.Errorf("planner.Execute failed for query %q with error %v", traversalQuery, err)
+		}
+		if got, want := len(tbl.Bindings()), 1; got != want {
+			b.Errorf("tbl.Bindings returned the wrong number of bindings for %q; got %d, want %d", traversalQuery, got, want)
+		}
+		if got, want := len(tbl.Rows()), 1; got != want {
+			b.Errorf("planner.Execute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", traversalQuery, got, want, tbl)
+		}
+	}
+}
+
 // Test to validate https://github.com/google/badwolf/issues/70
 func TestReificationResolutionIssue70(t *testing.T) {
 	// Graph traversal data.
