@@ -433,6 +433,7 @@ func (p *queryPlan) specifyClauseWithTable(ctx context.Context, cls *semantic.Gr
 			defer wg.Done()
 			tmpCls := &semantic.GraphClause{}
 			*tmpCls = *cls
+			// The table manipulations are now thread safe.
 			if err := p.addSpecifiedData(ctx, r, tmpCls, lo); err != nil {
 				mu.Lock()
 				gErr = err
