@@ -51,13 +51,13 @@ func (l *LookupOptions) String() string {
 	b.WriteString(strconv.Itoa(l.MaxElements))
 	b.WriteString(", lower_anchor=")
 	if l.LowerAnchor != nil {
-		b.WriteString(l.LowerAnchor.String())
+		b.WriteString(l.LowerAnchor.Format(time.RFC3339Nano))
 	} else {
 		b.WriteString("nil")
 	}
 	b.WriteString(", upper_anchor=")
 	if l.UpperAnchor != nil {
-		b.WriteString(l.UpperAnchor.String())
+		b.WriteString(l.UpperAnchor.Format(time.RFC3339Nano))
 	} else {
 		b.WriteString("nil")
 	}
