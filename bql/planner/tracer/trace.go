@@ -22,6 +22,7 @@ import (
 
 type event struct {
 	w    io.Writer
+	t    time.Time
 	msgs func() []string
 }
 
@@ -34,7 +35,7 @@ func init() {
 		for e := range c {
 			for _, msg := range e.msgs() {
 				e.w.Write([]byte("["))
-				e.w.Write([]byte(time.Now().Format("2006-01-02T15:04:05.999999-07:00")))
+				e.w.Write([]byte(e.t.Format("2006-01-02T15:04:05.999999-07:00")))
 				e.w.Write([]byte("] "))
 				e.w.Write([]byte(msg))
 				e.w.Write([]byte("\n"))
@@ -50,5 +51,5 @@ func Trace(w io.Writer, msgs func() []string) {
 	if w == nil {
 		return
 	}
-	c <- &event{w, msgs}
+	c <- &event{w, time.Now(), msgs}
 }
