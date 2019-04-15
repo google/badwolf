@@ -681,7 +681,7 @@ func (s bySpecificity) Swap(i, j int) {
 
 // Less returns true if the i element is less specific than j one.
 func (s bySpecificity) Less(i, j int) bool {
-	return s[i].Specificity() > s[j].Specificity()
+	return s[i].Specificity() >= s[j].Specificity()
 }
 
 // SortedGraphPatternClauses return the list of graph pattern clauses

@@ -376,23 +376,37 @@ func (p *queryPlan) addSpecifiedData(ctx context.Context, r table.Row, cls *sema
 		}
 	}
 	if cls.P == nil {
-		v := getBoundValueForComponent(r, []string{cls.PBinding, cls.PAlias})
+		v := getBoundValueForComponent(r, []string{cls.PBinding, cls.PAlias, cls.PAnchorAlias})
+		full := false
 		if v != nil {
-			if v.N != nil {
+			if v.P != nil {
+				full = true
 				cls.P = v.P
 			}
+			if cls.PID != "" && v.T != nil {
+				p, err := predicate.NewTemporal(cls.PID, *v.T)
+				if err != nil {
+					return err
+				}
+				full = true
+				cls.P = p
+			}
 		}
-		nlo, err := updateTimeBoundsForRow(lo, cls, r)
-		if err != nil {
-			return err
+		if !full {
+			nlo, err := updateTimeBoundsForRow(lo, cls, r)
+			if err != nil {
+				return err
+			}
+			lo = nlo
 		}
-		lo = nlo
 	}
 	if cls.O == nil {
 		v := getBoundValueForComponent(r, []string{cls.OBinding, cls.OAlias})
+		found := false
 		if v != nil {
 			o, err := cellToObject(v)
 			if err == nil {
+				found = true
 				cls.O = o
 			}
 		}
@@ -401,6 +415,16 @@ func (p *queryPlan) addSpecifiedData(ctx context.Context, r table.Row, cls *sema
 			return err
 		}
 		lo = nlo
+		if !found && cls.OID != "" && cls.OAnchorAlias != "" {
+			v := getBoundValueForComponent(r, []string{cls.OAnchorAlias})
+			if v != nil && v.T != nil {
+				p, err := predicate.NewTemporal(cls.OID, *v.T)
+				if err != nil {
+					return err
+				}
+				cls.P = p
+			}
+		}
 	}
 	stmLimit := int64(0)
 	if len(p.stm.GraphPatternClauses()) == 1 && len(p.stm.GroupBy()) == 0 && len(p.stm.HavingExpression()) == 0 {
@@ -450,7 +474,6 @@ func (p *queryPlan) specifyClauseWithTable(ctx context.Context, cls *semantic.Gr
 			defer wg.Done()
 			tmpCls := &semantic.GraphClause{}
 			*tmpCls = *cls
-			refineTemporalPredicateIfNeeded(tmpCls, r)
 			// The table manipulations are now thread safe.
 			if err := p.addSpecifiedData(ctx, r, tmpCls, lo); err != nil {
 				mu.Lock()
