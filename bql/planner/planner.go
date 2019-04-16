@@ -283,7 +283,7 @@ func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statem
 		store:     store,
 		bndgs:     bs,
 		grfsNames: stm.InputGraphNames(),
-		cls:       stm.SortedGraphPatternClauses(),
+		cls:       stm.GraphPatternClauses(),
 		tbl:       t,
 		chanSize:  chanSize,
 		tracer:    w,
@@ -296,6 +296,9 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 	// This method decides how to process the clause based on the current
 	// list of bindings solved and data available.
 	if cls.Specificity() == 3 {
+		tracer.Trace(p.tracer, func() []string {
+			return []string{"Clause is fully specified"}
+		})
 		t, err := triple.New(cls.S, cls.P, cls.O)
 		if err != nil {
 			return false, err
@@ -309,14 +312,21 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 		}
 		return b, nil
 	}
+
 	exist, total := 0, 0
+	var existing []string
 	for _, b := range cls.Bindings() {
 		total++
 		if p.tbl.HasBinding(b) {
 			exist++
+			existing = append(existing, b)
 		}
 	}
+
 	if exist == 0 {
+		tracer.Trace(p.tracer, func() []string {
+			return []string{fmt.Sprintf("None of the clause binding exist %v/%v", cls.Bindings(), existing)}
+		})
 		// Data is new.
 		stmLimit := int64(0)
 		if len(p.stm.GraphPatternClauses()) == 1 && len(p.stm.GroupBy()) == 0 && len(p.stm.HavingExpression()) == 0 {
@@ -331,22 +341,11 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 		}
 		return false, p.tbl.AppendTable(tbl)
 	}
-	if exist > 0 && exist < total {
-		// Data is partially bound, retrieve data either extends the row with the
-		// new bindings or filters it out if now new bindings are available.
-		return false, p.specifyClauseWithTable(ctx, cls, lo)
-	}
-	if exist > 0 && exist == total {
-		// Since all bindings in the clause are already solved, the clause becomes a
-		// fully specified triple. If the triple does not exist the row will be
-		// deleted.
-		if cls.PTemporal && cls.PID != "" {
-			return false, p.specifyClauseWithTable(ctx, cls, lo)
-		}
-		return false, p.filterOnExistence(ctx, cls, lo)
-	}
-	// Something is wrong with the code.
-	return false, fmt.Errorf("queryPlan.processClause(%v) should have never failed to resolve the clause", cls)
+
+	tracer.Trace(p.tracer, func() []string {
+		return []string{fmt.Sprintf("Some clause binding exist %v/%v", cls.Bindings(), existing)}
+	})
+	return false, p.specifyClauseWithTable(ctx, cls, lo)
 }
 
 // getBoundValueForComponent return the unique bound value if available on
@@ -375,38 +374,44 @@ func (p *queryPlan) addSpecifiedData(ctx context.Context, r table.Row, cls *sema
 			}
 		}
 	}
-	if cls.P == nil {
-		v := getBoundValueForComponent(r, []string{cls.PBinding, cls.PAlias, cls.PAnchorAlias})
-		full := false
-		if v != nil {
-			if v.P != nil {
-				full = true
-				cls.P = v.P
-			}
-			if cls.PID != "" && v.T != nil {
-				p, err := predicate.NewTemporal(cls.PID, *v.T)
-				if err != nil {
-					return err
-				}
-				full = true
-				cls.P = p
-			}
-		}
-		if !full {
-			nlo, err := updateTimeBoundsForRow(lo, cls, r)
+	if cls.P == nil && cls.PID != "" && cls.PAnchorBinding != "" {
+		v := r[cls.PAnchorBinding]
+		if v != nil && v.T != nil {
+			p, err := predicate.NewTemporal(cls.PID, *v.T)
 			if err != nil {
 				return err
 			}
-			lo = nlo
+			cls.P = p
+		}
+	}
+	if cls.P == nil {
+		v := getBoundValueForComponent(r, []string{cls.PBinding, cls.PAlias})
+		if v != nil {
+			if v.P != nil {
+				cls.P = v.P
+			}
+		}
+		nlo, err := updateTimeBoundsForRow(lo, cls, r)
+		if err != nil {
+			return err
+		}
+		lo = nlo
+	}
+	if cls.O == nil && cls.OID != "" && cls.OAnchorBinding != "" {
+		v := r[cls.OAnchorBinding]
+		if v != nil && v.T != nil {
+			p, err := predicate.NewTemporal(cls.OID, *v.T)
+			if err != nil {
+				return err
+			}
+			cls.O = triple.NewPredicateObject(p)
 		}
 	}
 	if cls.O == nil {
 		v := getBoundValueForComponent(r, []string{cls.OBinding, cls.OAlias})
-		found := false
 		if v != nil {
 			o, err := cellToObject(v)
 			if err == nil {
-				found = true
 				cls.O = o
 			}
 		}
@@ -415,17 +420,13 @@ func (p *queryPlan) addSpecifiedData(ctx context.Context, r table.Row, cls *sema
 			return err
 		}
 		lo = nlo
-		if !found && cls.OID != "" && cls.OAnchorAlias != "" {
-			v := getBoundValueForComponent(r, []string{cls.OAnchorAlias})
-			if v != nil && v.T != nil {
-				p, err := predicate.NewTemporal(cls.OID, *v.T)
-				if err != nil {
-					return err
-				}
-				cls.P = p
-			}
-		}
 	}
+
+	tracer.Trace(p.tracer, func() []string {
+		cls := *cls
+		return []string{fmt.Sprintf("Corrected clause: %v", &cls)}
+	})
+
 	stmLimit := int64(0)
 	if len(p.stm.GraphPatternClauses()) == 1 && len(p.stm.GroupBy()) == 0 && len(p.stm.HavingExpression()) == 0 {
 		stmLimit = p.stm.Limit()
@@ -455,10 +456,9 @@ func (p *queryPlan) specifyClauseWithTable(ctx context.Context, cls *semantic.Gr
 		wg.Add(1)
 		go func(r table.Row) {
 			defer wg.Done()
-			tmpCls := &semantic.GraphClause{}
-			*tmpCls = *cls
+			var tmpCls = *cls
 			// The table manipulations are now thread safe.
-			if err := p.addSpecifiedData(ctx, r, tmpCls, lo); err != nil {
+			if err := p.addSpecifiedData(ctx, r, &tmpCls, lo); err != nil {
 				mu.Lock()
 				gErr = err
 				mu.Unlock()
@@ -661,13 +661,21 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 // processGraphPattern process the query graph pattern to retrieve the
 // data from the specified graphs.
 func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupOptions) error {
-	for _, cls := range p.cls {
+	tracer.Trace(p.tracer, func() []string {
+		var res []string
+		for i, cls := range p.cls {
+			res = append(res, fmt.Sprintf("Clause %d to process: %v", i, cls))
+		}
+		return res
+	})
+	for i, c := range p.cls {
+		i, cls := i, *c
 		tracer.Trace(p.tracer, func() []string {
-			return []string{"Processing graph clause " + cls.String()}
+			return []string{fmt.Sprintf("Processing clause %d: %v", i, &cls)}
 		})
 		// The current planner is based on naively executing clauses by
 		// specificity.
-		unresolvable, err := p.processClause(ctx, cls, lo)
+		unresolvable, err := p.processClause(ctx, &cls, lo)
 		if err != nil {
 			return err
 		}

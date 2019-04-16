@@ -244,6 +244,10 @@ func (c *GraphClause) String() string {
 		b.WriteString(" ID ")
 		b.WriteString(c.PIDAlias)
 	}
+	if c.PAnchorAlias != "" {
+		b.WriteString(" AT ")
+		b.WriteString(c.PAnchorAlias)
+	}
 
 	// Object section.
 	// Node portion.
@@ -252,22 +256,6 @@ func (c *GraphClause) String() string {
 		b.WriteString(" ")
 		b.WriteString(c.O.String())
 		object = true
-	} else {
-		b.WriteString(" ")
-		b.WriteString(c.OBinding)
-		object = true
-	}
-	if c.OAlias != "" {
-		b.WriteString(" AS ")
-		b.WriteString(c.OAlias)
-	}
-	if c.OTypeAlias != "" {
-		b.WriteString(" TYPE ")
-		b.WriteString(c.OTypeAlias)
-	}
-	if c.OIDAlias != "" {
-		b.WriteString(" ID ")
-		b.WriteString(c.OIDAlias)
 	}
 	// Predicate portion.
 	if !object {
@@ -309,6 +297,22 @@ func (c *GraphClause) String() string {
 			}
 			b.WriteString("]")
 		}
+	}
+	if c.OAlias != "" {
+		b.WriteString(" AS ")
+		b.WriteString(c.OAlias)
+	}
+	if c.OTypeAlias != "" {
+		b.WriteString(" TYPE ")
+		b.WriteString(c.OTypeAlias)
+	}
+	if c.OIDAlias != "" {
+		b.WriteString(" ID ")
+		b.WriteString(c.OIDAlias)
+	}
+	if c.OAnchorAlias != "" {
+		b.WriteString(" AT ")
+		b.WriteString(c.OAnchorAlias)
 	}
 
 	if c.OAlias != "" {
