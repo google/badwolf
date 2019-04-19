@@ -764,7 +764,10 @@ func (g *graphMemoizer) TriplesForPredicateAndObject(ctx context.Context, p *pre
 // Exist checks if the provided triple exists on the store.
 func (g *graphMemoizer) Exist(ctx context.Context, t *triple.Triple) (bool, error) {
 	k := combinedUUID("Exist", storage.DefaultLookup, t.UUID())
-	if v, ok := g.memE[k]; ok {
+	g.mu.RLock()
+	v, ok := g.memE[k]
+	g.mu.RUnlock()
+	if ok {
 		// Return the memoized results.
 		return v, nil
 	}
