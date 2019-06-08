@@ -107,6 +107,8 @@ type Statement struct {
 
 // GraphClause represents a clause of a graph pattern in a where clause.
 type GraphClause struct {
+	Optional bool // This will be set to true if the clause is optional.
+
 	S          *node.Node
 	SBinding   string
 	SAlias     string

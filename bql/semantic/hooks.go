@@ -38,10 +38,10 @@ type ElementHook func(*Statement, ConsumedElement) (ElementHook, error)
 
 var (
 	// predicateRegexp contains the regular expression for not fully defined predicates.
-	predicateRegexp *regexp.Regexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?\]$`)
+	predicateRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?\]$`)
 
 	// boundRegexp contains the regular expression for not fully defined predicate bounds.
-	boundRegexp *regexp.Regexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?,"?([^\]"]*)"?\]$`)
+	boundRegexp = regexp.MustCompile(`^"(.+)"@\["?([^\]"]*)"?,"?([^\]"]*)"?\]$`)
 )
 
 // DataAccumulatorHook returns the singleton for data accumulation.
@@ -355,6 +355,11 @@ func whereSubjectClause() ElementHook {
 		tkn := ce.Token()
 		c := st.WorkingClause()
 		switch tkn.Type {
+		case lexer.ItemOptional:
+			if c.S != nil {
+				return nil, fmt.Errorf("invalid node in where clause that already has a subject; current %v, got %v", c.S, tkn.Type)
+			}
+			c.Optional = true
 		case lexer.ItemNode:
 			if c.S != nil {
 				return nil, fmt.Errorf("invalid node in where clause that already has a subject; current %v, got %v", c.S, tkn.Type)
