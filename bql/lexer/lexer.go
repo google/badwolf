@@ -135,6 +135,8 @@ const (
 	ItemShow
 	// ItemGraphs represent the graphs keyword.
 	ItemGraphs
+	// ItemOptional identifies optional graph pattern clauses.
+	ItemOptional
 )
 
 func (tt TokenType) String() string {

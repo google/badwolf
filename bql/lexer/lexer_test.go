@@ -16,6 +16,75 @@ package lexer
 
 import "testing"
 
+func TestTokenTypeString(t *testing.T) {
+	table := []struct {
+		tt   TokenType
+		want string
+	}{
+		{ItemError, "ERROR"},
+		{ItemEOF, "EOF"},
+		{ItemQuery, "QUERY"},
+		{ItemInsert, "INSERT"},
+		{ItemDelete, "DELETE"},
+		{ItemCreate, "CREATE"},
+		{ItemConstruct, "CONSTRUCT"},
+		{ItemDeconstruct, "DECONSTRUCT"},
+		{ItemDrop, "DROP"},
+		{ItemGraph, "Graph"},
+		{ItemData, "DATA"},
+		{ItemInto, "INTO"},
+		{ItemFrom, "FROM"},
+		{ItemWhere, "WHERE"},
+		{ItemCount, "COUNT"},
+		{ItemSum, "SUM"},
+		{ItemGroup, "GROUP"},
+		{ItemBy, "BY"},
+		{ItemHaving, "HAVING"},
+		{ItemOrder, "ORDER"},
+		{ItemAsc, "ASC"},
+		{ItemDesc, "DESC"},
+		{ItemLimit, "LIMIT"},
+		{ItemAs, "AS"},
+		{ItemBefore, "BEFORE"},
+		{ItemAfter, "AFTER"},
+		{ItemBetween, "BETWEEN"},
+		{ItemBinding, "BINDING"},
+		{ItemNode, "NODE"},
+		{ItemBlankNode, "BLANK_NODE"},
+		{ItemLiteral, "LITERAL"},
+		{ItemPredicate, "PREDICATE"},
+		{ItemPredicateBound, "PREDICATE_BOUND"},
+		{ItemLBracket, "LEFT_BRACKET"},
+		{ItemRBracket, "RIGHT_BRACKET"},
+		{ItemLPar, "LEFT_PARENT"},
+		{ItemRPar, "RIGHT_PARENT"},
+		{ItemDot, "DOT"},
+		{ItemSemicolon, "SEMICOLON"},
+		{ItemComma, "COMMA"},
+		{ItemLT, "LT"},
+		{ItemGT, "GT"},
+		{ItemEQ, "EQ"},
+		{ItemNot, "NOT"},
+		{ItemAnd, "AND"},
+		{ItemOr, "OR"},
+		{ItemID, "ID"},
+		{ItemType, "TYPE"},
+		{ItemAt, "AT"},
+		{ItemIn, "IN"},
+		{ItemDistinct, "DISTINCT"},
+		{ItemShow, "SHOW"},
+		{ItemGraphs, "GRAPHS"},
+		{ItemOptional, "OPTIONAL"},
+		{TokenType(-1), "UNKNOWN"},
+	}
+
+	for i, entry := range table {
+		if got, want := entry.tt.String(), entry.want; got != want {
+			t.Errorf("[case %d] failed; got %v, want %v", i, got, want)
+		}
+	}
+}
+
 func TestIndividualTokens(t *testing.T) {
 	table := []struct {
 		input  string
