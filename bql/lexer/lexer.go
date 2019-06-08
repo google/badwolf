@@ -247,6 +247,8 @@ func (tt TokenType) String() string {
 		return "SHOW"
 	case ItemGraphs:
 		return "GRAPHS"
+	case ItemOptional:
+		return "OPTIONAL"
 	default:
 		return "UNKNOWN"
 	}
@@ -287,6 +289,7 @@ const (
 	into           = "into"
 	from           = "from"
 	where          = "where"
+	optional       = "optional"
 	as             = "as"
 	before         = "before"
 	after          = "after"
@@ -595,6 +598,10 @@ func lexKeyword(l *lexer) stateFn {
 	}
 	if strings.EqualFold(input, id) {
 		consumeKeyword(l, ItemID)
+		return lexSpace
+	}
+	if strings.EqualFold(input, optional) {
+		consumeKeyword(l, ItemOptional)
 		return lexSpace
 	}
 	if strings.EqualFold(input, typeKeyword) {

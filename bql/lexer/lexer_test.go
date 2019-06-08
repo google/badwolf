@@ -116,7 +116,7 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemEOF}}},
 		{`SeLeCt FrOm WhErE As BeFoRe AfTeR BeTwEeN CoUnT SuM GrOuP bY HaViNg LiMiT
 		  OrDeR AsC DeSc NoT AnD Or Id TyPe At DiStInCt InSeRt DeLeTe DaTa InTo
-		  cONsTruCT CrEaTe DrOp GrApH`,
+		  cONsTruCT CrEaTe DrOp GrApH OpTiOnAl`,
 			[]Token{
 				{Type: ItemQuery, Text: "SeLeCt"},
 				{Type: ItemFrom, Text: "FrOm"},
@@ -149,6 +149,7 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemCreate, Text: "CrEaTe"},
 				{Type: ItemDrop, Text: "DrOp"},
 				{Type: ItemGraph, Text: "GrApH"},
+				{Type: ItemOptional, Text: "OpTiOnAl"},
 				{Type: ItemEOF}}},
 		{"/_<foo>/_<bar>",
 			[]Token{
@@ -224,6 +225,10 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemPredicateBound, Text: `"p4"@[,"b"]`},
 				{Type: ItemPredicateBound, Text: `"p4"@[,]`},
 				{Type: ItemEOF}}},
+		{`"p\"1"@[]`,
+			[]Token{
+				{Type: ItemPredicate, Text: `"p\"1"@[]`},
+				{Type: ItemEOF}}},
 		{`"p1"@]`,
 			[]Token{
 				{Type: ItemError,
@@ -245,6 +250,10 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemNode, Text: `/room<000>`},
 				{Type: ItemPredicate, Text: `"connects_to"@[]`},
 				{Type: ItemNode, Text: `/room<001>`},
+				{Type: ItemEOF}}},
+		{`"Hallway\"1\""^^type:text`,
+			[]Token{
+				{Type: ItemLiteral, Text: `"Hallway\"1\""^^type:text`},
 				{Type: ItemEOF}}},
 	}
 
