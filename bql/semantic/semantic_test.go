@@ -24,6 +24,30 @@ import (
 	"github.com/google/badwolf/triple/predicate"
 )
 
+func TestStamentTypeString(t *testing.T) {
+
+	table := []struct {
+		tt   StatementType
+		want string
+	}{
+		{Query, "QUERY"},
+		{Insert, "INSERT"},
+		{Delete, "DELETE"},
+		{Create, "CREATE"},
+		{Drop, "DROP"},
+		{Construct, "CONSTRUCT"},
+		{Deconstruct, "DECONSTRUCT"},
+		{Show, "SHOW"},
+		{StatementType(-1), "UNKNOWN"},
+	}
+
+	for i, entry := range table {
+		if got, want := entry.tt.String(), entry.want; got != want {
+			t.Errorf("[case %d] failed; got %v, want %v", i, got, want)
+		}
+	}
+}
+
 func TestStatementType(t *testing.T) {
 	st := &Statement{}
 	st.BindType(Query)
