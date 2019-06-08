@@ -83,6 +83,16 @@ func TestAcceptByParse(t *testing.T) {
 		`select ?a from ?b where {?s ?p ?o} between ""@["123"], ""@["123"];`,
 		// Test limit clause.
 		`select ?a from ?b where {?s ?p ?o} limit "10"^^type:int64;`,
+		// Test optional clauses.
+		`select ?a from ?b where {
+			?s ?p ?o .
+			optional {?x ?w ?z }
+		};`,
+		`select ?a from ?b where {
+			?s ?p ?o .
+			optional {?x ?w ?z } .
+			optional {?x ?w ?z }
+		};`,
 		// Insert data.
 		`insert data into ?a {/_<foo> "bar"@["1234"] /_<foo>};`,
 		`insert data into ?a {/_<foo> "bar"@["1234"] "bar"@["1234"]};`,
@@ -227,6 +237,14 @@ func TestRejectByParse(t *testing.T) {
 		// Test limit clause.
 		`select ?a from ?b where {?s ?p ?o} limit ?b;`,
 		`select ?a from ?b where {?s ?p ?o} limit ;`,
+		// Test optional clauses.
+		`select ?a from ?b where {
+			optional {?x ?w ?z }
+		};`,
+		`select ?a from ?b where {
+			?s ?p ?o .
+			optional {?x ?w ?z .?x ?w ?z }
+		};`,
 		// Insert incomplete data.
 		`insert data into ?a {"bar"@["1234"] /_<foo>};`,
 		`insert data into ?a {/_<foo> "bar"@["1234"]};`,

@@ -255,12 +255,12 @@ func BQL() *Grammar {
 				Elements: []Element{
 					NewTokenType(lexer.ItemWhere),
 					NewTokenType(lexer.ItemLBracket),
-					NewSymbol("CLAUSES"),
+					NewSymbol("FIRST_CLAUSE"),
 					NewTokenType(lexer.ItemRBracket),
 				},
 			},
 		},
-		"CLAUSES": []*Clause{
+		"FIRST_CLAUSE": []*Clause{
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemNode),
@@ -277,6 +277,53 @@ func BQL() *Grammar {
 					NewSymbol("PREDICATE"),
 					NewSymbol("OBJECT"),
 					NewSymbol("MORE_CLAUSES"),
+				},
+			},
+		},
+		"CLAUSES": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemOptional),
+					NewTokenType(lexer.ItemLBracket),
+					NewSymbol("OPTIONAL_CLAUSE"),
+					NewTokenType(lexer.ItemRBracket),
+					NewSymbol("MORE_CLAUSES"),
+				},
+			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemNode),
+					NewSymbol("SUBJECT_EXTRACT"),
+					NewSymbol("PREDICATE"),
+					NewSymbol("OBJECT"),
+					NewSymbol("MORE_CLAUSES"),
+				},
+			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemBinding),
+					NewSymbol("SUBJECT_EXTRACT"),
+					NewSymbol("PREDICATE"),
+					NewSymbol("OBJECT"),
+					NewSymbol("MORE_CLAUSES"),
+				},
+			},
+		},
+		"OPTIONAL_CLAUSE": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemNode),
+					NewSymbol("SUBJECT_EXTRACT"),
+					NewSymbol("PREDICATE"),
+					NewSymbol("OBJECT"),
+				},
+			},
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemBinding),
+					NewSymbol("SUBJECT_EXTRACT"),
+					NewSymbol("PREDICATE"),
+					NewSymbol("OBJECT"),
 				},
 			},
 		},
@@ -999,12 +1046,12 @@ func SemanticBQL() *Grammar {
 	setClauseHook(semanticBQL, []semantic.Symbol{"WHERE"}, semantic.WhereInitWorkingClauseHook(), semantic.VarBindingsGraphChecker())
 
 	clauseSymbols := []semantic.Symbol{
-		"CLAUSES", "MORE_CLAUSES",
+		"FIRST_CLAUSE", "CLAUSES", "MORE_CLAUSES",
 	}
 	setClauseHook(semanticBQL, clauseSymbols, semantic.WhereNextWorkingClauseHook(), semantic.WhereNextWorkingClauseHook())
 
 	subSymbols := []semantic.Symbol{
-		"CLAUSES", "SUBJECT_EXTRACT", "SUBJECT_TYPE", "SUBJECT_ID",
+		"FIRST_CLAUSE", "CLAUSES", "SUBJECT_EXTRACT", "SUBJECT_TYPE", "SUBJECT_ID",
 	}
 	setElementHook(semanticBQL, subSymbols, semantic.WhereSubjectClauseHook(), nil)
 
