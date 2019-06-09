@@ -356,9 +356,6 @@ func whereSubjectClause() ElementHook {
 		c := st.WorkingClause()
 		switch tkn.Type {
 		case lexer.ItemOptional:
-			if c.S != nil {
-				return nil, fmt.Errorf("invalid node in where clause that already has a subject; current %v, got %v", c.S, tkn.Type)
-			}
 			c.Optional = true
 		case lexer.ItemNode:
 			if c.S != nil {

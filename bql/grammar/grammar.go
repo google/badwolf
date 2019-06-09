@@ -1051,13 +1051,13 @@ func SemanticBQL() *Grammar {
 	setClauseHook(semanticBQL, clauseSymbols, semantic.WhereNextWorkingClauseHook(), semantic.WhereNextWorkingClauseHook())
 
 	subSymbols := []semantic.Symbol{
-		"FIRST_CLAUSE", "CLAUSES", "SUBJECT_EXTRACT", "SUBJECT_TYPE", "SUBJECT_ID",
+		"FIRST_CLAUSE", "OPTIONAL_CLAUSE", "CLAUSES", "SUBJECT_EXTRACT", "SUBJECT_TYPE", "SUBJECT_ID",
 	}
 	setElementHook(semanticBQL, subSymbols, semantic.WhereSubjectClauseHook(), nil)
 
 	predSymbols := []semantic.Symbol{
-		"PREDICATE", "PREDICATE_AS", "PREDICATE_ID", "PREDICATE_AT", "PREDICATE_BOUND_AT",
-		"PREDICATE_BOUND_AT_BINDINGS", "PREDICATE_BOUND_AT_BINDINGS_END",
+		"OPTIONAL_CLAUSE", "PREDICATE", "PREDICATE_AS", "PREDICATE_ID", "PREDICATE_AT",
+		"PREDICATE_BOUND_AT", "PREDICATE_BOUND_AT_BINDINGS", "PREDICATE_BOUND_AT_BINDINGS_END",
 	}
 	setElementHook(semanticBQL, predSymbols, semantic.WherePredicateClauseHook(), nil)
 
