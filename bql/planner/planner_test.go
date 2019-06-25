@@ -497,28 +497,27 @@ func TestPlannerQuery(t *testing.T) {
 			nbs:  1,
 			nrws: 0,
 		},
-		/*
-			{
-				q: `SELECT ?car
+		{
+			q: `SELECT ?car
 				    FROM ?test
 				    WHERE {
 					   ?car "is_a"@[] /t<car> .
 					   OPTIONAL { /c<model O> "is_a"@[] /t<car> }
 					};`,
-				nbs:  1,
-				nrws: 1,
-			},
-			{
-				q: `SELECT ?car
+			nbs:  1,
+			nrws: 4,
+		},
+		{
+			q: `SELECT ?car
 				    FROM ?test
 				    WHERE {
 					   ?car "is_a"@[] /t<car> .
-					   OPTIONAL { ?car "maybe_a"@[] /t<car> }
+					   OPTIONAL { ?car "is_a"@[] /t<car> }
 					};`,
-				nbs:  1,
-				nrws: 1,
-			},
-		*/
+			nbs:  1,
+			nrws: 4,
+		},
+
 		/*
 			{
 				q: `SELECT ?car, ?owner

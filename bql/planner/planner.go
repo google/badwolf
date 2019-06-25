@@ -299,6 +299,9 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 		tracer.Trace(p.tracer, func() []string {
 			return []string{"Clause is fully specified"}
 		})
+		if cls.Optional && !cls.HasAlias() {
+			return false, nil
+		}
 		t, err := triple.New(cls.S, cls.P, cls.O)
 		if err != nil {
 			return false, err
@@ -309,9 +312,6 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 		}
 		if err := p.tbl.AppendTable(tbl); err != nil {
 			return b, err
-		}
-		if cls.Optional {
-			return false, nil
 		}
 		return b, nil
 	}
