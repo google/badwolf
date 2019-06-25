@@ -327,3 +327,56 @@ func TestInputOutputBindings(t *testing.T) {
 		t.Errorf("s.OutputBindings returned the wrong output bindings; got %v, want %v", got, want)
 	}
 }
+
+func TestHasAlias(t *testing.T) {
+	accept := []*GraphClause{
+		{
+			SAlias: "?t",
+		},
+		{
+			STypeAlias: "?t",
+		},
+		{
+			SIDAlias: "?t",
+		},
+		{
+			PAlias: "?t",
+		},
+		{
+			PIDAlias: "?t",
+		},
+		{
+			PAnchorAlias: "?t",
+		},
+		{
+			PLowerBoundAlias: "?t",
+		},
+		{
+			PUpperBoundAlias: "?t",
+		},
+		{
+			OAlias: "?t",
+		},
+		{
+			OTypeAlias: "?t",
+		},
+		{
+			OIDAlias: "?t",
+		},
+		{
+			OAnchorAlias: "?t",
+		},
+		{
+			OLowerBoundAlias: "?t",
+		},
+		{
+			OUpperBoundAlias: "?t",
+		},
+	}
+
+	for i, c := range accept {
+		if !c.HasAlias() {
+			t.Errorf("[case %d] failed to return true for clause %s", i, c.String())
+		}
+	}
+}

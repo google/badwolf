@@ -167,6 +167,14 @@ type ConstructPredicateObjectPair struct {
 	OTemporal      bool
 }
 
+// HasAlias returns true if the clause has alias.
+func (c *GraphClause) HasAlias() bool {
+	return c.SAlias != "" || c.STypeAlias != "" || c.SIDAlias != "" ||
+		c.PAlias != "" || c.PAnchorAlias != "" || c.PIDAlias != "" || c.PLowerBoundAlias != "" ||
+		c.PUpperBoundAlias != "" || c.OAlias != "" || c.OAnchorAlias != "" || c.OIDAlias != "" ||
+		c.OTypeAlias != "" || c.OLowerBoundAlias != "" || c.OUpperBoundAlias != ""
+}
+
 // String returns a readable representation of a graph clause.
 func (c *GraphClause) String() string {
 	b := bytes.NewBufferString("{ ")
