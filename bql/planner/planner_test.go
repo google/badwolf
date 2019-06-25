@@ -467,6 +467,80 @@ func TestPlannerQuery(t *testing.T) {
 			nbs:  1,
 			nrws: 1,
 		},
+		/*
+			/c<model s> "is_a"@[] /t<car>
+			/c<model x> "is_a"@[] /t<car>
+			/c<model y> "is_a"@[] /t<car>
+		*/
+		// OPTIONAL clauses.
+		{
+			q:    `SELECT ?car FROM ?test WHERE { ?car "is_a"@[] /t<car> };`,
+			nbs:  1,
+			nrws: 4,
+		},
+		{
+			q: `SELECT ?car 
+			    FROM ?test 
+			    WHERE { 
+				   /c<model s> as ?car "is_a"@[] /t<car> 
+				};`,
+			nbs:  1,
+			nrws: 1,
+		},
+		{
+			q: `SELECT ?car 
+			    FROM ?test 
+			    WHERE { 
+				   ?car "is_a"@[] /t<car> . 
+				   /c<model z> as ?car "is_a"@[] /t<car>
+				};`,
+			nbs:  1,
+			nrws: 0,
+		},
+		/*
+			{
+				q: `SELECT ?car
+				    FROM ?test
+				    WHERE {
+					   ?car "is_a"@[] /t<car> .
+					   OPTIONAL { /c<model O> "is_a"@[] /t<car> }
+					};`,
+				nbs:  1,
+				nrws: 1,
+			},
+			{
+				q: `SELECT ?car
+				    FROM ?test
+				    WHERE {
+					   ?car "is_a"@[] /t<car> .
+					   OPTIONAL { ?car "maybe_a"@[] /t<car> }
+					};`,
+				nbs:  1,
+				nrws: 1,
+			},
+		*/
+		/*
+			{
+				q: `SELECT ?car, ?owner
+					FROM ?test
+					WHERE {
+						?car "is_a"@[] /t<car> .
+						?owner "owns"@[] ?car
+					};`,
+				nbs:  2,
+				nrws: 0,
+			},
+				{
+					q: `SELECT ?car, ?owner
+					    FROM ?test
+					    WHERE {
+						   ?car "is_a"@[] /t<car> .
+						   OPTIONAL { ?owner "owns"@[] ?car }
+						};`,
+					nbs:  2,
+					nrws: 0,
+				},
+		*/
 	}
 
 	s, ctx := memory.NewStore(), context.Background()

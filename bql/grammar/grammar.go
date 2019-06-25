@@ -280,6 +280,15 @@ func BQL() *Grammar {
 				},
 			},
 		},
+		"MORE_CLAUSES": []*Clause{
+			{
+				Elements: []Element{
+					NewTokenType(lexer.ItemDot),
+					NewSymbol("CLAUSES"),
+				},
+			},
+			{},
+		},
 		"CLAUSES": []*Clause{
 			{
 				Elements: []Element{
@@ -625,15 +634,6 @@ func BQL() *Grammar {
 				Elements: []Element{
 					NewTokenType(lexer.ItemAt),
 					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"MORE_CLAUSES": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemDot),
-					NewSymbol("CLAUSES"),
 				},
 			},
 			{},
@@ -1051,12 +1051,12 @@ func SemanticBQL() *Grammar {
 	setClauseHook(semanticBQL, clauseSymbols, semantic.WhereNextWorkingClauseHook(), semantic.WhereNextWorkingClauseHook())
 
 	subSymbols := []semantic.Symbol{
-		"FIRST_CLAUSE", "OPTIONAL_CLAUSE", "CLAUSES", "SUBJECT_EXTRACT", "SUBJECT_TYPE", "SUBJECT_ID",
+		"FIRST_CLAUSE", "CLAUSES", "OPTIONAL_CLAUSE", "SUBJECT_EXTRACT", "SUBJECT_TYPE", "SUBJECT_ID",
 	}
 	setElementHook(semanticBQL, subSymbols, semantic.WhereSubjectClauseHook(), nil)
 
 	predSymbols := []semantic.Symbol{
-		"OPTIONAL_CLAUSE", "PREDICATE", "PREDICATE_AS", "PREDICATE_ID", "PREDICATE_AT",
+		"PREDICATE", "PREDICATE_AS", "PREDICATE_ID", "PREDICATE_AT",
 		"PREDICATE_BOUND_AT", "PREDICATE_BOUND_AT_BINDINGS", "PREDICATE_BOUND_AT_BINDINGS_END",
 	}
 	setElementHook(semanticBQL, predSymbols, semantic.WherePredicateClauseHook(), nil)

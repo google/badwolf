@@ -310,6 +310,9 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 		if err := p.tbl.AppendTable(tbl); err != nil {
 			return b, err
 		}
+		if cls.Optional {
+			return false, nil
+		}
 		return b, nil
 	}
 

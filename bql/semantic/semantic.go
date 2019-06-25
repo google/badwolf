@@ -171,6 +171,11 @@ type ConstructPredicateObjectPair struct {
 func (c *GraphClause) String() string {
 	b := bytes.NewBufferString("{ ")
 
+	// Optional clause.
+	b.WriteString("opt=")
+	b.WriteString(fmt.Sprint(c.Optional))
+	b.WriteString(" ")
+
 	// Subject section.
 	if c.S != nil {
 		b.WriteString(c.S.String())
