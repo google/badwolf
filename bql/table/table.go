@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -241,7 +242,7 @@ func (t *Table) AppendTable(t2 *Table) error {
 
 // disjointBinding returns true if they are not overlapping bindings, false
 // otherwise.
-func disjointBinding(b1, b2 map[string]bool) bool {
+func disjointBindings(b1, b2 map[string]bool) bool {
 	for k := range b1 {
 		if b2[k] {
 			return false
@@ -267,7 +268,7 @@ func MergeRows(ms []Row) Row {
 func (t *Table) DotProduct(t2 *Table) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if !disjointBinding(t.mbs, t2.mbs) {
+	if !disjointBindings(t.mbs, t2.mbs) {
 		return fmt.Errorf("DotProduct operations requires disjoint bindings; instead got %v and %v", t.mbs, t2.mbs)
 	}
 	// Update the table metadata.
@@ -294,6 +295,162 @@ func (t *Table) DotProduct(t2 *Table) error {
 		}
 	}
 	return nil
+}
+
+// LeftOptionalJoin does a left join using the provided right table.
+func (t *Table) LeftOptionalJoin(t2 *Table) error {
+	if equalBindings(t.mbs, t2.mbs) {
+		// Both tables have the same bindings. Hence, the optinal results of
+		// the second table can be ignored and keep the left originol table
+		// untouched.
+		return nil
+	}
+	if disjointBindings(t.mbs, t2.mbs) {
+		// The tables has nothing in commnon. Hence, we are going to treat it
+		// as a regular cross product.
+		return t.DotProduct(t2)
+	}
+	// There are some overlapping bindings. That requires to sort both tables
+	// by the overlapping bindings and and then create the new rows merging
+	// both row ranges.
+	joinWithRange(t, t2)
+	return nil
+}
+
+// joinWithRange joins the two tables with overlaping bindings triggering
+// range expansions if needed.
+func joinWithRange(t, t2 *Table) {
+	ibs := intersectBindings(t.mbs, t2.mbs)
+	ubs := unionBindings(t.mbs, t2.mbs)
+	sortTablesData(t, t2, ibs)
+
+	// Create the comparison for row order.
+	var scfg SortConfig
+	for k := range ibs {
+		scfg = append(scfg, sortConfig{Binding: k})
+	}
+
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t2.mu.Lock()
+	defer t2.mu.Unlock()
+	var res []Row
+	t2d := t2.Data
+	lj, j := 0, 0
+	for _, t1r := range t.Data {
+		extended := false
+		for j < len(t2d) && (joinable(t1r, t2d[j], ibs) || rowLess(t2d[j], t1r, scfg)) {
+			if joinable(t1r, t2d[j], ibs) {
+				res = append(res, extendRowWith(t1r, t2d[j]))
+				extended = true
+				j++
+				continue
+			}
+			// Advante the row index for the right table while the rows are
+			// smaller than the current one.
+			for j < len(t2d) && rowLess(t2d[j], t1r, scfg) {
+				j++
+				lj = j
+			}
+		}
+		if !extended {
+			res = append(res, extendRow(t1r, ubs))
+		}
+		j = lj
+	}
+
+	// Udate the table.
+	t.mbs = ubs
+	t.AvailableBindings = nil
+	for k := range ubs {
+		t.AvailableBindings = append(t.AvailableBindings, k)
+	}
+	t.Data = res
+}
+
+// extendRow extends the row with the missing bindings.
+func extendRow(r Row, bs map[string]bool) Row {
+	nr := make(Row)
+	for k, v := range r {
+		nr[k] = v
+	}
+	for k := range bs {
+		if _, ok := nr[k]; ok {
+			continue
+		}
+		nr[k] = &Cell{}
+	}
+	return nr
+}
+
+// extendRowWith extends the row with the missing bindings.
+func extendRowWith(r, r2 Row) Row {
+	nr := make(Row)
+	for k, v := range r {
+		nr[k] = v
+	}
+	for k, v := range r2 {
+		if _, ok := nr[k]; ok {
+			continue
+		}
+		nr[k] = v
+	}
+	return nr
+}
+
+// intersecBindings returns a map with the intersection of bindings
+func intersectBindings(bs1, bs2 map[string]bool) map[string]bool {
+	res := make(map[string]bool)
+	for k1 := range bs1 {
+		if _, ok := bs2[k1]; ok {
+			res[k1] = true
+		}
+	}
+	return res
+}
+
+// unionBindings returns a map with the intersection of bindings
+func unionBindings(bs1, bs2 map[string]bool) map[string]bool {
+	res := make(map[string]bool)
+	for k := range bs1 {
+		res[k] = true
+	}
+	for k := range bs2 {
+		res[k] = true
+	}
+	return res
+}
+
+// sortTablesData sorts the two provided row slices based on the provided
+// bindings.
+func sortTablesData(t, t2 *Table, bs map[string]bool) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t2.mu.Lock()
+	defer t2.mu.Unlock()
+	d, d2 := t.Data, t2.Data
+	var scfg SortConfig
+	for k := range bs {
+		scfg = append(scfg, sortConfig{Binding: k})
+	}
+	sortIt := func(dt []Row) {
+		sort.Slice(dt, func(i, j int) bool {
+			return rowLess(dt[i], dt[j], scfg)
+		})
+	}
+	sortIt(d)
+	sortIt(d2)
+}
+
+// joinable return true if the values of the provided bindings are equal
+// for both provided rows.
+func joinable(r1, r2 Row, bs map[string]bool) bool {
+	for k := range bs {
+		if !reflect.DeepEqual(r1[k], r2[k]) {
+			return false
+		}
+	}
+	return true
 }
 
 // DeleteRow removes the row at position i from the table. This should be used
@@ -332,7 +489,8 @@ func (t *Table) Limit(i int64) {
 
 // SortConfig contains the sorting information. Contains the binding order
 // to use while sorting as well as the direction for each of them to use.
-type SortConfig []struct {
+type SortConfig []sortConfig
+type sortConfig struct {
 	Binding string
 	Desc    bool
 }

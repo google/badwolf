@@ -211,7 +211,7 @@ func TestEqualBindings(t *testing.T) {
 	}
 	for _, entry := range testTable {
 		if got, want := equalBindings(entry.b1, entry.b2), entry.want; got != want {
-			t.Errorf("equalBidings returned %v instead of %v for values %v, %v", got, want, entry.b1, entry.b2)
+			t.Errorf("equalBindings returned %v instead of %v for values %v, %v", got, want, entry.b1, entry.b2)
 		}
 	}
 }
@@ -375,8 +375,236 @@ func TestDisjointBinding(t *testing.T) {
 		},
 	}
 	for _, entry := range testTable {
-		if got, want := disjointBinding(entry.b1, entry.b2), entry.want; got != want {
+		if got, want := disjointBindings(entry.b1, entry.b2), entry.want; got != want {
 			t.Errorf("equalBidings returned %v instead of %v for values %v, %v", got, want, entry.b1, entry.b2)
+		}
+	}
+}
+
+func TestIntersectBinding(t *testing.T) {
+	testTable := []struct {
+		b1            map[string]bool
+		b2            map[string]bool
+		wantIntersect map[string]bool
+		wantUnion     map[string]bool
+	}{
+		{
+			b1:            map[string]bool{},
+			b2:            map[string]bool{},
+			wantIntersect: map[string]bool{},
+			wantUnion:     map[string]bool{},
+		},
+		{
+			b1: map[string]bool{},
+			b2: map[string]bool{
+				"?foo": true,
+				"?bar": true,
+			},
+			wantIntersect: map[string]bool{},
+			wantUnion: map[string]bool{
+				"?foo": true,
+				"?bar": true,
+			},
+		},
+		{
+			b1: map[string]bool{
+				"?foo": true,
+				"?bar": true,
+			},
+			b2:            map[string]bool{},
+			wantIntersect: map[string]bool{},
+			wantUnion: map[string]bool{
+				"?foo": true,
+				"?bar": true,
+			},
+		},
+		{
+			b1: map[string]bool{
+				"?foo": true,
+				"?bar": true,
+			},
+			b2: map[string]bool{
+				"?foo":   true,
+				"?bars":  true,
+				"?other": true,
+			},
+			wantIntersect: map[string]bool{
+				"?foo": true,
+			},
+			wantUnion: map[string]bool{
+				"?foo":   true,
+				"?bar":   true,
+				"?bars":  true,
+				"?other": true,
+			},
+		},
+		{
+			b1: map[string]bool{
+				"?foo": true,
+				"?bar": true,
+			},
+			b2: map[string]bool{
+				"?foo":   true,
+				"?bar":   true,
+				"?other": true,
+			},
+			wantIntersect: map[string]bool{
+				"?foo": true,
+				"?bar": true,
+			},
+			wantUnion: map[string]bool{
+				"?foo":   true,
+				"?bar":   true,
+				"?other": true,
+			},
+		},
+	}
+	for _, entry := range testTable {
+		if got, want := intersectBindings(entry.b1, entry.b2), entry.wantIntersect; !reflect.DeepEqual(got, want) {
+			t.Errorf("intersectBindings returned %v instead of %v for values %v, %v", got, want, entry.b1, entry.b2)
+		}
+		if got, want := unionBindings(entry.b1, entry.b2), entry.wantUnion; !reflect.DeepEqual(got, want) {
+			t.Errorf("unionBindings returned %v instead of %v for values %v, %v", got, want, entry.b1, entry.b2)
+		}
+	}
+}
+
+func TestSortTablesData(t *testing.T) {
+	t1 := &Table{
+		AvailableBindings: []string{"?s", "?t"},
+		mbs: map[string]bool{
+			"?s": true,
+			"?t": true,
+		},
+		Data: []Row{
+			{
+				"?s": &Cell{S: CellString("1")},
+				"?t": &Cell{S: CellString("1")},
+			},
+			{
+				"?s": &Cell{S: CellString("2")},
+				"?t": &Cell{S: CellString("1")},
+			},
+			{
+				"?s": &Cell{S: CellString("1")},
+				"?t": &Cell{S: CellString("2")},
+			},
+			{
+				"?s": &Cell{S: CellString("2")},
+				"?t": &Cell{S: CellString("2")},
+			},
+		},
+	}
+	t2 := &Table{
+		AvailableBindings: []string{"?s", "?t"},
+		mbs: map[string]bool{
+			"?s": true,
+			"?t": true,
+		},
+		Data: []Row{
+			{
+				"?s": &Cell{S: CellString("2")},
+				"?t": &Cell{S: CellString("2")},
+			},
+			{
+				"?s": &Cell{S: CellString("2")},
+				"?t": &Cell{S: CellString("1")},
+			},
+			{
+				"?s": &Cell{S: CellString("1")},
+				"?t": &Cell{S: CellString("2")},
+			},
+			{
+				"?s": &Cell{S: CellString("1")},
+				"?t": &Cell{S: CellString("1")},
+			},
+		},
+	}
+	wantTable := &Table{
+		AvailableBindings: []string{"?s", "?t"},
+		mbs: map[string]bool{
+			"?s": true,
+			"?t": true,
+		},
+		Data: []Row{
+			{
+				"?s": &Cell{S: CellString("1")},
+				"?t": &Cell{S: CellString("1")},
+			},
+			{
+				"?s": &Cell{S: CellString("1")},
+				"?t": &Cell{S: CellString("2")},
+			},
+			{
+				"?s": &Cell{S: CellString("2")},
+				"?t": &Cell{S: CellString("1")},
+			},
+			{
+				"?s": &Cell{S: CellString("2")},
+				"?t": &Cell{S: CellString("2")},
+			},
+		},
+	}
+	// Sort the tables.
+	sortTablesData(t1, t2, map[string]bool{"?s": true, "?t": true})
+
+	// Validate they got sorted correctly.
+	if got, want := t1.Data, wantTable.Data; !reflect.DeepEqual(got, want) {
+		t.Errorf("failed to sort t1 table; got %v, want %v", t1, wantTable)
+	}
+	if got, want := t2.Data, wantTable.Data; !reflect.DeepEqual(got, want) {
+		t.Errorf("failed to sort t1 table; got %v, want %v", t2, wantTable)
+	}
+}
+
+func TestJoinable(t *testing.T) {
+	r1 := Row{
+		"?foo":    &Cell{S: CellString("1")},
+		"?bar":    &Cell{S: CellString("2")},
+		"?foobar": &Cell{S: CellString("3")},
+	}
+	r2 := Row{
+		"?foo":    &Cell{S: CellString("1")},
+		"?bar":    &Cell{S: CellString("2")},
+		"?foobar": &Cell{S: CellString("4")},
+	}
+	table := []struct {
+		bs   map[string]bool
+		want bool
+	}{
+		{
+			bs:   map[string]bool{"?foo": true},
+			want: true,
+		},
+		{
+			bs:   map[string]bool{"?bar": true},
+			want: true,
+		},
+		{
+			bs:   map[string]bool{"?foobar": false},
+			want: false,
+		},
+		{
+			bs:   map[string]bool{"?foo": true, "?bar": true},
+			want: true,
+		},
+		{
+			bs:   map[string]bool{"?foo": true, "?foobar": true},
+			want: false,
+		},
+		{
+			bs:   map[string]bool{"?bar": true, "?foobar": true},
+			want: false,
+		},
+		{
+			bs:   map[string]bool{"?foo": true, "?bar": true, "?foobar": true},
+			want: false,
+		},
+	}
+
+	for _, entry := range table {
+		if got, want := joinable(r1, r2, entry.bs), entry.want; got != want {
+			t.Errorf("failed for case %v; got %v, want %v", entry.bs, got, want)
 		}
 	}
 }
@@ -1132,5 +1360,230 @@ func TestFilter(t *testing.T) {
 		if got, want := entry.t.NumRows(), entry.want; got != want {
 			t.Errorf("table.Filter failed to remove entries from table; got %d, want %d, output\n%v", got, want, entry.t)
 		}
+	}
+}
+
+func TestLeftOptionalJoin(t *testing.T) {
+	table := func(rs ...Row) *Table {
+		data := []Row{
+			{
+				"?s": &Cell{S: CellString("1s")},
+				"?t": &Cell{S: CellString("1t")},
+			},
+			{
+				"?s": &Cell{S: CellString("2s")},
+				"?t": &Cell{S: CellString("2t")},
+			},
+			{
+				"?s": &Cell{S: CellString("3s")},
+				"?t": &Cell{S: CellString("3t")},
+			},
+		}
+		data = append(data, rs...)
+
+		return &Table{
+			AvailableBindings: []string{"?s", "?t"},
+			mbs: map[string]bool{
+				"?s": true,
+				"?t": true,
+			},
+			Data: data,
+		}
+	}
+	cleanTable := func(rs ...Row) *Table {
+		mbs := make(map[string]bool)
+		for _, r := range rs {
+			for k := range r {
+				mbs[k] = true
+			}
+		}
+		var abs []string
+		for k := range mbs {
+			abs = append(abs, k)
+		}
+
+		return &Table{
+			AvailableBindings: abs,
+			mbs:               mbs,
+			Data:              rs,
+		}
+	}
+
+	entries := []struct {
+		left  *Table
+		right *Table
+		want  *Table
+	}{
+		{
+			left:  table(),
+			right: table(),
+			want:  table(),
+		},
+		{
+			left: table(),
+			right: cleanTable(Row{
+				"?x": &Cell{S: CellString("xs")},
+				"?y": &Cell{S: CellString("ys")},
+			}),
+			want: func() *Table {
+				tbl := table()
+				if err := tbl.DotProduct(cleanTable(Row{
+					"?x": &Cell{S: CellString("xs")},
+					"?y": &Cell{S: CellString("ys")},
+				})); err != nil {
+					t.Fatal(err)
+				}
+				return tbl
+			}(),
+		},
+		{
+			left: table(),
+			right: cleanTable(Row{
+				"?s": &Cell{S: CellString("rs")},
+				"?x": &Cell{S: CellString("rx")},
+				"?y": &Cell{S: CellString("ry")},
+			}),
+			want: func() *Table {
+				tbl := table()
+				for i, max := 0, len(tbl.Data); i < max; i++ {
+					tbl.Data[i] = extendRow(tbl.Data[i], map[string]bool{
+						"?s": true,
+						"?t": true,
+						"?x": true,
+						"?y": true,
+					})
+				}
+				return tbl
+			}(),
+		},
+		{
+			left: table(),
+			right: cleanTable(Row{
+				"?s": &Cell{S: CellString("1s")},
+				"?x": &Cell{S: CellString("rx")},
+				"?y": &Cell{S: CellString("ry")},
+			}, Row{
+				"?s": &Cell{S: CellString("1s")},
+				"?x": &Cell{S: CellString("r2x")},
+				"?y": &Cell{S: CellString("r2y")},
+			}),
+			want: cleanTable(
+				Row{
+					"?s": &Cell{S: CellString("1s")},
+					"?t": &Cell{S: CellString("1t")},
+					"?x": &Cell{S: CellString("rx")},
+					"?y": &Cell{S: CellString("ry")},
+				},
+				Row{
+					"?s": &Cell{S: CellString("1s")},
+					"?t": &Cell{S: CellString("1t")},
+					"?x": &Cell{S: CellString("r2x")},
+					"?y": &Cell{S: CellString("r2y")},
+				},
+				Row{
+					"?s": &Cell{S: CellString("2s")},
+					"?t": &Cell{S: CellString("2t")},
+					"?x": &Cell{},
+					"?y": &Cell{},
+				},
+				Row{
+					"?s": &Cell{S: CellString("3s")},
+					"?t": &Cell{S: CellString("3t")},
+					"?x": &Cell{},
+					"?y": &Cell{},
+				}),
+		},
+		{
+			left: table(),
+			right: cleanTable(Row{
+				"?s": &Cell{S: CellString("1s")},
+				"?x": &Cell{S: CellString("rx")},
+				"?y": &Cell{S: CellString("ry")},
+			}, Row{
+				"?s": &Cell{S: CellString("1s")},
+				"?x": &Cell{S: CellString("r2x")},
+				"?y": &Cell{S: CellString("r2y")},
+			}, Row{
+				"?s": &Cell{S: CellString("3s")},
+				"?x": &Cell{S: CellString("rx")},
+				"?y": &Cell{S: CellString("ry")},
+			}, Row{
+				"?s": &Cell{S: CellString("3s")},
+				"?x": &Cell{S: CellString("r2x")},
+				"?y": &Cell{S: CellString("r2y")},
+			}),
+			want: cleanTable(
+				Row{
+					"?s": &Cell{S: CellString("1s")},
+					"?t": &Cell{S: CellString("1t")},
+					"?x": &Cell{S: CellString("rx")},
+					"?y": &Cell{S: CellString("ry")},
+				},
+				Row{
+					"?s": &Cell{S: CellString("1s")},
+					"?t": &Cell{S: CellString("1t")},
+					"?x": &Cell{S: CellString("r2x")},
+					"?y": &Cell{S: CellString("r2y")},
+				},
+				Row{
+					"?s": &Cell{S: CellString("2s")},
+					"?t": &Cell{S: CellString("2t")},
+					"?x": &Cell{},
+					"?y": &Cell{},
+				},
+				Row{
+					"?s": &Cell{S: CellString("3s")},
+					"?t": &Cell{S: CellString("3t")},
+					"?x": &Cell{S: CellString("rx")},
+					"?y": &Cell{S: CellString("ry")},
+				},
+				Row{
+					"?s": &Cell{S: CellString("3s")},
+					"?t": &Cell{S: CellString("3t")},
+					"?x": &Cell{S: CellString("r2x")},
+					"?y": &Cell{S: CellString("r2y")},
+				}),
+		},
+	}
+
+	for i, entry := range entries {
+		tbl := entry.left
+		if err := tbl.LeftOptionalJoin(entry.right); err != nil {
+			t.Errorf("case %d failed to run; %v", i, err)
+			continue
+		}
+		if got, want := tbl.NumRows(), entry.want.NumRows(); got != want {
+			t.Errorf("case %d returned the wrong number of rows; got %v, want %v; got\n%vwant\n%s", i, got, want, tbl, entry.want)
+			continue
+		}
+		if got, want := tbl.Data, entry.want.Data; !reflect.DeepEqual(got, want) {
+			t.Errorf("case %d failed to return the expected data; got %v, want %v", i, tbl, entry.want)
+		}
+	}
+}
+
+func TestExtendRow(t *testing.T) {
+	r := Row{}
+	er := Row{"?foo": &Cell{}, "?bar": &Cell{}}
+	bs := map[string]bool{"?foo": true, "?bar": true}
+	nr := extendRow(r, bs)
+	if got, want := nr, er; !reflect.DeepEqual(got, want) {
+		t.Errorf("failed to extend an empty row; got %v, want %v", got, want)
+	}
+	nr = extendRow(nr, bs)
+	if got, want := nr, er; !reflect.DeepEqual(got, want) {
+		t.Errorf("failed to extend a fully binded row; got %v, want %v", got, want)
+	}
+}
+func TestExtendRowWith(t *testing.T) {
+	r := Row{}
+	er := Row{"?foo": &Cell{S: CellString("s")}, "?bar": &Cell{S: CellString("s")}}
+	nr := extendRowWith(r, er)
+	if got, want := nr, er; !reflect.DeepEqual(got, want) {
+		t.Errorf("failed to extend an empty row; got %v, want %v", got, want)
+	}
+	nr = extendRowWith(er, er)
+	if got, want := nr, er; !reflect.DeepEqual(got, want) {
+		t.Errorf("failed to extend a fully binded row; got %v, want %v", got, want)
 	}
 }
