@@ -1544,6 +1544,11 @@ func TestLeftOptionalJoin(t *testing.T) {
 					"?y": &Cell{S: CellString("r2y")},
 				}),
 		},
+		{
+			left:  table(),
+			right: cleanTable(),
+			want:  table(),
+		},
 	}
 
 	for i, entry := range entries {

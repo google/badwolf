@@ -256,7 +256,7 @@ func MergeRows(ms []Row) Row {
 	res := make(map[string]*Cell)
 	for _, om := range ms {
 		for k, v := range om {
-			if k != "" {
+			if _, ok := res[k]; !ok {
 				res[k] = v
 			}
 		}
@@ -299,7 +299,7 @@ func (t *Table) DotProduct(t2 *Table) error {
 
 // LeftOptionalJoin does a left join using the provided right table.
 func (t *Table) LeftOptionalJoin(t2 *Table) error {
-	if equalBindings(t.mbs, t2.mbs) {
+	if equalBindings(t.mbs, t2.mbs) || len(t2.mbs) == 0 {
 		// Both tables have the same bindings. Hence, the optinal results of
 		// the second table can be ignored and keep the left originol table
 		// untouched.
