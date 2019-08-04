@@ -208,6 +208,15 @@ func TestEqualBindings(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			b1: map[string]bool{
+				"?foo": true,
+			},
+			b2: map[string]bool{
+				"?foo":   true,
+			},
+			want: true,
+		},
 	}
 	for _, entry := range testTable {
 		if got, want := equalBindings(entry.b1, entry.b2), entry.want; got != want {

@@ -300,6 +300,9 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 			return []string{"Clause is fully specified"}
 		})
 		if cls.Optional && !cls.HasAlias() {
+			tracer.Trace(p.tracer, func() []string {
+				return []string{fmt.Sprintf("Processing optional clause of specificity 3 %v", cls)}
+			})
 			return false, nil
 		}
 		t, err := triple.New(cls.S, cls.P, cls.O)
@@ -337,9 +340,16 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 		}
 		tbl, err := simpleFetch(ctx, p.grfs, cls, lo, stmLimit, p.chanSize, p.tracer)
 		if err != nil {
-			return false, err
+			return true, err
 		}
+
 		if len(p.tbl.Bindings()) > 0 {
+			if cls.Optional {
+				tracer.Trace(p.tracer, func() []string {
+					return []string{fmt.Sprintf("Processing optional clause of disjoint bindings %v", cls)}
+				})
+				return false, p.tbl.LeftOptionalJoin(tbl)
+			}
 			return false, p.tbl.DotProduct(tbl)
 		}
 		return false, p.tbl.AppendTable(tbl)
@@ -438,7 +448,18 @@ func (p *queryPlan) addSpecifiedData(ctx context.Context, r table.Row, cls *sema
 	if err != nil {
 		return err
 	}
+
 	p.tbl.AddBindings(tbl.Bindings())
+	if tbl.NumRows() == 0 && cls.Optional {
+		nr := make(table.Row)
+		for _, k := range tbl.Bindings() {
+			if _, ok := r[k]; !ok {
+				nr[k] = &table.Cell{}
+			}
+		}
+		p.tbl.AddRow(table.MergeRows([]table.Row{r, nr}))
+		return nil
+	}
 	for _, nr := range tbl.Rows() {
 		p.tbl.AddRow(table.MergeRows([]table.Row{r, nr}))
 	}

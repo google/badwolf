@@ -517,29 +517,16 @@ func TestPlannerQuery(t *testing.T) {
 			nbs:  1,
 			nrws: 4,
 		},
-
-		/*
-			{
-				q: `SELECT ?car, ?owner
-					FROM ?test
-					WHERE {
-						?car "is_a"@[] /t<car> .
-						?owner "owns"@[] ?car
+		{
+			q: `SELECT ?cars, ?type
+				    FROM ?test
+				    WHERE {
+					   ?cars "is_a"@[] /t<car> .
+					   OPTIONAL { ?cars "is_a"@[] ?type }
 					};`,
-				nbs:  2,
-				nrws: 0,
-			},
-				{
-					q: `SELECT ?car, ?owner
-					    FROM ?test
-					    WHERE {
-						   ?car "is_a"@[] /t<car> .
-						   OPTIONAL { ?owner "owns"@[] ?car }
-						};`,
-					nbs:  2,
-					nrws: 0,
-				},
-		*/
+			nbs:  2,
+			nrws: 4,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
