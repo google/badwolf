@@ -322,11 +322,16 @@ func (t *Table) LeftOptionalJoin(t2 *Table) error {
 func joinWithRange(t, t2 *Table) {
 	ibs := intersectBindings(t.mbs, t2.mbs)
 	ubs := unionBindings(t.mbs, t2.mbs)
-	sortTablesData(t, t2, ibs)
+
+	var sbs []string
+	for k := range ibs {
+		sbs = append(sbs, k)
+	}
+	sortTablesData(t, t2, sbs)
 
 	// Create the comparison for row order.
 	var scfg SortConfig
-	for k := range ibs {
+	for _, k := range sbs {
 		scfg = append(scfg, sortConfig{Binding: k})
 	}
 
@@ -423,14 +428,14 @@ func unionBindings(bs1, bs2 map[string]bool) map[string]bool {
 
 // sortTablesData sorts the two provided row slices based on the provided
 // bindings.
-func sortTablesData(t, t2 *Table, bs map[string]bool) {
+func sortTablesData(t, t2 *Table, bs []string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t2.mu.Lock()
 	defer t2.mu.Unlock()
 	d, d2 := t.Data, t2.Data
 	var scfg SortConfig
-	for k := range bs {
+	for _, k := range bs {
 		scfg = append(scfg, sortConfig{Binding: k})
 	}
 	sortIt := func(dt []Row) {
@@ -501,12 +506,12 @@ func (s SortConfig) String() string {
 		b.WriteString(sc.Binding)
 		b.WriteString("->")
 		if sc.Desc {
-			b.WriteString("DESC")
+			b.WriteString("DESC ")
 		} else {
-			b.WriteString("ASC")
+			b.WriteString("ASC ")
 		}
 	}
-	b.WriteString(" ]")
+	b.WriteString("]")
 	return b.String()
 }
 

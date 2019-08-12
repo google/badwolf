@@ -213,7 +213,7 @@ func TestEqualBindings(t *testing.T) {
 				"?foo": true,
 			},
 			b2: map[string]bool{
-				"?foo":   true,
+				"?foo": true,
 			},
 			want: true,
 		},
@@ -555,7 +555,7 @@ func TestSortTablesData(t *testing.T) {
 		},
 	}
 	// Sort the tables.
-	sortTablesData(t1, t2, map[string]bool{"?s": true, "?t": true})
+	sortTablesData(t1, t2, []string{"?s", "?t"})
 
 	// Validate they got sorted correctly.
 	if got, want := t1.Data, wantTable.Data; !reflect.DeepEqual(got, want) {
@@ -812,12 +812,14 @@ func TestRowLess(t *testing.T) {
 		{r1, r2, SortConfig{{"?s", true}}, false},
 		{r1, r2, SortConfig{{"?t", false}}, false},
 		{r1, r2, SortConfig{{"?t", true}}, false},
+		{r1, r2, SortConfig{{"?s", false}, {"?t", false}}, true},
+		{r1, r2, SortConfig{{"?s", false}, {"?t", true}}, true},
+		{r1, r2, SortConfig{{"?s", true}, {"?t", false}}, false},
+		{r1, r2, SortConfig{{"?s", true}, {"?t", true}}, false},
 		{r1, r2, SortConfig{{"?t", false}, {"?s", false}}, true},
 		{r1, r2, SortConfig{{"?t", false}, {"?s", true}}, false},
-		{r1, r2, SortConfig{{"?t", false}, {"?t", false}}, false},
-		{r1, r2, SortConfig{{"?t", false}, {"?t", true}}, false},
-		{r1, r2, SortConfig{{"?t", true}, {"?t", false}}, false},
-		{r1, r2, SortConfig{{"?t", true}, {"?t", true}}, false},
+		{r1, r2, SortConfig{{"?t", true}, {"?s", false}}, true},
+		{r1, r2, SortConfig{{"?t", true}, {"?s", true}}, false},
 	}
 
 	for _, entry := range testTable {
