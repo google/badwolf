@@ -357,10 +357,20 @@ keywords. They can be composed together using ```not```, ```and```, and
   }
   AFTER 2006-01-01T15:04:05.999999999Z07:00
 ```
-
+If you have multiple predicates the After/Before Syntax has to either specify
+the predicate of interest or that it should be applied to all predicates in 
+the following manner: 
+```
+  SELECT ?user
+  FROM ?social_graph
+  WHERE {
+    ?user "folows"@[,] /user<Joe> .
+    ?user "interacts"@[,] /user<Joe>
+  }
+  AFTER ""@[2006-01-01T15:04:05.999999999Z07:00]
+```
 This is easier to read. It also allow expressing complex global time bounds
 that would require multiple clauses and extra bindings.
-
 ```
   SELECT ?user
   FROM ?social_graph
