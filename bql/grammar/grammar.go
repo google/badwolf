@@ -21,8 +21,8 @@
 package grammar
 
 import (
-	"google3/third_party/golang/badwolf/bql/lexer/lexer"
-	"google3/third_party/golang/badwolf/bql/semantic/semantic"
+	"github.com/badwolf/bql/lexer/lexer"
+	"github.com/badwolf/bql/semantic/semantic"
 )
 
 // BQL LL1 grammar.

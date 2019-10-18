@@ -17,8 +17,8 @@ package semantic
 import (
 	"testing"
 
-	"google3/third_party/golang/badwolf/bql/lexer/lexer"
-	"google3/third_party/golang/badwolf/bql/table/table"
+	"github.com/badwolf/bql/lexer/lexer"
+	"github.com/badwolf/bql/table/table"
 )
 
 func TestEvaluationNode(t *testing.T) {
