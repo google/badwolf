@@ -17,8 +17,8 @@ package semantic
 import (
 	"testing"
 
-	"github.com/google/badwolf/bql/lexer"
-	"github.com/google/badwolf/bql/table"
+	"google3/third_party/golang/badwolf/bql/lexer/lexer"
+	"google3/third_party/golang/badwolf/bql/table/table"
 )
 
 func TestEvaluationNode(t *testing.T) {
@@ -387,6 +387,27 @@ func TestNewEvaluator(t *testing.T) {
 			err:  false,
 			want: false,
 		},
+		{
+			id: "?foo = \"text\"^^type:text",
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: "\"text\"^^type:text",
+				}),
+			},
+			r: table.Row{
+				"?foo": &table.Cell{S: table.CellString("\"text\"^^type:text")},
+			},
+			err:  false,
+			want: true,
+		},
 	}
 	for _, entry := range testTable {
 		eval, err := NewEvaluator(entry.in)
@@ -402,3 +423,4 @@ func TestNewEvaluator(t *testing.T) {
 		}
 	}
 }
+

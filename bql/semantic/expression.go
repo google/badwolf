@@ -20,8 +20,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/google/badwolf/bql/lexer"
-	"github.com/google/badwolf/bql/table"
+	"google3/third_party/golang/badwolf/bql/lexer/lexer"
+	"google3/third_party/golang/badwolf/bql/table/table"
 )
 
 // Evaluator interface computes the evaluation of a boolean expression.
@@ -87,6 +87,80 @@ type evaluationNode struct {
 	rB string
 }
 
+type evaluationLiteralNode struct {
+	op OP
+
+	literalOnLeft bool
+
+	lS string
+	rS string
+}
+
+func (e *evaluationLiteralNode) Evaluate(r table.Row) (bool, error) {
+	// Binary evaluation
+	getLeft := func() (*table.Cell, error) {
+		var (
+			eL *table.Cell
+			ok bool
+		)
+		eL, ok = r[e.lS]
+		if !ok {
+			return nil, fmt.Errorf("comparison operations require the binding value for %q for row %q to exist", e.lS, r)
+		}
+		return eL, nil
+	}
+	getRight := func() (*table.Cell, error) {
+		var (
+			eR *table.Cell
+			ok bool
+		)
+		eR, ok = r[e.rS]
+		if !ok {
+			return nil, fmt.Errorf("comparison operations require the binding value for %q for row %q to exist", e.rS, r)
+		}
+		return eR, nil
+	}
+
+	cs := func(c *table.Cell) string {
+		if c.L != nil {
+			return strings.TrimSpace(c.L.ToComparableString())
+		}
+		return strings.TrimSpace(c.String())
+	}
+
+	leftCell, lerr := getLeft()
+	rightCell, rerr := getRight()
+	var (
+		csEL, csER string
+	)
+
+	if lerr != nil && rerr != nil {
+		return false, fmt.Errorf("comparison operations require either the left or right operands to be a binding but neither had an existing row")
+	}
+
+	if lerr == nil {
+		csEL = cs(leftCell)
+	} else {
+		csEL = e.lS
+	}
+	if rerr == nil {
+		csER = cs(rightCell)
+	} else {
+		csER = e.rS
+	}
+
+	switch e.op {
+	case EQ:
+		return reflect.DeepEqual(csEL, csER), nil
+	case LT:
+		return csEL < csER, nil
+	case GT:
+		return csEL > csER, nil
+	default:
+		return false, fmt.Errorf("boolean evaluation require a boolean operation; found %q instead", e.op)
+	}
+}
+
 // Evaluate the expression.
 func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 	// Binary evaluation
@@ -144,7 +218,24 @@ func NewEvaluationExpression(op OP, lB, rB string) (Evaluator, error) {
 			rB: rB,
 		}, nil
 	default:
-		return nil, errors.New("evaluation expressions require the operation to be one for the follwing '=', '<', '>'")
+		return nil, errors.New("evaluation expressions require the operation to be one for the following '=', '<', '>'")
+	}
+}
+
+func NewEvaluationExpressionForLiterals(op OP, lB, rB string) (Evaluator, error) {
+	l, r := strings.TrimSpace(lB), strings.TrimSpace(rB)
+	if l == "" || r == "" {
+		return nil, fmt.Errorf("operands cannot be empty; got %q, %q", l, r)
+	}
+	switch op {
+	case EQ, LT, GT:
+		return &evaluationLiteralNode{
+			op: op,
+			lS: l,
+			rS: r,
+		}, nil
+	default:
+		return nil, errors.New("evaluation expressions require the operation to be one for the following '=', '<', '>'")
 	}
 }
 
@@ -301,6 +392,18 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 			}
 			return e, res, nil
 		}
+
+		if bndTkn.Type == lexer.ItemLiteral {
+			e, err := NewEvaluationExpressionForLiterals(op, tkn.Text, bndTkn.Text)
+			if err != nil {
+				return nil, nil, err
+			}
+			var res []ConsumedElement
+			if len(tail) > 2 {
+				res = tail[2:]
+			}
+			return e, res, nil
+		}
 		return nil, nil, fmt.Errorf("cannot build a binary evaluation operand with right operant %v", bndTkn)
 	}
 
@@ -348,3 +451,4 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 	}
 	return nil, nil, fmt.Errorf("could not create an evaluator for condition {%s}", strings.Join(tkns, ","))
 }
+

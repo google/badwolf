@@ -21,8 +21,8 @@
 package grammar
 
 import (
-	"github.com/google/badwolf/bql/lexer"
-	"github.com/google/badwolf/bql/semantic"
+	"google3/third_party/golang/badwolf/bql/lexer/lexer"
+	"google3/third_party/golang/badwolf/bql/semantic/semantic"
 )
 
 // BQL LL1 grammar.
@@ -713,6 +713,12 @@ func BQL() *Grammar {
 			},
 			{
 				Elements: []Element{
+					NewTokenType(lexer.ItemLiteral),
+					NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
+				},
+			},
+			{
+				Elements: []Element{
 					NewTokenType(lexer.ItemNot),
 					NewSymbol("HAVING_CLAUSE"),
 				},
@@ -1128,3 +1134,4 @@ func SemanticBQL() *Grammar {
 
 	return semanticBQL
 }
+
