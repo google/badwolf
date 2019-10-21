@@ -21,8 +21,8 @@
 package grammar
 
 import (
-	"github.com/badwolf/bql/lexer"
-	"github.com/badwolf/bql/semantic"
+	"github.com/google/badwolf/bql/lexer"
+	"github.com/google/badwolf/bql/semantic"
 )
 
 // BQL LL1 grammar.

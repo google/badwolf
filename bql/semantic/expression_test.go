@@ -17,8 +17,8 @@ package semantic
 import (
 	"testing"
 
-	"github.com/badwolf/bql/lexer"
-	"github.com/badwolf/bql/table"
+	"github.com/google/badwolf/bql/lexer"
+	"github.com/google/badwolf/bql/table"
 )
 
 func TestEvaluationNode(t *testing.T) {
