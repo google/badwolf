@@ -20,8 +20,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/badwolf/bql/lexer/lexer"
-	"github.com/badwolf/bql/table/table"
+	"github.com/badwolf/bql/lexer"
+	"github.com/badwolf/bql/table"
 )
 
 // Evaluator interface computes the evaluation of a boolean expression.
