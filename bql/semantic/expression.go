@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/bql/table"
+	litutils "github.com/google/badwolf/triple/literal"
 )
 
 // Evaluator interface computes the evaluation of a boolean expression.
@@ -87,7 +88,8 @@ type evaluationNode struct {
 	rB string
 }
 
-type evaluationLiteralNode struct {
+// comparisonForLiteralNode represents the internal representation of a expression of comparison between a literal and a binding.
+type comparisonForLiteralNode struct {
 	op OP
 
 	literalOnLeft bool
@@ -96,29 +98,18 @@ type evaluationLiteralNode struct {
 	rS string
 }
 
-func (e *evaluationLiteralNode) Evaluate(r table.Row) (bool, error) {
+func (e *comparisonForLiteralNode) Evaluate(r table.Row) (bool, error) {
 	// Binary evaluation
-	getLeft := func() (*table.Cell, error) {
+	getValue := func(binding string) (*table.Cell, error) {
 		var (
-			eL *table.Cell
-			ok bool
+			val *table.Cell
+			ok  bool
 		)
-		eL, ok = r[e.lS]
+		val, ok = r[binding]
 		if !ok {
-			return nil, fmt.Errorf("comparison operations require the binding value for %q for row %q to exist", e.lS, r)
+			return nil, fmt.Errorf("comparison operations require the binding value for %q for row %q to exist", binding, r)
 		}
-		return eL, nil
-	}
-	getRight := func() (*table.Cell, error) {
-		var (
-			eR *table.Cell
-			ok bool
-		)
-		eR, ok = r[e.rS]
-		if !ok {
-			return nil, fmt.Errorf("comparison operations require the binding value for %q for row %q to exist", e.rS, r)
-		}
-		return eR, nil
+		return val, nil
 	}
 
 	cs := func(c *table.Cell) string {
@@ -127,31 +118,45 @@ func (e *evaluationLiteralNode) Evaluate(r table.Row) (bool, error) {
 		}
 		return strings.TrimSpace(c.String())
 	}
+	csLit := func(lit string) (string, error) {
+		n, err := litutils.DefaultBuilder().Parse(lit)
+		if err != nil {
+			return "", err
+		}
+		return n.ToComparableString(), nil
+	}
 
-	leftCell, lerr := getLeft()
-	rightCell, rerr := getRight()
-	var (
-		csEL, csER string
-	)
+	leftCell, lerr := getValue(e.lS)
+	rightCell, rerr := getValue(e.rS)
 
 	if lerr != nil && rerr != nil {
 		return false, fmt.Errorf("comparison operations require either the left or right operands to be a binding but neither had an existing row")
 	}
 
+	var (
+		csEL, csER string
+		err        error
+	)
 	if lerr == nil {
 		csEL = cs(leftCell)
 	} else {
-		csEL = e.lS
+		csEL, err = csLit(e.lS)
+		if err != nil {
+			return false, err
+		}
 	}
 	if rerr == nil {
 		csER = cs(rightCell)
 	} else {
-		csER = e.rS
+		csER, err = csLit(e.rS)
+		if err != nil {
+			return false, err
+		}
 	}
 
 	switch e.op {
 	case EQ:
-		return reflect.DeepEqual(csEL, csER), nil
+		return csEL == csER, nil
 	case LT:
 		return csEL < csER, nil
 	case GT:
@@ -229,7 +234,7 @@ func NewEvaluationExpressionForLiterals(op OP, lB, rB string) (Evaluator, error)
 	}
 	switch op {
 	case EQ, LT, GT:
-		return &evaluationLiteralNode{
+		return &comparisonForLiteralNode{
 			op: op,
 			lS: l,
 			rS: r,

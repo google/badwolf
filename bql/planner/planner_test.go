@@ -47,6 +47,9 @@ const (
 		/l<barcelona> "predicate"@[] "turned"@[2016-02-01T00:00:00-08:00]
 		/l<barcelona> "predicate"@[] "turned"@[2016-03-01T00:00:00-08:00]
 		/l<barcelona> "predicate"@[] "turned"@[2016-04-01T00:00:00-08:00]
+		/u<alice> "height_cm"@[] "174"^^type:int64
+		/u<alice> "tag"@[] "abc"^^type:text
+		/u<bob> "height_cm"@[] "151"^^type:int64
 		`
 
 	tripleFromIssue40 = `/room<Hallway> "connects_to"@[] /room<Kitchen>
@@ -467,6 +470,26 @@ func TestPlannerQuery(t *testing.T) {
 			nbs:  1,
 			nrws: 1,
 		},
+		{
+			q:    `select ?s, ?o from ?test where {?s "tag"@[] ?o} having ?o = "abc"^^type:text;`,
+			nbs:  2,
+			nrws: 1,
+		},
+		{
+			q:    `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?height > "0"^^type:int64;`,
+			nbs:  2,
+			nrws: 2,
+		},
+		{
+			q:    `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?height > "160"^^type:int64;`,
+			nbs:  2,
+			nrws: 1,
+		},
+		{
+			q:    `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?height = "151"^^type:int64;`,
+			nbs:  2,
+			nrws: 1,
+		},
 		/*
 			/c<model s> "is_a"@[] /t<car>
 			/c<model x> "is_a"@[] /t<car>
@@ -479,19 +502,19 @@ func TestPlannerQuery(t *testing.T) {
 			nrws: 4,
 		},
 		{
-			q: `SELECT ?car 
-			    FROM ?test 
-			    WHERE { 
-				   /c<model s> as ?car "is_a"@[] /t<car> 
+			q: `SELECT ?car
+			    FROM ?test
+			    WHERE {
+				   /c<model s> as ?car "is_a"@[] /t<car>
 				};`,
 			nbs:  1,
 			nrws: 1,
 		},
 		{
-			q: `SELECT ?car 
-			    FROM ?test 
-			    WHERE { 
-				   ?car "is_a"@[] /t<car> . 
+			q: `SELECT ?car
+			    FROM ?test
+			    WHERE {
+				   ?car "is_a"@[] /t<car> .
 				   /c<model z> as ?car "is_a"@[] /t<car>
 				};`,
 			nbs:  1,
@@ -1143,3 +1166,4 @@ func BenchmarkReg2(b *testing.B) {
 func BenchmarkAs2(b *testing.B) {
 	benchmarkQuery(`select ?s as ?s1, ?p as ?p1, ?o as ?o1 from ?test where {?s ?p ?o};`, b)
 }
+
