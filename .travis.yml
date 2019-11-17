@@ -3,7 +3,11 @@ language: go
 
 sudo: false
 
-env: GO111MODULE=on
+env:
+  - GO111MODULE=on
+
+git:
+  depth: 1
 
 go:
   - "1.12"
@@ -11,4 +15,4 @@ go:
   - tip
 
 script:
-  - go test ./bql/... ./io/... ./storage/... ./tools/... ./triple/...
+  - go test -v -race ./bql/... ./io/... ./storage/... ./tools/... ./triple/...
