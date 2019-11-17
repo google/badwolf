@@ -1003,15 +1003,15 @@ func TestFullGroupRangeReduce(t *testing.T) {
 			id:  "group ?foo and pass ?bar",
 			tbl: testTable(t),
 			red: map[string]map[string]AliasAccPair{
-				"?foo": map[string]AliasAccPair{
-					"?foo_alias": AliasAccPair{
+				"?foo": {
+					"?foo_alias": {
 						InAlias:  "?foo",
 						OutAlias: "?foo_alias",
 						Acc:      NewCountAccumulator(),
 					},
 				},
-				"?bar": map[string]AliasAccPair{
-					"?bar_alias": AliasAccPair{
+				"?bar": {
+					"?bar_alias": {
 						InAlias:  "?bar",
 						OutAlias: "?bar_alias",
 					},
@@ -1026,19 +1026,19 @@ func TestFullGroupRangeReduce(t *testing.T) {
 			id:  "group count ?foo and alias ?foo and ?bar",
 			tbl: testTable(t),
 			red: map[string]map[string]AliasAccPair{
-				"?foo": map[string]AliasAccPair{
-					"?foo_count": AliasAccPair{
+				"?foo": {
+					"?foo_count": {
 						InAlias:  "?foo",
 						OutAlias: "?foo_count",
 						Acc:      NewCountAccumulator(),
 					},
-					"?foo_alias": AliasAccPair{
+					"?foo_alias": {
 						InAlias:  "?foo",
 						OutAlias: "?foo_alias",
 					},
 				},
-				"?bar": map[string]AliasAccPair{
-					"?bar_alias": AliasAccPair{
+				"?bar": {
+					"?bar_alias": {
 						InAlias:  "?bar",
 						OutAlias: "?bar_alias",
 					},
@@ -1055,8 +1055,8 @@ func TestFullGroupRangeReduce(t *testing.T) {
 			id:  "reject query",
 			tbl: testTable(t),
 			red: map[string]map[string]AliasAccPair{
-				"?other": map[string]AliasAccPair{
-					"?other_alias": AliasAccPair{
+				"?other": {
+					"?other_alias": {
 						InAlias:  "?other",
 						OutAlias: "?other_alias",
 						Acc:      NewCountAccumulator(),

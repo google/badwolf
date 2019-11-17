@@ -16,8 +16,8 @@
 package batteries
 
 import (
-	"fmt"
 	"context"
+	"fmt"
 
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/tools/benchmark/runtime"
