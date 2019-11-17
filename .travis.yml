@@ -3,14 +3,12 @@ language: go
 
 sudo: false
 
-go:
-  - "1.11"
-  - "1.12"
-  - tip
+env: GO111MODULE=on
 
-before_install:
-  - go get golang.org/x/sync/errgroup
-  - go get github.com/pborman/uuid
+go:
+  - "1.12"
+  - "1.13"
+  - tip
 
 script:
   - go test ./bql/... ./io/... ./storage/... ./tools/... ./triple/...
