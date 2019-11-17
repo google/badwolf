@@ -17,10 +17,10 @@
 package load
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
-	"context"
 
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/tools/vcli/bw/command"

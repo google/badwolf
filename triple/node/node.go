@@ -101,7 +101,7 @@ func Parse(s string) (*Node, error) {
 		}
 		return NewNode(t, id), nil
 	case underscore:
-		id, err := NewID(raw[2:len(raw)])
+		id, err := NewID(raw[2:])
 		if err != nil {
 			return nil, fmt.Errorf("node.Parse: invalid ID in %q, %v", raw, err)
 		}

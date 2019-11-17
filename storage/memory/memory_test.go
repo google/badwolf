@@ -568,7 +568,7 @@ func TestTriplesForPredicate(t *testing.T) {
 		t.Errorf("g.TriplesForPredicate(%s) failed with error %v", ts[0].Subject(), err)
 	}
 	cnt := 0
-	for _ = range trpls {
+	for range trpls {
 		cnt++
 	}
 	if cnt != 6 {
@@ -615,7 +615,7 @@ func TestTriplesForObject(t *testing.T) {
 		t.Errorf("g.TriplesForObject(%s) failed with error %v", ts[0].Object(), err)
 	}
 	cnt := 0
-	for _ = range trpls {
+	for range trpls {
 		cnt++
 	}
 	if cnt != 1 {
@@ -714,7 +714,7 @@ func TestTriplesForSubjectAndPredicate(t *testing.T) {
 		t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s) failed with error %v", ts[0].Subject(), ts[0].Predicate(), err)
 	}
 	cnt := 0
-	for _ = range trpls {
+	for range trpls {
 		cnt++
 	}
 	if cnt != 3 {
@@ -761,7 +761,7 @@ func TestTriplesForPredicateAndObject(t *testing.T) {
 		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed with error %v", ts[0].Predicate(), ts[0].Object(), err)
 	}
 	cnt := 0
-	for _ = range trpls {
+	for range trpls {
 		cnt++
 	}
 	if cnt != 1 {
@@ -826,7 +826,7 @@ func TestTriples(t *testing.T) {
 		t.Fatal(err)
 	}
 	cnt := 0
-	for _ = range trpls {
+	for range trpls {
 		cnt++
 	}
 	if cnt != 6 {
