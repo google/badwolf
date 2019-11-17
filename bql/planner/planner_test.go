@@ -266,7 +266,6 @@ func populateStoreWithTriples(ctx context.Context, s storage.Store, gn string, t
 }
 
 func TestPlannerQuery(t *testing.T) {
-	ctx := context.Background()
 	testTable := []struct {
 		q    string
 		nbs  int
@@ -479,19 +478,19 @@ func TestPlannerQuery(t *testing.T) {
 			nrws: 4,
 		},
 		{
-			q: `SELECT ?car 
-			    FROM ?test 
-			    WHERE { 
-				   /c<model s> as ?car "is_a"@[] /t<car> 
+			q: `SELECT ?car
+			    FROM ?test
+			    WHERE {
+				   /c<model s> as ?car "is_a"@[] /t<car>
 				};`,
 			nbs:  1,
 			nrws: 1,
 		},
 		{
-			q: `SELECT ?car 
-			    FROM ?test 
-			    WHERE { 
-				   ?car "is_a"@[] /t<car> . 
+			q: `SELECT ?car
+			    FROM ?test
+			    WHERE {
+				   ?car "is_a"@[] /t<car> .
 				   /c<model z> as ?car "is_a"@[] /t<car>
 				};`,
 			nbs:  1,
