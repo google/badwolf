@@ -317,7 +317,7 @@ func (t *Table) LeftOptionalJoin(t2 *Table) error {
 	return nil
 }
 
-// joinWithRange joins the two tables with overlaping bindings triggering
+// joinWithRange joins the two tables with overlapping bindings triggering
 // range expansions if needed.
 func joinWithRange(t, t2 *Table) {
 	ibs := intersectBindings(t.mbs, t2.mbs)
