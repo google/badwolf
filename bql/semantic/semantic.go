@@ -457,19 +457,12 @@ func (c *ConstructPredicateObjectPair) String() string {
 	}
 
 	// Object section.
-	// Node portion.
-	object := false
 	if c.O != nil {
+		// Node portion.
 		b.WriteString(" ")
 		b.WriteString(c.O.String())
-		object = true
 	} else {
-		b.WriteString(" ")
-		b.WriteString(c.OBinding)
-		object = true
-	}
-	// Predicate portion.
-	if !object {
+		// Predicate portion.
 		if c.OBinding != "" {
 			b.WriteString(" ")
 			b.WriteString(c.OBinding)
