@@ -455,6 +455,72 @@ func TestInputOutputBindings(t *testing.T) {
 	}
 }
 
+func TestConstructPredicateObjectPairString(t *testing.T) {
+	// Testing that NewNodeFromStrings is not the point of this package. Taking the example from the unit tests.
+	n, _ := node.NewNodeFromStrings("/some/type", "id_1")
+	// Testing NewImmutable is not the point of this package.
+	immutFoo, _ := predicate.NewImmutable("foo")
+	o := triple.NewNodeObject(n)
+
+	table := []struct {
+		pop  *ConstructPredicateObjectPair
+		want string
+	}{
+		{&ConstructPredicateObjectPair{}, `@[]][]`},
+		{
+			&ConstructPredicateObjectPair{
+				P:              immutFoo,
+				PID:            "?predID",
+				PBinding:       "?predBinding",
+				PAnchorBinding: "?predAnchorBinding",
+				PTemporal:      true,
+				O:              o,
+				OBinding:       "?objBinding",
+				OID:            "?objID",
+				OAnchorBinding: "?Popeyes",
+				OTemporal:      true,
+			},
+			` "foo"@[] ?predBinding "?predID" /some/type<id_1>`,
+		},
+		{
+			&ConstructPredicateObjectPair{
+				P:              nil,
+				PID:            "?predID",
+				PBinding:       "?predBinding",
+				PAnchorBinding: "?predAnchorBinding",
+				PTemporal:      true,
+				O:              nil,
+				OBinding:       "?objBinding",
+				OID:            "?objID",
+				OAnchorBinding: "?Popeyes",
+				OTemporal:      false,
+			},
+			` ?predBinding "?predID"@[?predAnchorBinding] ?objBinding "?objID"[]`,
+		},
+		{
+			&ConstructPredicateObjectPair{
+				P:              nil,
+				PID:            "?predID",
+				PBinding:       "?predBinding",
+				PAnchorBinding: "?predAnchorBinding",
+				PTemporal:      false,
+				O:              nil,
+				OBinding:       "?objBinding",
+				OID:            "?objID",
+				OAnchorBinding: "?Popeyes",
+				OTemporal:      true,
+			},
+			` ?predBinding "?predID"@[]] ?objBinding "?objID"[?Popeyes]`,
+		},
+	}
+
+	for i, entry := range table {
+		if got, want := entry.pop.String(), entry.want; got != want {
+			t.Errorf("[case %d] failed; got `%v`, want `%v`", i, got, want)
+		}
+	}
+}
+
 func TestHasAlias(t *testing.T) {
 	accept := []*GraphClause{
 		{

@@ -458,11 +458,9 @@ func (c *ConstructPredicateObjectPair) String() string {
 
 	// Object section.
 	if c.O != nil {
-		// Node portion.
 		b.WriteString(" ")
 		b.WriteString(c.O.String())
 	} else {
-		// Predicate portion.
 		if c.OBinding != "" {
 			b.WriteString(" ")
 			b.WriteString(c.OBinding)
