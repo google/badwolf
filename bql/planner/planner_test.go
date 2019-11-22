@@ -1100,8 +1100,6 @@ func TestReificationResolutionIssue70(t *testing.T) {
 
 // benchmarkQuery is a helper function that runs a specified query on the testing data set for benchmarking purposes.
 func benchmarkQuery(query string, b *testing.B) {
-	ctx := context.Background()
-
 	s, ctx := memory.NewStore(), context.Background()
 	populateStoreWithTriples(ctx, s, "?test", testTriples, b)
 	p, err := grammar.NewParser(grammar.SemanticBQL())
