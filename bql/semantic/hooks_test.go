@@ -1413,10 +1413,10 @@ func TestOrderByBindings(t *testing.T) {
 				NewConsumedSymbol("FOO"),
 			},
 			want: table.SortConfig{
-				{"?foo", false},
-				{"?bar", false},
-				{"?asc", false},
-				{"?desc", true},
+				{Binding: "?foo", Desc: false},
+				{Binding: "?bar", Desc: false},
+				{Binding: "?asc", Desc: false},
+				{Binding: "?desc", Desc: true},
 			},
 		},
 	}
