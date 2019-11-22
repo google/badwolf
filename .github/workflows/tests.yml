@@ -1,0 +1,53 @@
+on: [push, pull_request]
+name: tests
+env:
+  GO111MODULE: on
+
+jobs:
+  linux:
+    strategy:
+      matrix:
+        go-version: [1.x, 1.12.x]
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/setup-go@v1
+      with:
+        go-version: ${{ matrix.go-version }}
+    - uses: actions/checkout@v1
+
+    - name: Cache go modules
+      uses: actions/cache@preview
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
+        restore-keys: ${{ runner.os }}-go-
+
+    - name: Run go fmt
+      run: diff -u <(echo -n) <(gofmt -d -s .)
+
+    - name: Run go vet
+      run: go vet ./...
+
+    - name: Run go test
+      run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+  # On Windows, just run the local tests.  Don't bother with checking gofmt, go vet
+  windows:
+    strategy:
+      matrix:
+        go-version: [1.x, 1.12.x]
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/setup-go@v1
+      with:
+        go-version: ${{ matrix.go-version }}
+    - uses: actions/checkout@v1
+    - name: Cache go modules
+      uses: actions/cache@preview
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
+        restore-keys: ${{ runner.os }}-go-
+    - run: go test ./...

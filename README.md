@@ -1,6 +1,8 @@
 # BadWolf
 
-[![Build Status](https://travis-ci.org/google/badwolf.svg?branch=master)](https://travis-ci.org/google/badwolf) [![Go Report Card](https://goreportcard.com/badge/github.com/google/badwolf)](https://goreportcard.com/report/github.com/google/badwolf) [![GoDoc](https://godoc.org/github.com/google/badwolf?status.svg)](https://godoc.org/github.com/google/badwolf) 
+[![Test Status](https://github.com/google/badwolf/workflows/tests/badge.svg)](https://github.com/google/badwolf/actions?query=workflow%3Atests)
+[![Go Report Card](https://goreportcard.com/badge/github.com/google/badwolf)](https://goreportcard.com/report/github.com/google/badwolf)
+[![GoDoc](https://godoc.org/github.com/google/badwolf?status.svg)](https://godoc.org/github.com/google/badwolf)
 
 BadWolf is a temporal graph store loosely modeled after the concepts introduced
 by the
@@ -36,8 +38,8 @@ Please keep in mind that this project is under active development and there
 will be no guarantees on API stability till the first stable 1.0 release.
 
 You can reach us here or via
-[@badwolf_project](https://twitter.com/badwolf_project) on Twitter. 
+[@badwolf_project](https://twitter.com/badwolf_project) on Twitter.
 
-For more information, presentation, or to find other related projects that 
+For more information, presentation, or to find other related projects that
 using BadWolf check the
 [project website](http://google.github.io/badwolf/).
