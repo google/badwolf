@@ -101,6 +101,23 @@ func TestNewNodeFromString(t *testing.T) {
 		t.Errorf("node.h Covariant: %q should not be market as covariant of %q", nB, nA)
 	}
 }
+func TestNodeString(t *testing.T) {
+	// NewNodeFromString's error output has already been tested in its own dedicated unit tests
+	nA, _ := NewNodeFromStrings("/some/type", "id_1")
+	table := []struct {
+		n    *Node
+		want string
+	}{
+		// Do not crash on unitialize node
+		{&Node{}, "<>"},
+		{nA, "/some/type<id_1>"},
+	}
+	for i, entry := range table {
+		if got, want := entry.n.String(), entry.want; got != want {
+			t.Errorf("[case %d] failed; got %v, want %v", i, got, want)
+		}
+	}
+}
 
 func TestParse(t *testing.T) {
 	table := []struct {
