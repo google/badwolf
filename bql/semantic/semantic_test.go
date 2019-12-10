@@ -108,13 +108,14 @@ func TestGraphClauseString(t *testing.T) {
 	immutFoo, _ := predicate.NewImmutable("foo")
 	nO, _ := node.NewNodeFromStrings("/some/other/type", "id_2")
 	o := triple.NewNodeObject(nO)
+
 	table := []struct {
 		gc   *GraphClause
 		want string
 	}{
-		{&GraphClause{}, `{ opt=false @[][] }`},
+		{gc: &GraphClause{}, want: `{ opt=false @[][] }`},
 		{
-			&GraphClause{
+			gc: &GraphClause{
 				Optional:         true,
 				S:                n,
 				SBinding:         "?nBinding",
@@ -147,10 +148,10 @@ func TestGraphClauseString(t *testing.T) {
 				OUpperBoundAlias: "?seemsSoFarAway",
 				OTemporal:        true,
 			},
-			`{ opt=true /some/type<id_1> AS ?nAlias TYPE ?nTypeAlias ID ?nIDAlias "foo"@[] ?predBinding "?predID" AS ?predAlias ID ?predIDAlias AT ?predAnchorAlias /some/other/type<id_2> AS ?objAlias TYPE ?objTypeAlias ID ?objCuteID AT ?Olive AS ?objAlias ID ?objCuteID }`,
+			want: `{ opt=true /some/type<id_1> AS ?nAlias TYPE ?nTypeAlias ID ?nIDAlias "foo"@[] ?predBinding "?predID" AS ?predAlias ID ?predIDAlias AT ?predAnchorAlias /some/other/type<id_2> AS ?objAlias TYPE ?objTypeAlias ID ?objCuteID AT ?Olive AS ?objAlias ID ?objCuteID }`,
 		},
 		{
-			&GraphClause{
+			gc: &GraphClause{
 				Optional:         true,
 				S:                nil,
 				SBinding:         "?nBinding",
@@ -177,10 +178,10 @@ func TestGraphClauseString(t *testing.T) {
 				OUpperBoundAlias: "?seemsSoFarAway",
 				OTemporal:        false,
 			},
-			`{ opt=true ?nBinding AS ?nAlias TYPE ?nTypeAlias ID ?nIDAlias ?predBinding "?predID"@[] AS ?predAlias ID ?predIDAlias AT ?predAnchorAlias[] }`,
+			want: `{ opt=true ?nBinding AS ?nAlias TYPE ?nTypeAlias ID ?nIDAlias ?predBinding "?predID"@[] AS ?predAlias ID ?predIDAlias AT ?predAnchorAlias[] }`,
 		},
 		{
-			&GraphClause{
+			gc: &GraphClause{
 				Optional:         true,
 				S:                nil,
 				SBinding:         "?nBinding",
@@ -212,7 +213,7 @@ func TestGraphClauseString(t *testing.T) {
 				OUpperBoundAlias: "?seemsSoFarAway",
 				OTemporal:        true,
 			},
-			`{ opt=true ?nBinding AS ?nAlias TYPE ?nTypeAlias ID ?nIDAlias ?predBinding "?predID"@[?predAnchorBinding at ?predAnchorAlias] AS ?predAlias ID ?predIDAlias AT ?predAnchorAlias ?objBinding "?objID"[2019-11-30T22:10:50.000000003Z,2019-12-02T17:00:10.000000015Z] AS ?objAlias TYPE ?objTypeAlias ID ?objCuteID AT ?Olive AS ?objAlias ID ?objCuteID }`,
+			want: `{ opt=true ?nBinding AS ?nAlias TYPE ?nTypeAlias ID ?nIDAlias ?predBinding "?predID"@[?predAnchorBinding at ?predAnchorAlias] AS ?predAlias ID ?predIDAlias AT ?predAnchorAlias ?objBinding "?objID"[2019-11-30T22:10:50.000000003Z,2019-12-02T17:00:10.000000015Z] AS ?objAlias TYPE ?objTypeAlias ID ?objCuteID AT ?Olive AS ?objAlias ID ?objCuteID }`,
 		},
 	}
 
@@ -224,6 +225,7 @@ func TestGraphClauseString(t *testing.T) {
 }
 
 func TestGraphClauseSpecificity(t *testing.T) {
+
 	table := []struct {
 		gc   *GraphClause
 		want int
@@ -233,6 +235,7 @@ func TestGraphClauseSpecificity(t *testing.T) {
 		{&GraphClause{S: &node.Node{}, P: &predicate.Predicate{}}, 2},
 		{&GraphClause{S: &node.Node{}, P: &predicate.Predicate{}, O: &triple.Object{}}, 3},
 	}
+
 	for _, entry := range table {
 		if got, want := entry.gc.Specificity(), entry.want; got != want {
 			t.Errorf("semantic.GraphClause.Specificity failed to return the proper value for %v; got %d, want %d", entry.gc, got, want)
@@ -466,9 +469,9 @@ func TestConstructPredicateObjectPairString(t *testing.T) {
 		pop  *ConstructPredicateObjectPair
 		want string
 	}{
-		{&ConstructPredicateObjectPair{}, `@[]][]`},
+		{pop: &ConstructPredicateObjectPair{}, want: `@[]][]`},
 		{
-			&ConstructPredicateObjectPair{
+			pop: &ConstructPredicateObjectPair{
 				P:              immutFoo,
 				PID:            "?predID",
 				PBinding:       "?predBinding",
@@ -480,10 +483,10 @@ func TestConstructPredicateObjectPairString(t *testing.T) {
 				OAnchorBinding: "?Popeyes",
 				OTemporal:      true,
 			},
-			` "foo"@[] ?predBinding "?predID" /some/type<id_1>`,
+			want: ` "foo"@[] ?predBinding "?predID" /some/type<id_1>`,
 		},
 		{
-			&ConstructPredicateObjectPair{
+			pop: &ConstructPredicateObjectPair{
 				P:              nil,
 				PID:            "?predID",
 				PBinding:       "?predBinding",
@@ -495,10 +498,10 @@ func TestConstructPredicateObjectPairString(t *testing.T) {
 				OAnchorBinding: "?Popeyes",
 				OTemporal:      false,
 			},
-			` ?predBinding "?predID"@[?predAnchorBinding] ?objBinding "?objID"[]`,
+			want: ` ?predBinding "?predID"@[?predAnchorBinding] ?objBinding "?objID"[]`,
 		},
 		{
-			&ConstructPredicateObjectPair{
+			pop: &ConstructPredicateObjectPair{
 				P:              nil,
 				PID:            "?predID",
 				PBinding:       "?predBinding",
@@ -510,7 +513,7 @@ func TestConstructPredicateObjectPairString(t *testing.T) {
 				OAnchorBinding: "?Popeyes",
 				OTemporal:      true,
 			},
-			` ?predBinding "?predID"@[]] ?objBinding "?objID"[?Popeyes]`,
+			want: ` ?predBinding "?predID"@[]] ?objBinding "?objID"[?Popeyes]`,
 		},
 	}
 
