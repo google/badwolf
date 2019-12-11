@@ -98,6 +98,13 @@ type comparisonForLiteralNode struct {
 	rS string
 }
 
+func formatCell(c *table.Cell) string {
+	if c.L != nil {
+		return strings.TrimSpace(c.L.ToComparableString())
+	}
+	return strings.TrimSpace(c.String())
+}
+
 func (e *comparisonForLiteralNode) Evaluate(r table.Row) (bool, error) {
 	// Binary evaluation
 	getValue := func(binding string) (*table.Cell, error) {
@@ -112,12 +119,6 @@ func (e *comparisonForLiteralNode) Evaluate(r table.Row) (bool, error) {
 		return val, nil
 	}
 
-	cs := func(c *table.Cell) string {
-		if c.L != nil {
-			return strings.TrimSpace(c.L.ToComparableString())
-		}
-		return strings.TrimSpace(c.String())
-	}
 	csLit := func(lit string) (string, error) {
 		n, err := litutils.DefaultBuilder().Parse(lit)
 		if err != nil {
@@ -126,34 +127,20 @@ func (e *comparisonForLiteralNode) Evaluate(r table.Row) (bool, error) {
 		return n.ToComparableString(), nil
 	}
 
-	leftCell, lerr := getValue(e.lS)
-	rightCell, rerr := getValue(e.rS)
-
-	if lerr != nil && rerr != nil {
-		return false, fmt.Errorf("comparison operations require either the left or right operands to be a binding but neither had an existing row")
+	leftCell, err := getValue(e.lS)
+	if err != nil {
+		return false, err
 	}
 
 	var (
 		csEL, csER string
-		err        error
 	)
-	if lerr == nil {
-		csEL = cs(leftCell)
-	} else {
-		csEL, err = csLit(e.lS)
-		if err != nil {
-			return false, err
-		}
-	}
-	if rerr == nil {
-		csER = cs(rightCell)
-	} else {
-		csER, err = csLit(e.rS)
-		if err != nil {
-			return false, err
-		}
-	}
 
+	csEL = formatCell(leftCell)
+	csER, err = csLit(e.rS)
+	if err != nil {
+		return false, err
+	}
 	switch e.op {
 	case EQ:
 		return csEL == csER, nil
@@ -185,23 +172,16 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 		return eL, eR, nil
 	}
 
-	cs := func(c *table.Cell) string {
-		if c.L != nil {
-			return strings.TrimSpace(c.L.ToComparableString())
-		}
-		return strings.TrimSpace(c.String())
-	}
-
 	eL, eR, err := eval()
 	if err != nil {
 		return false, err
 	}
-	csEL, csER := cs(eL), cs(eR)
+	csEL, csER := formatCell(eL), formatCell(eR)
 	switch e.op {
 	case EQ:
 		return reflect.DeepEqual(csEL, csER), nil
 	case LT:
-		return cs(eL) < cs(eR), nil
+		return csEL < csER, nil
 	case GT:
 		return csEL > csER, nil
 	default:
@@ -227,8 +207,8 @@ func NewEvaluationExpression(op OP, lB, rB string) (Evaluator, error) {
 	}
 }
 
-func NewEvaluationExpressionForLiterals(op OP, lB, rB string) (Evaluator, error) {
-	l, r := strings.TrimSpace(lB), strings.TrimSpace(rB)
+func NewEvaluationExpressionForLiterals(op OP, lB, rL string) (Evaluator, error) {
+	l, r := strings.TrimSpace(lB), strings.TrimSpace(rL)
 	if l == "" || r == "" {
 		return nil, fmt.Errorf("operands cannot be empty; got %q, %q", l, r)
 	}
@@ -409,7 +389,7 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 			}
 			return e, res, nil
 		}
-		return nil, nil, fmt.Errorf("cannot build a binary evaluation operand with right operant %v", bndTkn)
+		return nil, nil, fmt.Errorf("cannot build a binary evaluation operand with right operand %v", bndTkn)
 	}
 
 	// LPar Token
