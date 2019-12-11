@@ -24,7 +24,6 @@ import (
 	"github.com/google/badwolf/bql/table"
 )
 
-
 // Evaluator interface computes the evaluation of a boolean expression.
 type Evaluator interface {
 	// Evaluate computes the boolean value of the expression given a certain
@@ -426,4 +425,3 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 	}
 	return nil, nil, fmt.Errorf("could not create an evaluator for condition {%s}", strings.Join(tkns, ","))
 }
-

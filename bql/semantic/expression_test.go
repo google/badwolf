@@ -19,7 +19,6 @@ import (
 
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/bql/table"
-	"github.com/google/badwolf/triple/literal"
 )
 
 func TestEvaluationNode(t *testing.T) {
@@ -424,4 +423,3 @@ func TestNewEvaluator(t *testing.T) {
 		}
 	}
 }
-
