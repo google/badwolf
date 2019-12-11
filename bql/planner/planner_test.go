@@ -1159,4 +1159,3 @@ func BenchmarkReg2(b *testing.B) {
 func BenchmarkAs2(b *testing.B) {
 	benchmarkQuery(`select ?s as ?s1, ?p as ?p1, ?o as ?o1 from ?test where {?s ?p ?o};`, b)
 }
-
