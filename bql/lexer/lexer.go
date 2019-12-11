@@ -340,15 +340,16 @@ type stateFn func(*lexer) stateFn
 
 // lexer holds the state of the scanner.
 type lexer struct {
-	input    string     // the string being scanned.
-	start    int        // start position of this item.
-	pos      int        // current position in the input.
-	width    int        // width of last rune read from input.
-	line     int        // current line number for error reporting.
-	lastLine int        // last line number for error reporting.
-	col      int        // current column number for error reporting.
-	lastCol  int        // last column number for error reporting.
-	tokens   chan Token // channel of scanned items.
+	input         string     // the string being scanned.
+	start         int        // start position of this item.
+	pos           int        // current position in the input.
+	width         int        // width of last rune read from input.
+	line          int        // current line number for error reporting.
+	lastLine      int        // last line number for error reporting.
+	col           int        // current column number for error reporting.
+	lastCol       int        // last column number for error reporting.
+	lastTokenType TokenType  // type of the last token parsed (useful when parsing specific predicates)
+	tokens        chan Token // channel of scanned items.
 }
 
 // lex creates a new lexer for the given input
@@ -376,6 +377,10 @@ func lexToken(l *lexer) stateFn {
 	for {
 		{
 			r := l.peek()
+			// special predicate parsing for global level timestamps
+			if unicode.IsDigit(r) && (l.lastTokenType == ItemBefore || l.lastTokenType == ItemAfter || l.lastTokenType == ItemBetween) {
+				return lexPredicateGlobalTime
+			}
 			switch r {
 			case binding:
 				l.next()
@@ -747,6 +752,47 @@ func lexPredicate(l *lexer) stateFn {
 	return lexSpace
 }
 
+// lexPredicateGlobalTime lexes a predicate out of the input specifically for the BEFORE, AFTER and BETWEEN global clauses.
+func lexPredicateGlobalTime(l *lexer) stateFn {
+	l.next()
+	var (
+		nr     rune
+		commas = 0
+	)
+	for {
+		nr = l.next()
+		if nr == comma {
+			if commas > 0 {
+				l.emitError("predicate bounds should only have one , to separate bounds")
+				return nil
+			}
+			commas++
+			// you could have several spaces after a comma
+			for {
+				if s := l.peek(); unicode.IsSpace(s) {
+					l.next()
+					continue
+				}
+				break
+			}
+			continue
+		}
+		if nr == semicolon {
+			l.backup()
+			break
+		}
+		if unicode.IsSpace(nr) || nr == semicolon || nr == eof {
+			break
+		}
+	}
+	if commas == 0 {
+		l.emit(ItemPredicate)
+	} else {
+		l.emit(ItemPredicateBound)
+	}
+	return lexSpace
+}
+
 // lexLiteral lexes a literal out of the input.
 func lexLiteral(l *lexer) stateFn {
 	l.next()
@@ -815,6 +861,7 @@ func (l *lexer) emit(t TokenType) {
 		Text: l.input[l.start:l.pos],
 	}
 	l.start = l.pos
+	l.lastTokenType = t
 }
 
 // emitError passes and error to the client with proper error messaging.
