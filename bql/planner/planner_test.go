@@ -47,6 +47,10 @@ const (
 		/l<barcelona> "predicate"@[] "turned"@[2016-02-01T00:00:00-08:00]
 		/l<barcelona> "predicate"@[] "turned"@[2016-03-01T00:00:00-08:00]
 		/l<barcelona> "predicate"@[] "turned"@[2016-04-01T00:00:00-08:00]
+		/u<alice> "height_cm"@[] "174"^^type:int64
+		/u<bob> "height_cm"@[] "151"^^type:int64
+		/u<charlie> "height_cm"@[] "174"^^type:int64
+		/u<delta> "height_cm"@[] "174"^^type:int64
 		`
 
 	tripleFromIssue40 = `/room<Hallway> "connects_to"@[] /room<Kitchen>
@@ -466,6 +470,21 @@ func TestPlannerQuery(t *testing.T) {
 			q:    `SHOW GRAPHS;`,
 			nbs:  1,
 			nrws: 1,
+		},
+		{
+			q:    `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?s > /u<zzzzz>;`,
+			nbs:  2,
+			nrws: 0,
+		},
+		{
+			q:    `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?s > /u<alice>;`,
+			nbs:  2,
+			nrws: 3,
+		},
+		{
+			q:    `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?s > /u<bob>;`,
+			nbs:  2,
+			nrws: 2,
 		},
 		/*
 			/c<model s> "is_a"@[] /t<car>
@@ -1143,3 +1162,4 @@ func BenchmarkReg2(b *testing.B) {
 func BenchmarkAs2(b *testing.B) {
 	benchmarkQuery(`select ?s as ?s1, ?p as ?p1, ?o as ?o1 from ?test where {?s ?p ?o};`, b)
 }
+
