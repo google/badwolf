@@ -436,4 +436,3 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 	}
 	return nil, nil, fmt.Errorf("could not create an evaluator for condition {%s}", strings.Join(tkns, ","))
 }
-

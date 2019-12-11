@@ -495,4 +495,3 @@ func TestNewEvaluator(t *testing.T) {
 		}
 	}
 }
-
