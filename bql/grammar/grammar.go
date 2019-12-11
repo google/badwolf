@@ -713,6 +713,12 @@ func BQL() *Grammar {
 			},
 			{
 				Elements: []Element{
+					NewTokenType(lexer.ItemNode),
+					NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
+				},
+			},
+			{
+				Elements: []Element{
 					NewTokenType(lexer.ItemNot),
 					NewSymbol("HAVING_CLAUSE"),
 				},
@@ -1128,3 +1134,4 @@ func SemanticBQL() *Grammar {
 
 	return semanticBQL
 }
+
