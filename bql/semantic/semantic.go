@@ -204,11 +204,11 @@ func (c *GraphClause) String() string {
 	}
 
 	// Predicate section.
-	predicate := false
+	pred := false
 	if c.P != nil {
 		b.WriteString(" ")
 		b.WriteString(c.P.String())
-		predicate = true
+		pred = true
 	}
 	if c.PBinding != "" {
 		b.WriteString(" ")
@@ -219,7 +219,7 @@ func (c *GraphClause) String() string {
 		b.WriteString(c.PID)
 		b.WriteString("\"")
 	}
-	if !predicate {
+	if !pred {
 		if !c.PTemporal {
 			b.WriteString("@[]")
 		} else {
@@ -429,11 +429,11 @@ func (c *ConstructPredicateObjectPair) String() string {
 	b := bytes.NewBufferString("")
 
 	// Predicate section.
-	predicate := false
+	pred := false
 	if c.P != nil {
 		b.WriteString(" ")
 		b.WriteString(c.P.String())
-		predicate = true
+		pred = true
 	}
 	if c.PBinding != "" {
 		b.WriteString(" ")
@@ -444,7 +444,7 @@ func (c *ConstructPredicateObjectPair) String() string {
 		b.WriteString(c.PID)
 		b.WriteString("\"")
 	}
-	if !predicate {
+	if !pred {
 		if !c.PTemporal {
 			b.WriteString("@[]")
 		} else {
@@ -457,19 +457,10 @@ func (c *ConstructPredicateObjectPair) String() string {
 	}
 
 	// Object section.
-	// Node portion.
-	object := false
 	if c.O != nil {
 		b.WriteString(" ")
 		b.WriteString(c.O.String())
-		object = true
 	} else {
-		b.WriteString(" ")
-		b.WriteString(c.OBinding)
-		object = true
-	}
-	// Predicate portion.
-	if !object {
 		if c.OBinding != "" {
 			b.WriteString(" ")
 			b.WriteString(c.OBinding)

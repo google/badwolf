@@ -480,6 +480,27 @@ func TestNewEvaluator(t *testing.T) {
 			err:  false,
 			want: false,
 		},
+		{
+			id: "?foo = /_<meowth>",
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemNode,
+					Text: "/_<meowth>",
+				}),
+			},
+			r: table.Row{
+				"?foo": &table.Cell{S: table.CellString("/_<meowth>")},
+			},
+			err:  false,
+			want: true,
+		},
 	}
 	for _, entry := range testTable {
 		eval, err := NewEvaluator(entry.in)
