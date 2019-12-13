@@ -48,6 +48,7 @@ const (
 		/l<barcelona> "predicate"@[] "turned"@[2016-03-01T00:00:00-08:00]
 		/l<barcelona> "predicate"@[] "turned"@[2016-04-01T00:00:00-08:00]
 		/u<alice> "height_cm"@[] "174"^^type:int64
+		/u<alice> "tag"@[] "abc"^^type:text
 		/u<bob> "height_cm"@[] "151"^^type:int64
 		/u<charlie> "height_cm"@[] "174"^^type:int64
 		/u<delta> "height_cm"@[] "174"^^type:int64
@@ -468,6 +469,26 @@ func TestPlannerQuery(t *testing.T) {
 		{
 			q:    `SHOW GRAPHS;`,
 			nbs:  1,
+			nrws: 1,
+		},
+		{
+			q:    `select ?s, ?o from ?test where {?s "tag"@[] ?o} having ?o = "abc"^^type:text;`,
+			nbs:  2,
+			nrws: 1,
+		},
+		{
+			q:    `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?height > "0"^^type:int64;`,
+			nbs:  2,
+			nrws: 4,
+		},
+		{
+			q:    `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?height > "160"^^type:int64;`,
+			nbs:  2,
+			nrws: 3,
+		},
+		{
+			q:    `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?height = "151"^^type:int64;`,
+			nbs:  2,
 			nrws: 1,
 		},
 		{
