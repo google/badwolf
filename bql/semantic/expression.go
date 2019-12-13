@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/bql/table"
+	"github.com/google/badwolf/triple/literal"
 )
 
 // Evaluator interface computes the evaluation of a boolean expression.
@@ -133,6 +134,69 @@ func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 	}
 }
 
+// comparisonForLiteral represents the internal representation of a expression of comparison between a literal and a binding.
+type comparisonForLiteral struct {
+	op OP
+
+	lS string
+	rS string
+}
+
+func formatCell(c *table.Cell) string {
+	if c.L != nil {
+		return strings.TrimSpace(c.L.ToComparableString())
+	}
+	return strings.TrimSpace(c.String())
+}
+
+func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
+	// Binary evaluation
+	getValue := func(binding string) (*table.Cell, error) {
+		var (
+			val *table.Cell
+			ok  bool
+		)
+		val, ok = r[binding]
+		if !ok {
+			return nil, fmt.Errorf("comparison operations require the binding value for %q for row %q to exist", binding, r)
+		}
+		return val, nil
+	}
+
+	csLit := func(lit string) (string, error) {
+		n, err := literal.DefaultBuilder().Parse(lit)
+		if err != nil {
+			return "", err
+		}
+		return n.ToComparableString(), nil
+	}
+
+	leftCell, err := getValue(e.lS)
+	if err != nil {
+		return false, err
+	}
+
+	var (
+		csEL, csER string
+	)
+
+	csEL = formatCell(leftCell)
+	csER, err = csLit(e.rS)
+	if err != nil {
+		return false, err
+	}
+	switch e.op {
+	case EQ:
+		return csEL == csER, nil
+	case LT:
+		return csEL < csER, nil
+	case GT:
+		return csEL > csER, nil
+	default:
+		return false, fmt.Errorf("boolean evaluation require a boolean operation; found %q instead", e.op)
+	}
+}
+
 // Evaluate the expression.
 func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 	// Binary evaluation
@@ -152,23 +216,16 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 		return eL, eR, nil
 	}
 
-	cs := func(c *table.Cell) string {
-		if c.L != nil {
-			return strings.TrimSpace(c.L.ToComparableString())
-		}
-		return strings.TrimSpace(c.String())
-	}
-
 	eL, eR, err := eval()
 	if err != nil {
 		return false, err
 	}
-	csEL, csER := cs(eL), cs(eR)
+	csEL, csER := formatCell(eL), formatCell(eR)
 	switch e.op {
 	case EQ:
 		return reflect.DeepEqual(csEL, csER), nil
 	case LT:
-		return cs(eL) < cs(eR), nil
+		return csEL < csER, nil
 	case GT:
 		return csEL > csER, nil
 	default:
@@ -194,7 +251,25 @@ func NewEvaluationExpression(op OP, lB, rB string) (Evaluator, error) {
 	}
 }
 
-// NewEvaluationExpressionForNodeLiteral creates a new evaluator for two bindings in a row.
+// NewEvaluationExpressionForLiterals creates a new evaluator for binding and literal.
+func NewEvaluationExpressionForLiterals(op OP, lB, rL string) (Evaluator, error) {
+	l, r := strings.TrimSpace(lB), strings.TrimSpace(rL)
+	if l == "" || r == "" {
+		return nil, fmt.Errorf("operands cannot be empty; got %q, %q", l, r)
+	}
+	switch op {
+	case EQ, LT, GT:
+		return &comparisonForLiteral{
+			op: op,
+			lS: l,
+			rS: r,
+		}, nil
+	default:
+		return nil, errors.New("evaluation expressions require the operation to be one for the following '=', '<', '>'")
+	}
+}
+
+// NewEvaluationExpressionForNodeLiteral creates a new evaluator for binding and node literal.
 func NewEvaluationExpressionForNodeLiteral(op OP, lB, rNL string) (Evaluator, error) {
 	l, r := strings.TrimSpace(lB), strings.TrimSpace(rNL)
 	if l == "" || r == "" {
@@ -368,6 +443,18 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 
 		if bndTkn.Type == lexer.ItemNode {
 			e, err := NewEvaluationExpressionForNodeLiteral(op, tkn.Text, bndTkn.Text)
+			if err != nil {
+				return nil, nil, err
+			}
+			var res []ConsumedElement
+			if len(tail) > 2 {
+				res = tail[2:]
+			}
+			return e, res, nil
+		}
+
+		if bndTkn.Type == lexer.ItemLiteral {
+			e, err := NewEvaluationExpressionForLiterals(op, tkn.Text, bndTkn.Text)
 			if err != nil {
 				return nil, nil, err
 			}

@@ -19,7 +19,16 @@ import (
 
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/bql/table"
+	"github.com/google/badwolf/triple/literal"
 )
+
+func buildLiteral(l string) string {
+	p, err := literal.DefaultBuilder().Parse(l)
+	if err != nil {
+		return ""
+	}
+	return p.ToComparableString()
+}
 
 func TestEvaluationNode(t *testing.T) {
 	testTable := []struct {
@@ -383,6 +392,90 @@ func TestNewEvaluator(t *testing.T) {
 			r: table.Row{
 				"?foo": &table.Cell{S: table.CellString("foo")},
 				"?bar": &table.Cell{S: table.CellString("bar")},
+			},
+			err:  false,
+			want: false,
+		},
+		{
+			id: "?foo = \"abc\"^^type:text",
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: "\"abc\"^^type:text",
+				}),
+			},
+			r: table.Row{
+				"?foo": &table.Cell{S: table.CellString(buildLiteral("\"abc\"^^type:text"))},
+			},
+			err:  false,
+			want: true,
+		},
+		{
+			id: "?foo = \"99.0\"^^type:float64",
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: "\"99.0\"^^type:float64",
+				}),
+			},
+			r: table.Row{
+				"?foo": &table.Cell{S: table.CellString(buildLiteral("\"99.0\"^^type:float64"))},
+			},
+			err:  false,
+			want: true,
+		},
+		{
+			id: "?foo > \"10\"^^type:int64",
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: "\"10\"^^type:int64",
+				}),
+			},
+			r: table.Row{
+				"?foo": &table.Cell{S: table.CellString(buildLiteral("\"100\"^^type:int64"))},
+			},
+			err:  false,
+			want: true,
+		},
+		{
+			id: "?foo < \"10\"^^type:int64",
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: "\"10\"^^type:int64",
+				}),
+			},
+			r: table.Row{
+				"?foo": &table.Cell{S: table.CellString(buildLiteral("\"100\"^^type:int64"))},
 			},
 			err:  false,
 			want: false,
