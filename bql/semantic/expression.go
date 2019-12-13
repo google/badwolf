@@ -138,8 +138,6 @@ func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 type comparisonForLiteral struct {
 	op OP
 
-	literalOnLeft bool
-
 	lS string
 	rS string
 }
