@@ -1,0 +1,227 @@
+{
+  "Name": "Family graph data example 1",
+  "Sources": [
+    {
+      "ID": "?family",
+      "Facts": [
+        "/u<joe>   \"parent_of\"@[] /u<mary>",
+        "/u<joe>   \"parent_of\"@[] /u<peter>",
+        "/u<peter> \"parent_of\"@[] /u<eve>",
+        "/u<mary>  \"parent_of\"@[] /u<john>",
+        "/u<mary>  \"parent_of\"@[] /u<anne>",
+        "/u<mary>  \"parent_of\"@[] /u<amy>",
+        "/u<joe>   \"is_a\"@[]      /t<mammal>",
+        "/u<joe>   \"gender\"@[]    /g<male>",
+        "/u<peter> \"is_a\"@[]      /t<mammal>",
+        "/u<peter> \"gender\"@[]    /g<male>",
+        "/u<mary>  \"is_a\"@[]      /t<mammal>",
+        "/u<mary>  \"gender\"@[]    /g<female>",
+        "/u<eve>   \"is_a\"@[]      /t<mammal>",
+        "/u<eve>   \"gender\"@[]    /g<female>",
+        "/u<john>  \"is_a\"@[]      /t<mammal>",
+        "/u<john>  \"gender\"@[]    /g<male>",
+        "/u<anne>  \"is_a\"@[]      /t<mammal>",
+        "/u<anne>  \"gender\"@[]    /g<female>",
+        "/u<amy>   \"is_a\"@[]      /t<mammal>",
+        "/u<amy>   \"gender\"@[]    /g<female>"
+      ]
+    }
+  ],
+  "Assertions": [
+    {
+      "Requires": "finding how many offsprings Joe's has",
+      "Statement": "
+      SELECT ?grandparent, COUNT(?grandchildren) AS ?number_of_grandchildren
+      FROM ?family
+      WHERE {
+        /u<joe> AS ?grandparent \"parent_of\"@[] ?offspring .
+        ?offspring               \"parent_of\"@[] ?grandchildren
+      }
+      GROUP BY ?grandparent;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?grandparent":	"/u<joe>",
+          "?number_of_grandchildren":	"\"4\"^^type:int64"
+        }
+      ]
+    },
+    {
+      "Requires": "finding all Joe's offspring names",
+      "Statement": "
+      SELECT ?grandparent, ?grandchildren
+      FROM ?family
+      WHERE {
+        /u<joe> ID ?grandparent \"parent_of\"@[] ?offspring .
+        ?offspring              \"parent_of\"@[] ?gc ID ?grandchildren
+      }
+      GROUP BY ?grandparent, ?grandchildren
+      ORDER BY ?grandparent ASC, ?grandchildren ASC;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?grandparent":	"joe",
+          "?grandchildren":	"amy"
+        },
+        {
+          "?grandparent":	"joe",
+          "?grandchildren":	"anne"
+        },
+        {
+          "?grandparent":	"joe",
+          "?grandchildren":	"eve"
+        },
+        {
+          "?grandparent":	"joe",
+          "?grandchildren":	"john"
+        }
+      ]
+    },
+    {
+      "Requires": "finding all different mammal we know in the family graph",
+      "Statement": "
+      SELECT ?mammal
+      FROM ?family
+      WHERE {
+        ?mammal \"is_a\"@[] /t<mammal>
+      }
+      GROUP BY ?mammal;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?mammal": "/u<amy>"
+        },
+        {
+          "?mammal": "/u<anne>"
+        },
+        {
+          "?mammal": "/u<eve>"
+        },
+        {
+          "?mammal": "/u<joe>"
+        },
+        {
+          "?mammal": "/u<john>"
+        },
+        {
+          "?mammal": "/u<mary>"
+        },
+        {
+          "?mammal": "/u<peter>"
+        }
+      ]
+    },
+    {
+      "Requires": "finding all genders of the members in the family graph",
+      "Statement": "
+      SELECT ?gender
+      FROM ?family
+      WHERE {
+        ?mammal \"is_a\"@[]   /t<mammal> .
+        ?mammal \"gender\"@[] ?gender_node ID ?gender
+      }
+      GROUP BY ?gender;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?gender": "female"
+        },
+        {
+          "?gender": "male"
+        }
+      ]
+    },
+    {
+      "Requires": "finding all the gender distribution in our family graph",
+      "Statement": "
+      SELECT ?gender, COUNT(?gender_node) AS ?count
+      FROM ?family
+      WHERE {
+        ?mammal \"is_a\"@[]   /t<mammal> .
+        ?mammal \"gender\"@[] ?gender_node ID ?gender
+      }
+      GROUP BY ?gender;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?gender": "female",
+          "?count": "\"4\"^^type:int64"
+        },
+        {
+          "?gender": "male",
+          "?count": "\"3\"^^type:int64"
+        }
+      ]
+    },
+    {
+      "Requires": "finding how many female grandchildren does Joe have",
+      "Statement": "
+      SELECT ?grandparent, ?grandchildren
+      FROM ?family
+      WHERE {
+        /u<joe> AS ?grandparent \"parent_of\"@[] ?offspring .
+        ?offspring               \"parent_of\"@[] ?grandchildren .
+        ?grandchildren          \"gender\"@[]    /g<female>
+      }
+      GROUP BY ?grandparent, ?grandchildren;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?grandparent": "/u<joe>",
+          "?grandchildren": "/u<amy>"
+        },
+        {
+          "?grandparent": "/u<joe>",
+          "?grandchildren": "/u<anne>"
+        },
+        {
+          "?grandparent": "/u<joe>",
+          "?grandchildren": "/u<eve>"
+        }
+      ]
+    },
+    {
+      "Requires": "finding all male grandchildren does Joe have",
+      "Statement": "
+      SELECT ?grandparent, ?grandchildren
+      FROM ?family
+      WHERE {
+        /u<joe> AS ?grandparent \"parent_of\"@[] ?offspring .
+        ?offspring               \"parent_of\"@[] ?grandchildren .
+        ?grandchildren          \"gender\"@[]    /g<male>
+      }
+      GROUP BY ?grandparent, ?grandchildren;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?grandparent": "/u<joe>",
+          "?grandchildren": "/u<john>"
+        }
+      ]
+    },
+    {
+      "Requires": "finding the gender distribution of Joe's mammal grandchildren in our family graph?",
+      "Statement": "
+      SELECT ?gender, COUNT(DISTINCT ?grandchildren) AS ?count
+      FROM ?family
+      WHERE {
+        /u<joe> AS ?grandparent \"parent_of\"@[] ?offspring .
+        ?offspring               \"parent_of\"@[] ?grandchildren .
+        ?grandchildren          \"is_a\"@[]      /t<mammal> .
+        ?grandchildren          \"gender\"@[]    ?gender_node ID ?gender
+      }
+      GROUP BY ?gender;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?gender": "female",
+          "?count": "\"3\"^^type:int64"
+        },
+        {
+          "?gender": "male",
+          "?count": "\"1\"^^type:int64"
+        }
+      ]
+    }
+  ]
+}

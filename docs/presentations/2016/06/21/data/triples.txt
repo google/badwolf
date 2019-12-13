@@ -1,0 +1,12 @@
+/person<Charles Darwin>  "born_in"@[]      /city<Shrewsbury> 
+/person<Nikola Tesla>    "born_in"@[]      /city<Smiljan> 
+/city<Shrewsbury>        "belongs_to"@[]   /country<England> 
+/country<England>        "located_in"@[]   /continent<Europe> 
+/city<Smiljan>           "belongs_to"@[]   /country<Croatia> 
+/country<Croatia>        "located_in"@[]   /continent<Europe>
+/person<Nikola Tesla>    "knew"@[]            /_<UUID>
+/_<UUID>                 "_subject"@[]        /person<Charles Darwin>
+/_<UUID>                 "_predicate"@[]      "born_in"@[]
+/_<UUID>                 "_object"@[]         /city<Shrewsbury>
+/city<Shrewsbury>        "population"@[1860-04-10T4:21:00.000000000Z]   "6000"^^type:int64
+/city<Smiljan>           "population"@[1869-04-10T4:21:00.000000000Z]   "400"^^type:int64

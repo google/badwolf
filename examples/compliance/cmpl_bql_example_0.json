@@ -1,0 +1,55 @@
+{
+  "Name": "Family graph data example 0",
+  "Sources": [
+    {
+      "ID": "?family",
+      "Facts": [
+        "/u<joe> \"parent_of\"@[] /u<mary>",
+        "/u<joe> \"parent_of\"@[] /u<peter>",
+        "/u<peter> \"parent_of\"@[] /u<john>",
+        "/u<peter> \"parent_of\"@[] /u<eve>"
+      ]
+    }
+  ],
+  "Assertions": [
+    {
+      "Requires": "finding all Joe's offspring name",
+      "Statement": "
+      SELECT ?name
+      FROM ?family
+      WHERE {
+        /u<joe> \"parent_of\"@[] ?offspring ID ?name
+      }
+      ORDER BY ?name;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?name": "mary"
+        },
+        {
+          "?name": "peter"
+        }
+      ]
+    },
+    {
+      "Requires": "finding all Joe's grandchildren",
+      "Statement": "
+      SELECT ?grandchildren_name
+      FROM ?family
+      WHERE {
+        /u<joe> \"parent_of\"@[] ?offspring .
+        ?offspring \"parent_of\"@[] ?grandchildren ID ?grandchildren_name
+      }
+      ORDER BY ?grandchildren_name;",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?grandchildren_name": "eve"
+        },
+        {
+          "?grandchildren_name": "john"
+        }
+      ]
+    }
+  ]
+}

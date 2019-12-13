@@ -1,0 +1,58 @@
+{
+  "Name": "A simple object manipulation",
+  "Sources": [
+    {
+      "ID": "?g",
+      "Facts": [
+        "/t<id> \"predicate\"@[] /foo<bar>"
+      ]
+    }
+  ],
+  "Assertions": [
+    {
+      "Requires": "retrieving the type",
+      "Statement": "
+      SELECT ?type
+      FROM ?g
+      WHERE {
+        /t<id> \"predicate\"@[] /foo<bar> TYPE ?type
+      };",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?type": "/foo"
+        }
+      ]
+    },
+    {
+      "Requires": "retrieving the id",
+      "Statement": "
+      SELECT ?id
+      FROM ?g
+      WHERE {
+        /t<id> \"predicate\"@[] /foo<bar> ID ?id
+      };",
+      "WillFail": false,
+      "MustReturn": [
+        {
+          "?id": "bar"
+        }
+      ]
+    },
+    {
+      "Requires": "retrieving the object",
+      "Statement": "
+      SELECT ?o
+      FROM ?g
+      WHERE {
+        /t<id> \"predicate\"@[] ?o
+      };",
+      "WillFail": true,
+      "MustReturn": [
+        {
+          "?o": "/foo<bar>"
+        }
+      ]
+    }
+  ]
+}
