@@ -76,7 +76,15 @@ func (n *Node) ID() *ID {
 
 // String returns a pretty printing representation of Node.
 func (n *Node) String() string {
-	return fmt.Sprintf("%s<%s>", n.t.String(), n.id.String())
+	nodeType := ""
+	if n.t != nil {
+		nodeType = n.t.String()
+	}
+	nodeID := ""
+	if n.id != nil {
+		nodeID = n.id.String()
+	}
+	return fmt.Sprintf("%s<%s>", nodeType, nodeID)
 }
 
 // Parse returns a node given a pretty printed representation of a Node or a BlankNode.
@@ -101,7 +109,7 @@ func Parse(s string) (*Node, error) {
 		}
 		return NewNode(t, id), nil
 	case underscore:
-		id, err := NewID(raw[2:len(raw)])
+		id, err := NewID(raw[2:])
 		if err != nil {
 			return nil, fmt.Errorf("node.Parse: invalid ID in %q, %v", raw, err)
 		}

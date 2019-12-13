@@ -17,6 +17,7 @@ package semantic
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/literal"
@@ -96,7 +97,135 @@ func TestStatementAddData(t *testing.T) {
 	}
 }
 
+func TestGraphClauseString(t *testing.T) {
+	timeObj1 := time.Date(2019, 11, 20, 2, 30, 10, 5, time.UTC)
+	timeObj2 := time.Date(2019, 12, 3, 5, 40, 20, 7, time.UTC)
+	timeObj3 := time.Date(2019, 11, 30, 22, 10, 50, 3, time.UTC)
+	timeObj4 := time.Date(2019, 12, 2, 17, 0, 10, 15, time.UTC)
+	// Testing that NewNodeFromStrings is not the point of this package. Taking the example from the unit tests.
+	n, _ := node.NewNodeFromStrings("/some/type", "id_1")
+	// Testing NewImmutable is not the point of this package.
+	immutFoo, _ := predicate.NewImmutable("foo")
+	nO, _ := node.NewNodeFromStrings("/some/other/type", "id_2")
+	o := triple.NewNodeObject(nO)
+
+	table := []struct {
+		gc   *GraphClause
+		want string
+	}{
+		{gc: &GraphClause{}, want: `{ opt=false @[][] }`},
+		{
+			gc: &GraphClause{
+				Optional:         true,
+				S:                n,
+				SBinding:         "?nBinding",
+				SAlias:           "?nAlias",
+				STypeAlias:       "?nTypeAlias",
+				SIDAlias:         "?nIDAlias",
+				P:                immutFoo,
+				PID:              "?predID",
+				PBinding:         "?predBinding",
+				PAlias:           "?predAlias",
+				PIDAlias:         "?predIDAlias",
+				PAnchorBinding:   "?predAnchorBinding",
+				PAnchorAlias:     "?predAnchorAlias",
+				PLowerBound:      &timeObj1,
+				PUpperBound:      &timeObj2,
+				PLowerBoundAlias: "?earlyYesterday",
+				PUpperBoundAlias: "?someTimeInTheFuture",
+				PTemporal:        true,
+				O:                o,
+				OBinding:         "?objBinding",
+				OAlias:           "?objAlias",
+				OID:              "?objID",
+				OTypeAlias:       "?objTypeAlias",
+				OIDAlias:         "?objCuteID",
+				OAnchorBinding:   "?Popeyes",
+				OAnchorAlias:     "?Olive",
+				OLowerBound:      &timeObj3,
+				OUpperBound:      &timeObj4,
+				OLowerBoundAlias: "?SometimeSoon",
+				OUpperBoundAlias: "?seemsSoFarAway",
+				OTemporal:        true,
+			},
+			want: `{ opt=true /some/type<id_1> AS ?nAlias TYPE ?nTypeAlias ID ?nIDAlias "foo"@[] ?predBinding "?predID" AS ?predAlias ID ?predIDAlias AT ?predAnchorAlias /some/other/type<id_2> AS ?objAlias TYPE ?objTypeAlias ID ?objCuteID AT ?Olive AS ?objAlias ID ?objCuteID }`,
+		},
+		{
+			gc: &GraphClause{
+				Optional:         true,
+				S:                nil,
+				SBinding:         "?nBinding",
+				SAlias:           "?nAlias",
+				STypeAlias:       "?nTypeAlias",
+				SIDAlias:         "?nIDAlias",
+				P:                nil,
+				PID:              "?predID",
+				PBinding:         "?predBinding",
+				PAlias:           "?predAlias",
+				PIDAlias:         "?predIDAlias",
+				PAnchorBinding:   "?predAnchorBinding",
+				PAnchorAlias:     "?predAnchorAlias",
+				PLowerBound:      &timeObj1,
+				PUpperBound:      &timeObj2,
+				PLowerBoundAlias: "?earlyYesterday",
+				PUpperBoundAlias: "?someTimeInTheFuture",
+				PTemporal:        false,
+				O:                nil,
+				OAnchorBinding:   "?Popeyes",
+				OLowerBound:      &timeObj3,
+				OUpperBound:      &timeObj4,
+				OLowerBoundAlias: "?SometimeSoon",
+				OUpperBoundAlias: "?seemsSoFarAway",
+				OTemporal:        false,
+			},
+			want: `{ opt=true ?nBinding AS ?nAlias TYPE ?nTypeAlias ID ?nIDAlias ?predBinding "?predID"@[] AS ?predAlias ID ?predIDAlias AT ?predAnchorAlias[] }`,
+		},
+		{
+			gc: &GraphClause{
+				Optional:         true,
+				S:                nil,
+				SBinding:         "?nBinding",
+				SAlias:           "?nAlias",
+				STypeAlias:       "?nTypeAlias",
+				SIDAlias:         "?nIDAlias",
+				P:                nil,
+				PID:              "?predID",
+				PBinding:         "?predBinding",
+				PAlias:           "?predAlias",
+				PIDAlias:         "?predIDAlias",
+				PAnchorBinding:   "?predAnchorBinding",
+				PAnchorAlias:     "?predAnchorAlias",
+				PLowerBound:      &timeObj1,
+				PUpperBound:      &timeObj2,
+				PLowerBoundAlias: "?earlyYesterday",
+				PUpperBoundAlias: "?someTimeInTheFuture",
+				PTemporal:        true,
+				O:                nil,
+				OBinding:         "?objBinding",
+				OAlias:           "?objAlias",
+				OID:              "?objID",
+				OTypeAlias:       "?objTypeAlias",
+				OIDAlias:         "?objCuteID",
+				OAnchorAlias:     "?Olive",
+				OLowerBound:      &timeObj3,
+				OUpperBound:      &timeObj4,
+				OLowerBoundAlias: "?SometimeSoon",
+				OUpperBoundAlias: "?seemsSoFarAway",
+				OTemporal:        true,
+			},
+			want: `{ opt=true ?nBinding AS ?nAlias TYPE ?nTypeAlias ID ?nIDAlias ?predBinding "?predID"@[?predAnchorBinding at ?predAnchorAlias] AS ?predAlias ID ?predIDAlias AT ?predAnchorAlias ?objBinding "?objID"[2019-11-30T22:10:50.000000003Z,2019-12-02T17:00:10.000000015Z] AS ?objAlias TYPE ?objTypeAlias ID ?objCuteID AT ?Olive AS ?objAlias ID ?objCuteID }`,
+		},
+	}
+
+	for i, entry := range table {
+		if got, want := entry.gc.String(), entry.want; got != want {
+			t.Errorf("[case %d] failed; got %v, want %v", i, got, want)
+		}
+	}
+}
+
 func TestGraphClauseSpecificity(t *testing.T) {
+
 	table := []struct {
 		gc   *GraphClause
 		want int
@@ -106,6 +235,7 @@ func TestGraphClauseSpecificity(t *testing.T) {
 		{&GraphClause{S: &node.Node{}, P: &predicate.Predicate{}}, 2},
 		{&GraphClause{S: &node.Node{}, P: &predicate.Predicate{}, O: &triple.Object{}}, 3},
 	}
+
 	for _, entry := range table {
 		if got, want := entry.gc.Specificity(), entry.want; got != want {
 			t.Errorf("semantic.GraphClause.Specificity failed to return the proper value for %v; got %d, want %d", entry.gc, got, want)
@@ -325,6 +455,72 @@ func TestInputOutputBindings(t *testing.T) {
 		"?foo7", "?foo8", "?foo9", "?foo10", "?foo11", "?foo12", "?foo13"}
 	if got := s.OutputBindings(); !reflect.DeepEqual(got, want) {
 		t.Errorf("s.OutputBindings returned the wrong output bindings; got %v, want %v", got, want)
+	}
+}
+
+func TestConstructPredicateObjectPairString(t *testing.T) {
+	// Testing that NewNodeFromStrings is not the point of this package. Taking the example from the unit tests.
+	n, _ := node.NewNodeFromStrings("/some/type", "id_1")
+	// Testing NewImmutable is not the point of this package.
+	immutFoo, _ := predicate.NewImmutable("foo")
+	o := triple.NewNodeObject(n)
+
+	table := []struct {
+		pop  *ConstructPredicateObjectPair
+		want string
+	}{
+		{pop: &ConstructPredicateObjectPair{}, want: `@[]][]`},
+		{
+			pop: &ConstructPredicateObjectPair{
+				P:              immutFoo,
+				PID:            "?predID",
+				PBinding:       "?predBinding",
+				PAnchorBinding: "?predAnchorBinding",
+				PTemporal:      true,
+				O:              o,
+				OBinding:       "?objBinding",
+				OID:            "?objID",
+				OAnchorBinding: "?Popeyes",
+				OTemporal:      true,
+			},
+			want: ` "foo"@[] ?predBinding "?predID" /some/type<id_1>`,
+		},
+		{
+			pop: &ConstructPredicateObjectPair{
+				P:              nil,
+				PID:            "?predID",
+				PBinding:       "?predBinding",
+				PAnchorBinding: "?predAnchorBinding",
+				PTemporal:      true,
+				O:              nil,
+				OBinding:       "?objBinding",
+				OID:            "?objID",
+				OAnchorBinding: "?Popeyes",
+				OTemporal:      false,
+			},
+			want: ` ?predBinding "?predID"@[?predAnchorBinding] ?objBinding "?objID"[]`,
+		},
+		{
+			pop: &ConstructPredicateObjectPair{
+				P:              nil,
+				PID:            "?predID",
+				PBinding:       "?predBinding",
+				PAnchorBinding: "?predAnchorBinding",
+				PTemporal:      false,
+				O:              nil,
+				OBinding:       "?objBinding",
+				OID:            "?objID",
+				OAnchorBinding: "?Popeyes",
+				OTemporal:      true,
+			},
+			want: ` ?predBinding "?predID"@[]] ?objBinding "?objID"[?Popeyes]`,
+		},
+	}
+
+	for i, entry := range table {
+		if got, want := entry.pop.String(), entry.want; got != want {
+			t.Errorf("[case %d] failed; got `%v`, want `%v`", i, got, want)
+		}
 	}
 }
 

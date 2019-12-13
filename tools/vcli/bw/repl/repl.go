@@ -352,7 +352,7 @@ func planBQL(ctx context.Context, bql string, s storage.Store, chanSize, bulkSiz
 		return nil, msg
 	}
 	tracer.Trace(w, func() []string {
-		return []string{"Plan successfuly created"}
+		return []string{"Plan successfully created"}
 	})
 	return pln, nil
 }

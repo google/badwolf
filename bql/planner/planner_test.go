@@ -50,6 +50,9 @@ const (
 		/u<alice> "height_cm"@[] "174"^^type:int64
 		/u<alice> "tag"@[] "abc"^^type:text
 		/u<bob> "height_cm"@[] "151"^^type:int64
+		/u<bob> "height_cm"@[] "151"^^type:int64
+		/u<charlie> "height_cm"@[] "174"^^type:int64
+		/u<delta> "height_cm"@[] "174"^^type:int64
 		`
 
 	tripleFromIssue40 = `/room<Hallway> "connects_to"@[] /room<Kitchen>
@@ -269,7 +272,6 @@ func populateStoreWithTriples(ctx context.Context, s storage.Store, gn string, t
 }
 
 func TestPlannerQuery(t *testing.T) {
-	ctx := context.Background()
 	testTable := []struct {
 		q    string
 		nbs  int
@@ -489,6 +491,21 @@ func TestPlannerQuery(t *testing.T) {
 			q:    `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?height = "151"^^type:int64;`,
 			nbs:  2,
 			nrws: 1,
+		},
+		{
+			q:    `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?s > /u<zzzzz>;`,
+			nbs:  2,
+			nrws: 0,
+		},
+		{
+			q:    `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?s > /u<alice>;`,
+			nbs:  2,
+			nrws: 3,
+		},
+		{
+			q:    `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?s > /u<bob>;`,
+			nbs:  2,
+			nrws: 2,
 		},
 		/*
 			/c<model s> "is_a"@[] /t<car>
@@ -1124,8 +1141,6 @@ func TestReificationResolutionIssue70(t *testing.T) {
 
 // benchmarkQuery is a helper function that runs a specified query on the testing data set for benchmarking purposes.
 func benchmarkQuery(query string, b *testing.B) {
-	ctx := context.Background()
-
 	s, ctx := memory.NewStore(), context.Background()
 	populateStoreWithTriples(ctx, s, "?test", testTriples, b)
 	p, err := grammar.NewParser(grammar.SemanticBQL())
