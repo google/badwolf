@@ -134,8 +134,8 @@ func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 	}
 }
 
-// comparisonForLiteralNode represents the internal representation of a expression of comparison between a literal and a binding.
-type comparisonForLiteralNode struct {
+// comparisonForLiteral represents the internal representation of a expression of comparison between a literal and a binding.
+type comparisonForLiteral struct {
 	op OP
 
 	literalOnLeft bool
@@ -151,7 +151,7 @@ func formatCell(c *table.Cell) string {
 	return strings.TrimSpace(c.String())
 }
 
-func (e *comparisonForLiteralNode) Evaluate(r table.Row) (bool, error) {
+func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 	// Binary evaluation
 	getValue := func(binding string) (*table.Cell, error) {
 		var (
@@ -166,7 +166,7 @@ func (e *comparisonForLiteralNode) Evaluate(r table.Row) (bool, error) {
 	}
 
 	csLit := func(lit string) (string, error) {
-		n, err := litutils.DefaultBuilder().Parse(lit)
+		n, err := literal.DefaultBuilder().Parse(lit)
 		if err != nil {
 			return "", err
 		}
