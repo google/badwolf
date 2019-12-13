@@ -479,12 +479,12 @@ func TestPlannerQuery(t *testing.T) {
 		{
 			q:    `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?height > "0"^^type:int64;`,
 			nbs:  2,
-			nrws: 2,
+			nrws: 4,
 		},
 		{
 			q:    `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?height > "160"^^type:int64;`,
 			nbs:  2,
-			nrws: 1,
+			nrws: 3,
 		},
 		{
 			q:    `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?height = "151"^^type:int64;`,

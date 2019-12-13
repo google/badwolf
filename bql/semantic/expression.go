@@ -96,6 +96,14 @@ type comparisonForNodeLiteral struct {
 	rNL string
 }
 
+func formatCell(c *table.Cell) string {
+	if c.L != nil {
+		return strings.TrimSpace(c.L.ToComparableString())
+	}
+	return strings.TrimSpace(c.String())
+}
+
+// Evaluate the expression.
 func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 	// Binary evaluation
 	eval := func() (*table.Cell, error) {
@@ -110,23 +118,16 @@ func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 		return eL, nil
 	}
 
-	cs := func(c *table.Cell) string {
-		if c.L != nil {
-			return strings.TrimSpace(c.L.ToComparableString())
-		}
-		return strings.TrimSpace(c.String())
-	}
-
 	eL, err := eval()
 	if err != nil {
 		return false, err
 	}
-	csEL, csER := cs(eL), strings.TrimSpace(e.rNL)
+	csEL, csER := formatCell(eL), strings.TrimSpace(e.rNL)
 	switch e.op {
 	case EQ:
 		return reflect.DeepEqual(csEL, csER), nil
 	case LT:
-		return cs(eL) < csER, nil
+		return formatCell(eL) < csER, nil
 	case GT:
 		return csEL > csER, nil
 	default:
@@ -144,78 +145,7 @@ type comparisonForLiteralNode struct {
 	rS string
 }
 
-func formatCell(c *table.Cell) string {
-	if c.L != nil {
-		return strings.TrimSpace(c.L.ToComparableString())
-	}
-	return strings.TrimSpace(c.String())
-}
-
-func (e *comparisonForLiteralNode) Evaluate(r table.Row) (bool, error) {
-	// Binary evaluation
-	getValue := func(binding string) (*table.Cell, error) {
-		var (
-			val *table.Cell
-			ok  bool
-		)
-		val, ok = r[binding]
-		if !ok {
-			return nil, fmt.Errorf("comparison operations require the binding value for %q for row %q to exist", binding, r)
-		}
-		return val, nil
-	}
-
-	csLit := func(lit string) (string, error) {
-		n, err := litutils.DefaultBuilder().Parse(lit)
-		if err != nil {
-			return "", err
-		}
-		return n.ToComparableString(), nil
-	}
-
-	leftCell, err := getValue(e.lS)
-	if err != nil {
-		return false, err
-	}
-
-	var (
-		csEL, csER string
-	)
-
-	csEL = formatCell(leftCell)
-	csER, err = csLit(e.rS)
-	if err != nil {
-		return false, err
-	}
-	switch e.op {
-	case EQ:
-		return csEL == csER, nil
-	case LT:
-		return csEL < csER, nil
-	case GT:
-		return csEL > csER, nil
-	default:
-		return false, fmt.Errorf("boolean evaluation require a boolean operation; found %q instead", e.op)
-	}
-}
-
-// comparisonForLiteralNode represents the internal representation of a expression of comparison between a literal and a binding.
-type comparisonForLiteralNode struct {
-	op OP
-
-	literalOnLeft bool
-
-	lS string
-	rS string
-}
-
-func formatCell(c *table.Cell) string {
-	if c.L != nil {
-		return strings.TrimSpace(c.L.ToComparableString())
-	}
-	return strings.TrimSpace(c.String())
-}
-
+// Evaluate the expression.
 func (e *comparisonForLiteralNode) Evaluate(r table.Row) (bool, error) {
 	// Binary evaluation
 	getValue := func(binding string) (*table.Cell, error) {
@@ -344,23 +274,6 @@ func NewEvaluationExpressionForNodeLiteral(op OP, lB, rNL string) (Evaluator, er
 }
 
 // NewEvaluationExpressionForLiterals .
-func NewEvaluationExpressionForLiterals(op OP, lB, rL string) (Evaluator, error) {
-	l, r := strings.TrimSpace(lB), strings.TrimSpace(rL)
-	if l == "" || r == "" {
-		return nil, fmt.Errorf("operands cannot be empty; got %q, %q", l, r)
-	}
-	switch op {
-	case EQ, LT, GT:
-		return &comparisonForLiteralNode{
-			op: op,
-			lS: l,
-			rS: r,
-		}, nil
-	default:
-		return nil, errors.New("evaluation expressions require the operation to be one for the following '=', '<', '>'")
-	}
-}
-
 func NewEvaluationExpressionForLiterals(op OP, lB, rL string) (Evaluator, error) {
 	l, r := strings.TrimSpace(lB), strings.TrimSpace(rL)
 	if l == "" || r == "" {
@@ -556,19 +469,6 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 			return e, res, nil
 		}
 
-		return nil, nil, fmt.Errorf("cannot build a binary evaluation operand with right operand %v", bndTkn)
-
-		if bndTkn.Type == lexer.ItemLiteral {
-			e, err := NewEvaluationExpressionForLiterals(op, tkn.Text, bndTkn.Text)
-			if err != nil {
-				return nil, nil, err
-			}
-			var res []ConsumedElement
-			if len(tail) > 2 {
-				res = tail[2:]
-			}
-			return e, res, nil
-		}
 		return nil, nil, fmt.Errorf("cannot build a binary evaluation operand with right operand %v", bndTkn)
 	}
 
