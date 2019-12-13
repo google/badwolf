@@ -466,6 +466,7 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 			}
 			return e, res, nil
 		}
+
 		return nil, nil, fmt.Errorf("cannot build a binary evaluation operand with right operand %v", bndTkn)
 	}
 
