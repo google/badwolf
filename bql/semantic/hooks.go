@@ -932,26 +932,34 @@ func collectGlobalBounds() ElementHook {
 			if lastToken == nil {
 				return nil, fmt.Errorf("invalid token %v without a global time modifier", tkn)
 			}
-			p, err := predicate.Parse(tkn.Text)
+			ta, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(tkn.Text))
 			if err != nil {
-				return nil, err
-			}
-			if p.ID() != "" {
-				return nil, fmt.Errorf("global time bounds do not accept individual predicate IDs; found %s instead", p)
-			}
-			ta, err := p.TimeAnchor()
-			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to parse global time bound in %s with error: %s", tkn.Text, err)
 			}
 			if lastToken.Type == lexer.ItemComma || lastToken.Type == lexer.ItemBefore {
-				st.lookupOptions.UpperAnchor = ta
+				st.lookupOptions.UpperAnchor = &ta
 				opToken, lastToken = nil, nil
 			} else {
-				st.lookupOptions.LowerAnchor = ta
+				st.lookupOptions.LowerAnchor = &ta
 				if opToken.Type != lexer.ItemBetween {
 					opToken, lastToken = nil, nil
 				}
 			}
+		case lexer.ItemPredicateBound:
+			bounds := strings.Split(strings.TrimSpace(tkn.Text), ",")
+			if len(bounds) != 2 {
+				return nil, fmt.Errorf("wrong number of bounds in predicate %s; want 2 got %d", tkn.Text, len(bounds))
+			}
+			lowBound, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(bounds[0]))
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse lower time bound in %s with error: %s", tkn.Text, err)
+			}
+			upBound, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(bounds[1]))
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse upper time bound in %s with error: %s", tkn.Text, err)
+			}
+			st.lookupOptions.LowerAnchor = &lowBound
+			st.lookupOptions.UpperAnchor = &upBound
 		default:
 			return nil, fmt.Errorf("global bound found unexpected token %v", tkn)
 		}

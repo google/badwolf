@@ -787,9 +787,7 @@ func BQL() *Grammar {
 			{
 				Elements: []Element{
 					NewTokenType(lexer.ItemBetween),
-					NewTokenType(lexer.ItemPredicate),
-					NewTokenType(lexer.ItemComma),
-					NewTokenType(lexer.ItemPredicate),
+					NewTokenType(lexer.ItemPredicateBound),
 				},
 			},
 			{},

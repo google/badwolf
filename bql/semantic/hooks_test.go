@@ -1801,7 +1801,7 @@ func TestCollectGlobalBounds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("time.Parse failed to parse valid time %s with error %v", date, err)
 	}
-	pretty, invalid := fmt.Sprintf("\"\"@[%s]", date), fmt.Sprintf("\"INVALID\"@[%s]", date)
+	pretty, invalid := date, fmt.Sprintf("\"INVALID\"@[%s]", date)
 	testTable := []struct {
 		id   string
 		in   []ConsumedElement
@@ -1855,17 +1855,8 @@ func TestCollectGlobalBounds(t *testing.T) {
 				}),
 				NewConsumedSymbol("FOO"),
 				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemPredicate,
-					Text: pretty,
-				}),
-				NewConsumedSymbol("FOO"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemComma,
-				}),
-				NewConsumedSymbol("FOO"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemPredicate,
-					Text: pretty,
+					Type: lexer.ItemPredicateBound,
+					Text: fmt.Sprintf("%s, %s", date, date),
 				}),
 				NewConsumedSymbol("FOO"),
 			},
@@ -1916,17 +1907,24 @@ func TestCollectGlobalBounds(t *testing.T) {
 				}),
 				NewConsumedSymbol("FOO"),
 				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemPredicate,
-					Text: pretty,
+					Type: lexer.ItemPredicateBound,
+					Text: fmt.Sprintf("%s, notADate", date),
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			fail: true,
+		},
+		{
+			id: "between X, NO_UPPER_BOUND",
+			in: []ConsumedElement{
+				NewConsumedSymbol("FOO"),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBetween,
 				}),
 				NewConsumedSymbol("FOO"),
 				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemComma,
-				}),
-				NewConsumedSymbol("FOO"),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemPredicate,
-					Text: invalid,
+					Type: lexer.ItemPredicateBound,
+					Text: fmt.Sprintf("%s, ", date),
 				}),
 				NewConsumedSymbol("FOO"),
 			},

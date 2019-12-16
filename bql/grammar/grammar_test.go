@@ -78,9 +78,9 @@ func TestAcceptByParse(t *testing.T) {
 		`select ?a from ?b where {?a ?p ?o} having (?b and ?b) or not (?b = ?b);`,
 		`select ?a from ?b where {?a ?p ?o} having ((?b and ?b) or not (?b = ?b));`,
 		// Test global time bounds.
-		`select ?a from ?b where {?s ?p ?o} before ""@["123"];`,
-		`select ?a from ?b where {?s ?p ?o} after ""@["123"];`,
-		`select ?a from ?b where {?s ?p ?o} between ""@["123"], ""@["123"];`,
+		`select ?a from ?b where {?s ?p ?o} before 2006-01-01T15:04:05.999999999Z07:00;`,
+		`select ?a from ?b where {?s ?p ?o} after 2006-02-03T15:04:05.999999999Z07:00;`,
+		`select ?a from ?b where {?s ?p ?o} between 2006-01-01T15:04:05.999999999Z07:00, 2006-02-03T15:04:05.999999999Z07:00;`,
 		// Test limit clause.
 		`select ?a from ?b where {?s ?p ?o} limit "10"^^type:int64;`,
 		// Test optional clauses.
@@ -229,11 +229,10 @@ func TestRejectByParse(t *testing.T) {
 		// Reject invalid global time bounds.
 		`select ?a from ?b where {?s ?p ?o} before ;`,
 		`select ?a from ?b where {?s ?p ?o} after ;`,
-		`select ?a from ?b where {?s ?p ?o} between "foo"@["123"], ;`,
-		`select ?a from ?b where {?s ?p ?o} before "foo"@["123"]);`,
-		`select ?a from ?b where {?s ?p ?o} before "foo"@["123"]  before "foo"@["123"];`,
-		`select ?a from ?b where {?s ?p ?o} before "foo"@["123"] or before "foo"@["123"] ,;`,
-		`select ?a from ?b where {?s ?p ?o} before "foo"@["123"] or before "foo"@["123"] and before "foo"@["123"]);`,
+		`select ?a from ?b where {?s ?p ?o} between 0101;`,
+		`select ?a from ?b where {?s ?p ?o} before 2006-01-01T15:04:05.999999999Z07:00  before 2006-01-01T15:04:05.999999999Z07:00;`,
+		`select ?a from ?b where {?s ?p ?o} before 2006-01-01T15:04:05.999999999Z07:00 or before 2006-01-01T15:04:05.999999999Z07:00 ,;`,
+		`select ?a from ?b where {?s ?p ?o} before 2006-01-01T15:04:05.999999999Z07:00 or before 2006-01-01T15:04:05.999999999Z07:00 and before 2006-01-01T15:04:05.999999999Z07:00);`,
 		// Test limit clause.
 		`select ?a from ?b where {?s ?p ?o} limit ?b;`,
 		`select ?a from ?b where {?s ?p ?o} limit ;`,
