@@ -32,6 +32,9 @@ jobs:
     - name: Run go test
       run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 
+    - name: Run go examples
+      run: go test ./... && go build ./tools/vcli/bw && for f in ./examples/bql/*.bql; do ./bw run $f || break; done
+
   # On Windows, just run the local tests.  Don't bother with checking gofmt, go vet
   windows:
     strategy:
