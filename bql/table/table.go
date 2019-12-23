@@ -231,7 +231,7 @@ func (t *Table) AppendTable(t2 *Table) error {
 		return nil
 	}
 	if len(t.AvailableBindings) > 0 && !equalBindings(t.mbs, t2.mbs) {
-		return fmt.Errorf("AppendTable can only append to an empty table or equally binded table; instead got %v and %v", t.AvailableBindings, t2.AvailableBindings)
+		return fmt.Errorf("AppendTable can only append to an empty table or equally binded table; intead got %v and %v", t.AvailableBindings, t2.AvailableBindings)
 	}
 	if len(t.AvailableBindings) == 0 {
 		t.AvailableBindings, t.mbs = t2.AvailableBindings, t2.mbs
