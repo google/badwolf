@@ -522,7 +522,7 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 		}
 		r := tmp
 		cls := ocls
-		grp.Go(func() error {	
+		grp.Go(func() error {
 			sbj, prd, obj := cls.S, cls.P, cls.O
 			// Attempt to rebind the subject.
 			if sbj == nil && p.tbl.HasBinding(cls.SBinding) {
