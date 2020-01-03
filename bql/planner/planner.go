@@ -516,9 +516,13 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 	ocls := *cls
 	grp, gCtx := errgroup.WithContext(ctx)
 	for _, tmp := range data {
+		if gCtx.Err() != nil {
+			// Fail fast (in case another goroutine alredy failed, just abort)
+			break
+		}
 		r := tmp
 		cls := ocls
-		grp.Go(func() error {
+		grp.Go(func() error {	
 			sbj, prd, obj := cls.S, cls.P, cls.O
 			// Attempt to rebind the subject.
 			if sbj == nil && p.tbl.HasBinding(cls.SBinding) {
@@ -603,7 +607,7 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 					return err
 				}
 				exist = exist || b
-				if exist {
+				if exist || gCtx.Err() != nil {
 					break
 				}
 			}
