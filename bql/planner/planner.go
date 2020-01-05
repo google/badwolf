@@ -517,7 +517,7 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 	grp, gCtx := errgroup.WithContext(ctx)
 	for _, tmp := range data {
 		if gCtx.Err() != nil {
-			// Fail fast (in case another goroutine alredy failed, just abort)
+			// Fail fast by not processing more record (in case another goroutine alredy failed, just abort)
 			break
 		}
 		r := tmp
