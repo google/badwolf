@@ -15,7 +15,7 @@ syntactical parser.
 
 ## Supported statements
 
-BQL currently supports three statements for data querying and manipulation in
+BQL currently supports eight statements for data querying and manipulation in
 graphs:
 
 * _Create_: Creates a new graph in the store you are connected to.
@@ -25,7 +25,7 @@ graphs:
 * _Insert_: Allows inserting data from one or more graphs.
 * _Delete_: Allows deleting data from one or more graphs.
 * _Construct_: Allows creating new statements into graphs by querying existing statements.
-* _Destruct_: Allows removing statements from graphs by querying existing statements.
+* _Deconstruct_: Allows removing statements from graphs by querying existing statements.
 
 Currently _insert_ and _delete_ operations require you to explicitly state
 the fully qualified triple. In its current form it is not intended to deal with
