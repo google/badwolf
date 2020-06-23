@@ -16,6 +16,7 @@ package semantic
 
 import (
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
@@ -263,7 +264,7 @@ func TestBindingListing(t *testing.T) {
 	stm.ResetWorkingGraphClause()
 	for i := 0; i < 10; i++ {
 		wcls := stm.WorkingClause()
-		v := string(i)
+		v := strconv.Itoa(i)
 		cls := &GraphClause{
 			SBinding:         "?" + v,
 			SAlias:           "?" + v,
