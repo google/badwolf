@@ -8,8 +8,8 @@ new entities as needed.
 
 ## Node
 
-Nodes represents unique entities in a graph. Entities are represented by two
-elements: (1) the ID that identifies it entity, and (2) the type of
+Nodes represent unique entities in a graph. Entities are represented by two
+elements: (1) the ID that identifies its entity, and (2) the type of
 the entity. You may argue that collapsing both in a single element would achieve
 similar goals. However, there are benefits to keep explicit type information
 (e.g. indexing, filtering, etc.).
@@ -18,7 +18,7 @@ similar goals. However, there are benefits to keep explicit type information
 
 BadWolf does not provide type ontology. Types are left to the owner of the
 data to express.  Having that said, BadWolf requires type assertions to be
-expressed using hierarchies express as paths separated by forward slashes.
+expressed using hierarchies declared as paths separated by forward slashes.
 Example of possible types are:
 
 ```
@@ -28,7 +28,7 @@ Example of possible types are:
 ```
 
 Types follow a simple file path syntax. Only two operations are allowed on
-types.
+types:
 
 * _Equality_: Given two types A and B, A == B if and only if they have the exact
               same path representation. In other words, if strings(A)==string(B)
@@ -44,8 +44,7 @@ types.
 BadWolf does not make any assumption about ID structure. IDs are represented
 as UTF8 strings. No spaces, tabs, LF or CR are allowed as part of the ID to
 provide efficient node marshaling and unmarshaling. The only restriction for
-node IDs is that they cannot contain for efficient marshaling reasons neither
-'<' nor '>'.
+node IDs is that they cannot contain neither '<' nor '>' for efficient marshaling reasons.
 
 ### Marshaled representation of a node
 
@@ -86,13 +85,13 @@ Two literal builders are provided to create new literals:
 * _NewBoundedBuilder_ allows building valid literals of a bounded specified size.
 
 Literals can be pretty printed into a string format. The pretty printing retains
-the type and value of the literal. The format of the pretty printing formed
+the type and value of the literal. The format of the pretty printing is composed
 by the string representation of the value between quotes followed by ```^^``` and
 the type assertion ```type:``` with the corresponding type appended. This
 pretty printing convention loosely follows the
 [RDF specification for literals](http://www.w3.org/TR/rdf11-concepts/#section-Graph-Literal)
 also simplifying the parsing of such string formatted literals. Some examples
-of pretty printed literals are shown below.
+of pretty printed literals are shown below:
 
 ```
   "true"^^type:bool
@@ -113,12 +112,12 @@ The above representation can also be used to create a literal.
 
 ## Predicates
 
-Predicates allow predicating properties of nodes. BadWolf provide two different
-kind of predicates:
+Predicates allow predicating properties of nodes. BadWolf provides two different
+kinds of predicates:
 
 * _Immutable_ or predicates that are always valid regardless of when they were
               created. For instance, they are useful to describe properties
-              that never change, for instance, the color of someone's eyes.
+              that never change, such as the color of someone's eyes.
 * _Temporal_ predicates are anchored at some point along the time continuum.
              For instance, the predicate _met_ describing when two nodes met
              is anchored at a particular time.
@@ -149,8 +148,7 @@ below.
    2006-01-02T15:04:05.999999999Z07:00
 ```
 
-So for instance the fully pretty printed predicate for an immutable and  
-a temporal triple are shown below.
+So, for instance, the fully pretty printed predicate for an immutable and a temporal triple are shown below.
 
 ```
    "color_of_eyes"@[]
@@ -168,16 +166,16 @@ The basic unit of storage on BadWolf is the triple. A triple is a three tuple
 
 Triples can be marshaled and unmarshaled. The string representation of a triple
 it is just the string representation of each of its components separated by
-blank separator (tab is the preferred blank separator).
+blank separators (tab is the preferred blank separator).
 
 ## Blank nodes and triple reification
 
 A blank node is a node of type ```/_``` where the id is unique in BadWolf.
-Blank nodes can requested to be created by BadWolf. The main use of blank nodes
+Blank nodes can be requested to be created by BadWolf. The main use of blank nodes
 is to allow triple reification, or predicate properties about facts. It is
 important to keep in mind that predication properties about a node can be
 achieved by a triple, however predicating properties about a fact (triple)
-require reification. This is better explained with an example.
+requires reification. This is better explained with an example.
 
 Let's assume we have the following fact:
 
@@ -193,7 +191,7 @@ you need a way to express such information into triples.
 Reification is the process of predicating properties by adding new triples.
 This is achieved by creating a new blank node and using three special internal
 predicates ```_subject```, ```_predicate```, ```_object```. Reifying the above
-triple would add the following triples.
+triple would add the following triples:
 
 ```
   /user<John> "met"@[2006-01-02T15:04:05.999999999Z07:00] /user<Mary>
@@ -204,8 +202,8 @@ triple would add the following triples.
 
  Reifying temporal triples anchors all the derived temporal triples at the
  same time anchor of the original triple. Now, you can predicate any property
- about the fact by predicating against the blank node. Hence we can now
- predicate about where John and Mary met as shown below.
+ about the fact by predicating against the blank node. Hence, we can now
+ predicate about where John and Mary met as shown below:
 
  ```
    /user<John> "met"@[2006-01-02T15:04:05.999999999Z07:00] /user<Mary>
@@ -215,6 +213,6 @@ triple would add the following triples.
    /_<BUID> "location"@[2006-01-02T15:04:05.999999999Z07:00] /city<New York>
  ```
 
-Anchoring the time predicate on the same time anchor as the reified triples
-seem appropriate for this example, but there are no restrictions of what you
+Anchoring the location predicate on the same time anchor as the reified triples
+seems appropriate for this example, but there are no restrictions of what you
 predicate against blank nodes.
