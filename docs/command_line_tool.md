@@ -1,8 +1,8 @@
 # Command line tool: bw
 
-`bw` is the main command line tool used to access various functionality.
+`bw` is the main command line tool used to access various functionalities.
 The `bw` command line tool is built via the `tools/vcli/bw` package. You
-can build the tool by just typing
+can build the tool by just typing:
 
 ```
 $ go test github.com/google/badwolf/... && go build github.com/google/badwolf/tools/vcli/bw
@@ -25,7 +25,7 @@ This command will list available options. Also, you can always type
 $ bw help COMMAND
 ```
 
-To list the help related to the provided command. There are a set of flags
+To list the help related to the provided command. There is a set of flags
 available for the `bw` tool. To list them just type:
 
 ```
@@ -34,13 +34,13 @@ $ bw -h
 
 > Keep in mind that all flags should be listed before you enter the command
 > you want to run. If you attempt to set the flags after the command they
-> will be be treated as arguments of it and, hence, they will not be 
-> properly set and likely get unexpected results.
+> will be treated as arguments of it and, hence, they will not be 
+> properly set, likely introducing unexpected results.
 
 ## Command: Version
 
 The version command prints the version of BadWolf being used. Below you can
-find and example of the command output.
+find an example of the command output:
 
 ```
 $ bw version
@@ -54,8 +54,7 @@ given file. All lines in the file starting with # will be treated as comments
 and will be discarded. An example of a file containing a set of executable
 statements can be found at
 [examples/bql/example_0.bql](../examples/bql/example_0.bql).
-Below you can find the output of using the `run` command against the previously
-mentioned.
+Below you can find the output of using the `run` command against this file.
 
 ```
 $ bw run examples/bql/example_0.bql
@@ -105,7 +104,7 @@ OK
 The `assert` command allows you to run all the stories contained in a given
 folder. Stories are serialized as JSON files. Each story contains:
 
-1. One or more sources. A source is a graph defined by the triples it contain.
+1. One or more sources. A source is a graph defined by the triples it contains.
 2. One or more assertions. An assertion is a BQL query and the expected outcome.
 
 An example of a simple story with only one assertion could be:
@@ -125,7 +124,7 @@ An example of a simple story with only one assertion could be:
   ],
   "Assertions": [
     {
-      "Requires": "finding all Joe's offspring name",
+      "Requires": "finding all Joe's offspring names",
       "Statement": "
       SELECT ?name
       FROM ?family
@@ -149,13 +148,13 @@ An example of a simple story with only one assertion could be:
 ```
 
 The `assert` command will collect all story files and run every one of them
-collecting the outcome and evaluating of each the assertion. Stories are heavily
+collecting the outcome and evaluating each of the assertions. Stories are heavily
 used to validate BQL semantic behavior. All compliance stories can be found at
-[examples/compliance](../examples/compiance). Compliance stories guarantee that
+[examples/compliance](../examples/compliance). Compliance stories guarantee that
 all backend storage drivers that implement `storage.Store` and `storage.Graph`
 provide the exact same behavior. If a driver does not pass the compliance tests
 in the aforementioned folder, it will be an indication of a serious bug and
-should not be used since may lead to wrong results.
+the driver should not be used since it may lead to wrong results.
 
 Below you can find the output of using the `assert` command against the
 compliance folder that guarantees BQL returns the expected results.
@@ -228,8 +227,8 @@ Evaluating 6 stories... done.
 done
 ```
 
-If any of the assertions of a story fails, it will be properly indicated and
-the obtained result table and the expected one will both be displayed.
+If any of the assertions of a story fails it will be properly indicated, in which case
+the obtained result table and the expected one will be both displayed.
 
 ## Command: BQL
 
@@ -278,7 +277,7 @@ All these benchmarks run against synthetic data using two graph generators:
 
 2. _Random graph generator_: Given a number of nodes in a graph, this generator
    creates triples by picking two arbitrary nodes and creating a triple that
-   relates them together. The sampling of the nodes pair is done without
+   relates them together. The sampling of the pair of nodes is done without
    replacement.
 
 These two generators create graphs with very different structural properties.
@@ -346,21 +345,21 @@ Add non existing triples - rg nodes=1000, size=0100000, reps=10 - 70284.21 tripl
 ## Command: Load
 
 Loads all the triples stored in a file into the provided graphs.
-Graph names need to be separated by commands with no whitespaces. Each triple
-needs to placed in a single line. Each triple needs to be formated so it can be
-parsed as indicated in the [documetation](./temporal_graph_modeling.md). 
+Graph names need to be separated by commas with no whitespaces. Each triple
+needs to be placed in a single line. Each triple needs to be formatted so it can be
+parsed as indicated in the [documentation](./temporal_graph_modeling.md). 
 Please, also feel free to check this [example text file](./presentations/2016/06/21/data/triples.txt)
 and some examples of how to use it in this 
-[presentation](http://go-talks.appspot.com/github.com/google/badwolf/docs/presentations/2016/06/21/ottawa-graph-meetup.slide#1)
+[presentation](http://go-talks.appspot.com/github.com/google/badwolf/docs/presentations/2016/06/21/ottawa-graph-meetup.slide#1).
 All data in the file will be treated as triples. 
-A line starting with # willbe treated as a commented line. If the load fails you may 
+A line starting with # will be treated as a commented line. If the load fails you may 
 end up with partially loaded data.
 
 ```
 $ bw load ./triples.txt ?graph
 ```
 
-It also suports importing into multiple graphs at once.
+It also supports importing into multiple graphs at once:
 
 ```
 $ bw load ./triples.txt ?graph1,?graph2,?graph3
@@ -369,15 +368,15 @@ $ bw load ./triples.txt ?graph1,?graph2,?graph3
 
 ## Command: Export
 
-Export all the triples in the provided graphs into the provided text file. 
+Export all the triples from the provided graphs into the provided text file:
 
 ```
 $ bw export ?graph ./triples.txt
 ```
-As the export command, it suports exporting multiple graphs at once.
+As the load command, it supports exporting multiple graphs at once:
 
 ```
-$ badwolf export ?graph1,?graph2,?grpah3 ./triples.txt
+$ bw export ?graph1,?graph2,?grpah3 ./triples.txt
 ```
 
 ## Command: Server
@@ -391,29 +390,29 @@ $ bw server 1234
 
 This will start an enpoint on port ```1234```. You can just access the
 endpoint by hitting [http://localhost:1234](http://localhost:1234). 
-This will render a simple for you to enter muliple BQL queries.
+This will make it simple for you to enter multiple BQL queries.
 
 The endpoint for queries can be accessed at 
 [http://localhost:1234/bql](http://localhost:1234/bql) by posting a
 form with ```bqlQuery``` parameter. The enpoint returns, in JSON format,
 and array of results. Each element of the array contains:
 
-* _query_: The original passed query.
+* _query_: The original query passed.
 * _msg_: A human readable message. It will contain error information if the
          query failed to execute correctly.
 * _table_: If the query was run successfully and a query result was produced, 
-           _table_ will contain an array with the output bidings under
+           _table_ will contain an array with the output bindings under
 		   _bindings_. The table data will be provided as an array of rows
 		   under the _rows_ field. Each row entry represents an object where
-		   the fields are the binding name and the valu an object containing
+		   the fields are the binding names and the value is an object containing
 		   the cell value. The cell value is an object that may contain 
 		   one of the following fields depending on the value type:
 		   _string_, _node_, _pred_, _lit_, or _anchor_. All the values
-		   are represented using the string format for each time. Time 
+		   are represented using the string format for them each time. Time 
 		   anchors are formated following 
 		   (RFC3339Nano)[https://godoc.org/time#pkg-constants].
 
-For instance you can pass the following queries to the endpoint
+For instance, you can pass the following queries to the endpoint:
 
 ```
 create graph ?test;
@@ -431,8 +430,8 @@ where {
 };
 ```
 
-The endpoint will execute each of the statements in order and return and array
-of JSON formated objects, one for each query. For the above example you should
+The endpoint will execute each of the statements in order and return an array
+of JSON formatted objects, one for each query. For the above example you should
 get the following JSON on a newly started server:
 
 ```
