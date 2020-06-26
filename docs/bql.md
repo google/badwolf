@@ -1,4 +1,4 @@
-# BQL: BadWolf Query language
+# BQL: BadWolf Query Language
 
 BadWolf provides a high level declarative query and update language. BQL
 (or BadWolf Query Language) is a declarative language loosely modeled after
@@ -22,19 +22,19 @@ graphs:
 * _Drop_: Drops an existing graph in the store you are connected to.
 * _Shows_: Shows the list of available graphs.
 * _Select_: Allows querying data from one or more graphs.
-* _Insert_: Allows inserting data from one or more graphs.
+* _Insert_: Allows inserting data into one or more graphs.
 * _Delete_: Allows deleting data from one or more graphs.
 * _Construct_: Allows creating new statements into graphs by querying existing statements.
 * _Deconstruct_: Allows removing statements from graphs by querying existing statements.
 
 Currently _insert_ and _delete_ operations require you to explicitly state
 the fully qualified triple. In its current form it is not intended to deal with
-large data manipulation. Also they do not allow to use queries as sources of
+large data manipulation. Also, they do not allow to use queries as sources of
 the triples to insert or delete.
 
 ## Creating a New Graph
 
-All data in BadWolf is stored in graphs. Graph need to be explicitly created.
+All data in BadWolf is stored in graphs. Graphs need to be explicitly created.
 The `CREATE` graph statement allows you to create a graph as shown below.
 
 ```
@@ -42,9 +42,9 @@ CREATE GRAPH ?a;
 ```
 
 The name of the graph is represented by a non interpreted binding (more on
-this will be discussed in the next section.) Hence, in the previous example
+this will be discussed in the next section). Hence, in the previous example
 the statement would create a graph named `?a`. You can create multiple
-graphs in a single statement as shown in the example below.
+graphs in a single statement as shown in the example below:
 
 ```
 CREATE GRAPH ?a, ?b, ?c;
@@ -66,7 +66,7 @@ Hence, all data contained in the graph with be lost. You can drop a graph via:
 DROP GRAPH ?a;
 ```
 
-Or you can drop multiple graphs at once.
+You can also drop multiple graphs at once:
 
 ```
 DROP GRAPH ?a, ?b ?c;
@@ -80,7 +80,7 @@ been dropped, usually failing fast and not even attempting to drop the rest.
 
 ## Listing all the available graphs
 
-There is a simple way to get a list of all the available graph in a store.
+There is a simple way to get a list of all the available graphs in a store.
 Just run:
 
 ```
@@ -97,9 +97,9 @@ Bindings can be read as immutable variables given scoped context. Bindings
 start with a `?` and are followed by letters or digits. Some examples of
 bindings are: `?foo`, `?bar`, `?id12`.
 
-Once a binding takes a value in a context, cannot bind to a different
-value. Bindings allow expression of graph matching patterns. The simplest form
-of a graph pattern is the fully specified triple.
+Once a binding takes a value in a context, it cannot bind to a different
+value. Bindings allow the expression of graph matching patterns. The simplest form
+of a graph pattern is the fully specified triple:
 
 ```
   /user<joe> "color_of_eyes"@[] "brown"^^type:text
@@ -117,7 +117,7 @@ temporal predicate would look like the following:
 
 The above pattern checks if that triple exists and if it is anchored at that
 particular time. It is important not to confuse bindings with time ranges
-for temporal predicates. A time range is specified as shown below.
+for temporal predicates. A time range is specified as shown below:
 
 ```
   /user<Joe> "follows"@[,] /user<Mary>
@@ -140,7 +140,7 @@ Bindings represent potential values in a given context. For instance:
   /user<Joe> "follows"@[,] ?user
 ```
 
-represents a pattern that matches against all the users that Joe followed ever.
+represents a pattern that matches against all the users that Joe ever followed.
 As opposed to:
 
 ```
@@ -173,7 +173,7 @@ clause is matched against Joe as the parent of Peter, `?grandparent` gets
 bound against Joe and `?x` against Peter. To satisfy the second part of
 the composite clause, we now need to find triples where the subject is Peter
 (remember that once the value is bound in a context it cannot change) and the
-predicate is parent of. If one exists, then `?grand_child` would get bound
+predicate is "parent of". If one exists, then `?grand_child` would get bound
 and take the value of Mary.
 
 As we will see in later examples, bindings can also be used to identify
@@ -195,7 +195,7 @@ of a query is expressed as follows:
 The above query would return all the grandchildren of Joe. BQL uses binding
 notation to identify a graph to use. It uses the `?` to indicate the name
 of the graph. In the above example that query would be run against a graph
-which ID is equal to `?family_tree`.
+whose ID is equal to `?family_tree`.
 
 You can also query against multiple graphs:
 
@@ -208,7 +208,7 @@ You can also query against multiple graphs:
 ```
 
 There is no limit on how many variables you may return. You can return multiple
-variables instead as shown below.
+variables instead as shown below:
 
 ```
   SELECT ?grandparent, ?grand_child
@@ -219,9 +219,11 @@ variables instead as shown below.
 ```
 
 The above query would return all grandparents together with the name of their
-grandchildren, one pair per row. In some cases it is useful to return a different
+grandchildren, one pair per row. 
+
+In some cases it is useful to return a different
 name for the variables, and not use the biding name used in the graph pattern
-directly. This is achieved using the `as` keyword as shown below.
+directly. This is achieved using the `as` keyword as shown below:
 
 ```
   SELECT ?grandparent as ?gp, ?grand_child as ?gc
@@ -237,7 +239,7 @@ Hence, aliases cannot be used in graph patterns.
 BQL supports basic grouping and aggregation. It is accomplished via
 `group by`. The above query may return duplicates depending on the data
 available on the graph. If we want to get rid of the duplicates we could just
-group them as follows.
+group them as follows:
 
 ```
   SELECT ?grandparent as ?gp, ?grand_child as ?gc
@@ -251,7 +253,7 @@ group them as follows.
 As you may have expected, you can group by multiple bindings or aliases. Also,
 grouping allows a small subset of aggregates. Those include `count` its
 variant with `distinct`, and `sum`. Other functions will be added as needed.
-The queries below illustrate how these simple aggregations can be used.
+The queries below illustrate how these simple aggregations can be used:
 
 ```
   SELECT ?grandparent as ?gp, count(?grand_child) as ?gc
@@ -262,10 +264,10 @@ The queries below illustrate how these simple aggregations can be used.
   GROUP BY ?gp;
 ```
 
-Would return the number of grandchildren per grandparent. However, it would
-be better if the distinct version was used to guaranteed that all duplicates
-resulting on the graph data are removed. The query below illustrates how
-the `distinct` variant work.
+Which would return the number of grandchildren per grandparent. However, it would
+be better if the distinct version was used to guarantee that all duplicates
+resulting from the graph data are removed. The query below illustrates how
+the `distinct` variant works:
 
 ```
   SELECT ?grandparent as ?gp, count(distinct ?grand_child) as ?gc
@@ -277,7 +279,7 @@ the `distinct` variant work.
 ```
 
 The sum aggregation only works if the binding is done against a literal of type
-`int64` or `float64`, as shown on the example below.
+`int64` or `float64`, as shown on the example below:
 
 ```
   SELECT sum(?capacity) as ?total_capacity
@@ -287,7 +289,7 @@ The sum aggregation only works if the binding is done against a literal of type
   };
 ```
 
-You can also use `sum` to do partial accumulations in the same manner as was
+You can also use `sum` to do partial accumulations in the same manner as it was
 done in the `count` examples above.
 
 Results of the query can be sorted. By default, it is sorted in ascending
@@ -332,7 +334,7 @@ a limit to the number of rows to be returned.
 
 The above query would return at most only 20 rows.
 
-BQL also provides syntactic sugar to make ease specifying time bounds. Imagine
+BQL also provides syntactic sugar to make it easy to specify time bounds. Imagine
 you want to get all users who followed Joe and also followed Mary after a
 certain date. You could write it as:
 
@@ -340,8 +342,8 @@ certain date. You could write it as:
   SELECT ?user
   FROM ?social_graph
   WHERE {
-    ?user "folows"@[2006-01-01T15:04:05.999999999Z07:00,] /user<Joe> .
-    ?user "folows"@[2006-01-01T15:04:05.999999999Z07:00,] /user<Mary>
+    ?user "follows"@[2006-01-01T15:04:05.999999999Z07:00,] /user<Joe> .
+    ?user "follows"@[2006-01-01T15:04:05.999999999Z07:00,] /user<Mary>
   };
 ```
 
@@ -355,27 +357,27 @@ keywords. They can be composed together using `not`, `and`, and
   SELECT ?user
   FROM ?social_graph
   WHERE {
-    ?user "folows"@[,] /user<Joe> .
-    ?user "folows"@[,] /user<Mary>
+    ?user "follows"@[,] /user<Joe> .
+    ?user "follows"@[,] /user<Mary>
   }
   AFTER 2006-01-01T15:04:05.999999999Z07:00;
 ```
 
-This is easier to read. It also allow expressing complex global time bounds
-that would require multiple clauses and extra bindings.
+This is easier to read. It also allows expressing complex global time bounds
+that would require multiple clauses and extra bindings:
 
 ```
   SELECT ?user
   FROM ?social_graph
   WHERE {
-    ?user "folows"@[,] /user<Joe> .
-    ?user "folows"@[,] /user<Mary>
+    ?user "follows"@[,] /user<Joe> .
+    ?user "follows"@[,] /user<Mary>
   }
   AFTER 2006-01-01T15:04:05.999999999Z07:00 OR
   BETWEEN 2004-01-01T15:04:05.999999999Z07:00, 2004-03-01T15:04:05.999999999Z07:00;
 ```
 
-Also remember that bindings may take time anchor values so you could also query
+Also, remember that bindings may take time anchor values so you could also query
 for all users that first followed Joe and then followed Mary. Such query would
 look like:
 
@@ -383,8 +385,8 @@ look like:
   SELECT ?user, ?tj, ?tm
   FROM ?social_graph
   WHERE {
-    ?user "folows"@[?tj] /user<Joe> .
-    ?user "folows"@[?tm] /user<Mary>
+    ?user "follows"@[?tj] /user<Joe> .
+    ?user "follows"@[?tm] /user<Mary>
   }
   HAVING ?tm > ?tj;
 ```
@@ -419,11 +421,11 @@ running the following delete statements:
 
 You should not assume that the delete operation will be atomic. Most of the
 driver implementations may provide such property, but you will have to check
-with the driver implementation.
+with the driver implementation too.
 
 ## Building new facts out of existing facts in graphs
 
-In some cases you want to create new facts--insert new triples---into a graph or
+In some cases you want to create new facts -- insert new triples -- into a graph or
 graphs based on already existing facts. Constructing new facts requires
 two steps: (1) querying for the information that is going to be used to
 create new facts, and (2) how those new facts are going to be created. An
@@ -512,9 +514,9 @@ notation. `CONSTRUCT` supports the following:
 ```
   CONSTRUCT {
     ?ancestor "grandparent"@[] ?grandchildren .
-    _:v "subject"@[] ?ancestor .
-    _:v "predicate"@[] "grandparent"@[] .
-    _:v "object"@[] ?grandchildren .
+    _:v "_subject"@[] ?ancestor .
+    _:v "_predicate"@[] "grandparent"@[] .
+    _:v "_object"@[] ?grandchildren .
     _:v "both_live_in"@[] ?city
   }
   INTO ?dest1, ?dest2
@@ -538,7 +540,7 @@ Example of multiple blank nodes generated at once are `_:v0`, `_:v1`, etc.
 
 ## Removing complex facts out of existing graphs using existing statements
 
-In some cases you want to create remove facts--remove existing triples---in an
+In some cases you want to remove facts -- remove existing triples -- in an
 existing graph or graphs based on facts existing on the same or other graphs.
 Deconstructing facts requires two steps: (1) querying for the information that
 is going to be used to remove facts, and (2) how the facts to be removed are
@@ -556,14 +558,14 @@ going to be assembled. An illustrative example is:
 ```
 
 The above example would remove all immutable triples in the `?dest` graph that
-were found in the `?src` graph. As the `CONSTRUCT` statement, the `DECONTRUCT`
-statement supports multiple graph on the `IN` and `FROM` clauses of the
+were found in the `?src` graph. As the `CONSTRUCT` statement, the `DECONSTRUCT`
+statement supports multiple graphs on the `IN` and `FROM` clauses of the
 statement.
 
 Following the example used in the previous section, we could use the
 `DECONSTRUCT` to remove `grandparent` facts in a destination graph built from
 a source graphs by properly extracting graph patterns via the `WHERE`
-clause.
+clause:
 
 ```
   DECONSTRUCT {
