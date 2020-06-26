@@ -48,7 +48,7 @@ WHERE {
 }
 GROUP BY ?grandparent_name;
 
-# How many different brands of car manufactures do we know?
+# How many different brands of car manufacturers do we know?
 SELECT ?manufacturer
 FROM ?cars
 WHERE {
@@ -67,8 +67,8 @@ WHERE {
 GROUP BY ?manufacturer
 ORDER BY ?manufacturer DESC;
 
-# For any unique owner and manufacture, list the manufacture in descending
-# order, and for each manufacture order the owners in ascending order.
+# For any unique owner and manufacturer, list the manufacturer in descending
+# order, and for each manufacturer order the owners in ascending order.
 SELECT ?manufacturer, ?owner
 FROM ?family, ?cars
 WHERE {
@@ -77,7 +77,7 @@ WHERE {
 GROUP BY ?owner, ?manufacturer
 ORDER BY ?manufacturer DESC, ?owner ASC;
 
-# List the manufactures in descending order by number of owners.
+# List the manufacturers in descending order by number of owners.
 SELECT ?manufacturer, COUNT(?owner) AS ?owners
 FROM ?family, ?cars
 WHERE {
