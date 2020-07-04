@@ -319,6 +319,18 @@ than 10.
   HAVING ?capacity > "10"^^type:int64;
 ```
 
+Within this `having` clause, you can also build more complicated boolean expressions 
+using operators such as AND or OR:
+
+```
+  SELECT ?tank, ?capacity
+  FROM ?gas_tanks
+  WHERE {
+    ?tank "capacity"@[] ?capacity
+  }
+  HAVING (?capacity > "10"^^type:int64) AND (?capacity < "20"^^type:int64);
+```
+
 You could also limit the amount of data you will get back by simply appending
 a limit to the number of rows to be returned.
 
