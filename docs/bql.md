@@ -218,11 +218,28 @@ variables instead as shown below:
   };
 ```
 
-The above query would return all grandparents together with the name of their
-grandchildren, one pair per row. 
+The above query would return all grandparents together with their
+grandchildren, one pair per row.
+
+Note that you could also extract just the names (only "Joe" instead of the entire "/user<Joe>", for 
+example). For that you can use the `ID` keyword as follows:
+
+```
+  SELECT ?grand_parent_name
+  FROM ?family_tree
+  WHERE {
+    ?grand_parent ID ?grand_parent_name "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+  };
+```
+
+Which would extract only the names of all grandparents in `family_tree`. 
+
+For subjects and objects you can use the keywords `ID` and `TYPE` just like above. For 
+predicates, you can also use the `ID` and `AT` keywords for extracting the predicate IDs and the 
+time anchors, respectively.
 
 In some cases it is useful to return a different
-name for the variables, and not use the biding name used in the graph pattern
+name for the variables, and not use the binding name used in the graph pattern
 directly. This is achieved using the `as` keyword as shown below:
 
 ```
