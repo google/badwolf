@@ -146,7 +146,7 @@ func NewImmutable(id string) (*Predicate, error) {
 // NewTemporal creates a new temporal predicate.
 func NewTemporal(id string, t time.Time) (*Predicate, error) {
 	if id == "" {
-		return nil, fmt.Errorf("predicate.NewTemporal(%q, %v) cannot create a temporal predicate  with empty ID", id, t)
+		return nil, fmt.Errorf("predicate.NewTemporal(%q, %v) cannot create a temporal predicate with empty ID", id, t)
 	}
 	return &Predicate{
 		id:     ID(id),

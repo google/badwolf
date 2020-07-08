@@ -406,6 +406,10 @@ that would require multiple clauses and extra bindings:
   BETWEEN 2004-01-01T15:04:05.999999999Z07:00, 2004-03-01T15:04:05.999999999Z07:00;
 ```
 
+Note that the intervals defined by `before`, `after`, and `between` are always closed (the 
+limits of the intervals are included). You can then understand the `after` as a '>=', the 
+`before` as a `<=` and the `between` as a combination of them.
+
 Also, remember that bindings may take time anchor values so you could also query
 for all users that first followed Joe and then followed Mary. Such query would
 look like:
