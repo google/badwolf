@@ -82,11 +82,18 @@ func (o OP) String() string {
 }
 
 // formatCell formats a given cell into a trimmed comparable string
-func formatCell(c *table.Cell) string {
+func formatCell(c *table.Cell) (string, error) {
 	if c.L != nil {
-		return strings.TrimSpace(c.L.ToComparableString())
+		return strings.TrimSpace(c.L.ToComparableString()), nil
 	}
-	return strings.TrimSpace(c.String())
+	if c.S != nil {
+		formatted, err := literal.DefaultBuilder().Build(literal.Text, *c.S)
+		if err != nil {
+			return "", fmt.Errorf("could not build literal from string, received error: %v", err)
+		}
+		return strings.TrimSpace(formatted.ToComparableString()), nil
+	}
+	return strings.TrimSpace(c.String()), nil
 }
 
 // evaluationNode represents the internal representation of one expression.
@@ -120,7 +127,16 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	csEL, csER := formatCell(eL), formatCell(eR)
+
+	csEL, err := formatCell(eL)
+	if err != nil {
+		return false, err
+	}
+	csER, err := formatCell(eR)
+	if err != nil {
+		return false, err
+	}
+
 	switch e.op {
 	case EQ:
 		return reflect.DeepEqual(csEL, csER), nil
@@ -172,7 +188,10 @@ func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 		return n.ToComparableString(), nil
 	}
 
-	csEL = formatCell(leftCell)
+	csEL, err = formatCell(leftCell)
+	if err != nil {
+		return false, err
+	}
 	csER, err = formatLiteral(e.rS)
 	if err != nil {
 		return false, err
@@ -204,7 +223,12 @@ func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 		return false, err
 	}
 
-	csEL, csER := formatCell(eL), strings.TrimSpace(e.rNL)
+	csEL, err := formatCell(eL)
+	if err != nil {
+		return false, err
+	}
+	csER := strings.TrimSpace(e.rNL)
+
 	switch e.op {
 	case EQ:
 		return reflect.DeepEqual(csEL, csER), nil
@@ -274,6 +298,7 @@ func NewEvaluationExpressionForNodeLiteral(op OP, lB, rNL string) (Evaluator, er
 // booleanNode represents the internal representation of one expression.
 type booleanNode struct {
 	op OP
+
 	lS bool
 	lE Evaluator
 	rS bool
