@@ -566,6 +566,26 @@ func TestPlannerQuery(t *testing.T) {
 			nbs:  2,
 			nrws: 4,
 		},
+		{
+			q: `SELECT ?s_id, ?height
+					FROM ?test
+					WHERE {
+						?s ID ?s_id "height_cm"@[] ?height
+					}
+					HAVING ?s_id = "alice"^^type:text;`,
+			nbs:  2,
+			nrws: 1,
+		},
+		{
+			q: `SELECT ?p_id, ?o
+					FROM ?test
+					WHERE {
+						/u<peter> ?p ID ?p_id ?o
+					}
+					HAVING ?p_id < "parent_of"^^type:text;`,
+			nbs:  2,
+			nrws: 4,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
