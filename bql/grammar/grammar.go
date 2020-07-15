@@ -25,980 +25,1050 @@ import (
 	"github.com/google/badwolf/bql/semantic"
 )
 
+var (
+	startClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemQuery),
+				NewSymbol("VARS"),
+				NewTokenType(lexer.ItemFrom),
+				NewSymbol("INPUT_GRAPHS"),
+				NewSymbol("WHERE"),
+				NewSymbol("GROUP_BY"),
+				NewSymbol("ORDER_BY"),
+				NewSymbol("HAVING"),
+				NewSymbol("GLOBAL_TIME_BOUND"),
+				NewSymbol("LIMIT"),
+				NewTokenType(lexer.ItemSemicolon),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemInsert),
+				NewTokenType(lexer.ItemData),
+				NewTokenType(lexer.ItemInto),
+				NewSymbol("OUTPUT_GRAPHS"),
+				NewTokenType(lexer.ItemLBracket),
+				NewTokenType(lexer.ItemNode),
+				NewTokenType(lexer.ItemPredicate),
+				NewSymbol("INSERT_OBJECT"),
+				NewSymbol("INSERT_DATA"),
+				NewTokenType(lexer.ItemRBracket),
+				NewTokenType(lexer.ItemSemicolon),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemDelete),
+				NewTokenType(lexer.ItemData),
+				NewTokenType(lexer.ItemFrom),
+				NewSymbol("INPUT_GRAPHS"),
+				NewTokenType(lexer.ItemLBracket),
+				NewTokenType(lexer.ItemNode),
+				NewTokenType(lexer.ItemPredicate),
+				NewSymbol("DELETE_OBJECT"),
+				NewSymbol("DELETE_DATA"),
+				NewTokenType(lexer.ItemRBracket),
+				NewTokenType(lexer.ItemSemicolon),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemCreate),
+				NewSymbol("CREATE_GRAPHS"),
+				NewTokenType(lexer.ItemSemicolon),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemDrop),
+				NewSymbol("DROP_GRAPHS"),
+				NewTokenType(lexer.ItemSemicolon),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemConstruct),
+				NewSymbol("CONSTRUCT_FACTS"),
+				NewTokenType(lexer.ItemInto),
+				NewSymbol("OUTPUT_GRAPHS"),
+				NewTokenType(lexer.ItemFrom),
+				NewSymbol("INPUT_GRAPHS"),
+				NewSymbol("WHERE"),
+				NewSymbol("HAVING"),
+				NewTokenType(lexer.ItemSemicolon),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemDeconstruct),
+				NewSymbol("DECONSTRUCT_FACTS"),
+				NewTokenType(lexer.ItemIn),
+				NewSymbol("OUTPUT_GRAPHS"),
+				NewTokenType(lexer.ItemFrom),
+				NewSymbol("INPUT_GRAPHS"),
+				NewSymbol("WHERE"),
+				NewSymbol("HAVING"),
+				NewTokenType(lexer.ItemSemicolon),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemShow),
+				NewSymbol("GRAPH_SHOW"),
+				NewTokenType(lexer.ItemSemicolon),
+			},
+		},
+	}
+	createGraphClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemGraph),
+				NewSymbol("GRAPHS"),
+			},
+		},
+	}
+	dropGraphClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemGraph),
+				NewSymbol("GRAPHS"),
+			},
+		},
+	}
+	varsClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("VARS_AS"),
+				NewSymbol("MORE_VARS"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemCount),
+				NewTokenType(lexer.ItemLPar),
+				NewSymbol("COUNT_DISTINCT"),
+				NewTokenType(lexer.ItemBinding),
+				NewTokenType(lexer.ItemRPar),
+				NewTokenType(lexer.ItemAs),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("MORE_VARS"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemSum),
+				NewTokenType(lexer.ItemLPar),
+				NewTokenType(lexer.ItemBinding),
+				NewTokenType(lexer.ItemRPar),
+				NewTokenType(lexer.ItemAs),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("MORE_VARS"),
+			},
+		},
+	}
+	countDistinctClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemDistinct),
+			},
+		},
+		{},
+	}
+	varsAsClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAs),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	moreVarsClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemComma),
+				NewSymbol("VARS"),
+			},
+		},
+		{},
+	}
+	graphsClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("MORE_GRAPHS"),
+			},
+		},
+	}
+	moreGraphsClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemComma),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("MORE_GRAPHS"),
+			},
+		},
+		{},
+	}
+	inputGraphClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("MORE_INPUT_GRAPHS"),
+			},
+		},
+	}
+	moreInputGraphClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemComma),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("MORE_INPUT_GRAPHS"),
+			},
+		},
+		{},
+	}
+	outputGraphClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("MORE_OUTPUT_GRAPHS"),
+			},
+		},
+	}
+	moreOutputGraphClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemComma),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("MORE_OUTPUT_GRAPHS"),
+			},
+		},
+		{},
+	}
+	whereClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemWhere),
+				NewTokenType(lexer.ItemLBracket),
+				NewSymbol("FIRST_CLAUSE"),
+				NewTokenType(lexer.ItemRBracket),
+			},
+		},
+	}
+	firstClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemNode),
+				NewSymbol("SUBJECT_EXTRACT"),
+				NewSymbol("PREDICATE"),
+				NewSymbol("OBJECT"),
+				NewSymbol("MORE_CLAUSES"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("SUBJECT_EXTRACT"),
+				NewSymbol("PREDICATE"),
+				NewSymbol("OBJECT"),
+				NewSymbol("MORE_CLAUSES"),
+			},
+		},
+	}
+	moreClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemDot),
+				NewSymbol("CLAUSES"),
+			},
+		},
+		{},
+	}
+	clauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemOptional),
+				NewTokenType(lexer.ItemLBracket),
+				NewSymbol("OPTIONAL_CLAUSE"),
+				NewTokenType(lexer.ItemRBracket),
+				NewSymbol("MORE_CLAUSES"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemNode),
+				NewSymbol("SUBJECT_EXTRACT"),
+				NewSymbol("PREDICATE"),
+				NewSymbol("OBJECT"),
+				NewSymbol("MORE_CLAUSES"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("SUBJECT_EXTRACT"),
+				NewSymbol("PREDICATE"),
+				NewSymbol("OBJECT"),
+				NewSymbol("MORE_CLAUSES"),
+			},
+		},
+	}
+	optionalClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemNode),
+				NewSymbol("SUBJECT_EXTRACT"),
+				NewSymbol("PREDICATE"),
+				NewSymbol("OBJECT"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("SUBJECT_EXTRACT"),
+				NewSymbol("PREDICATE"),
+				NewSymbol("OBJECT"),
+			},
+		},
+	}
+	subjectExtractClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAs),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("SUBJECT_TYPE"),
+				NewSymbol("SUBJECT_ID"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemType),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("SUBJECT_ID"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemID),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	subjectTypeClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemType),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	subjectIDClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemID),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	predicateClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemPredicate),
+				NewSymbol("PREDICATE_AS"),
+				NewSymbol("PREDICATE_ID"),
+				NewSymbol("PREDICATE_AT"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemPredicateBound),
+				NewSymbol("PREDICATE_AS"),
+				NewSymbol("PREDICATE_ID"),
+				NewSymbol("PREDICATE_BOUND_AT"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("PREDICATE_AS"),
+				NewSymbol("PREDICATE_ID"),
+				NewSymbol("PREDICATE_AT"),
+			},
+		},
+	}
+	predicateAsClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAs),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	predicateIDClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemID),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	predicateAtClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAt),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	predicateBoundAtClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAt),
+				NewSymbol("PREDICATE_BOUND_AT_BINDINGS"),
+			},
+		},
+		{},
+	}
+	predicateBoundAtBindingsClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("PREDICATE_BOUND_AT_BINDINGS_END"),
+			},
+		},
+		{},
+	}
+	predicateBoundAtBindingsEndClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemComma),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	objectClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemLiteral),
+				NewSymbol("OBJECT_LITERAL_AS"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemNode),
+				NewSymbol("OBJECT_SUBJECT_EXTRACT"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemPredicate),
+				NewSymbol("OBJECT_PREDICATE_AS"),
+				NewSymbol("OBJECT_PREDICATE_ID"),
+				NewSymbol("OBJECT_PREDICATE_AT"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemPredicateBound),
+				NewSymbol("OBJECT_PREDICATE_AS"),
+				NewSymbol("OBJECT_PREDICATE_ID"),
+				NewSymbol("OBJECT_PREDICATE_BOUND_AT"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_LITERAL_BINDING_AS"),
+				NewSymbol("OBJECT_LITERAL_BINDING_TYPE"),
+				NewSymbol("OBJECT_LITERAL_BINDING_ID"),
+				NewSymbol("OBJECT_LITERAL_BINDING_AT"),
+			},
+		},
+	}
+	objectSubjectExtractClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAs),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_SUBJECT_TYPE"),
+				NewSymbol("OBJECT_SUBJECT_ID"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemType),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_SUBJECT_ID"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemID),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	objectSubjectTypeClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemType),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	objectSubjectIDClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemID),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	objectPredicateAsClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAs),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	objectPredicateIDClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemID),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	objectPredicateAtClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAt),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	objectPredicateBoundAtClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAt),
+				NewSymbol("OBJECT_PREDICATE_BOUND_AT_BINDINGS"),
+			},
+		},
+		{},
+	}
+	objectPredicateBoundAtBindingsClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_PREDICATE_BOUND_AT_BINDINGS_END"),
+			},
+		},
+		{},
+	}
+	objectPredicateBoundAtBindingsEndClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemComma),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	objectLiteralAsClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAs),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	objectLiteralBindingAsClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAs),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	objectLiteralBindingTypeClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemType),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	objectLiteralBindingIDClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemID),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	objectLiteralBindingAtClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAt),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+	groupByClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemGroup),
+				NewTokenType(lexer.ItemBy),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("GROUP_BY_BINDINGS"),
+			},
+		},
+		{},
+	}
+	groupByBindingsClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemComma),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("GROUP_BY_BINDINGS"),
+			},
+		},
+		{},
+	}
+	orderByClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemOrder),
+				NewTokenType(lexer.ItemBy),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("ORDER_BY_DIRECTION"),
+				NewSymbol("ORDER_BY_BINDINGS"),
+			},
+		},
+		{},
+	}
+	orderByDirectionClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAsc),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemDesc),
+			},
+		},
+		{},
+	}
+	orderByBindingsClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemComma),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("ORDER_BY_DIRECTION"),
+				NewSymbol("ORDER_BY_BINDINGS"),
+			},
+		},
+		{},
+	}
+	topHavingClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemHaving),
+				NewSymbol("HAVING_CLAUSE"),
+			},
+		},
+		{},
+	}
+	havingClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemNode),
+				NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemLiteral),
+				NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemNot),
+				NewSymbol("HAVING_CLAUSE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemLPar),
+				NewSymbol("HAVING_CLAUSE"),
+				NewTokenType(lexer.ItemRPar),
+				NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
+			},
+		},
+	}
+	havingClausesBinaryCompositeClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAnd),
+				NewSymbol("HAVING_CLAUSE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemOr),
+				NewSymbol("HAVING_CLAUSE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemEQ),
+				NewSymbol("HAVING_CLAUSE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemLT),
+				NewSymbol("HAVING_CLAUSE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemGT),
+				NewSymbol("HAVING_CLAUSE"),
+			},
+		},
+		{},
+	}
+	globalTimeBoundClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBefore),
+				NewTokenType(lexer.ItemPredicate),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAfter),
+				NewTokenType(lexer.ItemPredicate),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBetween),
+				NewTokenType(lexer.ItemPredicateBound),
+			},
+		},
+		{},
+	}
+	limitClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemLimit),
+				NewTokenType(lexer.ItemLiteral),
+			},
+		},
+		{},
+	}
+	insertObjectClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemNode),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemPredicate),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemLiteral),
+			},
+		},
+	}
+	insertDataClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemDot),
+				NewTokenType(lexer.ItemNode),
+				NewTokenType(lexer.ItemPredicate),
+				NewSymbol("INSERT_OBJECT"),
+				NewSymbol("INSERT_DATA"),
+			},
+		},
+		{},
+	}
+	deleteObjectClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemNode),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemPredicate),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemLiteral),
+			},
+		},
+	}
+	deleteDataClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemDot),
+				NewTokenType(lexer.ItemNode),
+				NewTokenType(lexer.ItemPredicate),
+				NewSymbol("DELETE_OBJECT"),
+				NewSymbol("DELETE_DATA"),
+			},
+		},
+		{},
+	}
+	constructFactsClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemLBracket),
+				NewSymbol("CONSTRUCT_TRIPLES"),
+				NewTokenType(lexer.ItemRBracket),
+			},
+		},
+	}
+	constructTriplesClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemNode),
+				NewSymbol("CONSTRUCT_PREDICATE"),
+				NewSymbol("CONSTRUCT_OBJECT"),
+				NewSymbol("MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS"),
+				NewSymbol("MORE_CONSTRUCT_TRIPLES"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBlankNode),
+				NewSymbol("CONSTRUCT_PREDICATE"),
+				NewSymbol("CONSTRUCT_OBJECT"),
+				NewSymbol("MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS"),
+				NewSymbol("MORE_CONSTRUCT_TRIPLES"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("CONSTRUCT_PREDICATE"),
+				NewSymbol("CONSTRUCT_OBJECT"),
+				NewSymbol("MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS"),
+				NewSymbol("MORE_CONSTRUCT_TRIPLES"),
+			},
+		},
+	}
+	constructPredicateClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemPredicate),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+	}
+	constructObjectClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemNode),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBlankNode),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemPredicate),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemLiteral),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+	}
+	moreConstructPredicateObjectPairsClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemSemicolon),
+				NewSymbol("CONSTRUCT_PREDICATE"),
+				NewSymbol("CONSTRUCT_OBJECT"),
+				NewSymbol("MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS"),
+			},
+		},
+		{},
+	}
+	moreConstructTriplesClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemDot),
+				NewSymbol("CONSTRUCT_TRIPLES"),
+			},
+		},
+		{},
+	}
+	deconstructFactsClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemLBracket),
+				NewSymbol("DECONSTRUCT_TRIPLES"),
+				NewTokenType(lexer.ItemRBracket),
+			},
+		},
+	}
+	deconstructTriplesClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemNode),
+				NewSymbol("CONSTRUCT_PREDICATE"),
+				NewSymbol("CONSTRUCT_OBJECT"),
+				NewSymbol("MORE_DECONSTRUCT_TRIPLES"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("CONSTRUCT_PREDICATE"),
+				NewSymbol("CONSTRUCT_OBJECT"),
+				NewSymbol("MORE_DECONSTRUCT_TRIPLES"),
+			},
+		},
+	}
+	moreDeconstructTriplesClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemDot),
+				NewSymbol("DECONSTRUCT_TRIPLES"),
+			},
+		},
+		{},
+	}
+	graphShowClauses = []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemGraphs),
+			},
+		},
+	}
+)
+
 // BQL LL1 grammar.
 func BQL() *Grammar {
 	return &Grammar{
-		"START": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemQuery),
-					NewSymbol("VARS"),
-					NewTokenType(lexer.ItemFrom),
-					NewSymbol("INPUT_GRAPHS"),
-					NewSymbol("WHERE"),
-					NewSymbol("GROUP_BY"),
-					NewSymbol("ORDER_BY"),
-					NewSymbol("HAVING"),
-					NewSymbol("GLOBAL_TIME_BOUND"),
-					NewSymbol("LIMIT"),
-					NewTokenType(lexer.ItemSemicolon),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemInsert),
-					NewTokenType(lexer.ItemData),
-					NewTokenType(lexer.ItemInto),
-					NewSymbol("OUTPUT_GRAPHS"),
-					NewTokenType(lexer.ItemLBracket),
-					NewTokenType(lexer.ItemNode),
-					NewTokenType(lexer.ItemPredicate),
-					NewSymbol("INSERT_OBJECT"),
-					NewSymbol("INSERT_DATA"),
-					NewTokenType(lexer.ItemRBracket),
-					NewTokenType(lexer.ItemSemicolon),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemDelete),
-					NewTokenType(lexer.ItemData),
-					NewTokenType(lexer.ItemFrom),
-					NewSymbol("INPUT_GRAPHS"),
-					NewTokenType(lexer.ItemLBracket),
-					NewTokenType(lexer.ItemNode),
-					NewTokenType(lexer.ItemPredicate),
-					NewSymbol("DELETE_OBJECT"),
-					NewSymbol("DELETE_DATA"),
-					NewTokenType(lexer.ItemRBracket),
-					NewTokenType(lexer.ItemSemicolon),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemCreate),
-					NewSymbol("CREATE_GRAPHS"),
-					NewTokenType(lexer.ItemSemicolon),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemDrop),
-					NewSymbol("DROP_GRAPHS"),
-					NewTokenType(lexer.ItemSemicolon),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemConstruct),
-					NewSymbol("CONSTRUCT_FACTS"),
-					NewTokenType(lexer.ItemInto),
-					NewSymbol("OUTPUT_GRAPHS"),
-					NewTokenType(lexer.ItemFrom),
-					NewSymbol("INPUT_GRAPHS"),
-					NewSymbol("WHERE"),
-					NewSymbol("HAVING"),
-					NewTokenType(lexer.ItemSemicolon),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemDeconstruct),
-					NewSymbol("DECONSTRUCT_FACTS"),
-					NewTokenType(lexer.ItemIn),
-					NewSymbol("OUTPUT_GRAPHS"),
-					NewTokenType(lexer.ItemFrom),
-					NewSymbol("INPUT_GRAPHS"),
-					NewSymbol("WHERE"),
-					NewSymbol("HAVING"),
-					NewTokenType(lexer.ItemSemicolon),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemShow),
-					NewSymbol("GRAPH_SHOW"),
-					NewTokenType(lexer.ItemSemicolon),
-				},
-			},
-		},
-		"CREATE_GRAPHS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemGraph),
-					NewSymbol("GRAPHS"),
-				},
-			},
-		},
-		"DROP_GRAPHS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemGraph),
-					NewSymbol("GRAPHS"),
-				},
-			},
-		},
-		"VARS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("VARS_AS"),
-					NewSymbol("MORE_VARS"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemCount),
-					NewTokenType(lexer.ItemLPar),
-					NewSymbol("COUNT_DISTINCT"),
-					NewTokenType(lexer.ItemBinding),
-					NewTokenType(lexer.ItemRPar),
-					NewTokenType(lexer.ItemAs),
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("MORE_VARS"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemSum),
-					NewTokenType(lexer.ItemLPar),
-					NewTokenType(lexer.ItemBinding),
-					NewTokenType(lexer.ItemRPar),
-					NewTokenType(lexer.ItemAs),
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("MORE_VARS"),
-				},
-			},
-		},
-		"COUNT_DISTINCT": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemDistinct),
-				},
-			},
-			{},
-		},
-		"VARS_AS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemAs),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"MORE_VARS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemComma),
-					NewSymbol("VARS"),
-				},
-			},
-			{},
-		},
-		"GRAPHS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("MORE_GRAPHS"),
-				},
-			},
-		},
-		"MORE_GRAPHS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemComma),
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("MORE_GRAPHS"),
-				},
-			},
-			{},
-		},
-		"INPUT_GRAPHS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("MORE_INPUT_GRAPHS"),
-				},
-			},
-		},
-		"MORE_INPUT_GRAPHS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemComma),
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("MORE_INPUT_GRAPHS"),
-				},
-			},
-			{},
-		},
-		"OUTPUT_GRAPHS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("MORE_OUTPUT_GRAPHS"),
-				},
-			},
-		},
-		"MORE_OUTPUT_GRAPHS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemComma),
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("MORE_OUTPUT_GRAPHS"),
-				},
-			},
-			{},
-		},
-		"WHERE": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemWhere),
-					NewTokenType(lexer.ItemLBracket),
-					NewSymbol("FIRST_CLAUSE"),
-					NewTokenType(lexer.ItemRBracket),
-				},
-			},
-		},
-		"FIRST_CLAUSE": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemNode),
-					NewSymbol("SUBJECT_EXTRACT"),
-					NewSymbol("PREDICATE"),
-					NewSymbol("OBJECT"),
-					NewSymbol("MORE_CLAUSES"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("SUBJECT_EXTRACT"),
-					NewSymbol("PREDICATE"),
-					NewSymbol("OBJECT"),
-					NewSymbol("MORE_CLAUSES"),
-				},
-			},
-		},
-		"MORE_CLAUSES": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemDot),
-					NewSymbol("CLAUSES"),
-				},
-			},
-			{},
-		},
-		"CLAUSES": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemOptional),
-					NewTokenType(lexer.ItemLBracket),
-					NewSymbol("OPTIONAL_CLAUSE"),
-					NewTokenType(lexer.ItemRBracket),
-					NewSymbol("MORE_CLAUSES"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemNode),
-					NewSymbol("SUBJECT_EXTRACT"),
-					NewSymbol("PREDICATE"),
-					NewSymbol("OBJECT"),
-					NewSymbol("MORE_CLAUSES"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("SUBJECT_EXTRACT"),
-					NewSymbol("PREDICATE"),
-					NewSymbol("OBJECT"),
-					NewSymbol("MORE_CLAUSES"),
-				},
-			},
-		},
-		"OPTIONAL_CLAUSE": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemNode),
-					NewSymbol("SUBJECT_EXTRACT"),
-					NewSymbol("PREDICATE"),
-					NewSymbol("OBJECT"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("SUBJECT_EXTRACT"),
-					NewSymbol("PREDICATE"),
-					NewSymbol("OBJECT"),
-				},
-			},
-		},
-		"SUBJECT_EXTRACT": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemAs),
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("SUBJECT_TYPE"),
-					NewSymbol("SUBJECT_ID"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemType),
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("SUBJECT_ID"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemID),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"SUBJECT_TYPE": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemType),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"SUBJECT_ID": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemID),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"PREDICATE": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemPredicate),
-					NewSymbol("PREDICATE_AS"),
-					NewSymbol("PREDICATE_ID"),
-					NewSymbol("PREDICATE_AT"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemPredicateBound),
-					NewSymbol("PREDICATE_AS"),
-					NewSymbol("PREDICATE_ID"),
-					NewSymbol("PREDICATE_BOUND_AT"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("PREDICATE_AS"),
-					NewSymbol("PREDICATE_ID"),
-					NewSymbol("PREDICATE_AT"),
-				},
-			},
-		},
-		"PREDICATE_AS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemAs),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"PREDICATE_ID": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemID),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"PREDICATE_AT": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemAt),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"PREDICATE_BOUND_AT": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemAt),
-					NewSymbol("PREDICATE_BOUND_AT_BINDINGS"),
-				},
-			},
-			{},
-		},
-		"PREDICATE_BOUND_AT_BINDINGS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("PREDICATE_BOUND_AT_BINDINGS_END"),
-				},
-			},
-			{},
-		},
-		"PREDICATE_BOUND_AT_BINDINGS_END": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemComma),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"OBJECT": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemLiteral),
-					NewSymbol("OBJECT_LITERAL_AS"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemNode),
-					NewSymbol("OBJECT_SUBJECT_EXTRACT"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemPredicate),
-					NewSymbol("OBJECT_PREDICATE_AS"),
-					NewSymbol("OBJECT_PREDICATE_ID"),
-					NewSymbol("OBJECT_PREDICATE_AT"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemPredicateBound),
-					NewSymbol("OBJECT_PREDICATE_AS"),
-					NewSymbol("OBJECT_PREDICATE_ID"),
-					NewSymbol("OBJECT_PREDICATE_BOUND_AT"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("OBJECT_LITERAL_BINDING_AS"),
-					NewSymbol("OBJECT_LITERAL_BINDING_TYPE"),
-					NewSymbol("OBJECT_LITERAL_BINDING_ID"),
-					NewSymbol("OBJECT_LITERAL_BINDING_AT"),
-				},
-			},
-		},
-		"OBJECT_SUBJECT_EXTRACT": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemAs),
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("OBJECT_SUBJECT_TYPE"),
-					NewSymbol("OBJECT_SUBJECT_ID"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemType),
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("OBJECT_SUBJECT_ID"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemID),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"OBJECT_SUBJECT_TYPE": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemType),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"OBJECT_SUBJECT_ID": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemID),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"OBJECT_PREDICATE_AS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemAs),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"OBJECT_PREDICATE_ID": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemID),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"OBJECT_PREDICATE_AT": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemAt),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"OBJECT_PREDICATE_BOUND_AT": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemAt),
-					NewSymbol("OBJECT_PREDICATE_BOUND_AT_BINDINGS"),
-				},
-			},
-			{},
-		},
-		"OBJECT_PREDICATE_BOUND_AT_BINDINGS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("OBJECT_PREDICATE_BOUND_AT_BINDINGS_END"),
-				},
-			},
-			{},
-		},
-		"OBJECT_PREDICATE_BOUND_AT_BINDINGS_END": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemComma),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"OBJECT_LITERAL_AS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemAs),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"OBJECT_LITERAL_BINDING_AS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemAs),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"OBJECT_LITERAL_BINDING_TYPE": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemType),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"OBJECT_LITERAL_BINDING_ID": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemID),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"OBJECT_LITERAL_BINDING_AT": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemAt),
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-			{},
-		},
-		"GROUP_BY": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemGroup),
-					NewTokenType(lexer.ItemBy),
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("GROUP_BY_BINDINGS"),
-				},
-			},
-			{},
-		},
-		"GROUP_BY_BINDINGS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemComma),
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("GROUP_BY_BINDINGS"),
-				},
-			},
-			{},
-		},
-		"ORDER_BY": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemOrder),
-					NewTokenType(lexer.ItemBy),
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("ORDER_BY_DIRECTION"),
-					NewSymbol("ORDER_BY_BINDINGS"),
-				},
-			},
-			{},
-		},
-		"ORDER_BY_DIRECTION": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemAsc),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemDesc),
-				},
-			},
-			{},
-		},
-		"ORDER_BY_BINDINGS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemComma),
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("ORDER_BY_DIRECTION"),
-					NewSymbol("ORDER_BY_BINDINGS"),
-				},
-			},
-			{},
-		},
-		"HAVING": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemHaving),
-					NewSymbol("HAVING_CLAUSE"),
-				},
-			},
-			{},
-		},
-		"HAVING_CLAUSE": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemNode),
-					NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemLiteral),
-					NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemNot),
-					NewSymbol("HAVING_CLAUSE"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemLPar),
-					NewSymbol("HAVING_CLAUSE"),
-					NewTokenType(lexer.ItemRPar),
-					NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
-				},
-			},
-		},
-		"HAVING_CLAUSE_BINARY_COMPOSITE": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemAnd),
-					NewSymbol("HAVING_CLAUSE"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemOr),
-					NewSymbol("HAVING_CLAUSE"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemEQ),
-					NewSymbol("HAVING_CLAUSE"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemLT),
-					NewSymbol("HAVING_CLAUSE"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemGT),
-					NewSymbol("HAVING_CLAUSE"),
-				},
-			},
-			{},
-		},
-		"GLOBAL_TIME_BOUND": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBefore),
-					NewTokenType(lexer.ItemPredicate),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemAfter),
-					NewTokenType(lexer.ItemPredicate),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBetween),
-					NewTokenType(lexer.ItemPredicateBound),
-				},
-			},
-			{},
-		},
-		"LIMIT": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemLimit),
-					NewTokenType(lexer.ItemLiteral),
-				},
-			},
-			{},
-		},
-		"INSERT_OBJECT": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemNode),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemPredicate),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemLiteral),
-				},
-			},
-		},
-		"INSERT_DATA": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemDot),
-					NewTokenType(lexer.ItemNode),
-					NewTokenType(lexer.ItemPredicate),
-					NewSymbol("INSERT_OBJECT"),
-					NewSymbol("INSERT_DATA"),
-				},
-			},
-			{},
-		},
-		"DELETE_OBJECT": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemNode),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemPredicate),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemLiteral),
-				},
-			},
-		},
-		"DELETE_DATA": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemDot),
-					NewTokenType(lexer.ItemNode),
-					NewTokenType(lexer.ItemPredicate),
-					NewSymbol("DELETE_OBJECT"),
-					NewSymbol("DELETE_DATA"),
-				},
-			},
-			{},
-		},
-		"CONSTRUCT_FACTS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemLBracket),
-					NewSymbol("CONSTRUCT_TRIPLES"),
-					NewTokenType(lexer.ItemRBracket),
-				},
-			},
-		},
-		"CONSTRUCT_TRIPLES": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemNode),
-					NewSymbol("CONSTRUCT_PREDICATE"),
-					NewSymbol("CONSTRUCT_OBJECT"),
-					NewSymbol("MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS"),
-					NewSymbol("MORE_CONSTRUCT_TRIPLES"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBlankNode),
-					NewSymbol("CONSTRUCT_PREDICATE"),
-					NewSymbol("CONSTRUCT_OBJECT"),
-					NewSymbol("MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS"),
-					NewSymbol("MORE_CONSTRUCT_TRIPLES"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("CONSTRUCT_PREDICATE"),
-					NewSymbol("CONSTRUCT_OBJECT"),
-					NewSymbol("MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS"),
-					NewSymbol("MORE_CONSTRUCT_TRIPLES"),
-				},
-			},
-		},
-		"CONSTRUCT_PREDICATE": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemPredicate),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-		},
-		"CONSTRUCT_OBJECT": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemNode),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBlankNode),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemPredicate),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemLiteral),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-				},
-			},
-		},
-		"MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemSemicolon),
-					NewSymbol("CONSTRUCT_PREDICATE"),
-					NewSymbol("CONSTRUCT_OBJECT"),
-					NewSymbol("MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS"),
-				},
-			},
-			{},
-		},
-		"MORE_CONSTRUCT_TRIPLES": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemDot),
-					NewSymbol("CONSTRUCT_TRIPLES"),
-				},
-			},
-			{},
-		},
-		"DECONSTRUCT_FACTS": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemLBracket),
-					NewSymbol("DECONSTRUCT_TRIPLES"),
-					NewTokenType(lexer.ItemRBracket),
-				},
-			},
-		},
-		"DECONSTRUCT_TRIPLES": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemNode),
-					NewSymbol("CONSTRUCT_PREDICATE"),
-					NewSymbol("CONSTRUCT_OBJECT"),
-					NewSymbol("MORE_DECONSTRUCT_TRIPLES"),
-				},
-			},
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemBinding),
-					NewSymbol("CONSTRUCT_PREDICATE"),
-					NewSymbol("CONSTRUCT_OBJECT"),
-					NewSymbol("MORE_DECONSTRUCT_TRIPLES"),
-				},
-			},
-		},
-		"MORE_DECONSTRUCT_TRIPLES": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemDot),
-					NewSymbol("DECONSTRUCT_TRIPLES"),
-				},
-			},
-			{},
-		},
-		"GRAPH_SHOW": []*Clause{
-			{
-				Elements: []Element{
-					NewTokenType(lexer.ItemGraphs),
-				},
-			},
-		},
+		"START":                                  startClauses,
+		"CREATE_GRAPHS":                          createGraphClauses,
+		"DROP_GRAPHS":                            dropGraphClauses,
+		"VARS":                                   varsClauses,
+		"COUNT_DISTINCT":                         countDistinctClauses,
+		"VARS_AS":                                varsAsClauses,
+		"MORE_VARS":                              moreVarsClauses,
+		"GRAPHS":                                 graphsClauses,
+		"MORE_GRAPHS":                            moreGraphsClauses,
+		"INPUT_GRAPHS":                           inputGraphClauses,
+		"MORE_INPUT_GRAPHS":                      moreInputGraphClauses,
+		"OUTPUT_GRAPHS":                          outputGraphClauses,
+		"MORE_OUTPUT_GRAPHS":                     moreOutputGraphClauses,
+		"WHERE":                                  whereClauses,
+		"FIRST_CLAUSE":                           firstClauses,
+		"MORE_CLAUSES":                           moreClauses,
+		"CLAUSES":                                clauses,
+		"OPTIONAL_CLAUSE":                        optionalClauses,
+		"SUBJECT_EXTRACT":                        subjectExtractClauses,
+		"SUBJECT_TYPE":                           subjectTypeClauses,
+		"SUBJECT_ID":                             subjectIDClauses,
+		"PREDICATE":                              predicateClauses,
+		"PREDICATE_AS":                           predicateAsClauses,
+		"PREDICATE_ID":                           predicateIDClauses,
+		"PREDICATE_AT":                           predicateAtClauses,
+		"PREDICATE_BOUND_AT":                     predicateBoundAtClauses,
+		"PREDICATE_BOUND_AT_BINDINGS":            predicateBoundAtBindingsClauses,
+		"PREDICATE_BOUND_AT_BINDINGS_END":        predicateBoundAtBindingsEndClauses,
+		"OBJECT":                                 objectClauses,
+		"OBJECT_SUBJECT_EXTRACT":                 objectSubjectExtractClauses,
+		"OBJECT_SUBJECT_TYPE":                    objectSubjectTypeClauses,
+		"OBJECT_SUBJECT_ID":                      objectSubjectIDClauses,
+		"OBJECT_PREDICATE_AS":                    objectPredicateAsClauses,
+		"OBJECT_PREDICATE_ID":                    objectPredicateIDClauses,
+		"OBJECT_PREDICATE_AT":                    objectPredicateAtClauses,
+		"OBJECT_PREDICATE_BOUND_AT":              objectPredicateBoundAtClauses,
+		"OBJECT_PREDICATE_BOUND_AT_BINDINGS":     objectPredicateBoundAtBindingsClauses,
+		"OBJECT_PREDICATE_BOUND_AT_BINDINGS_END": objectPredicateBoundAtBindingsEndClauses,
+		"OBJECT_LITERAL_AS":                      objectLiteralAsClauses,
+		"OBJECT_LITERAL_BINDING_AS":              objectLiteralBindingAsClauses,
+		"OBJECT_LITERAL_BINDING_TYPE":            objectLiteralBindingTypeClauses,
+		"OBJECT_LITERAL_BINDING_ID":              objectLiteralBindingIDClauses,
+		"OBJECT_LITERAL_BINDING_AT":              objectLiteralBindingAtClauses,
+		"GROUP_BY":                               groupByClauses,
+		"GROUP_BY_BINDINGS":                      groupByBindingsClauses,
+		"ORDER_BY":                               orderByClauses,
+		"ORDER_BY_DIRECTION":                     orderByDirectionClauses,
+		"ORDER_BY_BINDINGS":                      orderByBindingsClauses,
+		"HAVING":                                 topHavingClauses,
+		"HAVING_CLAUSE":                          havingClauses,
+		"HAVING_CLAUSE_BINARY_COMPOSITE":         havingClausesBinaryCompositeClauses,
+		"GLOBAL_TIME_BOUND":                      globalTimeBoundClauses,
+		"LIMIT":                                  limitClauses,
+		"INSERT_OBJECT":                          insertObjectClauses,
+		"INSERT_DATA":                            insertDataClauses,
+		"DELETE_OBJECT":                          deleteObjectClauses,
+		"DELETE_DATA":                            deleteDataClauses,
+		"CONSTRUCT_FACTS":                        constructFactsClauses,
+		"CONSTRUCT_TRIPLES":                      constructTriplesClauses,
+		"CONSTRUCT_PREDICATE":                    constructPredicateClauses,
+		"CONSTRUCT_OBJECT":                       constructObjectClauses,
+		"MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS":  moreConstructPredicateObjectPairsClauses,
+		"MORE_CONSTRUCT_TRIPLES":                 moreConstructTriplesClauses,
+		"DECONSTRUCT_FACTS":                      deconstructFactsClauses,
+		"DECONSTRUCT_TRIPLES":                    deconstructTriplesClauses,
+		"MORE_DECONSTRUCT_TRIPLES":               moreDeconstructTriplesClauses,
+		"GRAPH_SHOW":                             graphShowClauses,
 	}
 }
 
