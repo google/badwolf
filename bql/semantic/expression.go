@@ -175,27 +175,26 @@ func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("in comparisonForLiteral.Evaluate got error: %v", err)
 	}
-
-	var (
-		csEL, csER string
-	)
-
-	formatLiteral := func(lit string) (string, error) {
-		n, err := literal.DefaultBuilder().Parse(lit)
-		if err != nil {
-			return "", err
-		}
-		return n.ToComparableString(), nil
+	if leftCell.L == nil && leftCell.S == nil {
+		return false, nil
 	}
 
+	lit, err := literal.DefaultBuilder().Parse(e.rS)
+	if err != nil {
+		return false, fmt.Errorf("in comparisonForLiteral.Evaluate got error: %v", err)
+	}
+	if leftCell.S != nil && lit.Type() != literal.Text {
+		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %v instead", lit.String())
+	}
+
+	var (
+		csEL, csER string // comparable string expressions left and right
+	)
 	csEL, err = formatCell(leftCell)
 	if err != nil {
 		return false, fmt.Errorf("in comparisonForLiteral.Evaluate got error: %v", err)
 	}
-	csER, err = formatLiteral(e.rS)
-	if err != nil {
-		return false, fmt.Errorf("in comparisonForLiteral.Evaluate got error: %v", err)
-	}
+	csER = lit.ToComparableString()
 
 	switch e.op {
 	case EQ:
@@ -221,6 +220,12 @@ func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 	eL, err := cellFromRow(e.lB, r)
 	if err != nil {
 		return false, fmt.Errorf("in comparisonForNodeLiteral.Evaluate got error: %v", err)
+	}
+	if eL.S != nil {
+		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", strings.TrimSpace(e.rNL))
+	}
+	if eL.N == nil {
+		return false, nil
 	}
 
 	csEL, err := formatCell(eL)
