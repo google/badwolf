@@ -15,11 +15,13 @@
 package semantic
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/triple/literal"
+	"github.com/google/badwolf/triple/node"
 )
 
 func buildLiteral(l string) string {
@@ -193,6 +195,22 @@ func TestBooleanEvaluationNode(t *testing.T) {
 			t.Errorf("failed to evaluate op %q for %v; got %v, want %v", entry.eval.(*booleanNode).op, entry.eval, got, want)
 		}
 	}
+}
+
+func buildLiteralOrDie(textLiteral string) *literal.Literal {
+	lit, err := literal.DefaultBuilder().Parse(textLiteral)
+	if err != nil {
+		panic("Could not parse text literal got err: " + err.Error())
+	}
+	return lit
+}
+
+func newNodeFromStringOrDie(nodeType, nodeID string) *node.Node {
+	n, err := node.NewNodeFromStrings(nodeType, nodeID)
+	if err != nil {
+		panic(fmt.Sprintf("Could not build node from type %s and value %s", nodeType, nodeID))
+	}
+	return n
 }
 
 func TestNewEvaluator(t *testing.T) {
@@ -412,10 +430,75 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: table.CellString(buildLiteral("\"abc\"^^type:text"))},
+				"?foo": &table.Cell{
+					L: buildLiteralOrDie(`"abc"^^type:text`),
+				},
 			},
 			err:  false,
 			want: true,
+		},
+		{
+			id: "?s ID ?id = \"abc\"^^type:text",
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?id",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: "\"abc\"^^type:text",
+				}),
+			},
+			r: table.Row{
+				"?id": &table.Cell{S: table.CellString("abc")},
+			},
+			err:  false,
+			want: true,
+		},
+		{
+			id: "?s ID ?id < \"bbb\"^^type:text",
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?id",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: "\"bbb\"^^type:text",
+				}),
+			},
+			r: table.Row{
+				"?id": &table.Cell{S: table.CellString("aaa")},
+			},
+			err:  false,
+			want: true,
+		},
+		{
+			id: "?s ID ?id > \"ccc\"^^type:text",
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?id",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: "\"ccc\"^^type:text",
+				}),
+			},
+			r: table.Row{
+				"?id": &table.Cell{S: table.CellString("bbb")},
+			},
+			err:  false,
+			want: false,
 		},
 		{
 			id: "?foo = \"99.0\"^^type:float64",
@@ -433,7 +516,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: table.CellString(buildLiteral("\"99.0\"^^type:float64"))},
+				"?foo": &table.Cell{L: buildLiteralOrDie(`"99.0"^^type:float64`)},
 			},
 			err:  false,
 			want: true,
@@ -454,7 +537,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: table.CellString(buildLiteral("\"100\"^^type:int64"))},
+				"?foo": &table.Cell{L: buildLiteralOrDie(`"100"^^type:int64`)},
 			},
 			err:  false,
 			want: true,
@@ -475,7 +558,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: table.CellString(buildLiteral("\"100\"^^type:int64"))},
+				"?foo": &table.Cell{L: buildLiteralOrDie("\"100\"^^type:int64")},
 			},
 			err:  false,
 			want: false,
@@ -496,7 +579,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: table.CellString("/_<meowth>")},
+				"?foo": &table.Cell{N: newNodeFromStringOrDie("/_", "meowth")},
 			},
 			err:  false,
 			want: true,
