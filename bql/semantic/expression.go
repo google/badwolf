@@ -89,7 +89,7 @@ func formatCell(c *table.Cell) (string, error) {
 	if c.S != nil {
 		formatted, err := literal.DefaultBuilder().Build(literal.Text, *c.S)
 		if err != nil {
-			return "", fmt.Errorf("could not build literal from string, received error: %v", err)
+			return "", fmt.Errorf("in formatCell, could not build literal from string - received error: %v", err)
 		}
 		return strings.TrimSpace(formatted.ToComparableString()), nil
 	}
@@ -114,11 +114,11 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 		)
 		eL, ok = r[e.lB]
 		if !ok {
-			return nil, nil, fmt.Errorf("comparison operations require the binding value for %q for row %q to exist", e.lB, r)
+			return nil, nil, fmt.Errorf("comparison operation requires the binding value for %q for row %q to exist", e.lB, r)
 		}
 		eR, ok = r[e.rB]
 		if !ok {
-			return nil, nil, fmt.Errorf("comparison operations require the binding value for %q for row %q to exist", e.rB, r)
+			return nil, nil, fmt.Errorf("comparison operation requires the binding value for %q for row %q to exist", e.rB, r)
 		}
 		return eL, eR, nil
 	}
@@ -130,11 +130,11 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 
 	csEL, err := formatCell(eL)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("in evaluationNode.Evaluate got error: %v", err)
 	}
 	csER, err := formatCell(eR)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("in evaluationNode.Evaluate got error: %v", err)
 	}
 
 	switch e.op {
@@ -145,7 +145,7 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 	case GT:
 		return csEL > csER, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation require a boolen operation; found %q instead", e.op)
+		return false, fmt.Errorf("boolean evaluation requires a boolen operation; found %q instead", e.op)
 	}
 }
 
@@ -157,7 +157,7 @@ func cellFromRow(binding string, r table.Row) (*table.Cell, error) {
 	)
 	val, ok = r[binding]
 	if !ok {
-		return nil, fmt.Errorf("comparison operations require the binding value for %q for row %q to exist", binding, r)
+		return nil, fmt.Errorf("comparison operation requires the binding value for %q for row %q to exist", binding, r)
 	}
 	return val, nil
 }
@@ -173,7 +173,7 @@ type comparisonForLiteral struct {
 func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 	leftCell, err := cellFromRow(e.lS, r)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("in comparisonForLiteral.Evaluate got error: %v", err)
 	}
 
 	var (
@@ -190,11 +190,11 @@ func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 
 	csEL, err = formatCell(leftCell)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("in comparisonForLiteral.Evaluate got error: %v", err)
 	}
 	csER, err = formatLiteral(e.rS)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("in comparisonForLiteral.Evaluate got error: %v", err)
 	}
 
 	switch e.op {
@@ -205,7 +205,7 @@ func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 	case GT:
 		return csEL > csER, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation require a boolean operation; found %q instead", e.op)
+		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op)
 	}
 }
 
@@ -220,12 +220,12 @@ type comparisonForNodeLiteral struct {
 func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 	eL, err := cellFromRow(e.lB, r)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("in comparisonForNodeLiteral.Evaluate got error: %v", err)
 	}
 
 	csEL, err := formatCell(eL)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("in comparisonForNodeLiteral.Evaluate got error: %v", err)
 	}
 	csER := strings.TrimSpace(e.rNL)
 
@@ -237,7 +237,7 @@ func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 	case GT:
 		return csEL > csER, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation require a boolean operation; found %q instead", e.op)
+		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op)
 	}
 }
 
@@ -352,7 +352,7 @@ func (e *booleanNode) Evaluate(r table.Row) (bool, error) {
 		}
 		return !eL, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation require a boolen operation; found %q instead", e.op)
+		return false, fmt.Errorf("boolean evaluation requires a boolen operation; found %q instead", e.op)
 	}
 }
 
@@ -368,7 +368,7 @@ func NewBinaryBooleanExpression(op OP, lE, rE Evaluator) (Evaluator, error) {
 			rE: rE,
 		}, nil
 	default:
-		return nil, errors.New("binary boolean expressions require the operation to be one for the follwing 'and', 'or'")
+		return nil, errors.New("binary boolean expressions require the operation to be one of the following: 'and', 'or'")
 	}
 }
 
@@ -383,7 +383,7 @@ func NewUnaryBooleanExpression(op OP, lE Evaluator) (Evaluator, error) {
 			rS: false,
 		}, nil
 	default:
-		return nil, errors.New("unary boolean expressions require the operation to be one for the follwing 'not'")
+		return nil, errors.New("unary boolean expressions require the operation to be the following: 'not'")
 	}
 }
 
@@ -485,11 +485,11 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 			return nil, nil, err
 		}
 		if len(ce) < 1 {
-			return nil, nil, errors.New("incomplete parentesis expression; missing ')'")
+			return nil, nil, errors.New("incomplete parenthesis expression; missing ')'")
 		}
 		head, tail = ce[0], ce[1:]
 		if head.Token().Type != lexer.ItemRPar {
-			return nil, nil, fmt.Errorf("missing right parentesis in expression; found %v instead", head)
+			return nil, nil, fmt.Errorf("missing right parenthesis in expression; found %v instead", head)
 		}
 		if len(tail) > 1 {
 			// Binary boolean expression.

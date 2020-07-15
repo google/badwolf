@@ -24,14 +24,6 @@ import (
 	"github.com/google/badwolf/triple/node"
 )
 
-func buildLiteral(l string) string {
-	p, err := literal.DefaultBuilder().Parse(l)
-	if err != nil {
-		return ""
-	}
-	return p.ToComparableString()
-}
-
 func TestEvaluationNode(t *testing.T) {
 	testTable := []struct {
 		eval Evaluator
@@ -415,7 +407,7 @@ func TestNewEvaluator(t *testing.T) {
 			want: false,
 		},
 		{
-			id: "?foo = \"abc\"^^type:text",
+			id: `?foo = "abc"^^type:text`,
 			in: []ConsumedElement{
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
@@ -426,7 +418,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLiteral,
-					Text: "\"abc\"^^type:text",
+					Text: `"abc"^^type:text`,
 				}),
 			},
 			r: table.Row{
@@ -438,7 +430,7 @@ func TestNewEvaluator(t *testing.T) {
 			want: true,
 		},
 		{
-			id: "?s ID ?id = \"abc\"^^type:text",
+			id: `?s ID ?id = "abc"^^type:text`,
 			in: []ConsumedElement{
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
@@ -449,7 +441,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLiteral,
-					Text: "\"abc\"^^type:text",
+					Text: `"abc"^^type:text`,
 				}),
 			},
 			r: table.Row{
@@ -459,7 +451,7 @@ func TestNewEvaluator(t *testing.T) {
 			want: true,
 		},
 		{
-			id: "?s ID ?id < \"bbb\"^^type:text",
+			id: `?s ID ?id < "bbb"^^type:text`,
 			in: []ConsumedElement{
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
@@ -470,7 +462,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLiteral,
-					Text: "\"bbb\"^^type:text",
+					Text: `"bbb"^^type:text`,
 				}),
 			},
 			r: table.Row{
@@ -480,7 +472,7 @@ func TestNewEvaluator(t *testing.T) {
 			want: true,
 		},
 		{
-			id: "?s ID ?id > \"ccc\"^^type:text",
+			id: `?s ID ?id > "ccc"^^type:text`,
 			in: []ConsumedElement{
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
@@ -491,7 +483,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLiteral,
-					Text: "\"ccc\"^^type:text",
+					Text: `"ccc"^^type:text`,
 				}),
 			},
 			r: table.Row{
@@ -501,7 +493,7 @@ func TestNewEvaluator(t *testing.T) {
 			want: false,
 		},
 		{
-			id: "?foo = \"99.0\"^^type:float64",
+			id: `?foo = "99.0"^^type:float64`,
 			in: []ConsumedElement{
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
@@ -512,7 +504,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLiteral,
-					Text: "\"99.0\"^^type:float64",
+					Text: `"99.0"^^type:float64`,
 				}),
 			},
 			r: table.Row{
@@ -522,7 +514,7 @@ func TestNewEvaluator(t *testing.T) {
 			want: true,
 		},
 		{
-			id: "?foo > \"10\"^^type:int64",
+			id: `?foo > "10"^^type:int64`,
 			in: []ConsumedElement{
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
@@ -533,7 +525,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLiteral,
-					Text: "\"10\"^^type:int64",
+					Text: `"10"^^type:int64`,
 				}),
 			},
 			r: table.Row{
@@ -543,7 +535,7 @@ func TestNewEvaluator(t *testing.T) {
 			want: true,
 		},
 		{
-			id: "?foo < \"10\"^^type:int64",
+			id: `?foo < "10"^^type:int64`,
 			in: []ConsumedElement{
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
@@ -554,11 +546,11 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLiteral,
-					Text: "\"10\"^^type:int64",
+					Text: `"10"^^type:int64`,
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{L: buildLiteralOrDie("\"100\"^^type:int64")},
+				"?foo": &table.Cell{L: buildLiteralOrDie(`"100"^^type:int64`)},
 			},
 			err:  false,
 			want: false,
