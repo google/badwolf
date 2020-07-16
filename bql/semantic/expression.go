@@ -89,7 +89,7 @@ func formatCell(c *table.Cell) (string, error) {
 	if c.S != nil {
 		formatted, err := literal.DefaultBuilder().Build(literal.Text, *c.S)
 		if err != nil {
-			return "", fmt.Errorf("in formatCell, could not build literal from string - received error: %v", err)
+			return "", fmt.Errorf("could not build a literal from string while trying to formatCell, got error: %v", err)
 		}
 		return strings.TrimSpace(formatted.ToComparableString()), nil
 	}
@@ -187,9 +187,8 @@ func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %v instead", lit.String())
 	}
 
-	var (
-		csEL, csER string // comparable string expressions left and right
-	)
+	// comparable string expressions for left and right tokens.
+	var csEL, csER string
 	csEL, err = formatCell(leftCell)
 	if err != nil {
 		return false, fmt.Errorf("in comparisonForLiteral.Evaluate got error: %v", err)

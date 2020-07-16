@@ -538,51 +538,51 @@ func TestPlannerQuery(t *testing.T) {
 		},
 		{
 			q: `SELECT ?car
-				    FROM ?test
-				    WHERE {
-					   ?car "is_a"@[] /t<car> .
-					   OPTIONAL { /c<model O> "is_a"@[] /t<car> }
-					};`,
+				FROM ?test
+				WHERE {
+					?car "is_a"@[] /t<car> .
+					OPTIONAL { /c<model O> "is_a"@[] /t<car> }
+				};`,
 			nbs:  1,
 			nrws: 4,
 		},
 		{
 			q: `SELECT ?car
-				    FROM ?test
-				    WHERE {
-					   ?car "is_a"@[] /t<car> .
-					   OPTIONAL { ?car "is_a"@[] /t<car> }
-					};`,
+				FROM ?test
+				WHERE {
+					?car "is_a"@[] /t<car> .
+					OPTIONAL { ?car "is_a"@[] /t<car> }
+				};`,
 			nbs:  1,
 			nrws: 4,
 		},
 		{
 			q: `SELECT ?cars, ?type
-				    FROM ?test
-				    WHERE {
-					   ?cars "is_a"@[] /t<car> .
-					   OPTIONAL { ?cars "is_a"@[] ?type }
-					};`,
+				FROM ?test
+				WHERE {
+					?cars "is_a"@[] /t<car> .
+					OPTIONAL { ?cars "is_a"@[] ?type }
+				};`,
 			nbs:  2,
 			nrws: 4,
 		},
 		{
 			q: `SELECT ?s_id, ?height
-					FROM ?test
-					WHERE {
-						?s ID ?s_id "height_cm"@[] ?height
-					}
-					HAVING ?s_id = "alice"^^type:text;`,
+				FROM ?test
+				WHERE {
+					?s ID ?s_id "height_cm"@[] ?height
+				}
+				HAVING ?s_id = "alice"^^type:text;`,
 			nbs:  2,
 			nrws: 1,
 		},
 		{
 			q: `SELECT ?p_id, ?o
-					FROM ?test
-					WHERE {
-						/u<peter> ?p ID ?p_id ?o
-					}
-					HAVING ?p_id < "parent_of"^^type:text;`,
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ID ?p_id ?o
+				}
+				HAVING ?p_id < "parent_of"^^type:text;`,
 			nbs:  2,
 			nrws: 4,
 		},
