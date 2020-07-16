@@ -47,17 +47,17 @@ func (a *AlwaysReturn) Evaluate(r table.Row) (bool, error) {
 type OP int8
 
 const (
-	// LT represents '<'
+	// LT represents '<'.
 	LT OP = iota
-	// GT represents '>''
+	// GT represents '>'.
 	GT
-	// EQ represents '=''
+	// EQ represents '='.
 	EQ
-	// NOT represents 'not'
+	// NOT represents 'not'.
 	NOT
-	// AND represents 'and'
+	// AND represents 'and'.
 	AND
-	// OR represents 'or'
+	// OR represents 'or'.
 	OR
 )
 
@@ -81,7 +81,7 @@ func (o OP) String() string {
 	}
 }
 
-// formatCell formats a given cell into a trimmed comparable string
+// formatCell formats a given cell into a trimmed comparable string.
 func formatCell(c *table.Cell) (string, error) {
 	if c.L != nil {
 		return strings.TrimSpace(c.L.ToComparableString()), nil
@@ -98,15 +98,15 @@ func formatCell(c *table.Cell) (string, error) {
 
 // evaluationNode represents the internal representation of one expression.
 type evaluationNode struct {
-	op OP // operation
+	op OP // operation.
 
-	lB string // left binding
-	rB string // right binding
+	lB string // left binding.
+	rB string // right binding.
 }
 
 // Evaluate the expression.
 func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
-	// Binary evaluation
+	// Binary evaluation.
 	eval := func() (*table.Cell, *table.Cell, error) {
 		var (
 			eL, eR *table.Cell
@@ -149,7 +149,7 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 	}
 }
 
-// cellFromRow retrives the value of a binding from a given row
+// cellFromRow retrives the value of a binding from a given row.
 func cellFromRow(binding string, r table.Row) (*table.Cell, error) {
 	var (
 		val *table.Cell
@@ -164,10 +164,10 @@ func cellFromRow(binding string, r table.Row) (*table.Cell, error) {
 
 // comparisonForLiteral represents the internal representation of an expression of comparison between a binding and a literal.
 type comparisonForLiteral struct {
-	op OP // operation
+	op OP // operation.
 
-	lS string // left string
-	rS string // right string
+	lS string // left string.
+	rS string // right string.
 }
 
 func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
@@ -209,10 +209,10 @@ func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 
 // comparisonForNodeLiteral represents the internal representation of an expression of comparison between a binding and a node literal.
 type comparisonForNodeLiteral struct {
-	op OP // operation
+	op OP // operation.
 
-	lB  string // left binding
-	rNL string // right node literal
+	lB  string // left binding.
+	rNL string // right node literal.
 }
 
 func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
@@ -311,7 +311,7 @@ type booleanNode struct {
 
 // Evaluate the expression.
 func (e *booleanNode) Evaluate(r table.Row) (bool, error) {
-	// Binary evaluation
+	// Binary evaluation.
 	eval := func(binary bool) (bool, bool, error) {
 		var (
 			eL, eR     bool
@@ -412,7 +412,7 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 	head, tail := ce[0], ce[1:]
 	tkn := head.Token()
 
-	// Not token
+	// Not token.
 	if tkn.Type == lexer.ItemNot {
 		tailEval, tailCEs, err := internalNewEvaluator(tail)
 		if err != nil {
@@ -425,7 +425,7 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 		return e, tailCEs, nil
 	}
 
-	// Binding token
+	// Binding token.
 	if tkn.Type == lexer.ItemBinding {
 		if len(tail) < 2 {
 			return nil, nil, fmt.Errorf("cannot create a binary evaluation operand for %v", ce)
@@ -482,7 +482,7 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 		return nil, nil, fmt.Errorf("cannot build a binary evaluation operand with right operand %v", bndTkn)
 	}
 
-	// LPar Token
+	// LPar Token.
 	if tkn.Type == lexer.ItemLPar {
 		tailEval, ce, err := internalNewEvaluator(tail)
 		if err != nil {
