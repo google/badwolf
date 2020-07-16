@@ -184,7 +184,7 @@ func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 		return false, fmt.Errorf("in comparisonForLiteral.Evaluate got error: %v", err)
 	}
 	if leftCell.S != nil && lit.Type() != literal.Text {
-		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %v instead", lit.String())
+		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", lit.String())
 	}
 
 	// comparable string expressions for left and right tokens.

@@ -200,7 +200,7 @@ func buildLiteralOrDie(textLiteral string) *literal.Literal {
 func newNodeFromStringOrDie(nodeType, nodeID string) *node.Node {
 	n, err := node.NewNodeFromStrings(nodeType, nodeID)
 	if err != nil {
-		panic(fmt.Sprintf("Could not build node from type %s and value %s", nodeType, nodeID))
+		panic(fmt.Sprintf("Could not build node from type %q and value %q", nodeType, nodeID))
 	}
 	return n
 }
