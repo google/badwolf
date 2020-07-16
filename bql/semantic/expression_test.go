@@ -576,15 +576,61 @@ func TestNewEvaluator(t *testing.T) {
 			err:  false,
 			want: true,
 		},
+		{
+			id: `?s ID ?id > "37"^^type:int64`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?id",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: `"37"^^type:int64`,
+				}),
+			},
+			r: table.Row{
+				"?id": &table.Cell{S: table.CellString("peter")},
+			},
+			err:  true,
+			want: false,
+		},
+		{
+			id: `?s ID ?id = /u<peter>`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?id",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemNode,
+					Text: "/u<peter>",
+				}),
+			},
+			r: table.Row{
+				"?id": &table.Cell{S: table.CellString("peter")},
+			},
+			err:  true,
+			want: false,
+		},
 	}
 	for _, entry := range testTable {
 		eval, err := NewEvaluator(entry.in)
-		if !entry.err && err != nil {
+		if err != nil {
 			t.Fatalf("test %q should have never failed to process %v with error %v", entry.id, entry.in, err)
 		}
+
 		got, err := eval.Evaluate(entry.r)
-		if err != nil {
+		if !entry.err && err != nil {
 			t.Errorf("test %q the created evaluator failed to evaluate row %v with error %v", entry.id, entry.r, err)
+		}
+		if entry.err && err == nil {
+			t.Errorf("test %q the created evaluator should have returned an error when evaluating row %v", entry.id, entry.r)
 		}
 		if want := entry.want; got != want {
 			t.Errorf("test %q failed to evaluate the proper value; got %v, want %v", entry.id, got, want)

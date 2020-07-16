@@ -145,7 +145,7 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 	case GT:
 		return csEL > csER, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation requires a boolen operation; found %q instead", e.op)
+		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op)
 	}
 }
 
