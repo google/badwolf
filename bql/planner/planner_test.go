@@ -685,6 +685,28 @@ func TestPlannerQuery(t *testing.T) {
 			nbs:  2,
 			nrws: 4,
 		},
+		{
+			q: `SELECT ?s, ?s_type
+				FROM ?test
+				WHERE {
+					?s TYPE ?s_type ?p ?o
+				}
+				HAVING ?s_type = "/c"^^type:text;`,
+			err:  false,
+			nbs:  2,
+			nrws: 4,
+		},
+		{
+			q: `SELECT ?s, ?s_type
+				FROM ?test
+				WHERE {
+					?s TYPE ?s_type ?p ?o
+				}
+				HAVING ?s_type < "/l"^^type:text;`,
+			err:  false,
+			nbs:  2,
+			nrws: 7,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
