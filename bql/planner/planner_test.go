@@ -108,7 +108,7 @@ func insertAndDeleteTest(t *testing.T) {
                                /_<foo> "bar"@[] "yeah"^^type:text};`
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+		t.Errorf("grammar.NewParser should have produced a valid BQL parser but got error: %v", err)
 	}
 	stm := &semantic.Statement{}
 	if err = p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
@@ -145,7 +145,7 @@ func insertAndDeleteTest(t *testing.T) {
 			      /_<foo> "bar"@[] "yeah"^^type:text};`
 	p, err = grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+		t.Errorf("grammar.NewParser should have produced a valid BQL parser but got error: %v", err)
 	}
 	stm = &semantic.Statement{}
 	if err = p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
@@ -194,7 +194,7 @@ func TestPlannerCreateGraph(t *testing.T) {
 	bql := `create graph ?foo, ?bar;`
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+		t.Errorf("grammar.NewParser should have produced a valid BQL parser but got error: %v", err)
 	}
 	stm := &semantic.Statement{}
 	if err = p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
@@ -225,7 +225,7 @@ func TestPlannerDropGraph(t *testing.T) {
 	bql := `drop graph ?foo, ?bar;`
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser")
+		t.Errorf("grammar.NewParser should have produced a valid BQL parser but got error: %v", err)
 	}
 	stm := &semantic.Statement{}
 	if err = p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
@@ -711,11 +711,12 @@ func TestPlannerQuery(t *testing.T) {
 
 	s, ctx := memory.NewStore(), context.Background()
 	populateStoreWithTriples(ctx, s, "?test", testTriples, t)
-	p, err := grammar.NewParser(grammar.SemanticBQL())
-	if err != nil {
-		t.Fatalf("grammar.NewParser should have produced a valid BQL parser but got error: %v", err)
-	}
 	for _, entry := range testTable {
+		p, err := grammar.NewParser(grammar.SemanticBQL())
+		if err != nil {
+			t.Fatalf("grammar.NewParser should have produced a valid BQL parser but got error: %v", err)
+		}
+
 		st := &semantic.Statement{}
 		if err := p.Parse(grammar.NewLLk(entry.q, 1), st); err != nil {
 			t.Errorf("Parser.consume: failed to parse query %q with error: %v", entry.q, err)
@@ -809,11 +810,12 @@ func TestPlannerConstructAddsCorrectNumberofTriples(t *testing.T) {
 			trps: 3,
 		},
 	}
-	p, err := grammar.NewParser(grammar.SemanticBQL())
-	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
-	}
+
 	for _, entry := range testTable {
+		p, err := grammar.NewParser(grammar.SemanticBQL())
+		if err != nil {
+			t.Errorf("grammar.NewParser should have produced a valid BQL parser but got error: %v", err)
+		}
 
 		s, ctx := memory.NewStore(), context.Background()
 		populateStoreWithTriples(ctx, s, "?src", constructTestSrcTriples, t)
@@ -865,7 +867,7 @@ func TestPlannerConstructAddsCorrectTriples(t *testing.T) {
 		       ?s "met_at"@[?t] ?o};`
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
+		t.Errorf("grammar.NewParser should have produced a valid BQL parser but got error: %v", err)
 	}
 	s, ctx := memory.NewStore(), context.Background()
 	populateStoreWithTriples(ctx, s, "?src", constructTestSrcTriples, t)
@@ -1025,11 +1027,12 @@ func TestPlannerDeconstructRemovesCorrectTriples(t *testing.T) {
 				fmt.Sprintf("%s\t%s\t%s", `/person<B>`, `"met"@[]`, `/person<D>`)},
 		},
 	}
-	p, err := grammar.NewParser(grammar.SemanticBQL())
-	if err != nil {
-		t.Errorf("grammar.NewParser: should have produced a valid BQL parser, %v", err)
-	}
+
 	for _, entry := range testTable {
+		p, err := grammar.NewParser(grammar.SemanticBQL())
+		if err != nil {
+			t.Errorf("grammar.NewParser should have produced a valid BQL parser but got error: %v", err)
+		}
 
 		s, ctx := memory.NewStore(), context.Background()
 		populateStoreWithTriples(ctx, s, "?src", deconstructTestSrcTriples, t)
@@ -1111,7 +1114,7 @@ func TestTreeTraversalToRoot(t *testing.T) {
 	}
 	p, pErr := grammar.NewParser(grammar.SemanticBQL())
 	if pErr != nil {
-		t.Fatalf("grammar.NewParser: should have produced a valid BQL parser with error %v", pErr)
+		t.Fatalf("grammar.NewParser should have produced a valid BQL parser but got error: %v", pErr)
 	}
 	st := &semantic.Statement{}
 	if err := p.Parse(grammar.NewLLk(traversalQuery, 1), st); err != nil {
@@ -1158,7 +1161,7 @@ func TestChaining(t *testing.T) {
 	}
 	p, pErr := grammar.NewParser(grammar.SemanticBQL())
 	if pErr != nil {
-		t.Fatalf("grammar.NewParser: should have produced a valid BQL parser with error %v", pErr)
+		t.Fatalf("grammar.NewParser should have produced a valid BQL parser but got error: %v", pErr)
 	}
 	st := &semantic.Statement{}
 	if err := p.Parse(grammar.NewLLk(traversalQuery, 1), st); err != nil {
@@ -1206,7 +1209,7 @@ func BenchmarkChaining(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		p, pErr := grammar.NewParser(grammar.SemanticBQL())
 		if pErr != nil {
-			b.Fatalf("grammar.NewParser: should have produced a valid BQL parser with error %v", pErr)
+			b.Fatalf("grammar.NewParser should have produced a valid BQL parser but got error: %v", pErr)
 		}
 		st := &semantic.Statement{}
 		if err := p.Parse(grammar.NewLLk(traversalQuery, 1), st); err != nil {
@@ -1265,7 +1268,7 @@ func TestReificationResolutionIssue70(t *testing.T) {
 	}
 	p, pErr := grammar.NewParser(grammar.SemanticBQL())
 	if pErr != nil {
-		t.Fatalf("grammar.NewParser: should have produced a valid BQL parser with error %v", pErr)
+		t.Fatalf("grammar.NewParser should have produced a valid BQL parser but got error: %v", pErr)
 	}
 	st := &semantic.Statement{}
 	if err := p.Parse(grammar.NewLLk(query, 1), st); err != nil {
@@ -1291,12 +1294,13 @@ func TestReificationResolutionIssue70(t *testing.T) {
 func benchmarkQuery(query string, b *testing.B) {
 	s, ctx := memory.NewStore(), context.Background()
 	populateStoreWithTriples(ctx, s, "?test", testTriples, b)
-	p, err := grammar.NewParser(grammar.SemanticBQL())
-	if err != nil {
-		b.Fatalf("grammar.NewParser: should have produced a valid BQL parser with error %v", err)
-	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
+		p, err := grammar.NewParser(grammar.SemanticBQL())
+		if err != nil {
+			b.Fatalf("grammar.NewParser should have produced a valid BQL parser but got error: %v", err)
+		}
+
 		st := &semantic.Statement{}
 		if err := p.Parse(grammar.NewLLk(query, 1), st); err != nil {
 			b.Errorf("Parser.consume: failed to parse query %q with error %v", query, err)
