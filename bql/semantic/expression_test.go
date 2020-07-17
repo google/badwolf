@@ -192,7 +192,7 @@ func TestBooleanEvaluationNode(t *testing.T) {
 func buildLiteralOrDie(textLiteral string) *literal.Literal {
 	lit, err := literal.DefaultBuilder().Parse(textLiteral)
 	if err != nil {
-		panic("Could not parse text literal got err: " + err.Error())
+		panic(fmt.Sprintf("Could not parse text literal got err: %v", err.Error()))
 	}
 	return lit
 }
@@ -575,6 +575,48 @@ func TestNewEvaluator(t *testing.T) {
 			},
 			err:  false,
 			want: true,
+		},
+		{
+			id: `?o > "37"^^type:int64`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?o",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: `"37"^^type:int64`,
+				}),
+			},
+			r: table.Row{
+				"?o": &table.Cell{N: newNodeFromStringOrDie("/u", "paul")},
+			},
+			err:  false,
+			want: false,
+		},
+		{
+			id: `?o = /u<peter>`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?o",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemNode,
+					Text: "/u<peter>",
+				}),
+			},
+			r: table.Row{
+				"?o": &table.Cell{L: buildLiteralOrDie(`"73"^^type:int64`)},
+			},
+			err:  false,
+			want: false,
 		},
 		{
 			id: `?s ID ?id > "37"^^type:int64`,
