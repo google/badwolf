@@ -707,6 +707,50 @@ func TestPlannerQuery(t *testing.T) {
 			nbs:  2,
 			nrws: 7,
 		},
+		{
+			q: `SELECT ?p, ?p_id, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ID ?p_id ?o
+				}
+				HAVING ?p_id = "bought"^^type:text
+				AFTER 2016-03-01T00:00:00-08:00;`,
+			nbs:  3,
+			nrws: 2,
+		},
+		{
+			q: `SELECT ?p, ?p_id, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ID ?p_id ?o
+				}
+				HAVING ?p_id < "parent_of"^^type:text
+				BEFORE 2016-03-01T00:00:00-08:00;`,
+			nbs:  3,
+			nrws: 3,
+		},
+		{
+			q: `SELECT ?p, ?p_id, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ID ?p_id ?o
+				}
+				HAVING ?p_id = "bought"^^type:text
+				BETWEEN 2016-02-01T00:00:00-08:00, 2016-03-01T00:00:00-08:00;`,
+			nbs:  3,
+			nrws: 2,
+		},
+		{
+			q: `SELECT ?p, ?p_id, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ID ?p_id ?o
+				}
+				HAVING ?p_id < "work_with"^^type:text
+				BEFORE 2016-02-01T00:00:00-08:00;`,
+			nbs:  3,
+			nrws: 4,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
