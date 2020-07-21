@@ -179,12 +179,16 @@ func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 		return false, nil
 	}
 
-	lit, err := literal.DefaultBuilder().Parse(e.rS)
+	rightLiteral, err := literal.DefaultBuilder().Parse(e.rS)
 	if err != nil {
 		return false, fmt.Errorf("in comparisonForLiteral.Evaluate got error: %v", err)
 	}
-	if leftCell.S != nil && lit.Type() != literal.Text {
-		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", lit.String())
+	if leftCell.S != nil && rightLiteral.Type() != literal.Text {
+		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", rightLiteral.String())
+	}
+
+	if leftCell.L != nil && leftCell.L.Type() != rightLiteral.Type() && !(leftCell.L.IsNumber() && rightLiteral.IsNumber()) {
+		return false, nil
 	}
 
 	// comparable string expressions for left and right tokens.
@@ -193,7 +197,7 @@ func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("in comparisonForLiteral.Evaluate got error: %v", err)
 	}
-	csER = lit.ToComparableString()
+	csER = rightLiteral.ToComparableString()
 
 	switch e.op {
 	case EQ:
