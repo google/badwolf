@@ -660,6 +660,48 @@ func TestNewEvaluator(t *testing.T) {
 			err:  true,
 			want: false,
 		},
+		{
+			id: `?foo = "10"^^type:text`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: `"10"^^type:text`,
+				}),
+			},
+			r: table.Row{
+				"?foo": &table.Cell{L: buildLiteralOrDie(`"10"^^type:int64`)},
+			},
+			err:  false,
+			want: false,
+		},
+		{
+			id: `?foo > "10"^^type:int64`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: `"10"^^type:int64`,
+				}),
+			},
+			r: table.Row{
+				"?foo": &table.Cell{L: buildLiteralOrDie(`"100.0"^^type:float64`)},
+			},
+			err:  false,
+			want: true,
+		},
 	}
 	for _, entry := range testTable {
 		eval, err := NewEvaluator(entry.in)
