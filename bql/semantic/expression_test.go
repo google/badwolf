@@ -493,6 +493,27 @@ func TestNewEvaluator(t *testing.T) {
 			want: false,
 		},
 		{
+			id: `?s TYPE ?s_type = "/u"^^type:text`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?s_type",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: `"/u"^^type:text`,
+				}),
+			},
+			r: table.Row{
+				"?s_type": &table.Cell{S: table.CellString("/u")},
+			},
+			err:  false,
+			want: true,
+		},
+		{
 			id: `?foo = "99.0"^^type:float64`,
 			in: []ConsumedElement{
 				NewConsumedToken(&lexer.Token{
