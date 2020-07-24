@@ -670,6 +670,16 @@ func TestPlannerQuery(t *testing.T) {
 			nBindings: 3,
 			nRows:     4,
 		},
+		{
+			q: `SELECT ?o, ?o_type
+				FROM ?test
+				WHERE {
+					?s ?p ?o TYPE ?o_type
+				}
+				HAVING (?s = /u<joe>) OR (?s = /l<barcelona>) OR (?s = /u<alice>);`,
+			nBindings: 2,
+			nRows:     2,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
