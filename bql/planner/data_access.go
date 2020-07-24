@@ -409,7 +409,12 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 // table. The semantic graph clause is also passed to be able to identify what
 // bindings to set.
 func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.Table) error {
+	var lastErr error
 	for t := range ts {
+		if lastErr != nil {
+			// Drain the channel to avoid leaking goroutines.
+			continue
+		}
 		if cls.PID != "" {
 			// The triples need to be filtered.
 			if string(t.Predicate().ID()) != cls.PID {
@@ -421,7 +426,8 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 				}
 				ta, err := t.Predicate().TimeAnchor()
 				if err != nil {
-					return fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
+					lastErr = fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
+					continue
 				}
 				// Need to check the bounds of the triple.
 				if cls.PLowerBound != nil && cls.PLowerBound.After(*ta) {
@@ -444,7 +450,8 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 					}
 					ta, err := p.TimeAnchor()
 					if err != nil {
-						return fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
+						lastErr = fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
+						continue
 					}
 					// Need to check the bounds of the triple.
 					if cls.OLowerBound != nil && cls.OLowerBound.After(*ta) {
@@ -458,12 +465,17 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 		}
 		r, err := tripleToRow(t, cls)
 		if err != nil {
-			return err
+			lastErr = err
+			continue
 		}
 		if r != nil {
 			tbl.AddRow(r)
 		}
 	}
+	if lastErr != nil {
+		return lastErr
+	}
+
 	return nil
 }
 
