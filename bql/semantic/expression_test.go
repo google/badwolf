@@ -98,10 +98,10 @@ func TestEvaluationNode(t *testing.T) {
 	for _, entry := range testTable {
 		got, err := entry.eval.Evaluate(entry.r)
 		if !entry.err && err != nil {
-			t.Errorf("failed to evaluate op %q for %v on row %v with error %v", entry.eval.(*evaluationNode).op, entry.eval, entry.r, err)
+			t.Errorf("failed to evaluate op %q for %v on row %v with error %v", entry.eval.(*evaluationNode).op.String(), entry.eval, entry.r, err)
 		}
 		if want := entry.want; got != want {
-			t.Errorf("failed to evaluate op %q for %v on row %v; got %v, want %v", entry.eval.(*evaluationNode).op, entry.eval, entry.r, got, want)
+			t.Errorf("failed to evaluate op %q for %v on row %v; got %v, want %v", entry.eval.(*evaluationNode).op.String(), entry.eval, entry.r, got, want)
 		}
 	}
 }
@@ -181,10 +181,10 @@ func TestBooleanEvaluationNode(t *testing.T) {
 	for _, entry := range testTable {
 		got, err := entry.eval.Evaluate(table.Row{})
 		if !entry.err && err != nil {
-			t.Errorf("failed to evaluate op %q for %v with error %v", entry.eval.(*booleanNode).op, entry.eval, err)
+			t.Errorf("failed to evaluate op %q for %v with error %v", entry.eval.(*booleanNode).op.String(), entry.eval, err)
 		}
 		if want := entry.want; got != want {
-			t.Errorf("failed to evaluate op %q for %v; got %v, want %v", entry.eval.(*booleanNode).op, entry.eval, got, want)
+			t.Errorf("failed to evaluate op %q for %v; got %v, want %v", entry.eval.(*booleanNode).op.String(), entry.eval, got, want)
 		}
 	}
 }

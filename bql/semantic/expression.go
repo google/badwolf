@@ -114,11 +114,11 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 		)
 		eL, ok = r[e.lB]
 		if !ok {
-			return nil, nil, fmt.Errorf("comparison operation requires the binding value for %q for row %q to exist", e.lB, r)
+			return nil, nil, fmt.Errorf("comparison operation requires the binding value for %q for row %v to exist", e.lB, r)
 		}
 		eR, ok = r[e.rB]
 		if !ok {
-			return nil, nil, fmt.Errorf("comparison operation requires the binding value for %q for row %q to exist", e.rB, r)
+			return nil, nil, fmt.Errorf("comparison operation requires the binding value for %q for row %v to exist", e.rB, r)
 		}
 		return eL, eR, nil
 	}
@@ -145,7 +145,7 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 	case GT:
 		return csEL > csER, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op)
+		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op.String())
 	}
 }
 
@@ -157,7 +157,7 @@ func cellFromRow(binding string, r table.Row) (*table.Cell, error) {
 	)
 	val, ok = r[binding]
 	if !ok {
-		return nil, fmt.Errorf("comparison operation requires the binding value for %q for row %q to exist", binding, r)
+		return nil, fmt.Errorf("comparison operation requires the binding value for %q for row %v to exist", binding, r)
 	}
 	return val, nil
 }
@@ -207,7 +207,7 @@ func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 	case GT:
 		return csEL > csER, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op)
+		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op.String())
 	}
 }
 
@@ -245,7 +245,7 @@ func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 	case GT:
 		return csEL > csER, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op)
+		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op.String())
 	}
 }
 
@@ -322,7 +322,7 @@ func (e *booleanNode) Evaluate(r table.Row) (bool, error) {
 			errL, errR error
 		)
 		if !e.lS {
-			return false, false, fmt.Errorf("boolean operations require a left operator; found (%q, %q) instead", e.lE, e.rE)
+			return false, false, fmt.Errorf(`boolean operations require a left operator; found "(%v, %v)" instead`, e.lE, e.rE)
 		}
 		eL, errL = e.lE.Evaluate(r)
 		if errL != nil {
@@ -330,7 +330,7 @@ func (e *booleanNode) Evaluate(r table.Row) (bool, error) {
 		}
 		if binary {
 			if !e.rS {
-				return false, false, fmt.Errorf("boolean operations require a left operator; found (%q, %q) instead", e.lE, e.rE)
+				return false, false, fmt.Errorf(`boolean operations require a right operator; found "(%v, %v)" instead`, e.lE, e.rE)
 			}
 			eR, errR = e.rE.Evaluate(r)
 			if errR != nil {
@@ -360,7 +360,7 @@ func (e *booleanNode) Evaluate(r table.Row) (bool, error) {
 		}
 		return !eL, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation requires a boolen operation; found %q instead", e.op)
+		return false, fmt.Errorf("boolean evaluation requires a boolen operation; found %q instead", e.op.String())
 	}
 }
 
@@ -526,7 +526,7 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 
 	var tkns []string
 	for _, e := range ce {
-		tkns = append(tkns, fmt.Sprintf("%q", e.token.Type))
+		tkns = append(tkns, fmt.Sprintf("%q", e.token.Type.String()))
 	}
 	return nil, nil, fmt.Errorf("could not create an evaluator for condition {%s}", strings.Join(tkns, ","))
 }
