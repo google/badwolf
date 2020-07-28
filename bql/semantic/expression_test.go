@@ -98,7 +98,7 @@ func TestEvaluationNode(t *testing.T) {
 	for _, entry := range testTable {
 		got, err := entry.eval.Evaluate(entry.r)
 		if !entry.err && err != nil {
-			t.Errorf("failed to evaluate op %q for %v on row %v with error %v", entry.eval.(*evaluationNode).op.String(), entry.eval, entry.r, err)
+			t.Errorf("failed to evaluate op %q for %v on row %v with error: %v", entry.eval.(*evaluationNode).op.String(), entry.eval, entry.r, err)
 		}
 		if want := entry.want; got != want {
 			t.Errorf("failed to evaluate op %q for %v on row %v; got %v, want %v", entry.eval.(*evaluationNode).op.String(), entry.eval, entry.r, got, want)
@@ -181,7 +181,7 @@ func TestBooleanEvaluationNode(t *testing.T) {
 	for _, entry := range testTable {
 		got, err := entry.eval.Evaluate(table.Row{})
 		if !entry.err && err != nil {
-			t.Errorf("failed to evaluate op %q for %v with error %v", entry.eval.(*booleanNode).op.String(), entry.eval, err)
+			t.Errorf("failed to evaluate op %q for %v with error: %v", entry.eval.(*booleanNode).op.String(), entry.eval, err)
 		}
 		if want := entry.want; got != want {
 			t.Errorf("failed to evaluate op %q for %v; got %v, want %v", entry.eval.(*booleanNode).op.String(), entry.eval, got, want)
@@ -727,18 +727,18 @@ func TestNewEvaluator(t *testing.T) {
 	for _, entry := range testTable {
 		eval, err := NewEvaluator(entry.in)
 		if err != nil {
-			t.Fatalf("test %q should have never failed to process %v with error: %v", entry.id, entry.in, err)
+			t.Fatalf("test %q should have never failed when creating a new evaluator from %v, got error: %v", entry.id, entry.in, err)
 		}
 
 		got, err := eval.Evaluate(entry.r)
 		if !entry.err && err != nil {
-			t.Errorf("test %q the created evaluator failed to evaluate row %v with error: %v", entry.id, entry.r, err)
+			t.Errorf("%s: eval.Evaluate(%v) = _, %v; want nil error", entry.id, entry.r, err)
 		}
 		if entry.err && err == nil {
-			t.Errorf("test %q the created evaluator should have returned an error when evaluating row %v", entry.id, entry.r)
+			t.Errorf("%s: eval.Evaluate(%v) = _, nil; want non-nil error", entry.id, entry.r)
 		}
 		if want := entry.want; got != want {
-			t.Errorf("test %q failed to evaluate the proper value; got %v, want %v", entry.id, got, want)
+			t.Errorf("%s: eval.Evaluate(%v) = %v, _; want %v, _", entry.id, entry.r, got, want)
 		}
 	}
 }

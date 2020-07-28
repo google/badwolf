@@ -89,7 +89,7 @@ func formatCell(c *table.Cell) (string, error) {
 	if c.S != nil {
 		formatted, err := literal.DefaultBuilder().Build(literal.Text, *c.S)
 		if err != nil {
-			return "", fmt.Errorf("could not build a literal from string while trying to formatCell, got error: %v", err)
+			return "", fmt.Errorf("formatCell failed, could not build a text literal from the string %q, got error: %v", *c.S, err)
 		}
 		return strings.TrimSpace(formatted.ToComparableString()), nil
 	}
@@ -130,11 +130,11 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 
 	csEL, err := formatCell(eL)
 	if err != nil {
-		return false, fmt.Errorf("in evaluationNode.Evaluate got error: %v", err)
+		return false, fmt.Errorf("evaluationNode.Evaluate failed, the call for formatCell(%s) returned error: %v", eL, err)
 	}
 	csER, err := formatCell(eR)
 	if err != nil {
-		return false, fmt.Errorf("in evaluationNode.Evaluate got error: %v", err)
+		return false, fmt.Errorf("evaluationNode.Evaluate failed, the call for formatCell(%s) returned error: %v", eR, err)
 	}
 
 	switch e.op {
@@ -173,7 +173,7 @@ type comparisonForLiteral struct {
 func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 	leftCell, err := cellFromRow(e.lS, r)
 	if err != nil {
-		return false, fmt.Errorf("in comparisonForLiteral.Evaluate got error: %v", err)
+		return false, fmt.Errorf("comparisonForLiteral.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.lS, r, err)
 	}
 	if leftCell.L == nil && leftCell.S == nil {
 		return false, nil
@@ -181,7 +181,7 @@ func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 
 	rightLiteral, err := literal.DefaultBuilder().Parse(e.rS)
 	if err != nil {
-		return false, fmt.Errorf("in comparisonForLiteral.Evaluate got error: %v", err)
+		return false, fmt.Errorf("comparisonForLiteral.Evaluate failed, could not parse literal from the string %q, got error: %v", e.rS, err)
 	}
 	if leftCell.S != nil && rightLiteral.Type() != literal.Text {
 		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", rightLiteral.String())
@@ -195,7 +195,7 @@ func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 	var csEL, csER string
 	csEL, err = formatCell(leftCell)
 	if err != nil {
-		return false, fmt.Errorf("in comparisonForLiteral.Evaluate got error: %v", err)
+		return false, fmt.Errorf("comparisonForLiteral.Evaluate failed, the call for formatCell(%s) returned error: %v", leftCell, err)
 	}
 	csER = rightLiteral.ToComparableString()
 
@@ -222,7 +222,7 @@ type comparisonForNodeLiteral struct {
 func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 	eL, err := cellFromRow(e.lB, r)
 	if err != nil {
-		return false, fmt.Errorf("in comparisonForNodeLiteral.Evaluate got error: %v", err)
+		return false, fmt.Errorf("comparisonForNodeLiteral.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.lB, r, err)
 	}
 	if eL.S != nil {
 		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", strings.TrimSpace(e.rNL))
@@ -233,7 +233,7 @@ func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 
 	csEL, err := formatCell(eL)
 	if err != nil {
-		return false, fmt.Errorf("in comparisonForNodeLiteral.Evaluate got error: %v", err)
+		return false, fmt.Errorf("comparisonForNodeLiteral.Evaluate failed, the call for formatCell(%s) returned error: %v", eL, err)
 	}
 	csER := strings.TrimSpace(e.rNL)
 

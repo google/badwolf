@@ -767,30 +767,30 @@ func TestPlannerQuery(t *testing.T) {
 
 		st := &semantic.Statement{}
 		if err := p.Parse(grammar.NewLLk(entry.q, 1), st); err != nil {
-			t.Errorf("Parser.consume: failed to parse query %q with error: %v", entry.q, err)
+			t.Errorf("parser.Parse(%s)\n= %v; want nil error", entry.q, err)
 		}
 		plnr, err := New(ctx, s, st, 0, 10, nil)
 		if err != nil {
-			t.Errorf("planner.New failed to create a valid query plan with error: %v", err)
+			t.Errorf("planner.New() = _, %v; want nil error", err)
 		}
 		tbl, err := plnr.Execute(ctx)
 		if !entry.wantErr && err != nil {
-			t.Errorf("planner.Execute failed for query %q with error: %v", entry.q, err)
+			t.Errorf("planner.Execute(%s)\n= _, %v; want nil error", entry.q, err)
 			continue
 		}
 		if entry.wantErr && err == nil {
-			t.Errorf("planner.Execute for query %q should have returned an error, but did not", entry.q)
+			t.Errorf("planner.Execute(%s)\n= _, nil; want non-nil error", entry.q)
 			continue
 		}
 		if entry.wantErr {
-			// an error was expected and it was indeed caught above.
+			// an error was expected and it was indeed caught.
 			continue
 		}
 		if got, want := len(tbl.Bindings()), entry.nbs; got != want {
-			t.Errorf("tbl.Bindings returned the wrong number of bindings for %q; got %d, want %d", entry.q, got, want)
+			t.Errorf("planner.Execute(%s)\n= a Table with %d bindings; want %d", entry.q, got, want)
 		}
 		if got, want := len(tbl.Rows()), entry.nrws; got != want {
-			t.Errorf("planner.Execute failed to return the expected number of rows for query %q; got %d want %d\nGot:\n%v\n", entry.q, got, want, tbl)
+			t.Errorf("planner.Execute(%s)\n= a Table with %d rows; want %d\nTable:\n%v\n", entry.q, got, want, tbl)
 		}
 	}
 }
