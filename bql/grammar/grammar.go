@@ -24,6 +24,7 @@ import (
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/bql/semantic"
 )
+
 func startClauses() []*Clause {
 	return []*Clause{
 		{
@@ -1352,4 +1353,3 @@ func SemanticBQL() *Grammar {
 
 	return semanticBQL
 }
-
