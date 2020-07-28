@@ -24,7 +24,7 @@ the Time Vortex itself. The BadWolf entity scattered events in time as self
 encode messages, creating a looped ontological paradox. Hence, naming a temporal
 graph store after the entity seemed appropriate.
 
-You can find more detail information on each of the components of BadWolf below:
+You can find more detailed information on each of the components of BadWolf below:
 
 * [Data Abstractions for Temporal Graph Modeling](./docs/temporal_graph_modeling.md).
 * [Storage Abstraction Layer](./docs/storage_abstraction_layer.md).
@@ -41,5 +41,5 @@ You can reach us here or via
 [@badwolf_project](https://twitter.com/badwolf_project) on Twitter.
 
 For more information, presentation, or to find other related projects that
-using BadWolf check the
+are using BadWolf check the
 [project website](http://google.github.io/badwolf/).

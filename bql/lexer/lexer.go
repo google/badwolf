@@ -101,7 +101,7 @@ const (
 	ItemBlankNode
 	// ItemLiteral represents a BadWolf literal in BQL.
 	ItemLiteral
-	// ItemPredicate represents a BadWolf predicates in BQL.
+	// ItemPredicate represents a BadWolf predicate in BQL.
 	ItemPredicate
 	// ItemPredicateBound represents a BadWolf predicate bound in BQL.
 	ItemPredicateBound
