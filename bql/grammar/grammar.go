@@ -25,8 +25,8 @@ import (
 	"github.com/google/badwolf/bql/semantic"
 )
 
-var (
-	startClauses = []*Clause{
+func startClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemQuery),
@@ -120,7 +120,10 @@ var (
 			},
 		},
 	}
-	createGraphClauses = []*Clause{
+}
+
+func createGraphClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemGraph),
@@ -128,7 +131,10 @@ var (
 			},
 		},
 	}
-	dropGraphClauses = []*Clause{
+}
+
+func dropGraphClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemGraph),
@@ -136,7 +142,10 @@ var (
 			},
 		},
 	}
-	varsClauses = []*Clause{
+}
+
+func varsClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemBinding),
@@ -168,7 +177,10 @@ var (
 			},
 		},
 	}
-	countDistinctClauses = []*Clause{
+}
+
+func countDistinctClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemDistinct),
@@ -176,7 +188,10 @@ var (
 		},
 		{},
 	}
-	varsAsClauses = []*Clause{
+}
+
+func varsAsClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemAs),
@@ -185,7 +200,10 @@ var (
 		},
 		{},
 	}
-	moreVarsClauses = []*Clause{
+}
+
+func moreVarsClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemComma),
@@ -194,7 +212,10 @@ var (
 		},
 		{},
 	}
-	graphsClauses = []*Clause{
+}
+
+func graphsClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemBinding),
@@ -202,7 +223,10 @@ var (
 			},
 		},
 	}
-	moreGraphsClauses = []*Clause{
+}
+
+func moreGraphsClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemComma),
@@ -212,7 +236,10 @@ var (
 		},
 		{},
 	}
-	inputGraphClauses = []*Clause{
+}
+
+func inputGraphClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemBinding),
@@ -220,7 +247,10 @@ var (
 			},
 		},
 	}
-	moreInputGraphClauses = []*Clause{
+}
+
+func moreInputGraphClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemComma),
@@ -230,7 +260,10 @@ var (
 		},
 		{},
 	}
-	outputGraphClauses = []*Clause{
+}
+
+func outputGraphClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemBinding),
@@ -238,7 +271,10 @@ var (
 			},
 		},
 	}
-	moreOutputGraphClauses = []*Clause{
+}
+
+func moreOutputGraphClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemComma),
@@ -248,7 +284,10 @@ var (
 		},
 		{},
 	}
-	whereClauses = []*Clause{
+}
+
+func whereClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemWhere),
@@ -258,7 +297,10 @@ var (
 			},
 		},
 	}
-	firstClauses = []*Clause{
+}
+
+func firstClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemNode),
@@ -278,7 +320,9 @@ var (
 			},
 		},
 	}
-	moreClauses = []*Clause{
+}
+func moreClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemDot),
@@ -287,7 +331,9 @@ var (
 		},
 		{},
 	}
-	clauses = []*Clause{
+}
+func clauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemOptional),
@@ -316,7 +362,10 @@ var (
 			},
 		},
 	}
-	optionalClauses = []*Clause{
+}
+
+func optionalClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemNode),
@@ -334,7 +383,10 @@ var (
 			},
 		},
 	}
-	subjectExtractClauses = []*Clause{
+}
+
+func subjectExtractClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemAs),
@@ -358,7 +410,10 @@ var (
 		},
 		{},
 	}
-	subjectTypeClauses = []*Clause{
+}
+
+func subjectTypeClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemType),
@@ -367,7 +422,10 @@ var (
 		},
 		{},
 	}
-	subjectIDClauses = []*Clause{
+}
+
+func subjectIDClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemID),
@@ -376,7 +434,10 @@ var (
 		},
 		{},
 	}
-	predicateClauses = []*Clause{
+}
+
+func predicateClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemPredicate),
@@ -402,7 +463,10 @@ var (
 			},
 		},
 	}
-	predicateAsClauses = []*Clause{
+}
+
+func predicateAsClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemAs),
@@ -411,7 +475,10 @@ var (
 		},
 		{},
 	}
-	predicateIDClauses = []*Clause{
+}
+
+func predicateIDClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemID),
@@ -420,7 +487,10 @@ var (
 		},
 		{},
 	}
-	predicateAtClauses = []*Clause{
+}
+
+func predicateAtClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemAt),
@@ -429,7 +499,10 @@ var (
 		},
 		{},
 	}
-	predicateBoundAtClauses = []*Clause{
+}
+
+func predicateBoundAtClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemAt),
@@ -438,7 +511,10 @@ var (
 		},
 		{},
 	}
-	predicateBoundAtBindingsClauses = []*Clause{
+}
+
+func predicateBoundAtBindingsClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemBinding),
@@ -447,16 +523,21 @@ var (
 		},
 		{},
 	}
-	predicateBoundAtBindingsEndClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemComma),
-				NewTokenType(lexer.ItemBinding),
-			},
+}
+
+func predicateBoundAtBindingsEndClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemComma),
+			NewTokenType(lexer.ItemBinding),
 		},
+	},
 		{},
 	}
-	objectClauses = []*Clause{
+}
+
+func objectClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemLiteral),
@@ -495,31 +576,36 @@ var (
 			},
 		},
 	}
-	objectSubjectExtractClauses = []*Clause{
+}
+
+func objectSubjectExtractClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemAs),
+			NewTokenType(lexer.ItemBinding),
+			NewSymbol("OBJECT_SUBJECT_TYPE"),
+			NewSymbol("OBJECT_SUBJECT_ID"),
+		},
+	},
 		{
 			Elements: []Element{
-				NewTokenType(lexer.ItemAs),
+				NewTokenType(lexer.ItemType),
 				NewTokenType(lexer.ItemBinding),
-				NewSymbol("OBJECT_SUBJECT_TYPE"),
 				NewSymbol("OBJECT_SUBJECT_ID"),
 			},
 		},
 		{
 			Elements: []Element{
-				NewTokenType(lexer.ItemType),
-				NewTokenType(lexer.ItemBinding),
-				NewSymbol("OBJECT_SUBJECT_ID"),
-			},
-		},
-		{
-			Elements: []Element{
 				NewTokenType(lexer.ItemID),
 				NewTokenType(lexer.ItemBinding),
 			},
 		},
 		{},
 	}
-	objectSubjectTypeClauses = []*Clause{
+}
+
+func objectSubjectTypeClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemType),
@@ -528,7 +614,10 @@ var (
 		},
 		{},
 	}
-	objectSubjectIDClauses = []*Clause{
+}
+
+func objectSubjectIDClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemID),
@@ -537,7 +626,10 @@ var (
 		},
 		{},
 	}
-	objectPredicateAsClauses = []*Clause{
+}
+
+func objectPredicateAsClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemAs),
@@ -546,7 +638,10 @@ var (
 		},
 		{},
 	}
-	objectPredicateIDClauses = []*Clause{
+}
+
+func objectPredicateIDClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemID),
@@ -555,7 +650,10 @@ var (
 		},
 		{},
 	}
-	objectPredicateAtClauses = []*Clause{
+}
+
+func objectPredicateAtClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemAt),
@@ -564,7 +662,10 @@ var (
 		},
 		{},
 	}
-	objectPredicateBoundAtClauses = []*Clause{
+}
+
+func objectPredicateBoundAtClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemAt),
@@ -573,52 +674,64 @@ var (
 		},
 		{},
 	}
-	objectPredicateBoundAtBindingsClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemBinding),
-				NewSymbol("OBJECT_PREDICATE_BOUND_AT_BINDINGS_END"),
-			},
+}
+
+func objectPredicateBoundAtBindingsClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemBinding),
+			NewSymbol("OBJECT_PREDICATE_BOUND_AT_BINDINGS_END"),
 		},
+	},
 		{},
 	}
-	objectPredicateBoundAtBindingsEndClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemComma),
-				NewTokenType(lexer.ItemBinding),
-			},
+}
+
+func objectPredicateBoundAtBindingsEndClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemComma),
+			NewTokenType(lexer.ItemBinding),
 		},
+	},
 		{},
 	}
-	objectLiteralAsClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemAs),
-				NewTokenType(lexer.ItemBinding),
-			},
+}
+
+func objectLiteralAsClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemAs),
+			NewTokenType(lexer.ItemBinding),
 		},
+	},
 		{},
 	}
-	objectLiteralBindingAsClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemAs),
-				NewTokenType(lexer.ItemBinding),
-			},
+}
+
+func objectLiteralBindingAsClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemAs),
+			NewTokenType(lexer.ItemBinding),
 		},
+	},
 		{},
 	}
-	objectLiteralBindingTypeClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemType),
-				NewTokenType(lexer.ItemBinding),
-			},
+}
+func objectLiteralBindingTypeClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemType),
+			NewTokenType(lexer.ItemBinding),
 		},
+	},
 		{},
 	}
-	objectLiteralBindingIDClauses = []*Clause{
+}
+
+func objectLiteralBindingIDClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemID),
@@ -627,16 +740,21 @@ var (
 		},
 		{},
 	}
-	objectLiteralBindingAtClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemAt),
-				NewTokenType(lexer.ItemBinding),
-			},
+}
+
+func objectLiteralBindingAtClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemAt),
+			NewTokenType(lexer.ItemBinding),
 		},
+	},
 		{},
 	}
-	groupByClauses = []*Clause{
+}
+
+func groupByClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemGroup),
@@ -647,34 +765,38 @@ var (
 		},
 		{},
 	}
-	groupByBindingsClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemComma),
-				NewTokenType(lexer.ItemBinding),
-				NewSymbol("GROUP_BY_BINDINGS"),
-			},
+}
+
+func groupByBindingsClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemComma),
+			NewTokenType(lexer.ItemBinding),
+			NewSymbol("GROUP_BY_BINDINGS"),
 		},
+	},
 		{},
 	}
-	orderByClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemOrder),
-				NewTokenType(lexer.ItemBy),
-				NewTokenType(lexer.ItemBinding),
-				NewSymbol("ORDER_BY_DIRECTION"),
-				NewSymbol("ORDER_BY_BINDINGS"),
-			},
+}
+func orderByClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemOrder),
+			NewTokenType(lexer.ItemBy),
+			NewTokenType(lexer.ItemBinding),
+			NewSymbol("ORDER_BY_DIRECTION"),
+			NewSymbol("ORDER_BY_BINDINGS"),
 		},
+	},
 		{},
 	}
-	orderByDirectionClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemAsc),
-			},
+}
+func orderByDirectionClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemAsc),
 		},
+	},
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemDesc),
@@ -682,33 +804,36 @@ var (
 		},
 		{},
 	}
-	orderByBindingsClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemComma),
-				NewTokenType(lexer.ItemBinding),
-				NewSymbol("ORDER_BY_DIRECTION"),
-				NewSymbol("ORDER_BY_BINDINGS"),
-			},
+}
+func orderByBindingsClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemComma),
+			NewTokenType(lexer.ItemBinding),
+			NewSymbol("ORDER_BY_DIRECTION"),
+			NewSymbol("ORDER_BY_BINDINGS"),
 		},
+	},
 		{},
 	}
-	topHavingClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemHaving),
-				NewSymbol("HAVING_CLAUSE"),
-			},
+}
+func topHavingClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemHaving),
+			NewSymbol("HAVING_CLAUSE"),
 		},
+	},
 		{},
 	}
-	havingClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemBinding),
-				NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
-			},
+}
+func havingClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemBinding),
+			NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
 		},
+	},
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemNode),
@@ -736,13 +861,14 @@ var (
 			},
 		},
 	}
-	havingClausesBinaryCompositeClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemAnd),
-				NewSymbol("HAVING_CLAUSE"),
-			},
+}
+func havingClausesBinaryCompositeClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemAnd),
+			NewSymbol("HAVING_CLAUSE"),
 		},
+	},
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemOr),
@@ -769,13 +895,14 @@ var (
 		},
 		{},
 	}
-	globalTimeBoundClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemBefore),
-				NewTokenType(lexer.ItemPredicate),
-			},
+}
+func globalTimeBoundClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemBefore),
+			NewTokenType(lexer.ItemPredicate),
 		},
+	},
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemAfter),
@@ -790,50 +917,23 @@ var (
 		},
 		{},
 	}
-	limitClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemLimit),
-				NewTokenType(lexer.ItemLiteral),
-			},
+}
+func limitClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemLimit),
+			NewTokenType(lexer.ItemLiteral),
 		},
+	},
 		{},
 	}
-	insertObjectClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemNode),
-			},
+}
+func insertObjectClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemNode),
 		},
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemPredicate),
-			},
-		},
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemLiteral),
-			},
-		},
-	}
-	insertDataClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemDot),
-				NewTokenType(lexer.ItemNode),
-				NewTokenType(lexer.ItemPredicate),
-				NewSymbol("INSERT_OBJECT"),
-				NewSymbol("INSERT_DATA"),
-			},
-		},
-		{},
-	}
-	deleteObjectClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemNode),
-			},
-		},
+	},
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemPredicate),
@@ -845,37 +945,71 @@ var (
 			},
 		},
 	}
-	deleteDataClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemDot),
-				NewTokenType(lexer.ItemNode),
-				NewTokenType(lexer.ItemPredicate),
-				NewSymbol("DELETE_OBJECT"),
-				NewSymbol("DELETE_DATA"),
-			},
+}
+func insertDataClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemDot),
+			NewTokenType(lexer.ItemNode),
+			NewTokenType(lexer.ItemPredicate),
+			NewSymbol("INSERT_OBJECT"),
+			NewSymbol("INSERT_DATA"),
 		},
+	},
 		{},
 	}
-	constructFactsClauses = []*Clause{
+}
+func deleteObjectClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemNode),
+		},
+	},
 		{
 			Elements: []Element{
-				NewTokenType(lexer.ItemLBracket),
-				NewSymbol("CONSTRUCT_TRIPLES"),
-				NewTokenType(lexer.ItemRBracket),
+				NewTokenType(lexer.ItemPredicate),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemLiteral),
 			},
 		},
 	}
-	constructTriplesClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemNode),
-				NewSymbol("CONSTRUCT_PREDICATE"),
-				NewSymbol("CONSTRUCT_OBJECT"),
-				NewSymbol("MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS"),
-				NewSymbol("MORE_CONSTRUCT_TRIPLES"),
-			},
+}
+func deleteDataClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemDot),
+			NewTokenType(lexer.ItemNode),
+			NewTokenType(lexer.ItemPredicate),
+			NewSymbol("DELETE_OBJECT"),
+			NewSymbol("DELETE_DATA"),
 		},
+	},
+		{},
+	}
+}
+func constructFactsClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemLBracket),
+			NewSymbol("CONSTRUCT_TRIPLES"),
+			NewTokenType(lexer.ItemRBracket),
+		},
+	},
+	}
+}
+func constructTriplesClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemNode),
+			NewSymbol("CONSTRUCT_PREDICATE"),
+			NewSymbol("CONSTRUCT_OBJECT"),
+			NewSymbol("MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS"),
+			NewSymbol("MORE_CONSTRUCT_TRIPLES"),
+		},
+	},
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemBlankNode),
@@ -895,19 +1029,22 @@ var (
 			},
 		},
 	}
-	constructPredicateClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemPredicate),
-			},
+}
+func constructPredicateClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemPredicate),
 		},
+	},
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemBinding),
 			},
 		},
 	}
-	constructObjectClauses = []*Clause{
+}
+func constructObjectClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemNode),
@@ -934,44 +1071,48 @@ var (
 			},
 		},
 	}
-	moreConstructPredicateObjectPairsClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemSemicolon),
-				NewSymbol("CONSTRUCT_PREDICATE"),
-				NewSymbol("CONSTRUCT_OBJECT"),
-				NewSymbol("MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS"),
-			},
+}
+func moreConstructPredicateObjectPairsClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemSemicolon),
+			NewSymbol("CONSTRUCT_PREDICATE"),
+			NewSymbol("CONSTRUCT_OBJECT"),
+			NewSymbol("MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS"),
 		},
+	},
 		{},
 	}
-	moreConstructTriplesClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemDot),
-				NewSymbol("CONSTRUCT_TRIPLES"),
-			},
+}
+func moreConstructTriplesClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemDot),
+			NewSymbol("CONSTRUCT_TRIPLES"),
 		},
+	},
 		{},
 	}
-	deconstructFactsClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemLBracket),
-				NewSymbol("DECONSTRUCT_TRIPLES"),
-				NewTokenType(lexer.ItemRBracket),
-			},
+}
+func deconstructFactsClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemLBracket),
+			NewSymbol("DECONSTRUCT_TRIPLES"),
+			NewTokenType(lexer.ItemRBracket),
 		},
+	},
 	}
-	deconstructTriplesClauses = []*Clause{
-		{
-			Elements: []Element{
-				NewTokenType(lexer.ItemNode),
-				NewSymbol("CONSTRUCT_PREDICATE"),
-				NewSymbol("CONSTRUCT_OBJECT"),
-				NewSymbol("MORE_DECONSTRUCT_TRIPLES"),
-			},
+}
+func deconstructTriplesClauses() []*Clause {
+	return []*Clause{{
+		Elements: []Element{
+			NewTokenType(lexer.ItemNode),
+			NewSymbol("CONSTRUCT_PREDICATE"),
+			NewSymbol("CONSTRUCT_OBJECT"),
+			NewSymbol("MORE_DECONSTRUCT_TRIPLES"),
 		},
+	},
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemBinding),
@@ -981,7 +1122,9 @@ var (
 			},
 		},
 	}
-	moreDeconstructTriplesClauses = []*Clause{
+}
+func moreDeconstructTriplesClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemDot),
@@ -990,85 +1133,87 @@ var (
 		},
 		{},
 	}
-	graphShowClauses = []*Clause{
+}
+func graphShowClauses() []*Clause {
+	return []*Clause{
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemGraphs),
 			},
 		},
 	}
-)
+}
 
 // BQL LL1 grammar.
 func BQL() *Grammar {
 	return &Grammar{
-		"START":                                  startClauses,
-		"CREATE_GRAPHS":                          createGraphClauses,
-		"DROP_GRAPHS":                            dropGraphClauses,
-		"VARS":                                   varsClauses,
-		"COUNT_DISTINCT":                         countDistinctClauses,
-		"VARS_AS":                                varsAsClauses,
-		"MORE_VARS":                              moreVarsClauses,
-		"GRAPHS":                                 graphsClauses,
-		"MORE_GRAPHS":                            moreGraphsClauses,
-		"INPUT_GRAPHS":                           inputGraphClauses,
-		"MORE_INPUT_GRAPHS":                      moreInputGraphClauses,
-		"OUTPUT_GRAPHS":                          outputGraphClauses,
-		"MORE_OUTPUT_GRAPHS":                     moreOutputGraphClauses,
-		"WHERE":                                  whereClauses,
-		"FIRST_CLAUSE":                           firstClauses,
-		"MORE_CLAUSES":                           moreClauses,
-		"CLAUSES":                                clauses,
-		"OPTIONAL_CLAUSE":                        optionalClauses,
-		"SUBJECT_EXTRACT":                        subjectExtractClauses,
-		"SUBJECT_TYPE":                           subjectTypeClauses,
-		"SUBJECT_ID":                             subjectIDClauses,
-		"PREDICATE":                              predicateClauses,
-		"PREDICATE_AS":                           predicateAsClauses,
-		"PREDICATE_ID":                           predicateIDClauses,
-		"PREDICATE_AT":                           predicateAtClauses,
-		"PREDICATE_BOUND_AT":                     predicateBoundAtClauses,
-		"PREDICATE_BOUND_AT_BINDINGS":            predicateBoundAtBindingsClauses,
-		"PREDICATE_BOUND_AT_BINDINGS_END":        predicateBoundAtBindingsEndClauses,
-		"OBJECT":                                 objectClauses,
-		"OBJECT_SUBJECT_EXTRACT":                 objectSubjectExtractClauses,
-		"OBJECT_SUBJECT_TYPE":                    objectSubjectTypeClauses,
-		"OBJECT_SUBJECT_ID":                      objectSubjectIDClauses,
-		"OBJECT_PREDICATE_AS":                    objectPredicateAsClauses,
-		"OBJECT_PREDICATE_ID":                    objectPredicateIDClauses,
-		"OBJECT_PREDICATE_AT":                    objectPredicateAtClauses,
-		"OBJECT_PREDICATE_BOUND_AT":              objectPredicateBoundAtClauses,
-		"OBJECT_PREDICATE_BOUND_AT_BINDINGS":     objectPredicateBoundAtBindingsClauses,
-		"OBJECT_PREDICATE_BOUND_AT_BINDINGS_END": objectPredicateBoundAtBindingsEndClauses,
-		"OBJECT_LITERAL_AS":                      objectLiteralAsClauses,
-		"OBJECT_LITERAL_BINDING_AS":              objectLiteralBindingAsClauses,
-		"OBJECT_LITERAL_BINDING_TYPE":            objectLiteralBindingTypeClauses,
-		"OBJECT_LITERAL_BINDING_ID":              objectLiteralBindingIDClauses,
-		"OBJECT_LITERAL_BINDING_AT":              objectLiteralBindingAtClauses,
-		"GROUP_BY":                               groupByClauses,
-		"GROUP_BY_BINDINGS":                      groupByBindingsClauses,
-		"ORDER_BY":                               orderByClauses,
-		"ORDER_BY_DIRECTION":                     orderByDirectionClauses,
-		"ORDER_BY_BINDINGS":                      orderByBindingsClauses,
-		"HAVING":                                 topHavingClauses,
-		"HAVING_CLAUSE":                          havingClauses,
-		"HAVING_CLAUSE_BINARY_COMPOSITE":         havingClausesBinaryCompositeClauses,
-		"GLOBAL_TIME_BOUND":                      globalTimeBoundClauses,
-		"LIMIT":                                  limitClauses,
-		"INSERT_OBJECT":                          insertObjectClauses,
-		"INSERT_DATA":                            insertDataClauses,
-		"DELETE_OBJECT":                          deleteObjectClauses,
-		"DELETE_DATA":                            deleteDataClauses,
-		"CONSTRUCT_FACTS":                        constructFactsClauses,
-		"CONSTRUCT_TRIPLES":                      constructTriplesClauses,
-		"CONSTRUCT_PREDICATE":                    constructPredicateClauses,
-		"CONSTRUCT_OBJECT":                       constructObjectClauses,
-		"MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS":  moreConstructPredicateObjectPairsClauses,
-		"MORE_CONSTRUCT_TRIPLES":                 moreConstructTriplesClauses,
-		"DECONSTRUCT_FACTS":                      deconstructFactsClauses,
-		"DECONSTRUCT_TRIPLES":                    deconstructTriplesClauses,
-		"MORE_DECONSTRUCT_TRIPLES":               moreDeconstructTriplesClauses,
-		"GRAPH_SHOW":                             graphShowClauses,
+		"START":                                  startClauses(),
+		"CREATE_GRAPHS":                          createGraphClauses(),
+		"DROP_GRAPHS":                            dropGraphClauses(),
+		"VARS":                                   varsClauses(),
+		"COUNT_DISTINCT":                         countDistinctClauses(),
+		"VARS_AS":                                varsAsClauses(),
+		"MORE_VARS":                              moreVarsClauses(),
+		"GRAPHS":                                 graphsClauses(),
+		"MORE_GRAPHS":                            moreGraphsClauses(),
+		"INPUT_GRAPHS":                           inputGraphClauses(),
+		"MORE_INPUT_GRAPHS":                      moreInputGraphClauses(),
+		"OUTPUT_GRAPHS":                          outputGraphClauses(),
+		"MORE_OUTPUT_GRAPHS":                     moreOutputGraphClauses(),
+		"WHERE":                                  whereClauses(),
+		"FIRST_CLAUSE":                           firstClauses(),
+		"MORE_CLAUSES":                           moreClauses(),
+		"CLAUSES":                                clauses(),
+		"OPTIONAL_CLAUSE":                        optionalClauses(),
+		"SUBJECT_EXTRACT":                        subjectExtractClauses(),
+		"SUBJECT_TYPE":                           subjectTypeClauses(),
+		"SUBJECT_ID":                             subjectIDClauses(),
+		"PREDICATE":                              predicateClauses(),
+		"PREDICATE_AS":                           predicateAsClauses(),
+		"PREDICATE_ID":                           predicateIDClauses(),
+		"PREDICATE_AT":                           predicateAtClauses(),
+		"PREDICATE_BOUND_AT":                     predicateBoundAtClauses(),
+		"PREDICATE_BOUND_AT_BINDINGS":            predicateBoundAtBindingsClauses(),
+		"PREDICATE_BOUND_AT_BINDINGS_END":        predicateBoundAtBindingsEndClauses(),
+		"OBJECT":                                 objectClauses(),
+		"OBJECT_SUBJECT_EXTRACT":                 objectSubjectExtractClauses(),
+		"OBJECT_SUBJECT_TYPE":                    objectSubjectTypeClauses(),
+		"OBJECT_SUBJECT_ID":                      objectSubjectIDClauses(),
+		"OBJECT_PREDICATE_AS":                    objectPredicateAsClauses(),
+		"OBJECT_PREDICATE_ID":                    objectPredicateIDClauses(),
+		"OBJECT_PREDICATE_AT":                    objectPredicateAtClauses(),
+		"OBJECT_PREDICATE_BOUND_AT":              objectPredicateBoundAtClauses(),
+		"OBJECT_PREDICATE_BOUND_AT_BINDINGS":     objectPredicateBoundAtBindingsClauses(),
+		"OBJECT_PREDICATE_BOUND_AT_BINDINGS_END": objectPredicateBoundAtBindingsEndClauses(),
+		"OBJECT_LITERAL_AS":                      objectLiteralAsClauses(),
+		"OBJECT_LITERAL_BINDING_AS":              objectLiteralBindingAsClauses(),
+		"OBJECT_LITERAL_BINDING_TYPE":            objectLiteralBindingTypeClauses(),
+		"OBJECT_LITERAL_BINDING_ID":              objectLiteralBindingIDClauses(),
+		"OBJECT_LITERAL_BINDING_AT":              objectLiteralBindingAtClauses(),
+		"GROUP_BY":                               groupByClauses(),
+		"GROUP_BY_BINDINGS":                      groupByBindingsClauses(),
+		"ORDER_BY":                               orderByClauses(),
+		"ORDER_BY_DIRECTION":                     orderByDirectionClauses(),
+		"ORDER_BY_BINDINGS":                      orderByBindingsClauses(),
+		"HAVING":                                 topHavingClauses(),
+		"HAVING_CLAUSE":                          havingClauses(),
+		"HAVING_CLAUSE_BINARY_COMPOSITE":         havingClausesBinaryCompositeClauses(),
+		"GLOBAL_TIME_BOUND":                      globalTimeBoundClauses(),
+		"LIMIT":                                  limitClauses(),
+		"INSERT_OBJECT":                          insertObjectClauses(),
+		"INSERT_DATA":                            insertDataClauses(),
+		"DELETE_OBJECT":                          deleteObjectClauses(),
+		"DELETE_DATA":                            deleteDataClauses(),
+		"CONSTRUCT_FACTS":                        constructFactsClauses(),
+		"CONSTRUCT_TRIPLES":                      constructTriplesClauses(),
+		"CONSTRUCT_PREDICATE":                    constructPredicateClauses(),
+		"CONSTRUCT_OBJECT":                       constructObjectClauses(),
+		"MORE_CONSTRUCT_PREDICATE_OBJECT_PAIRS":  moreConstructPredicateObjectPairsClauses(),
+		"MORE_CONSTRUCT_TRIPLES":                 moreConstructTriplesClauses(),
+		"DECONSTRUCT_FACTS":                      deconstructFactsClauses(),
+		"DECONSTRUCT_TRIPLES":                    deconstructTriplesClauses(),
+		"MORE_DECONSTRUCT_TRIPLES":               moreDeconstructTriplesClauses(),
+		"GRAPH_SHOW":                             graphShowClauses(),
 	}
 }
 
