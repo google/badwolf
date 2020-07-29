@@ -90,11 +90,6 @@ func (l *Literal) ToComparableString() string {
 	return s
 }
 
-// IsNumber returns if the literal is indeed a number (Int64 or Float64).
-func (l *Literal) IsNumber() bool {
-	return l.Type() == Int64 || l.Type() == Float64
-}
-
 // Bool returns the value of a literal as a boolean.
 func (l *Literal) Bool() (bool, error) {
 	if l.t != Bool {

@@ -187,7 +187,7 @@ func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", rightLiteral.String())
 	}
 
-	if leftCell.L != nil && leftCell.L.Type() != rightLiteral.Type() && !(leftCell.L.IsNumber() && rightLiteral.IsNumber()) {
+	if leftCell.L != nil && leftCell.L.Type() != rightLiteral.Type() {
 		return false, nil
 	}
 
