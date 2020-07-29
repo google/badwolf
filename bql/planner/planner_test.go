@@ -760,19 +760,21 @@ func TestPlannerQuery(t *testing.T) {
 	s, ctx := memory.NewStore(), context.Background()
 	populateStoreWithTriples(ctx, s, "?test", testTriples, t)
 	for _, entry := range testTable {
+		// Test setup:
 		p, err := grammar.NewParser(grammar.SemanticBQL())
 		if err != nil {
 			t.Fatalf("grammar.NewParser should have produced a valid BQL parser but got error: %v", err)
 		}
-
 		st := &semantic.Statement{}
 		if err := p.Parse(grammar.NewLLk(entry.q, 1), st); err != nil {
-			t.Errorf("parser.Parse(%s)\n= %v; want nil error", entry.q, err)
+			t.Fatalf("parser.Parse failed for query \"%s\"\nwith error: %v", entry.q, err)
 		}
 		plnr, err := New(ctx, s, st, 0, 10, nil)
 		if err != nil {
-			t.Errorf("planner.New() = _, %v; want nil error", err)
+			t.Fatalf("planner.New failed to create a valid query plan with error: %v", err)
 		}
+
+		// Actual test:
 		tbl, err := plnr.Execute(ctx)
 		if !entry.wantErr && err != nil {
 			t.Errorf("planner.Execute(%s)\n= _, %v; want nil error", entry.q, err)
