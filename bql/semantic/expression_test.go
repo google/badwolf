@@ -189,18 +189,18 @@ func TestBooleanEvaluationNode(t *testing.T) {
 	}
 }
 
-func buildLiteralOrDie(textLiteral string) *literal.Literal {
+func mustBuildLiteral(textLiteral string) *literal.Literal {
 	lit, err := literal.DefaultBuilder().Parse(textLiteral)
 	if err != nil {
-		panic(fmt.Sprintf("Could not parse text literal got err: %v", err.Error()))
+		panic(fmt.Sprintf("could not parse text literal %q, got error: %v", textLiteral, err))
 	}
 	return lit
 }
 
-func newNodeFromStringOrDie(nodeType, nodeID string) *node.Node {
+func mustBuildNodeFromStrings(nodeType, nodeID string) *node.Node {
 	n, err := node.NewNodeFromStrings(nodeType, nodeID)
 	if err != nil {
-		panic(fmt.Sprintf("Could not build node from type %q and value %q", nodeType, nodeID))
+		panic(fmt.Sprintf("could not build node from type %q and ID %q, got error: %v", nodeType, nodeID, err))
 	}
 	return n
 }
@@ -423,7 +423,7 @@ func TestNewEvaluator(t *testing.T) {
 			},
 			r: table.Row{
 				"?foo": &table.Cell{
-					L: buildLiteralOrDie(`"abc"^^type:text`),
+					L: mustBuildLiteral(`"abc"^^type:text`),
 				},
 			},
 			err:  false,
@@ -529,7 +529,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{L: buildLiteralOrDie(`"99.0"^^type:float64`)},
+				"?foo": &table.Cell{L: mustBuildLiteral(`"99.0"^^type:float64`)},
 			},
 			err:  false,
 			want: true,
@@ -550,7 +550,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{L: buildLiteralOrDie(`"100"^^type:int64`)},
+				"?foo": &table.Cell{L: mustBuildLiteral(`"100"^^type:int64`)},
 			},
 			err:  false,
 			want: true,
@@ -571,7 +571,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{L: buildLiteralOrDie(`"100"^^type:int64`)},
+				"?foo": &table.Cell{L: mustBuildLiteral(`"100"^^type:int64`)},
 			},
 			err:  false,
 			want: false,
@@ -592,7 +592,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{N: newNodeFromStringOrDie("/_", "meowth")},
+				"?foo": &table.Cell{N: mustBuildNodeFromStrings("/_", "meowth")},
 			},
 			err:  false,
 			want: true,
@@ -613,7 +613,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?o": &table.Cell{N: newNodeFromStringOrDie("/u", "paul")},
+				"?o": &table.Cell{N: mustBuildNodeFromStrings("/u", "paul")},
 			},
 			err:  false,
 			want: false,
@@ -634,7 +634,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?o": &table.Cell{L: buildLiteralOrDie(`"73"^^type:int64`)},
+				"?o": &table.Cell{L: mustBuildLiteral(`"73"^^type:int64`)},
 			},
 			err:  false,
 			want: false,
@@ -697,7 +697,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{L: buildLiteralOrDie(`"10"^^type:int64`)},
+				"?foo": &table.Cell{L: mustBuildLiteral(`"10"^^type:int64`)},
 			},
 			err:  false,
 			want: false,
@@ -718,7 +718,7 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{L: buildLiteralOrDie(`"100.0"^^type:float64`)},
+				"?foo": &table.Cell{L: mustBuildLiteral(`"100.0"^^type:float64`)},
 			},
 			err:  false,
 			want: true,
