@@ -624,7 +624,8 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 	if cls.OTypeAlias != "" {
 		n, err := o.Node()
 		if err != nil {
-			return nil, err
+			// in the case of TYPE binding for a non-node object we just want (for now) to skip this triple and proceed to the next one, not returning any errors.
+			return nil, nil
 		}
 		c := &table.Cell{S: table.CellString(n.Type().String())}
 		r[cls.OTypeAlias] = c
