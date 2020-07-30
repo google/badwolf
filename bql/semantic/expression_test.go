@@ -15,20 +15,14 @@
 package semantic
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/triple/literal"
+	"github.com/google/badwolf/triple/node"
 )
-
-func buildLiteral(l string) string {
-	p, err := literal.DefaultBuilder().Parse(l)
-	if err != nil {
-		return ""
-	}
-	return p.ToComparableString()
-}
 
 func TestEvaluationNode(t *testing.T) {
 	testTable := []struct {
@@ -104,10 +98,10 @@ func TestEvaluationNode(t *testing.T) {
 	for _, entry := range testTable {
 		got, err := entry.eval.Evaluate(entry.r)
 		if !entry.err && err != nil {
-			t.Errorf("failed to evaluate op %q for %v on row %v with error %v", entry.eval.(*evaluationNode).op, entry.eval, entry.r, err)
+			t.Errorf("failed to evaluate op %q for %v on row %v with error: %v", entry.eval.(*evaluationNode).op.String(), entry.eval, entry.r, err)
 		}
 		if want := entry.want; got != want {
-			t.Errorf("failed to evaluate op %q for %v on row %v; got %v, want %v", entry.eval.(*evaluationNode).op, entry.eval, entry.r, got, want)
+			t.Errorf("failed to evaluate op %q for %v on row %v; got %v, want %v", entry.eval.(*evaluationNode).op.String(), entry.eval, entry.r, got, want)
 		}
 	}
 }
@@ -187,12 +181,28 @@ func TestBooleanEvaluationNode(t *testing.T) {
 	for _, entry := range testTable {
 		got, err := entry.eval.Evaluate(table.Row{})
 		if !entry.err && err != nil {
-			t.Errorf("failed to evaluate op %q for %v with error %v", entry.eval.(*booleanNode).op, entry.eval, err)
+			t.Errorf("failed to evaluate op %q for %v with error: %v", entry.eval.(*booleanNode).op.String(), entry.eval, err)
 		}
 		if want := entry.want; got != want {
-			t.Errorf("failed to evaluate op %q for %v; got %v, want %v", entry.eval.(*booleanNode).op, entry.eval, got, want)
+			t.Errorf("failed to evaluate op %q for %v; got %v, want %v", entry.eval.(*booleanNode).op.String(), entry.eval, got, want)
 		}
 	}
+}
+
+func mustBuildLiteral(textLiteral string) *literal.Literal {
+	lit, err := literal.DefaultBuilder().Parse(textLiteral)
+	if err != nil {
+		panic(fmt.Sprintf("could not parse text literal %q, got error: %v", textLiteral, err))
+	}
+	return lit
+}
+
+func mustBuildNodeFromStrings(nodeType, nodeID string) *node.Node {
+	n, err := node.NewNodeFromStrings(nodeType, nodeID)
+	if err != nil {
+		panic(fmt.Sprintf("could not build node from type %q and ID %q, got error: %v", nodeType, nodeID, err))
+	}
+	return n
 }
 
 func TestNewEvaluator(t *testing.T) {
@@ -397,7 +407,7 @@ func TestNewEvaluator(t *testing.T) {
 			want: false,
 		},
 		{
-			id: "?foo = \"abc\"^^type:text",
+			id: `?foo = "abc"^^type:text`,
 			in: []ConsumedElement{
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
@@ -408,17 +418,103 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLiteral,
-					Text: "\"abc\"^^type:text",
+					Text: `"abc"^^type:text`,
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: table.CellString(buildLiteral("\"abc\"^^type:text"))},
+				"?foo": &table.Cell{
+					L: mustBuildLiteral(`"abc"^^type:text`),
+				},
 			},
 			err:  false,
 			want: true,
 		},
 		{
-			id: "?foo = \"99.0\"^^type:float64",
+			id: `?s ID ?id = "abc"^^type:text`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?id",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: `"abc"^^type:text`,
+				}),
+			},
+			r: table.Row{
+				"?id": &table.Cell{S: table.CellString("abc")},
+			},
+			err:  false,
+			want: true,
+		},
+		{
+			id: `?s ID ?id < "bbb"^^type:text`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?id",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: `"bbb"^^type:text`,
+				}),
+			},
+			r: table.Row{
+				"?id": &table.Cell{S: table.CellString("aaa")},
+			},
+			err:  false,
+			want: true,
+		},
+		{
+			id: `?s ID ?id > "ccc"^^type:text`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?id",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: `"ccc"^^type:text`,
+				}),
+			},
+			r: table.Row{
+				"?id": &table.Cell{S: table.CellString("bbb")},
+			},
+			err:  false,
+			want: false,
+		},
+		{
+			id: `?s TYPE ?s_type = "/u"^^type:text`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?s_type",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: `"/u"^^type:text`,
+				}),
+			},
+			r: table.Row{
+				"?s_type": &table.Cell{S: table.CellString("/u")},
+			},
+			err:  false,
+			want: true,
+		},
+		{
+			id: `?foo = "99.0"^^type:float64`,
 			in: []ConsumedElement{
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
@@ -429,17 +525,17 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLiteral,
-					Text: "\"99.0\"^^type:float64",
+					Text: `"99.0"^^type:float64`,
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: table.CellString(buildLiteral("\"99.0\"^^type:float64"))},
+				"?foo": &table.Cell{L: mustBuildLiteral(`"99.0"^^type:float64`)},
 			},
 			err:  false,
 			want: true,
 		},
 		{
-			id: "?foo > \"10\"^^type:int64",
+			id: `?foo > "10"^^type:int64`,
 			in: []ConsumedElement{
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
@@ -450,17 +546,17 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLiteral,
-					Text: "\"10\"^^type:int64",
+					Text: `"10"^^type:int64`,
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: table.CellString(buildLiteral("\"100\"^^type:int64"))},
+				"?foo": &table.Cell{L: mustBuildLiteral(`"100"^^type:int64`)},
 			},
 			err:  false,
 			want: true,
 		},
 		{
-			id: "?foo < \"10\"^^type:int64",
+			id: `?foo < "10"^^type:int64`,
 			in: []ConsumedElement{
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
@@ -471,11 +567,11 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemLiteral,
-					Text: "\"10\"^^type:int64",
+					Text: `"10"^^type:int64`,
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: table.CellString(buildLiteral("\"100\"^^type:int64"))},
+				"?foo": &table.Cell{L: mustBuildLiteral(`"100"^^type:int64`)},
 			},
 			err:  false,
 			want: false,
@@ -496,23 +592,132 @@ func TestNewEvaluator(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{S: table.CellString("/_<meowth>")},
+				"?foo": &table.Cell{N: mustBuildNodeFromStrings("/_", "meowth")},
 			},
 			err:  false,
 			want: true,
 		},
+		{
+			id: `?o > "37"^^type:int64`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?o",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: `"37"^^type:int64`,
+				}),
+			},
+			r: table.Row{
+				"?o": &table.Cell{N: mustBuildNodeFromStrings("/u", "paul")},
+			},
+			err:  false,
+			want: false,
+		},
+		{
+			id: `?o = /u<peter>`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?o",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemNode,
+					Text: "/u<peter>",
+				}),
+			},
+			r: table.Row{
+				"?o": &table.Cell{L: mustBuildLiteral(`"73"^^type:int64`)},
+			},
+			err:  false,
+			want: false,
+		},
+		{
+			id: `?s ID ?id > "37"^^type:int64`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?id",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: `"37"^^type:int64`,
+				}),
+			},
+			r: table.Row{
+				"?id": &table.Cell{S: table.CellString("peter")},
+			},
+			err:  true,
+			want: false,
+		},
+		{
+			id: `?s ID ?id = /u<peter>`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?id",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemNode,
+					Text: "/u<peter>",
+				}),
+			},
+			r: table.Row{
+				"?id": &table.Cell{S: table.CellString("peter")},
+			},
+			err:  true,
+			want: false,
+		},
+		{
+			id: `?foo = "10"^^type:text`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?foo",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: `"10"^^type:text`,
+				}),
+			},
+			r: table.Row{
+				"?foo": &table.Cell{L: mustBuildLiteral(`"10"^^type:int64`)},
+			},
+			err:  false,
+			want: false,
+		},
 	}
 	for _, entry := range testTable {
 		eval, err := NewEvaluator(entry.in)
-		if !entry.err && err != nil {
-			t.Fatalf("test %q should have never failed to process %v with error %v", entry.id, entry.in, err)
-		}
-		got, err := eval.Evaluate(entry.r)
 		if err != nil {
-			t.Errorf("test %q the created evaluator failed to evaluate row %v with error %v", entry.id, entry.r, err)
+			t.Fatalf("test %q should have never failed when creating a new evaluator from %v, got error: %v", entry.id, entry.in, err)
+		}
+
+		got, err := eval.Evaluate(entry.r)
+		if !entry.err && err != nil {
+			t.Errorf("%s: eval.Evaluate(%v) = _, %v; want nil error", entry.id, entry.r, err)
+		}
+		if entry.err && err == nil {
+			t.Errorf("%s: eval.Evaluate(%v) = _, nil; want non-nil error", entry.id, entry.r)
 		}
 		if want := entry.want; got != want {
-			t.Errorf("test %q failed to evaluate the proper value; got %v, want %v", entry.id, got, want)
+			t.Errorf("%s: eval.Evaluate(%v) = %v, _; want %v, _", entry.id, entry.r, got, want)
 		}
 	}
 }

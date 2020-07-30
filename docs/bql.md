@@ -407,7 +407,7 @@ that would require multiple clauses and extra bindings:
 ```
 
 Note that the intervals defined by `before`, `after`, and `between` are always closed (the 
-limits of the intervals are included). You can then understand the `after` as a '>=', the 
+limits of the intervals are included). You can then understand the `after` as a `>=`, the 
 `before` as a `<=` and the `between` as a combination of them.
 
 Also, remember that bindings may take time anchor values so you could also query

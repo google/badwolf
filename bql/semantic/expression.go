@@ -47,17 +47,17 @@ func (a *AlwaysReturn) Evaluate(r table.Row) (bool, error) {
 type OP int8
 
 const (
-	// LT represents '<'
+	// LT represents '<'.
 	LT OP = iota
-	// GT represents '>''
+	// GT represents '>'.
 	GT
-	// EQ represents '=''
+	// EQ represents '='.
 	EQ
-	// NOT represents 'not'
+	// NOT represents 'not'.
 	NOT
-	// AND represents 'and'
+	// AND represents 'and'.
 	AND
-	// OR represents 'or'
+	// OR represents 'or'.
 	OR
 )
 
@@ -81,25 +81,32 @@ func (o OP) String() string {
 	}
 }
 
-// formatCell formats a given cell into a trimmed comparable string
-func formatCell(c *table.Cell) string {
+// formatCell formats a given cell into a trimmed comparable string.
+func formatCell(c *table.Cell) (string, error) {
 	if c.L != nil {
-		return strings.TrimSpace(c.L.ToComparableString())
+		return strings.TrimSpace(c.L.ToComparableString()), nil
 	}
-	return strings.TrimSpace(c.String())
+	if c.S != nil {
+		formatted, err := literal.DefaultBuilder().Build(literal.Text, *c.S)
+		if err != nil {
+			return "", fmt.Errorf("formatCell failed, could not build a text literal from the string %q, got error: %v", *c.S, err)
+		}
+		return strings.TrimSpace(formatted.ToComparableString()), nil
+	}
+	return strings.TrimSpace(c.String()), nil
 }
 
 // evaluationNode represents the internal representation of one expression.
 type evaluationNode struct {
-	op OP // operation
+	op OP // operation.
 
-	lB string // left binding
-	rB string // right binding
+	lB string // left binding.
+	rB string // right binding.
 }
 
 // Evaluate the expression.
 func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
-	// Binary evaluation
+	// Binary evaluation.
 	eval := func() (*table.Cell, *table.Cell, error) {
 		var (
 			eL, eR *table.Cell
@@ -107,11 +114,11 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 		)
 		eL, ok = r[e.lB]
 		if !ok {
-			return nil, nil, fmt.Errorf("comparison operations require the binding value for %q for row %q to exist", e.lB, r)
+			return nil, nil, fmt.Errorf("comparison operation requires the binding value for %q for row %v to exist", e.lB, r)
 		}
 		eR, ok = r[e.rB]
 		if !ok {
-			return nil, nil, fmt.Errorf("comparison operations require the binding value for %q for row %q to exist", e.rB, r)
+			return nil, nil, fmt.Errorf("comparison operation requires the binding value for %q for row %v to exist", e.rB, r)
 		}
 		return eL, eR, nil
 	}
@@ -120,7 +127,16 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	csEL, csER := formatCell(eL), formatCell(eR)
+
+	csEL, err := formatCell(eL)
+	if err != nil {
+		return false, fmt.Errorf("evaluationNode.Evaluate failed, the call for formatCell(%s) returned error: %v", eL, err)
+	}
+	csER, err := formatCell(eR)
+	if err != nil {
+		return false, fmt.Errorf("evaluationNode.Evaluate failed, the call for formatCell(%s) returned error: %v", eR, err)
+	}
+
 	switch e.op {
 	case EQ:
 		return reflect.DeepEqual(csEL, csER), nil
@@ -129,11 +145,11 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 	case GT:
 		return csEL > csER, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation require a boolen operation; found %q instead", e.op)
+		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op.String())
 	}
 }
 
-// cellFromRow retrives the value of a binding from a given row
+// cellFromRow retrives the value of a binding from a given row.
 func cellFromRow(binding string, r table.Row) (*table.Cell, error) {
 	var (
 		val *table.Cell
@@ -141,42 +157,47 @@ func cellFromRow(binding string, r table.Row) (*table.Cell, error) {
 	)
 	val, ok = r[binding]
 	if !ok {
-		return nil, fmt.Errorf("comparison operations require the binding value for %q for row %q to exist", binding, r)
+		return nil, fmt.Errorf("comparison operation requires the binding value for %q for row %v to exist", binding, r)
 	}
 	return val, nil
 }
 
 // comparisonForLiteral represents the internal representation of an expression of comparison between a binding and a literal.
 type comparisonForLiteral struct {
-	op OP // operation
+	op OP // operation.
 
-	lS string // left string
-	rS string // right string
+	lS string // left string.
+	rS string // right string.
 }
 
 func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 	leftCell, err := cellFromRow(e.lS, r)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("comparisonForLiteral.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.lS, r, err)
+	}
+	if leftCell.L == nil && leftCell.S == nil {
+		return false, nil
 	}
 
-	var (
-		csEL, csER string
-	)
-
-	formatLiteral := func(lit string) (string, error) {
-		n, err := literal.DefaultBuilder().Parse(lit)
-		if err != nil {
-			return "", err
-		}
-		return n.ToComparableString(), nil
-	}
-
-	csEL = formatCell(leftCell)
-	csER, err = formatLiteral(e.rS)
+	rightLiteral, err := literal.DefaultBuilder().Parse(e.rS)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("comparisonForLiteral.Evaluate failed, could not parse literal from the string %q, got error: %v", e.rS, err)
 	}
+	if leftCell.S != nil && rightLiteral.Type() != literal.Text {
+		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", rightLiteral.String())
+	}
+
+	if leftCell.L != nil && leftCell.L.Type() != rightLiteral.Type() {
+		return false, nil
+	}
+
+	// comparable string expressions for left and right tokens.
+	var csEL, csER string
+	csEL, err = formatCell(leftCell)
+	if err != nil {
+		return false, fmt.Errorf("comparisonForLiteral.Evaluate failed, the call for formatCell(%s) returned error: %v", leftCell, err)
+	}
+	csER = rightLiteral.ToComparableString()
 
 	switch e.op {
 	case EQ:
@@ -186,25 +207,36 @@ func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 	case GT:
 		return csEL > csER, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation require a boolean operation; found %q instead", e.op)
+		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op.String())
 	}
 }
 
 // comparisonForNodeLiteral represents the internal representation of an expression of comparison between a binding and a node literal.
 type comparisonForNodeLiteral struct {
-	op OP // operation
+	op OP // operation.
 
-	lB  string // left binding
-	rNL string // right node literal
+	lB  string // left binding.
+	rNL string // right node literal.
 }
 
 func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 	eL, err := cellFromRow(e.lB, r)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("comparisonForNodeLiteral.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.lB, r, err)
+	}
+	if eL.S != nil {
+		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", strings.TrimSpace(e.rNL))
+	}
+	if eL.N == nil {
+		return false, nil
 	}
 
-	csEL, csER := formatCell(eL), strings.TrimSpace(e.rNL)
+	csEL, err := formatCell(eL)
+	if err != nil {
+		return false, fmt.Errorf("comparisonForNodeLiteral.Evaluate failed, the call for formatCell(%s) returned error: %v", eL, err)
+	}
+	csER := strings.TrimSpace(e.rNL)
+
 	switch e.op {
 	case EQ:
 		return reflect.DeepEqual(csEL, csER), nil
@@ -213,7 +245,7 @@ func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 	case GT:
 		return csEL > csER, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation require a boolean operation; found %q instead", e.op)
+		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op.String())
 	}
 }
 
@@ -274,6 +306,7 @@ func NewEvaluationExpressionForNodeLiteral(op OP, lB, rNL string) (Evaluator, er
 // booleanNode represents the internal representation of one expression.
 type booleanNode struct {
 	op OP
+
 	lS bool
 	lE Evaluator
 	rS bool
@@ -282,14 +315,14 @@ type booleanNode struct {
 
 // Evaluate the expression.
 func (e *booleanNode) Evaluate(r table.Row) (bool, error) {
-	// Binary evaluation
+	// Binary evaluation.
 	eval := func(binary bool) (bool, bool, error) {
 		var (
 			eL, eR     bool
 			errL, errR error
 		)
 		if !e.lS {
-			return false, false, fmt.Errorf("boolean operations require a left operator; found (%q, %q) instead", e.lE, e.rE)
+			return false, false, fmt.Errorf(`boolean operations require a left operator; found "(%v, %v)" instead`, e.lE, e.rE)
 		}
 		eL, errL = e.lE.Evaluate(r)
 		if errL != nil {
@@ -297,7 +330,7 @@ func (e *booleanNode) Evaluate(r table.Row) (bool, error) {
 		}
 		if binary {
 			if !e.rS {
-				return false, false, fmt.Errorf("boolean operations require a left operator; found (%q, %q) instead", e.lE, e.rE)
+				return false, false, fmt.Errorf(`boolean operations require a right operator; found "(%v, %v)" instead`, e.lE, e.rE)
 			}
 			eR, errR = e.rE.Evaluate(r)
 			if errR != nil {
@@ -327,7 +360,7 @@ func (e *booleanNode) Evaluate(r table.Row) (bool, error) {
 		}
 		return !eL, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation require a boolen operation; found %q instead", e.op)
+		return false, fmt.Errorf("boolean evaluation requires a boolen operation; found %q instead", e.op.String())
 	}
 }
 
@@ -343,7 +376,7 @@ func NewBinaryBooleanExpression(op OP, lE, rE Evaluator) (Evaluator, error) {
 			rE: rE,
 		}, nil
 	default:
-		return nil, errors.New("binary boolean expressions require the operation to be one for the follwing 'and', 'or'")
+		return nil, errors.New("binary boolean expressions require the operation to be one of the following: 'and', 'or'")
 	}
 }
 
@@ -358,7 +391,7 @@ func NewUnaryBooleanExpression(op OP, lE Evaluator) (Evaluator, error) {
 			rS: false,
 		}, nil
 	default:
-		return nil, errors.New("unary boolean expressions require the operation to be one for the follwing 'not'")
+		return nil, errors.New("unary boolean expressions require the operation to be the following: 'not'")
 	}
 }
 
@@ -383,7 +416,7 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 	head, tail := ce[0], ce[1:]
 	tkn := head.Token()
 
-	// Not token
+	// Not token.
 	if tkn.Type == lexer.ItemNot {
 		tailEval, tailCEs, err := internalNewEvaluator(tail)
 		if err != nil {
@@ -396,7 +429,7 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 		return e, tailCEs, nil
 	}
 
-	// Binding token
+	// Binding token.
 	if tkn.Type == lexer.ItemBinding {
 		if len(tail) < 2 {
 			return nil, nil, fmt.Errorf("cannot create a binary evaluation operand for %v", ce)
@@ -453,18 +486,18 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 		return nil, nil, fmt.Errorf("cannot build a binary evaluation operand with right operand %v", bndTkn)
 	}
 
-	// LPar Token
+	// LPar Token.
 	if tkn.Type == lexer.ItemLPar {
 		tailEval, ce, err := internalNewEvaluator(tail)
 		if err != nil {
 			return nil, nil, err
 		}
 		if len(ce) < 1 {
-			return nil, nil, errors.New("incomplete parentesis expression; missing ')'")
+			return nil, nil, errors.New("incomplete parenthesis expression; missing ')'")
 		}
 		head, tail = ce[0], ce[1:]
 		if head.Token().Type != lexer.ItemRPar {
-			return nil, nil, fmt.Errorf("missing right parentesis in expression; found %v instead", head)
+			return nil, nil, fmt.Errorf("missing right parenthesis in expression; found %v instead", head)
 		}
 		if len(tail) > 1 {
 			// Binary boolean expression.
@@ -493,7 +526,7 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 
 	var tkns []string
 	for _, e := range ce {
-		tkns = append(tkns, fmt.Sprintf("%q", e.token.Type))
+		tkns = append(tkns, fmt.Sprintf("%q", e.token.Type.String()))
 	}
 	return nil, nil, fmt.Errorf("could not create an evaluator for condition {%s}", strings.Join(tkns, ","))
 }
