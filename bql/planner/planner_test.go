@@ -680,6 +680,15 @@ func TestPlannerQuery(t *testing.T) {
 			nBindings: 2,
 			nRows:     2,
 		},
+		{
+			q: `SELECT ?p, ?time, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p AT ?time ?o
+				};`,
+			nBindings: 3,
+			nRows:     4,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
