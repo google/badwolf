@@ -582,10 +582,10 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 			return nil, nil
 		}
 	}
-
 	if cls.PAnchorAlias != "" {
 		if p.Type() != predicate.Temporal {
-			return nil, fmt.Errorf("cannot retrieve the time anchor value for non temporal predicate %q in binding %q", p, cls.PAnchorAlias)
+			// in the case of AT binding for an immutable predicate we just want (for now) to skip this triple and proceed to the next one, not returning any errors.
+			return nil, nil
 		}
 		t, err := p.TimeAnchor()
 		if err != nil {
