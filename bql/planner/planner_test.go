@@ -689,6 +689,15 @@ func TestPlannerQuery(t *testing.T) {
 			nBindings: 3,
 			nRows:     4,
 		},
+		{
+			q: `SELECT ?s, ?time, ?o
+				FROM ?test
+				WHERE {
+					?s "parent_of"@[?time] ?o
+				};`,
+			nBindings: 3,
+			nRows:     0,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
