@@ -272,286 +272,239 @@ func populateStoreWithTriples(ctx context.Context, s storage.Store, gn string, t
 
 func TestPlannerQuery(t *testing.T) {
 	testTable := []struct {
-		q       string
-		wantErr bool
-		nbs     int
-		nrws    int
+		q         string
+		nBindings int
+		nRows     int
 	}{
 		{
-			q:       `select ?s, ?p, ?o from ?test where {?s ?p ?o};`,
-			wantErr: false,
-			nbs:     3,
-			nrws:    len(strings.Split(testTriples, "\n")) - 1,
+			q:         `select ?s, ?p, ?o from ?test where {?s ?p ?o};`,
+			nBindings: 3,
+			nRows:     len(strings.Split(testTriples, "\n")) - 1,
 		},
 		{
-			q:       `select ?s as ?s1, ?p as ?p1, ?o as ?o1 from ?test where {?s ?p ?o};`,
-			wantErr: false,
-			nbs:     3,
-			nrws:    len(strings.Split(testTriples, "\n")) - 1,
+			q:         `select ?s as ?s1, ?p as ?p1, ?o as ?o1 from ?test where {?s ?p ?o};`,
+			nBindings: 3,
+			nRows:     len(strings.Split(testTriples, "\n")) - 1,
 		},
 		{
-			q:       `select ?p, ?o from ?test where {/u<joe> ?p ?o};`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    2,
+			q:         `select ?p, ?o from ?test where {/u<joe> ?p ?o};`,
+			nBindings: 2,
+			nRows:     2,
 		},
 		{
-			q:       `select ?p as ?p1, ?o as ?o1 from ?test where {/u<joe> ?p ?o};`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    2,
+			q:         `select ?p as ?p1, ?o as ?o1 from ?test where {/u<joe> ?p ?o};`,
+			nBindings: 2,
+			nRows:     2,
 		},
 		{
-			q:       `select ?s, ?p from ?test where {?s ?p /t<car>};`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    4,
+			q:         `select ?s, ?p from ?test where {?s ?p /t<car>};`,
+			nBindings: 2,
+			nRows:     4,
 		},
 		{
-			q:       `select ?s, ?o from ?test where {?s "parent_of"@[] ?o};`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    4,
+			q:         `select ?s, ?o from ?test where {?s "parent_of"@[] ?o};`,
+			nBindings: 2,
+			nRows:     4,
 		},
 		{
-			q:       `select ?s, ?p, ?o from ?test where {/u<joe> as ?s "parent_of"@[] as ?p /u<mary> as ?o};`,
-			wantErr: false,
-			nbs:     3,
-			nrws:    1,
+			q:         `select ?s, ?p, ?o from ?test where {/u<joe> as ?s "parent_of"@[] as ?p /u<mary> as ?o};`,
+			nBindings: 3,
+			nRows:     1,
 		},
 		{
-			q:       `select ?s, ?p, ?o from ?test where {/u<unknown> as ?s "parent_of"@[] as ?p /u<mary> as ?o};`,
-			wantErr: false,
-			nbs:     3,
-			nrws:    0,
+			q:         `select ?s, ?p, ?o from ?test where {/u<unknown> as ?s "parent_of"@[] as ?p /u<mary> as ?o};`,
+			nBindings: 3,
+			nRows:     0,
 		},
 		{
-			q:       `select ?o from ?test where {/u<joe> "parent_of"@[] ?o};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    2,
+			q:         `select ?o from ?test where {/u<joe> "parent_of"@[] ?o};`,
+			nBindings: 1,
+			nRows:     2,
 		},
 		{
-			q:       `select ?p from ?test where {/u<joe> ?p /u<mary>};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    1,
+			q:         `select ?p from ?test where {/u<joe> ?p /u<mary>};`,
+			nBindings: 1,
+			nRows:     1,
 		},
 		{
-			q:       `select ?s from ?test where {?s "is_a"@[] /t<car>};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    4,
+			q:         `select ?s from ?test where {?s "is_a"@[] /t<car>};`,
+			nBindings: 1,
+			nRows:     4,
 		},
 		{
-			q:       `select ?s as ?s1 from ?test where {?s "is_a"@[] /t<car>};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    4,
+			q:         `select ?s as ?s1 from ?test where {?s "is_a"@[] /t<car>};`,
+			nBindings: 1,
+			nRows:     4,
 		},
 		{
-			q:       `select ?o from ?test where {/u<joe> "parent_of"@[] ?o. ?o "parent_of"@[] /u<john>};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    1,
+			q:         `select ?o from ?test where {/u<joe> "parent_of"@[] ?o. ?o "parent_of"@[] /u<john>};`,
+			nBindings: 1,
+			nRows:     1,
 		},
 		{
-			q:       `select ?s, ?o from ?test where {/u<joe> "parent_of"@[] ?o. ?o "parent_of"@[] ?s};`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    2,
+			q:         `select ?s, ?o from ?test where {/u<joe> "parent_of"@[] ?o. ?o "parent_of"@[] ?s};`,
+			nBindings: 2,
+			nRows:     2,
 		},
 		{
-			q:       `select ?s, ?p, ?o, ?k, ?l, ?m from ?test where {?s ?p ?o. ?k ?l ?m};`,
-			wantErr: false,
-			nbs:     6,
-			nrws:    (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
+			q:         `select ?s, ?p, ?o, ?k, ?l, ?m from ?test where {?s ?p ?o. ?k ?l ?m};`,
+			nBindings: 6,
+			nRows:     (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
 		},
 		{
-			q:       `select ?s, ?p, ?o, ?k, ?l from ?test where {?s ?p ?o. ?k ?l ?m};`,
-			wantErr: false,
-			nbs:     5,
-			nrws:    (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
+			q:         `select ?s, ?p, ?o, ?k, ?l from ?test where {?s ?p ?o. ?k ?l ?m};`,
+			nBindings: 5,
+			nRows:     (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
 		},
 		{
-			q:       `select ?s, ?p, ?o, ?k from ?test where {?s ?p ?o. ?k ?l ?m};`,
-			wantErr: false,
-			nbs:     4,
-			nrws:    (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
+			q:         `select ?s, ?p, ?o, ?k from ?test where {?s ?p ?o. ?k ?l ?m};`,
+			nBindings: 4,
+			nRows:     (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
 		},
 		{
-			q:       `select ?s, ?p, ?o from ?test where {?s ?p ?o. ?k ?l ?m};`,
-			wantErr: false,
-			nbs:     3,
-			nrws:    (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
+			q:         `select ?s, ?p, ?o from ?test where {?s ?p ?o. ?k ?l ?m};`,
+			nBindings: 3,
+			nRows:     (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
 		},
 		{
-			q:       `select ?s, ?p from ?test where {?s ?p ?o. ?k ?l ?m};`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
+			q:         `select ?s, ?p from ?test where {?s ?p ?o. ?k ?l ?m};`,
+			nBindings: 2,
+			nRows:     (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
 		},
 		{
-			q:       `select ?s from ?test where {?s ?p ?o. ?k ?l ?m};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
+			q:         `select ?s from ?test where {?s ?p ?o. ?k ?l ?m};`,
+			nBindings: 1,
+			nRows:     (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
 		},
 		{
-			q:       `select ?o from ?test where {/u<peter> "bought"@[,] ?o};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    4,
+			q:         `select ?o from ?test where {/u<peter> "bought"@[,] ?o};`,
+			nBindings: 1,
+			nRows:     4,
 		},
 		{
-			q:       `select ?o from ?test where {/u<peter> "bought"@[,2015-01-01T00:00:00-08:00] ?o};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    0,
+			q:         `select ?o from ?test where {/u<peter> "bought"@[,2015-01-01T00:00:00-08:00] ?o};`,
+			nBindings: 1,
+			nRows:     0,
 		},
 		{
-			q:       `select ?o from ?test where {/u<peter> "bought"@[2017-01-01T00:00:00-08:00,] ?o};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    0,
+			q:         `select ?o from ?test where {/u<peter> "bought"@[2017-01-01T00:00:00-08:00,] ?o};`,
+			nBindings: 1,
+			nRows:     0,
 		},
 		{
-			q:       `select ?o from ?test where {/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    4,
+			q:         `select ?o from ?test where {/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o};`,
+			nBindings: 1,
+			nRows:     4,
 		},
 		{
-			q:       `select ?o from ?test where {/l<barcelona> "predicate"@[] "turned"@[,] as ?o};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    4,
+			q:         `select ?o from ?test where {/l<barcelona> "predicate"@[] "turned"@[,] as ?o};`,
+			nBindings: 1,
+			nRows:     4,
 		},
 		{
-			q:       `select ?o from ?test where {/l<barcelona> "predicate"@[] "turned"@[,2015-01-01T00:00:00-08:00] as ?o};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    0,
+			q:         `select ?o from ?test where {/l<barcelona> "predicate"@[] "turned"@[,2015-01-01T00:00:00-08:00] as ?o};`,
+			nBindings: 1,
+			nRows:     0,
 		},
 		{
-			q:       `select ?o from ?test where {/l<barcelona> "predicate"@[] "turned"@[2017-01-01T00:00:00-08:00,] as ?o};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    0,
+			q:         `select ?o from ?test where {/l<barcelona> "predicate"@[] "turned"@[2017-01-01T00:00:00-08:00,] as ?o};`,
+			nBindings: 1,
+			nRows:     0,
 		},
 		{
-			q:       `select ?o from ?test where {/l<barcelona> "predicate"@[] "turned"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] as ?o};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    4,
+			q:         `select ?o from ?test where {/l<barcelona> "predicate"@[] "turned"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] as ?o};`,
+			nBindings: 1,
+			nRows:     4,
 		},
 		{
-			q:       `select ?grandparent, count(?name) as ?grandchildren from ?test where {/u<joe> as ?grandparent "parent_of"@[] ?offspring . ?offspring "parent_of"@[] ?name} group by ?grandparent;`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    1,
+			q:         `select ?grandparent, count(?name) as ?grandchildren from ?test where {/u<joe> as ?grandparent "parent_of"@[] ?offspring . ?offspring "parent_of"@[] ?name} group by ?grandparent;`,
+			nBindings: 2,
+			nRows:     1,
 		},
 		{
-			q:       `select ?grandparent, count(distinct ?name) as ?grandchildren from ?test where {/u<joe> as ?grandparent "parent_of"@[] ?offspring . ?offspring "parent_of"@[] ?name} group by ?grandparent;`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    1,
+			q:         `select ?grandparent, count(distinct ?name) as ?grandchildren from ?test where {/u<joe> as ?grandparent "parent_of"@[] ?offspring . ?offspring "parent_of"@[] ?name} group by ?grandparent;`,
+			nBindings: 2,
+			nRows:     1,
 		},
 		{
-			q:       `select ?s, ?p, ?o, ?k, ?l, ?m from ?test where {?s ?p ?o. ?k ?l ?m} order by ?s, ?p, ?o, ?k, ?l, ?m;`,
-			wantErr: false,
-			nbs:     6,
-			nrws:    (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
+			q:         `select ?s, ?p, ?o, ?k, ?l, ?m from ?test where {?s ?p ?o. ?k ?l ?m} order by ?s, ?p, ?o, ?k, ?l, ?m;`,
+			nBindings: 6,
+			nRows:     (len(strings.Split(testTriples, "\n")) - 1) * (len(strings.Split(testTriples, "\n")) - 1),
 		},
 		{
-			q:       `select ?s, ?p, ?o, ?k, ?l, ?m from ?test where {?s ?p ?o. ?k ?l ?m} order by ?s, ?p, ?o, ?k, ?l, ?m  having not(?s = ?s);`,
-			wantErr: false,
-			nbs:     6,
-			nrws:    0,
+			q:         `select ?s, ?p, ?o, ?k, ?l, ?m from ?test where {?s ?p ?o. ?k ?l ?m} order by ?s, ?p, ?o, ?k, ?l, ?m  having not(?s = ?s);`,
+			nBindings: 6,
+			nRows:     0,
 		},
 		{
-			q:       `select ?o from ?test where {/l<barcelona> "predicate"@[] "turned"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] as ?o} LIMIT "2"^^type:int64;`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    2,
+			q:         `select ?o from ?test where {/l<barcelona> "predicate"@[] "turned"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] as ?o} LIMIT "2"^^type:int64;`,
+			nBindings: 1,
+			nRows:     2,
 		},
 		{
-			q:       `select ?o from ?test where {/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o} before 2014-01-01T00:00:00-08:00;`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    0,
+			q:         `select ?o from ?test where {/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o} before 2014-01-01T00:00:00-08:00;`,
+			nBindings: 1,
+			nRows:     0,
 		},
 		{
-			q:       `select ?o from ?test where {/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o} after 2017-01-01T00:00:00-08:00;`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    0,
+			q:         `select ?o from ?test where {/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o} after 2017-01-01T00:00:00-08:00;`,
+			nBindings: 1,
+			nRows:     0,
 		},
 		{
-			q:       `select ?o from ?test where {/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o} between 2014-01-01T00:00:00-08:00, 2017-01-01T00:00:00-08:00;`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    4,
+			q:         `select ?o from ?test where {/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o} between 2014-01-01T00:00:00-08:00, 2017-01-01T00:00:00-08:00;`,
+			nBindings: 1,
+			nRows:     4,
 		},
 		{
-			q:       `SELECT ?grandparent, COUNT(?grandparent) AS ?number_of_grandchildren FROM ?test WHERE{ ?gp ID ?grandparent "parent_of"@[] ?c . ?c "parent_of"@[] ?gc ID ?gc } GROUP BY ?grandparent;`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    1,
+			q:         `SELECT ?grandparent, COUNT(?grandparent) AS ?number_of_grandchildren FROM ?test WHERE{ ?gp ID ?grandparent "parent_of"@[] ?c . ?c "parent_of"@[] ?gc ID ?gc } GROUP BY ?grandparent;`,
+			nBindings: 2,
+			nRows:     1,
 		},
 		{ // Issue 40 (https://github.com/google/badwolf/issues/40)
-			q:       `SELECT ?item, ?t FROM ?test WHERE {?item "in"@[?t] /room<Bedroom>};`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    1,
+			q:         `SELECT ?item, ?t FROM ?test WHERE {?item "in"@[?t] /room<Bedroom>};`,
+			nBindings: 2,
+			nRows:     1,
 		},
 		{
-			q:       `SHOW GRAPHS;`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    1,
+			q:         `SHOW GRAPHS;`,
+			nBindings: 1,
+			nRows:     1,
 		},
 		{
-			q:       `select ?s, ?o from ?test where {?s "tag"@[] ?o} having ?o = "abc"^^type:text;`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    1,
+			q:         `select ?s, ?o from ?test where {?s "tag"@[] ?o} having ?o = "abc"^^type:text;`,
+			nBindings: 2,
+			nRows:     1,
 		},
 		{
-			q:       `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?height > "0"^^type:int64;`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    4,
+			q:         `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?height > "0"^^type:int64;`,
+			nBindings: 2,
+			nRows:     4,
 		},
 		{
-			q:       `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?height > "160"^^type:int64;`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    3,
+			q:         `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?height > "160"^^type:int64;`,
+			nBindings: 2,
+			nRows:     3,
 		},
 		{
-			q:       `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?height = "151"^^type:int64;`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    1,
+			q:         `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?height = "151"^^type:int64;`,
+			nBindings: 2,
+			nRows:     1,
 		},
 		{
-			q:       `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?s > /u<zzzzz>;`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    0,
+			q:         `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?s > /u<zzzzz>;`,
+			nBindings: 2,
+			nRows:     0,
 		},
 		{
-			q:       `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?s > /u<alice>;`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    3,
+			q:         `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?s > /u<alice>;`,
+			nBindings: 2,
+			nRows:     3,
 		},
 		{
-			q:       `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?s > /u<bob>;`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    2,
+			q:         `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?s > /u<bob>;`,
+			nBindings: 2,
+			nRows:     2,
 		},
 		/*
 			/c<model s> "is_a"@[] /t<car>
@@ -560,10 +513,9 @@ func TestPlannerQuery(t *testing.T) {
 		*/
 		// OPTIONAL clauses.
 		{
-			q:       `SELECT ?car FROM ?test WHERE { ?car "is_a"@[] /t<car> };`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    4,
+			q:         `SELECT ?car FROM ?test WHERE { ?car "is_a"@[] /t<car> };`,
+			nBindings: 1,
+			nRows:     4,
 		},
 		{
 			q: `SELECT ?car
@@ -571,9 +523,8 @@ func TestPlannerQuery(t *testing.T) {
 			    WHERE {
 				   /c<model s> as ?car "is_a"@[] /t<car>
 				};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    1,
+			nBindings: 1,
+			nRows:     1,
 		},
 		{
 			q: `SELECT ?car
@@ -582,9 +533,8 @@ func TestPlannerQuery(t *testing.T) {
 				   ?car "is_a"@[] /t<car> .
 				   /c<model z> as ?car "is_a"@[] /t<car>
 				};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    0,
+			nBindings: 1,
+			nRows:     0,
 		},
 		{
 			q: `SELECT ?car
@@ -593,9 +543,8 @@ func TestPlannerQuery(t *testing.T) {
 					?car "is_a"@[] /t<car> .
 					OPTIONAL { /c<model O> "is_a"@[] /t<car> }
 				};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    4,
+			nBindings: 1,
+			nRows:     4,
 		},
 		{
 			q: `SELECT ?car
@@ -604,9 +553,8 @@ func TestPlannerQuery(t *testing.T) {
 					?car "is_a"@[] /t<car> .
 					OPTIONAL { ?car "is_a"@[] /t<car> }
 				};`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    4,
+			nBindings: 1,
+			nRows:     4,
 		},
 		{
 			q: `SELECT ?cars, ?type
@@ -615,9 +563,8 @@ func TestPlannerQuery(t *testing.T) {
 					?cars "is_a"@[] /t<car> .
 					OPTIONAL { ?cars "is_a"@[] ?type }
 				};`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    4,
+			nBindings: 2,
+			nRows:     4,
 		},
 		{
 			q: `SELECT ?p, ?o
@@ -626,9 +573,8 @@ func TestPlannerQuery(t *testing.T) {
 					/c<mini> ?p ?o
 				}
 				HAVING ?o > "37"^^type:int64;`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    0,
+			nBindings: 2,
+			nRows:     0,
 		},
 		{
 			q: `SELECT ?o
@@ -637,9 +583,8 @@ func TestPlannerQuery(t *testing.T) {
 					/u<alice> "height_cm"@[] ?o
 				}
 				HAVING ?o = /u<peter>;`,
-			wantErr: false,
-			nbs:     1,
-			nrws:    0,
+			nBindings: 1,
+			nRows:     0,
 		},
 		{
 			q: `SELECT ?s_id, ?height
@@ -648,31 +593,8 @@ func TestPlannerQuery(t *testing.T) {
 					?s ID ?s_id "height_cm"@[] ?height
 				}
 				HAVING ?s_id = "alice"^^type:text;`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    1,
-		},
-		{
-			q: `SELECT ?s_id, ?height
-				FROM ?test
-				WHERE {
-					?s ID ?s_id "height_cm"@[] ?height
-				}
-				HAVING ?s_id > "37"^^type:int64;`,
-			wantErr: true,
-			nbs:     2,
-			nrws:    1,
-		},
-		{
-			q: `SELECT ?s_id, ?height
-				FROM ?test
-				WHERE {
-					?s ID ?s_id "height_cm"@[] ?height
-				}
-				HAVING ?s_id = /u<alice>;`,
-			wantErr: true,
-			nbs:     2,
-			nrws:    0,
+			nBindings: 2,
+			nRows:     1,
 		},
 		{
 			q: `SELECT ?p_id, ?o
@@ -681,9 +603,8 @@ func TestPlannerQuery(t *testing.T) {
 					/u<peter> ?p ID ?p_id ?o
 				}
 				HAVING ?p_id < "parent_of"^^type:text;`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    4,
+			nBindings: 2,
+			nRows:     4,
 		},
 		{
 			q: `SELECT ?s, ?s_type
@@ -692,9 +613,8 @@ func TestPlannerQuery(t *testing.T) {
 					?s TYPE ?s_type ?p ?o
 				}
 				HAVING ?s_type = "/c"^^type:text;`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    4,
+			nBindings: 2,
+			nRows:     4,
 		},
 		{
 			q: `SELECT ?s, ?s_type
@@ -703,9 +623,8 @@ func TestPlannerQuery(t *testing.T) {
 					?s TYPE ?s_type ?p ?o
 				}
 				HAVING ?s_type < "/l"^^type:text;`,
-			wantErr: false,
-			nbs:     2,
-			nrws:    7,
+			nBindings: 2,
+			nRows:     7,
 		},
 		{
 			q: `SELECT ?p, ?p_id, ?o
@@ -715,9 +634,8 @@ func TestPlannerQuery(t *testing.T) {
 				}
 				HAVING ?p_id = "bought"^^type:text
 				AFTER 2016-03-01T00:00:00-08:00;`,
-			wantErr: false,
-			nbs:     3,
-			nrws:    2,
+			nBindings: 3,
+			nRows:     2,
 		},
 		{
 			q: `SELECT ?p, ?p_id, ?o
@@ -727,9 +645,8 @@ func TestPlannerQuery(t *testing.T) {
 				}
 				HAVING ?p_id < "parent_of"^^type:text
 				BEFORE 2016-03-01T00:00:00-08:00;`,
-			wantErr: false,
-			nbs:     3,
-			nrws:    3,
+			nBindings: 3,
+			nRows:     3,
 		},
 		{
 			q: `SELECT ?p, ?p_id, ?o
@@ -739,9 +656,8 @@ func TestPlannerQuery(t *testing.T) {
 				}
 				HAVING ?p_id = "bought"^^type:text
 				BETWEEN 2016-02-01T00:00:00-08:00, 2016-03-01T00:00:00-08:00;`,
-			wantErr: false,
-			nbs:     3,
-			nrws:    2,
+			nBindings: 3,
+			nRows:     2,
 		},
 		{
 			q: `SELECT ?p, ?p_id, ?o
@@ -751,16 +667,15 @@ func TestPlannerQuery(t *testing.T) {
 				}
 				HAVING ?p_id < "work_with"^^type:text
 				BEFORE 2016-02-01T00:00:00-08:00;`,
-			wantErr: false,
-			nbs:     3,
-			nrws:    4,
+			nBindings: 3,
+			nRows:     4,
 		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
 	populateStoreWithTriples(ctx, s, "?test", testTriples, t)
 	for _, entry := range testTable {
-		// Test setup:
+		// Setup for test:
 		p, err := grammar.NewParser(grammar.SemanticBQL())
 		if err != nil {
 			t.Fatalf("grammar.NewParser should have produced a valid BQL parser but got error: %v", err)
@@ -776,23 +691,62 @@ func TestPlannerQuery(t *testing.T) {
 
 		// Actual test:
 		tbl, err := plnr.Execute(ctx)
-		if !entry.wantErr && err != nil {
+		if err != nil {
 			t.Errorf("planner.Execute(%s)\n= _, %v; want nil error", entry.q, err)
 			continue
 		}
-		if entry.wantErr && err == nil {
-			t.Errorf("planner.Execute(%s)\n= _, nil; want non-nil error", entry.q)
-			continue
-		}
-		if entry.wantErr {
-			// an error was expected and it was indeed caught.
-			continue
-		}
-		if got, want := len(tbl.Bindings()), entry.nbs; got != want {
+		if got, want := len(tbl.Bindings()), entry.nBindings; got != want {
 			t.Errorf("planner.Execute(%s)\n= a Table with %d bindings; want %d", entry.q, got, want)
 		}
-		if got, want := len(tbl.Rows()), entry.nrws; got != want {
+		if got, want := len(tbl.Rows()), entry.nRows; got != want {
 			t.Errorf("planner.Execute(%s)\n= a Table with %d rows; want %d\nTable:\n%v\n", entry.q, got, want, tbl)
+		}
+	}
+}
+
+func TestPlannerQueryError(t *testing.T) {
+	testTable := []struct {
+		q string
+	}{
+		{
+			q: `SELECT ?s_id, ?height
+				FROM ?test
+				WHERE {
+					?s ID ?s_id "height_cm"@[] ?height
+				}
+				HAVING ?s_id > "37"^^type:int64;`,
+		},
+		{
+			q: `SELECT ?s_id, ?height
+				FROM ?test
+				WHERE {
+					?s ID ?s_id "height_cm"@[] ?height
+				}
+				HAVING ?s_id = /u<alice>;`,
+		},
+	}
+
+	s, ctx := memory.NewStore(), context.Background()
+	populateStoreWithTriples(ctx, s, "?test", testTriples, t)
+	for _, entry := range testTable {
+		// Setup for test:
+		p, err := grammar.NewParser(grammar.SemanticBQL())
+		if err != nil {
+			t.Fatalf("grammar.NewParser should have produced a valid BQL parser but got error: %v", err)
+		}
+		st := &semantic.Statement{}
+		if err := p.Parse(grammar.NewLLk(entry.q, 1), st); err != nil {
+			t.Fatalf("parser.Parse failed for query \"%s\"\nwith error: %v", entry.q, err)
+		}
+		plnr, err := New(ctx, s, st, 0, 10, nil)
+		if err != nil {
+			t.Fatalf("planner.New failed to create a valid query plan with error: %v", err)
+		}
+
+		// Actual test:
+		_, err = plnr.Execute(ctx)
+		if err == nil {
+			t.Errorf("planner.Execute(%s)\n= _, nil; want non-nil error", entry.q)
 		}
 	}
 }

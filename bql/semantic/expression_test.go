@@ -205,12 +205,11 @@ func mustBuildNodeFromStrings(nodeType, nodeID string) *node.Node {
 	return n
 }
 
-func TestNewEvaluator(t *testing.T) {
+func TestEvaluatorEvaluate(t *testing.T) {
 	testTable := []struct {
 		id   string
 		in   []ConsumedElement
 		r    table.Row
-		err  bool
 		want bool
 	}{
 		{
@@ -232,7 +231,6 @@ func TestNewEvaluator(t *testing.T) {
 				"?foo": &table.Cell{S: table.CellString("VALUE")},
 				"?bar": &table.Cell{S: table.CellString("VALUE")},
 			},
-			err:  false,
 			want: true,
 		},
 		{
@@ -254,7 +252,6 @@ func TestNewEvaluator(t *testing.T) {
 				"?foo": &table.Cell{S: table.CellString("foo")},
 				"?bar": &table.Cell{S: table.CellString("bar")},
 			},
-			err:  false,
 			want: false,
 		},
 		{
@@ -276,7 +273,6 @@ func TestNewEvaluator(t *testing.T) {
 				"?foo": &table.Cell{S: table.CellString("foo")},
 				"?bar": &table.Cell{S: table.CellString("bar")},
 			},
-			err:  false,
 			want: true,
 		},
 		{
@@ -307,7 +303,6 @@ func TestNewEvaluator(t *testing.T) {
 				"?foo": &table.Cell{S: table.CellString("VALUE")},
 				"?bar": &table.Cell{S: table.CellString("VALUE")},
 			},
-			err:  false,
 			want: false,
 		},
 		{
@@ -355,7 +350,6 @@ func TestNewEvaluator(t *testing.T) {
 				"?foo": &table.Cell{S: table.CellString("foo")},
 				"?bar": &table.Cell{S: table.CellString("bar")},
 			},
-			err:  false,
 			want: true,
 		},
 		{
@@ -403,7 +397,6 @@ func TestNewEvaluator(t *testing.T) {
 				"?foo": &table.Cell{S: table.CellString("foo")},
 				"?bar": &table.Cell{S: table.CellString("bar")},
 			},
-			err:  false,
 			want: false,
 		},
 		{
@@ -426,7 +419,6 @@ func TestNewEvaluator(t *testing.T) {
 					L: mustBuildLiteral(`"abc"^^type:text`),
 				},
 			},
-			err:  false,
 			want: true,
 		},
 		{
@@ -447,7 +439,6 @@ func TestNewEvaluator(t *testing.T) {
 			r: table.Row{
 				"?id": &table.Cell{S: table.CellString("abc")},
 			},
-			err:  false,
 			want: true,
 		},
 		{
@@ -468,7 +459,6 @@ func TestNewEvaluator(t *testing.T) {
 			r: table.Row{
 				"?id": &table.Cell{S: table.CellString("aaa")},
 			},
-			err:  false,
 			want: true,
 		},
 		{
@@ -489,7 +479,6 @@ func TestNewEvaluator(t *testing.T) {
 			r: table.Row{
 				"?id": &table.Cell{S: table.CellString("bbb")},
 			},
-			err:  false,
 			want: false,
 		},
 		{
@@ -510,7 +499,6 @@ func TestNewEvaluator(t *testing.T) {
 			r: table.Row{
 				"?s_type": &table.Cell{S: table.CellString("/u")},
 			},
-			err:  false,
 			want: true,
 		},
 		{
@@ -531,7 +519,6 @@ func TestNewEvaluator(t *testing.T) {
 			r: table.Row{
 				"?foo": &table.Cell{L: mustBuildLiteral(`"99.0"^^type:float64`)},
 			},
-			err:  false,
 			want: true,
 		},
 		{
@@ -552,7 +539,6 @@ func TestNewEvaluator(t *testing.T) {
 			r: table.Row{
 				"?foo": &table.Cell{L: mustBuildLiteral(`"100"^^type:int64`)},
 			},
-			err:  false,
 			want: true,
 		},
 		{
@@ -573,7 +559,6 @@ func TestNewEvaluator(t *testing.T) {
 			r: table.Row{
 				"?foo": &table.Cell{L: mustBuildLiteral(`"100"^^type:int64`)},
 			},
-			err:  false,
 			want: false,
 		},
 		{
@@ -594,7 +579,6 @@ func TestNewEvaluator(t *testing.T) {
 			r: table.Row{
 				"?foo": &table.Cell{N: mustBuildNodeFromStrings("/_", "meowth")},
 			},
-			err:  false,
 			want: true,
 		},
 		{
@@ -615,7 +599,6 @@ func TestNewEvaluator(t *testing.T) {
 			r: table.Row{
 				"?o": &table.Cell{N: mustBuildNodeFromStrings("/u", "paul")},
 			},
-			err:  false,
 			want: false,
 		},
 		{
@@ -636,49 +619,6 @@ func TestNewEvaluator(t *testing.T) {
 			r: table.Row{
 				"?o": &table.Cell{L: mustBuildLiteral(`"73"^^type:int64`)},
 			},
-			err:  false,
-			want: false,
-		},
-		{
-			id: `?s ID ?id > "37"^^type:int64`,
-			in: []ConsumedElement{
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemBinding,
-					Text: "?id",
-				}),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemGT,
-				}),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemLiteral,
-					Text: `"37"^^type:int64`,
-				}),
-			},
-			r: table.Row{
-				"?id": &table.Cell{S: table.CellString("peter")},
-			},
-			err:  true,
-			want: false,
-		},
-		{
-			id: `?s ID ?id = /u<peter>`,
-			in: []ConsumedElement{
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemBinding,
-					Text: "?id",
-				}),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemEQ,
-				}),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemNode,
-					Text: "/u<peter>",
-				}),
-			},
-			r: table.Row{
-				"?id": &table.Cell{S: table.CellString("peter")},
-			},
-			err:  true,
 			want: false,
 		},
 		{
@@ -699,7 +639,6 @@ func TestNewEvaluator(t *testing.T) {
 			r: table.Row{
 				"?foo": &table.Cell{L: mustBuildLiteral(`"10"^^type:int64`)},
 			},
-			err:  false,
 			want: false,
 		},
 	}
@@ -710,10 +649,72 @@ func TestNewEvaluator(t *testing.T) {
 		}
 
 		got, err := eval.Evaluate(entry.r)
-		if !entry.err && err != nil {
+		if err != nil {
 			t.Errorf("%s: eval.Evaluate(%v) = _, %v; want nil error", entry.id, entry.r, err)
 		}
-		if entry.err && err == nil {
+		if want := entry.want; got != want {
+			t.Errorf("%s: eval.Evaluate(%v) = %v, _; want %v, _", entry.id, entry.r, got, want)
+		}
+	}
+}
+
+func TestEvaluatorEvaluateError(t *testing.T) {
+	testTable := []struct {
+		id   string
+		in   []ConsumedElement
+		r    table.Row
+		want bool
+	}{
+		{
+			id: `?s ID ?id > "37"^^type:int64`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?id",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: `"37"^^type:int64`,
+				}),
+			},
+			r: table.Row{
+				"?id": &table.Cell{S: table.CellString("peter")},
+			},
+			want: false,
+		},
+		{
+			id: `?s ID ?id = /u<peter>`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?id",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemNode,
+					Text: "/u<peter>",
+				}),
+			},
+			r: table.Row{
+				"?id": &table.Cell{S: table.CellString("peter")},
+			},
+			want: false,
+		},
+	}
+
+	for _, entry := range testTable {
+		eval, err := NewEvaluator(entry.in)
+		if err != nil {
+			t.Fatalf("test %q should have never failed when creating a new evaluator from %v, got error: %v", entry.id, entry.in, err)
+		}
+
+		got, err := eval.Evaluate(entry.r)
+		if err == nil {
 			t.Errorf("%s: eval.Evaluate(%v) = _, nil; want non-nil error", entry.id, entry.r)
 		}
 		if want := entry.want; got != want {
