@@ -205,7 +205,7 @@ func mustBuildNodeFromStrings(nodeType, nodeID string) *node.Node {
 	return n
 }
 
-func TestNewEvaluator(t *testing.T) {
+func TestEvaluatorEvaluate(t *testing.T) {
 	testTable := []struct {
 		id   string
 		in   []ConsumedElement
@@ -658,7 +658,7 @@ func TestNewEvaluator(t *testing.T) {
 	}
 }
 
-func TestNewEvaluatorError(t *testing.T) {
+func TestEvaluatorEvaluateError(t *testing.T) {
 	testTable := []struct {
 		id   string
 		in   []ConsumedElement
