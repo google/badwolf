@@ -624,12 +624,14 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 		}
 	}
 	if cls.OTypeAlias != "" {
+		var c *table.Cell
 		n, err := o.Node()
 		if err != nil {
-			// in the case of TYPE binding for a non-node object we just want (for now) to skip this triple and proceed to the next one, not returning any errors.
-			return nil, nil
+			// in the case of TYPE bindings for non-node objects we provide an empty Cell as we want <NULL> to appear in the query result (for now, see Issue 124).
+			c = &table.Cell{}
+		} else {
+			c = &table.Cell{S: table.CellString(n.Type().String())}
 		}
-		c := &table.Cell{S: table.CellString(n.Type().String())}
 		r[cls.OTypeAlias] = c
 		if !validBinding(cls.OTypeAlias, c) {
 			return nil, nil
