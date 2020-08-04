@@ -692,7 +692,7 @@ func TestPlannerQuery(t *testing.T) {
 					?s "parent_of"@[?time] ?o
 				};`,
 			nBindings: 3,
-			nRows:     0,
+			nRows:     4,
 		},
 		{
 			q: `SELECT ?s, ?s_alias, ?s_id, ?s_type
