@@ -420,7 +420,7 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 			if string(t.Predicate().ID()) != cls.PID {
 				continue
 			}
-			if cls.PTemporal {
+			if cls.PTemporal && cls.PAnchorBinding == "" {
 				if t.Predicate().Type() != predicate.Temporal {
 					continue
 				}
@@ -566,15 +566,17 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 		}
 	}
 	if cls.PAnchorBinding != "" {
+		var c *table.Cell
 		if p.Type() != predicate.Temporal {
-			// in the case of time anchor binding (eg: "bought"@[?time]) for an immutable predicate we just want (for now) to skip this triple and proceed to the next one, not returning any errors.
-			return nil, nil
+			// in the case of time anchor bindings (eg: "bought"@[?time]) for immutable predicates we provide an empty Cell as we want <NULL> to appear in the query result.
+			c = &table.Cell{}
+		} else {
+			t, err := p.TimeAnchor()
+			if err != nil {
+				return nil, fmt.Errorf("failed to retrieve the time anchor value for predicate %q in binding %q with error: %v", p, cls.PAnchorBinding, err)
+			}
+			c = &table.Cell{T: t}
 		}
-		t, err := p.TimeAnchor()
-		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve the time anchor value for predicate %q in binding %q with error %v", p, cls.PAnchorBinding, err)
-		}
-		c := &table.Cell{T: t}
 		r[cls.PAnchorBinding] = c
 		if !validBinding(cls.PAnchorBinding, c) {
 			return nil, nil
