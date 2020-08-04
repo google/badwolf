@@ -472,11 +472,8 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 			tbl.AddRow(r)
 		}
 	}
-	if lastErr != nil {
-		return lastErr
-	}
 
-	return nil
+	return lastErr
 }
 
 // objectToCell returns a cell containing the data boxed in the object.
