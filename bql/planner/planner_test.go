@@ -687,7 +687,7 @@ func TestPlannerQuery(t *testing.T) {
 					/u<peter> ?p AT ?time ?o
 				};`,
 			nBindings: 3,
-			nRows:     4,
+			nRows:     6,
 		},
 		{
 			q: `SELECT ?s, ?time, ?o
