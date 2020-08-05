@@ -696,6 +696,15 @@ func TestPlannerQuery(t *testing.T) {
 			nRows:     4,
 		},
 		{
+			q: `SELECT ?p, ?o, ?time_o
+				FROM ?test
+				WHERE {
+					/l<barcelona> ?p ?o AT ?time_o
+				};`,
+			nBindings: 3,
+			nRows:     5,
+		},
+		{
 			q: `SELECT ?s, ?s_alias, ?s_id, ?s_type
 				FROM ?test
 				WHERE {
