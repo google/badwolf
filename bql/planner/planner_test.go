@@ -47,6 +47,7 @@ const (
 		/l<barcelona> "predicate"@[] "turned"@[2016-02-01T00:00:00-08:00]
 		/l<barcelona> "predicate"@[] "turned"@[2016-03-01T00:00:00-08:00]
 		/l<barcelona> "predicate"@[] "turned"@[2016-04-01T00:00:00-08:00]
+		/l<barcelona> "predicate"@[] "immutable_predicate"@[]
 		/u<alice> "height_cm"@[] "174"^^type:int64
 		/u<alice> "tag"@[] "abc"^^type:text
 		/u<bob> "height_cm"@[] "151"^^type:int64
@@ -678,7 +679,7 @@ func TestPlannerQuery(t *testing.T) {
 				}
 				HAVING (?s = /u<joe>) OR (?s = /l<barcelona>) OR (?s = /u<alice>);`,
 			nBindings: 2,
-			nRows:     8,
+			nRows:     9,
 		},
 		{
 			q: `SELECT ?p, ?time, ?o
