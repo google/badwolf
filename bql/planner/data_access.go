@@ -494,7 +494,7 @@ func objectToCell(o *triple.Object) (*table.Cell, error) {
 	return nil, fmt.Errorf("unknown object type in object %q", o)
 }
 
-// tripleToRow converts a triple into a row using the binndings specidfied
+// tripleToRow converts a triple into a row using the bindings specified
 // on the graph clause.
 func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error) {
 	r, s, p, o := make(table.Row), t.Subject(), t.Predicate(), t.Object()
