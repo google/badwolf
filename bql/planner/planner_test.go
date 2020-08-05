@@ -708,6 +708,15 @@ func TestPlannerQuery(t *testing.T) {
 			nBindings: 3,
 			nRows:     5,
 		},
+		{
+			q: `SELECT ?p, ?time_o
+				FROM ?test
+				WHERE {
+					/l<barcelona> ?p "immutable_predicate"@[?time_o]
+				};`,
+			nBindings: 2,
+			nRows:     1,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
