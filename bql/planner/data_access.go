@@ -446,7 +446,7 @@ func shouldIgnoreTriple(t *triple.Triple, cls *semantic.GraphClause) (bool, erro
 			if string(p.ID()) != cls.OID {
 				return true, nil
 			}
-			if cls.OTemporal {
+			if cls.OTemporal && cls.OAnchorBinding == "" {
 				if p.Type() != predicate.Temporal {
 					return true, nil
 				}
@@ -695,12 +695,15 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 				return nil, &skippableError{"cls.OAnchorBinding in non-optional clause", err}
 			}
 			c = &table.Cell{}
+		} else if p.Type() != predicate.Temporal {
+			// in the case of time anchor bindings for objects that are immutable predicates we provide an empty Cell as we want <NULL> to appear in the query result.
+			c = &table.Cell{}
 		} else {
-			ts, err := p.TimeAnchor()
+			t, err := p.TimeAnchor()
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to retrieve the time anchor value for predicate %q in binding %q with error: %v", p, cls.OAnchorBinding, err)
 			}
-			c = &table.Cell{T: ts}
+			c = &table.Cell{T: t}
 		}
 		r[cls.OAnchorBinding] = c
 		if !validBinding(cls.OAnchorBinding, c) {
