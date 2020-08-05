@@ -444,7 +444,7 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 				if string(p.ID()) != cls.OID {
 					continue
 				}
-				if cls.OTemporal {
+				if cls.OTemporal && cls.OAnchorBinding == "" {
 					if p.Type() != predicate.Temporal {
 						continue
 					}
@@ -658,11 +658,17 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 		if err != nil {
 			return nil, err
 		}
-		ts, err := p.TimeAnchor()
-		if err != nil {
-			return nil, err
+		var c *table.Cell
+		if p.Type() != predicate.Temporal {
+			// in the case of time anchor bindings for objects that are immutable predicates we provide an empty Cell as we want <NULL> to appear in the query result.
+			c = &table.Cell{}
+		} else {
+			t, err := p.TimeAnchor()
+			if err != nil {
+				return nil, fmt.Errorf("failed to retrieve the time anchor value for predicate %q in binding %q with error: %v", p, cls.OAnchorBinding, err)
+			}
+			c = &table.Cell{T: t}
 		}
-		c := &table.Cell{T: ts}
 		r[cls.OAnchorBinding] = c
 		if !validBinding(cls.OAnchorBinding, c) {
 			return nil, nil
