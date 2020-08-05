@@ -673,11 +673,17 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 		if err != nil {
 			return nil, err
 		}
-		ts, err := p.TimeAnchor()
-		if err != nil {
-			return nil, err
+		var c *table.Cell
+		if p.Type() != predicate.Temporal {
+			// in the case of AT bindings for objects that are immutable predicates we provide an empty Cell as we want <NULL> to appear in the query result.
+			c = &table.Cell{}
+		} else {
+			t, err := p.TimeAnchor()
+			if err != nil {
+				return nil, fmt.Errorf("failed to retrieve the time anchor value for predicate %q in binding %q with error: %v", p, cls.OAnchorAlias, err)
+			}
+			c = &table.Cell{T: t}
 		}
-		c := &table.Cell{T: ts}
 		r[cls.OAnchorAlias] = c
 		if !validBinding(cls.OAnchorAlias, c) {
 			return nil, nil
