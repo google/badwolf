@@ -407,18 +407,19 @@ func TestDataAccessTripleToRowSubjectBindings(t *testing.T) {
 
 func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
 	n, p, _ := testNodeTemporalPredicateLiteral(t)
-	ts, err := p.TimeAnchor()
+	ta, err := p.TimeAnchor()
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	testTable := []struct {
-		t   string
-		cls *semantic.GraphClause
-		bc  *table.Cell
-		ac  *table.Cell
-		ic  *table.Cell
-		tc  *table.Cell
-		atc *table.Cell
+		t              string
+		cls            *semantic.GraphClause
+		pBinding       *table.Cell
+		pAlias         *table.Cell
+		pIDAlias       *table.Cell
+		pAnchorBinding *table.Cell
+		pAnchorAlias   *table.Cell
 	}{
 		{
 			t: n.String() + "\t" + p.String() + "\t" + n.String(),
@@ -426,39 +427,36 @@ func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
 				PBinding:       "?p",
 				PAlias:         "?alias",
 				PIDAlias:       "?id",
-				PAnchorBinding: "?ts",
-				PAnchorAlias:   "?tsa",
+				PAnchorBinding: "?anchorBinding",
+				PAnchorAlias:   "?anchorAlias",
 			},
-			bc:  &table.Cell{P: p},
-			ac:  &table.Cell{P: p},
-			ic:  &table.Cell{S: table.CellString(string(p.ID()))},
-			tc:  &table.Cell{T: ts},
-			atc: &table.Cell{T: ts},
+			pBinding:       &table.Cell{P: p},
+			pAlias:         &table.Cell{P: p},
+			pIDAlias:       &table.Cell{S: table.CellString(string(p.ID()))},
+			pAnchorBinding: &table.Cell{T: ta},
+			pAnchorAlias:   &table.Cell{T: ta},
 		},
 	}
+
 	for _, entry := range testTable {
+		// Setup for test:
 		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
-			t.Errorf("triple.Parse failed to parse valid triple %q with error %v", entry.t, err)
+			t.Fatalf(`triple.Parse failed to parse valid triple "%s" with error: %v`, entry.t, err)
 		}
+
+		// Actual test:
 		r, err := tripleToRow(tpl, entry.cls)
 		if err != nil {
-			t.Errorf("tripleToRow for triple %q and clasuse %v, failed with error %v", tpl, entry.cls, err)
+			t.Errorf(`tripleToRow for triple "%s" and clause %q failed with error: %v`, tpl, entry.cls, err)
+			continue
 		}
-		if got, want := r["?p"], entry.bc; !reflect.DeepEqual(got, want) {
-			t.Errorf("tripleToRow failed to return right value for binding \"?p\"; got %q, want %q", got, want)
-		}
-		if got, want := r["?alias"], entry.ac; !reflect.DeepEqual(got, want) {
-			t.Errorf("tripleToRow failed to return right value for binding alias \"?alias\"; got %q, want %q", got, want)
-		}
-		if got, want := r["?id"], entry.ic; !reflect.DeepEqual(got, want) {
-			t.Errorf("tripleToRow failed to return right value for binding \"?id\"; got %q, want %q", got, want)
-		}
-		if got, want := r["?ts"], entry.tc; !reflect.DeepEqual(got, want) {
-			t.Errorf("tripleToRow failed to return right value for binding \"?ts\"; got %q, want %q", got, want)
-		}
-		if got, want := r["?tsa"], entry.tc; !reflect.DeepEqual(got, want) {
-			t.Errorf("tripleToRow failed to return right value for binding \"?tsa\"; got %q, want %q", got, want)
+		bindings := []string{"?p", "?alias", "?id", "?anchorBinding", "?anchorAlias"}
+		entryCells := []*table.Cell{entry.pBinding, entry.pAlias, entry.pIDAlias, entry.pAnchorBinding, entry.pAnchorAlias}
+		for i, binding := range bindings {
+			if got, want := r[binding], entryCells[i]; !reflect.DeepEqual(got, want) {
+				t.Errorf(`tripleToRow(%q) = "%s"; want "%s"`, binding, got, want)
+			}
 		}
 	}
 }
