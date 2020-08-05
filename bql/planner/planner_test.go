@@ -705,6 +705,15 @@ func TestPlannerQuery(t *testing.T) {
 			nRows:     5,
 		},
 		{
+			q: `SELECT ?p, ?o_time
+				FROM ?test
+				WHERE {
+					/l<barcelona> ?p "immutable_predicate"@[?o_time]
+				};`,
+			nBindings: 2,
+			nRows:     1,
+		},
+		{
 			q: `SELECT ?s, ?s_alias, ?s_id, ?s_type
 				FROM ?test
 				WHERE {
