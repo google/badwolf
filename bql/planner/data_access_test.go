@@ -482,11 +482,12 @@ func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
 }
 
 func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
-	n, p, _ := testNodeTemporalPredicateLiteral(t)
-	ta, err := p.TimeAnchor()
+	n, pTemporal, l := testNodeTemporalPredicateLiteral(t)
+	ta, err := pTemporal.TimeAnchor()
 	if err != nil {
 		t.Fatal(err)
 	}
+	_, pImmutable, _ := testNodePredicateLiteral(t)
 
 	testTable := []struct {
 		t              string
@@ -499,7 +500,7 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 		oAnchorAlias   *table.Cell
 	}{
 		{
-			t: n.String() + "\t" + p.String() + "\t" + n.String(),
+			t: n.String() + "\t" + pTemporal.String() + "\t" + n.String(),
 			cls: &semantic.GraphClause{
 				OBinding:   "?o",
 				OAlias:     "?alias",
@@ -512,19 +513,45 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 			oIDAlias:   &table.Cell{S: table.CellString(n.ID().String())},
 		},
 		{
-			t: n.String() + "\t" + p.String() + "\t" + p.String(),
+			t: n.String() + "\t" + pTemporal.String() + "\t" + pTemporal.String(),
 			cls: &semantic.GraphClause{
 				OBinding:       "?o",
 				OAlias:         "?alias",
+				OTypeAlias:     "?type",
 				OIDAlias:       "?id",
 				OAnchorBinding: "?anchorBinding",
 				OAnchorAlias:   "?anchorAlias",
 			},
-			oBinding:       &table.Cell{P: p},
-			oAlias:         &table.Cell{P: p},
-			oIDAlias:       &table.Cell{S: table.CellString(string(p.ID()))},
+			oBinding:       &table.Cell{P: pTemporal},
+			oAlias:         &table.Cell{P: pTemporal},
+			oTypeAlias:     &table.Cell{},
+			oIDAlias:       &table.Cell{S: table.CellString(string(pTemporal.ID()))},
 			oAnchorBinding: &table.Cell{T: ta},
 			oAnchorAlias:   &table.Cell{T: ta},
+		},
+		{
+			t: n.String() + "\t" + pTemporal.String() + "\t" + l.String(),
+			cls: &semantic.GraphClause{
+				OBinding:   "?o",
+				OAlias:     "?alias",
+				OTypeAlias: "?type",
+			},
+			oBinding:   &table.Cell{L: l},
+			oAlias:     &table.Cell{L: l},
+			oTypeAlias: &table.Cell{},
+		},
+		{
+			t: n.String() + "\t" + pImmutable.String() + "\t" + pImmutable.String(),
+			cls: &semantic.GraphClause{
+				OBinding:   "?o",
+				OAlias:     "?alias",
+				OTypeAlias: "?type",
+				OIDAlias:   "?id",
+			},
+			oBinding:   &table.Cell{P: pImmutable},
+			oAlias:     &table.Cell{P: pImmutable},
+			oTypeAlias: &table.Cell{},
+			oIDAlias:   &table.Cell{S: table.CellString(string(pImmutable.ID()))},
 		},
 	}
 
