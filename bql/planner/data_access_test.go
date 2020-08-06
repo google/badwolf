@@ -531,21 +531,22 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 	}
 }
 
-func TestDataAccessTripleToRowObjectBindingsDroping(t *testing.T) {
+func TestDataAccessTripleToRowObjectBindingsDropping(t *testing.T) {
 	n, p, _ := testNodeTemporalPredicateLiteral(t)
-	ts, err := p.TimeAnchor()
+	ta, err := p.TimeAnchor()
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	testTable := []struct {
-		t   string
-		cls *semantic.GraphClause
-		bc  *table.Cell
-		ac  *table.Cell
-		tc  *table.Cell
-		ic  *table.Cell
-		tsc *table.Cell
-		atc *table.Cell
+		t              string
+		cls            *semantic.GraphClause
+		oBinding       *table.Cell
+		oAlias         *table.Cell
+		oTypeAlias     *table.Cell
+		oIDAlias       *table.Cell
+		oAnchorBinding *table.Cell
+		oAnchorAlias   *table.Cell
 	}{
 		{
 			t: n.String() + "\t" + p.String() + "\t" + n.String(),
@@ -555,10 +556,10 @@ func TestDataAccessTripleToRowObjectBindingsDroping(t *testing.T) {
 				OTypeAlias: "?o",
 				OIDAlias:   "?id",
 			},
-			bc: &table.Cell{N: n},
-			ac: &table.Cell{N: n},
-			tc: &table.Cell{S: table.CellString(n.Type().String())},
-			ic: &table.Cell{S: table.CellString(n.ID().String())},
+			oBinding:   &table.Cell{N: n},
+			oAlias:     &table.Cell{N: n},
+			oTypeAlias: &table.Cell{S: table.CellString(n.Type().String())},
+			oIDAlias:   &table.Cell{S: table.CellString(n.ID().String())},
 		},
 		{
 			t: n.String() + "\t" + p.String() + "\t" + p.String(),
@@ -566,27 +567,32 @@ func TestDataAccessTripleToRowObjectBindingsDroping(t *testing.T) {
 				OBinding:       "?o",
 				OAlias:         "?alias",
 				OIDAlias:       "?id",
-				OAnchorBinding: "?ts",
+				OAnchorBinding: "?anchorBinding",
 				OAnchorAlias:   "?o",
 			},
-			bc:  &table.Cell{P: p},
-			ac:  &table.Cell{P: p},
-			ic:  &table.Cell{S: table.CellString(string(p.ID()))},
-			tsc: &table.Cell{T: ts},
-			atc: &table.Cell{T: ts},
+			oBinding:       &table.Cell{P: p},
+			oAlias:         &table.Cell{P: p},
+			oIDAlias:       &table.Cell{S: table.CellString(string(p.ID()))},
+			oAnchorBinding: &table.Cell{T: ta},
+			oAnchorAlias:   &table.Cell{T: ta},
 		},
 	}
+
 	for _, entry := range testTable {
+		// Setup for test:
 		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
-			t.Errorf("triple.Parse failed to parse valid triple %q with error %v", entry.t, err)
+			t.Fatalf(`triple.Parse failed to parse valid triple "%s" with error: %v`, entry.t, err)
 		}
+
+		// Actual test:
 		r, err := tripleToRow(tpl, entry.cls)
 		if err != nil {
-			t.Errorf("tripleToRow for triple %q and clasuse %v, failed with error %v", tpl, entry.cls, err)
+			t.Errorf(`tripleToRow for triple "%s" and clause %q failed with error: %v`, tpl, entry.cls, err)
+			continue
 		}
 		if r != nil {
-			t.Errorf("tripleToRow for triple %q and clasuse %v, failed to drop triple and returned %v", tpl, entry.cls, r)
+			t.Errorf(`tripleToRow for triple "%s" and clause %q failed to drop triple and returned: %v; want nil`, tpl, entry.cls, r)
 		}
 	}
 }
