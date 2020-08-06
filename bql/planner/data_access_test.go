@@ -311,48 +311,52 @@ func TestDataAccessBasicBindings(t *testing.T) {
 		PBinding: "?p",
 		OBinding: "?o",
 	}
+
 	testTable := []struct {
-		t  string
-		sc *table.Cell
-		pc *table.Cell
-		oc *table.Cell
+		t        string
+		sBinding *table.Cell
+		pBinding *table.Cell
+		oBinding *table.Cell
 	}{
 		{
-			t:  n.String() + "\t" + p.String() + "\t" + n.String(),
-			sc: &table.Cell{N: n},
-			pc: &table.Cell{P: p},
-			oc: &table.Cell{N: n},
+			t:        n.String() + "\t" + p.String() + "\t" + n.String(),
+			sBinding: &table.Cell{N: n},
+			pBinding: &table.Cell{P: p},
+			oBinding: &table.Cell{N: n},
 		},
 		{
-			t:  n.String() + "\t" + p.String() + "\t" + p.String(),
-			sc: &table.Cell{N: n},
-			pc: &table.Cell{P: p},
-			oc: &table.Cell{P: p},
+			t:        n.String() + "\t" + p.String() + "\t" + p.String(),
+			sBinding: &table.Cell{N: n},
+			pBinding: &table.Cell{P: p},
+			oBinding: &table.Cell{P: p},
 		},
 		{
-			t:  n.String() + "\t" + p.String() + "\t" + l.String(),
-			sc: &table.Cell{N: n},
-			pc: &table.Cell{P: p},
-			oc: &table.Cell{L: l},
+			t:        n.String() + "\t" + p.String() + "\t" + l.String(),
+			sBinding: &table.Cell{N: n},
+			pBinding: &table.Cell{P: p},
+			oBinding: &table.Cell{L: l},
 		},
 	}
+
 	for _, entry := range testTable {
+		// Setup for test:
 		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
-			t.Errorf("triple.Parse failed to parse valid triple %q with error %v", entry.t, err)
+			t.Fatalf(`triple.Parse failed to parse valid triple "%s" with error: %v`, entry.t, err)
 		}
+
+		// Actual test:
 		r, err := tripleToRow(tpl, cls)
 		if err != nil {
-			t.Errorf("tripleToRow for triple %q and clasuse %v, failed with error %v", tpl, cls, err)
+			t.Errorf(`tripleToRow for triple "%s" and clause %q failed with error: %v`, tpl, cls, err)
+			continue
 		}
-		if got, want := r["?s"], entry.sc; !reflect.DeepEqual(got, want) {
-			t.Errorf("tripleToRow failed to return right value for binding \"?s\"; got %q, want %q", got, want)
-		}
-		if got, want := r["?p"], entry.pc; !reflect.DeepEqual(got, want) {
-			t.Errorf("tripleToRow failed to return right value for binding \"?p\"; got %q, want %q", got, want)
-		}
-		if got, want := r["?o"], entry.oc; !reflect.DeepEqual(got, want) {
-			t.Errorf("tripleToRow failed to return right value for binding \"?o\"; got %q, want %q", got, want)
+		bindings := []string{"?s", "?p", "?o"}
+		entryCells := []*table.Cell{entry.sBinding, entry.pBinding, entry.oBinding}
+		for i, binding := range bindings {
+			if got, want := r[binding], entryCells[i]; !reflect.DeepEqual(got, want) {
+				t.Errorf(`tripleToRow(%q) = "%s"; want "%s"`, binding, got, want)
+			}
 		}
 	}
 }
