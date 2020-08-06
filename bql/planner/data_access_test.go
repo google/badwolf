@@ -575,13 +575,17 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 		{
 			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, pImmutable),
 			cls: &semantic.GraphClause{
-				OBinding: "?o",
-				OAlias:   "?alias",
-				OIDAlias: "?id",
+				OBinding:       "?o",
+				OAlias:         "?alias",
+				OIDAlias:       "?id",
+				OAnchorBinding: "?anchorBinding",
+				OAnchorAlias:   "?anchorAlias",
 			},
-			oBinding: &table.Cell{P: pImmutable},
-			oAlias:   &table.Cell{P: pImmutable},
-			oIDAlias: &table.Cell{S: table.CellString(string(pImmutable.ID()))},
+			oBinding:       &table.Cell{P: pImmutable},
+			oAlias:         &table.Cell{P: pImmutable},
+			oIDAlias:       &table.Cell{S: table.CellString(string(pImmutable.ID()))},
+			oAnchorBinding: &table.Cell{},
+			oAnchorAlias:   &table.Cell{},
 		},
 	}
 
