@@ -410,11 +410,12 @@ func TestDataAccessTripleToRowSubjectBindings(t *testing.T) {
 }
 
 func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
-	n, p, _ := testNodeTemporalPredicateLiteral(t)
-	ta, err := p.TimeAnchor()
+	n, pTemporal, _ := testNodeTemporalPredicateLiteral(t)
+	ta, err := pTemporal.TimeAnchor()
 	if err != nil {
 		t.Fatal(err)
 	}
+	_, pImmutable, _ := testNodePredicateLiteral(t)
 
 	testTable := []struct {
 		t              string
@@ -426,7 +427,7 @@ func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
 		pAnchorAlias   *table.Cell
 	}{
 		{
-			t: n.String() + "\t" + p.String() + "\t" + n.String(),
+			t: n.String() + "\t" + pTemporal.String() + "\t" + n.String(),
 			cls: &semantic.GraphClause{
 				PBinding:       "?p",
 				PAlias:         "?alias",
@@ -434,11 +435,26 @@ func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
 				PAnchorBinding: "?anchorBinding",
 				PAnchorAlias:   "?anchorAlias",
 			},
-			pBinding:       &table.Cell{P: p},
-			pAlias:         &table.Cell{P: p},
-			pIDAlias:       &table.Cell{S: table.CellString(string(p.ID()))},
+			pBinding:       &table.Cell{P: pTemporal},
+			pAlias:         &table.Cell{P: pTemporal},
+			pIDAlias:       &table.Cell{S: table.CellString(string(pTemporal.ID()))},
 			pAnchorBinding: &table.Cell{T: ta},
 			pAnchorAlias:   &table.Cell{T: ta},
+		},
+		{
+			t: n.String() + "\t" + pImmutable.String() + "\t" + n.String(),
+			cls: &semantic.GraphClause{
+				PBinding:       "?p",
+				PAlias:         "?alias",
+				PIDAlias:       "?id",
+				PAnchorBinding: "?anchorBinding",
+				PAnchorAlias:   "?anchorAlias",
+			},
+			pBinding:       &table.Cell{P: pImmutable},
+			pAlias:         &table.Cell{P: pImmutable},
+			pIDAlias:       &table.Cell{S: table.CellString(string(pImmutable.ID()))},
+			pAnchorBinding: &table.Cell{},
+			pAnchorAlias:   &table.Cell{},
 		},
 	}
 
