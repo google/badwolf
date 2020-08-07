@@ -409,32 +409,26 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 // table. The semantic graph clause is also passed to be able to identify what
 // bindings to set.
 func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.Table) error {
-	var lastErr error
-	for t := range ts {
-		if lastErr != nil {
-			// Drain the channel to avoid leaking goroutines.
-			continue
-		}
+	shouldIgnoreTriple := func(t *triple.Triple) (bool, error) {
 		if cls.PID != "" {
 			// The triples need to be filtered.
 			if string(t.Predicate().ID()) != cls.PID {
-				continue
+				return true, nil
 			}
 			if cls.PTemporal {
 				if t.Predicate().Type() != predicate.Temporal {
-					continue
+					return true, nil
 				}
 				ta, err := t.Predicate().TimeAnchor()
 				if err != nil {
-					lastErr = fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
-					continue
+					return true, fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
 				}
 				// Need to check the bounds of the triple.
 				if cls.PLowerBound != nil && cls.PLowerBound.After(*ta) {
-					continue
+					return true, nil
 				}
 				if cls.PUpperBound != nil && cls.PUpperBound.Before(*ta) {
-					continue
+					return true, nil
 				}
 			}
 		}
@@ -442,38 +436,53 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 			if p, err := t.Object().Predicate(); err == nil {
 				// The triples need to be filtered.
 				if string(p.ID()) != cls.OID {
-					continue
+					return true, nil
 				}
 				if cls.OTemporal {
 					if p.Type() != predicate.Temporal {
-						continue
+						return true, nil
 					}
 					ta, err := p.TimeAnchor()
 					if err != nil {
-						lastErr = fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
-						continue
+						return true, fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
 					}
 					// Need to check the bounds of the triple.
 					if cls.OLowerBound != nil && cls.OLowerBound.After(*ta) {
-						continue
+						return true, nil
 					}
 					if cls.OUpperBound != nil && cls.OUpperBound.Before(*ta) {
-						continue
+						return true, nil
 					}
 				}
 			}
 		}
+		return false, nil
+	}
+
+	var err error
+	for t := range ts {
+		ignoreTriple, err := shouldIgnoreTriple(t)
+		if err != nil {
+			break
+		}
+		if ignoreTriple {
+			continue
+		}
+
 		r, err := tripleToRow(t, cls)
 		if err != nil {
-			lastErr = err
-			continue
+			break
 		}
 		if r != nil {
 			tbl.AddRow(r)
 		}
 	}
+	// Drain the channel to avoid leaking goroutines in the case the loop above was interrupted by an error.
+	for range ts {
+		continue
+	}
 
-	return lastErr
+	return err
 }
 
 // objectToCell returns a cell containing the data boxed in the object.
