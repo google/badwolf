@@ -567,7 +567,7 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 	}
 	if cls.PAnchorBinding != "" {
 		if p.Type() != predicate.Temporal {
-			// in the case of time anchor binding (eg: "bought"@[?time]) for an immutable predicate we just want (for now) to skip this triple and proceed to the next one, not returning any errors.
+			// in the case of time anchor binding (eg: "bought"@[?time]) for an immutable predicate we just want to skip this triple and proceed to the next one, not returning any errors.
 			return nil, nil
 		}
 		t, err := p.TimeAnchor()
@@ -582,7 +582,7 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 	}
 	if cls.PAnchorAlias != "" {
 		if p.Type() != predicate.Temporal {
-			// in the case of AT binding for an immutable predicate we just want (for now) to skip this triple and proceed to the next one, not returning any errors.
+			// in the case of AT binding for an immutable predicate we just want to skip this triple and proceed to the next one, not returning any errors.
 			return nil, nil
 		}
 		t, err := p.TimeAnchor()
@@ -622,7 +622,7 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 	if cls.OTypeAlias != "" {
 		n, err := o.Node()
 		if err != nil {
-			// in the case of TYPE binding for a non-node object we just want (for now) to skip this triple and proceed to the next one, not returning any errors.
+			// in the case of TYPE binding for a non-node object we just want to skip this triple and proceed to the next one, not returning any errors.
 			return nil, nil
 		}
 		c := &table.Cell{S: table.CellString(n.Type().String())}
