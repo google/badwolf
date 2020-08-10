@@ -17,6 +17,7 @@ package planner
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"sync"
 	"testing"
@@ -319,19 +320,19 @@ func TestDataAccessBasicBindings(t *testing.T) {
 		oBinding *table.Cell
 	}{
 		{
-			t:        n.String() + "\t" + p.String() + "\t" + n.String(),
+			t:        fmt.Sprintf("%s\t%s\t%s", n, p, n),
 			sBinding: &table.Cell{N: n},
 			pBinding: &table.Cell{P: p},
 			oBinding: &table.Cell{N: n},
 		},
 		{
-			t:        n.String() + "\t" + p.String() + "\t" + p.String(),
+			t:        fmt.Sprintf("%s\t%s\t%s", n, p, p),
 			sBinding: &table.Cell{N: n},
 			pBinding: &table.Cell{P: p},
 			oBinding: &table.Cell{P: p},
 		},
 		{
-			t:        n.String() + "\t" + p.String() + "\t" + l.String(),
+			t:        fmt.Sprintf("%s\t%s\t%s", n, p, l),
 			sBinding: &table.Cell{N: n},
 			pBinding: &table.Cell{P: p},
 			oBinding: &table.Cell{L: l},
@@ -372,7 +373,7 @@ func TestDataAccessTripleToRowSubjectBindings(t *testing.T) {
 		sIDAlias   *table.Cell
 	}{
 		{
-			t: n.String() + "\t" + p.String() + "\t" + n.String(),
+			t: fmt.Sprintf("%s\t%s\t%s", n, p, n),
 			cls: &semantic.GraphClause{
 				SBinding:   "?s",
 				SAlias:     "?alias",
@@ -426,7 +427,7 @@ func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
 		pAnchorAlias   *table.Cell
 	}{
 		{
-			t: n.String() + "\t" + p.String() + "\t" + n.String(),
+			t: fmt.Sprintf("%s\t%s\t%s", n, p, n),
 			cls: &semantic.GraphClause{
 				PBinding:       "?p",
 				PAlias:         "?alias",
@@ -483,7 +484,7 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 		oAnchorAlias   *table.Cell
 	}{
 		{
-			t: n.String() + "\t" + p.String() + "\t" + n.String(),
+			t: fmt.Sprintf("%s\t%s\t%s", n, p, n),
 			cls: &semantic.GraphClause{
 				OBinding:   "?o",
 				OAlias:     "?alias",
@@ -496,7 +497,7 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 			oIDAlias:   &table.Cell{S: table.CellString(n.ID().String())},
 		},
 		{
-			t: n.String() + "\t" + p.String() + "\t" + p.String(),
+			t: fmt.Sprintf("%s\t%s\t%s", n, p, p),
 			cls: &semantic.GraphClause{
 				OBinding:       "?o",
 				OAlias:         "?alias",
@@ -553,7 +554,7 @@ func TestDataAccessTripleToRowObjectBindingsDropping(t *testing.T) {
 		oAnchorAlias   *table.Cell
 	}{
 		{
-			t: n.String() + "\t" + p.String() + "\t" + n.String(),
+			t: fmt.Sprintf("%s\t%s\t%s", n, p, n),
 			cls: &semantic.GraphClause{
 				OBinding:   "?o",
 				OAlias:     "?alias",
@@ -566,7 +567,7 @@ func TestDataAccessTripleToRowObjectBindingsDropping(t *testing.T) {
 			oIDAlias:   &table.Cell{S: table.CellString(n.ID().String())},
 		},
 		{
-			t: n.String() + "\t" + p.String() + "\t" + p.String(),
+			t: fmt.Sprintf("%s\t%s\t%s", n, p, p),
 			cls: &semantic.GraphClause{
 				OBinding:       "?o",
 				OAlias:         "?alias",
