@@ -405,63 +405,65 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	return nil, fmt.Errorf("planner.simpleFetch could not recognize request in clause %v", cls)
 }
 
-// addTriples add all the retrieved triples from the graphs into the results
-// table. The semantic graph clause is also passed to be able to identify what
-// bindings to set.
-func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.Table) error {
-	shouldIgnoreTriple := func(t *triple.Triple) (bool, error) {
-		if cls.PID != "" {
-			// The triples need to be filtered.
-			if string(t.Predicate().ID()) != cls.PID {
+// shouldIgnoreTriple indicates if the given triple should be ignored in addTriples.
+func shouldIgnoreTriple(t *triple.Triple, cls *semantic.GraphClause) (bool, error) {
+	if cls.PID != "" {
+		// The triples need to be filtered.
+		if string(t.Predicate().ID()) != cls.PID {
+			return true, nil
+		}
+		if cls.PTemporal {
+			if t.Predicate().Type() != predicate.Temporal {
 				return true, nil
 			}
-			if cls.PTemporal {
-				if t.Predicate().Type() != predicate.Temporal {
+			ta, err := t.Predicate().TimeAnchor()
+			if err != nil {
+				return true, fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
+			}
+			// Need to check the bounds of the triple.
+			if cls.PLowerBound != nil && cls.PLowerBound.After(*ta) {
+				return true, nil
+			}
+			if cls.PUpperBound != nil && cls.PUpperBound.Before(*ta) {
+				return true, nil
+			}
+		}
+	}
+	if cls.OID != "" {
+		if p, err := t.Object().Predicate(); err == nil {
+			// The triples need to be filtered.
+			if string(p.ID()) != cls.OID {
+				return true, nil
+			}
+			if cls.OTemporal {
+				if p.Type() != predicate.Temporal {
 					return true, nil
 				}
-				ta, err := t.Predicate().TimeAnchor()
+				ta, err := p.TimeAnchor()
 				if err != nil {
 					return true, fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
 				}
 				// Need to check the bounds of the triple.
-				if cls.PLowerBound != nil && cls.PLowerBound.After(*ta) {
+				if cls.OLowerBound != nil && cls.OLowerBound.After(*ta) {
 					return true, nil
 				}
-				if cls.PUpperBound != nil && cls.PUpperBound.Before(*ta) {
+				if cls.OUpperBound != nil && cls.OUpperBound.Before(*ta) {
 					return true, nil
 				}
 			}
 		}
-		if cls.OID != "" {
-			if p, err := t.Object().Predicate(); err == nil {
-				// The triples need to be filtered.
-				if string(p.ID()) != cls.OID {
-					return true, nil
-				}
-				if cls.OTemporal {
-					if p.Type() != predicate.Temporal {
-						return true, nil
-					}
-					ta, err := p.TimeAnchor()
-					if err != nil {
-						return true, fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
-					}
-					// Need to check the bounds of the triple.
-					if cls.OLowerBound != nil && cls.OLowerBound.After(*ta) {
-						return true, nil
-					}
-					if cls.OUpperBound != nil && cls.OUpperBound.Before(*ta) {
-						return true, nil
-					}
-				}
-			}
-		}
-		return false, nil
 	}
 
+	return false, nil
+}
+
+// addTriples add all the retrieved triples from the graphs into the results
+// table. The semantic graph clause is also passed to be able to identify what
+// bindings to set.
+func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.Table) error {
 	var err error
 	for t := range ts {
-		ignoreTriple, err := shouldIgnoreTriple(t)
+		ignoreTriple, err := shouldIgnoreTriple(t, cls)
 		if err != nil {
 			break
 		}
