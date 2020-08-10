@@ -405,66 +405,87 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	return nil, fmt.Errorf("planner.simpleFetch could not recognize request in clause %v", cls)
 }
 
+// shouldIgnoreTriple indicates if the given triple should be ignored in addTriples.
+func shouldIgnoreTriple(t *triple.Triple, cls *semantic.GraphClause) (bool, error) {
+	if cls.PID != "" {
+		// The triples need to be filtered.
+		if string(t.Predicate().ID()) != cls.PID {
+			return true, nil
+		}
+		if cls.PTemporal {
+			if t.Predicate().Type() != predicate.Temporal {
+				return true, nil
+			}
+			ta, err := t.Predicate().TimeAnchor()
+			if err != nil {
+				return true, fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
+			}
+			// Need to check the bounds of the triple.
+			if cls.PLowerBound != nil && cls.PLowerBound.After(*ta) {
+				return true, nil
+			}
+			if cls.PUpperBound != nil && cls.PUpperBound.Before(*ta) {
+				return true, nil
+			}
+		}
+	}
+	if cls.OID != "" {
+		if p, err := t.Object().Predicate(); err == nil {
+			// The triples need to be filtered.
+			if string(p.ID()) != cls.OID {
+				return true, nil
+			}
+			if cls.OTemporal {
+				if p.Type() != predicate.Temporal {
+					return true, nil
+				}
+				ta, err := p.TimeAnchor()
+				if err != nil {
+					return true, fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
+				}
+				// Need to check the bounds of the triple.
+				if cls.OLowerBound != nil && cls.OLowerBound.After(*ta) {
+					return true, nil
+				}
+				if cls.OUpperBound != nil && cls.OUpperBound.Before(*ta) {
+					return true, nil
+				}
+			}
+		}
+	}
+
+	return false, nil
+}
+
 // addTriples add all the retrieved triples from the graphs into the results
 // table. The semantic graph clause is also passed to be able to identify what
 // bindings to set.
 func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.Table) error {
+	var err error
 	for t := range ts {
-		if cls.PID != "" {
-			// The triples need to be filtered.
-			if string(t.Predicate().ID()) != cls.PID {
-				continue
-			}
-			if cls.PTemporal {
-				if t.Predicate().Type() != predicate.Temporal {
-					continue
-				}
-				ta, err := t.Predicate().TimeAnchor()
-				if err != nil {
-					return fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
-				}
-				// Need to check the bounds of the triple.
-				if cls.PLowerBound != nil && cls.PLowerBound.After(*ta) {
-					continue
-				}
-				if cls.PUpperBound != nil && cls.PUpperBound.Before(*ta) {
-					continue
-				}
-			}
+		ignoreTriple, err := shouldIgnoreTriple(t, cls)
+		if err != nil {
+			break
 		}
-		if cls.OID != "" {
-			if p, err := t.Object().Predicate(); err == nil {
-				// The triples need to be filtered.
-				if string(p.ID()) != cls.OID {
-					continue
-				}
-				if cls.OTemporal {
-					if p.Type() != predicate.Temporal {
-						continue
-					}
-					ta, err := p.TimeAnchor()
-					if err != nil {
-						return fmt.Errorf("failed to retrieve time anchor from time predicate in triple %s with error %v", t, err)
-					}
-					// Need to check the bounds of the triple.
-					if cls.OLowerBound != nil && cls.OLowerBound.After(*ta) {
-						continue
-					}
-					if cls.OUpperBound != nil && cls.OUpperBound.Before(*ta) {
-						continue
-					}
-				}
-			}
+		if ignoreTriple {
+			continue
 		}
+
 		r, err := tripleToRow(t, cls)
 		if err != nil {
-			return err
+			break
 		}
-		if r != nil {
-			tbl.AddRow(r)
+		if r == nil {
+			continue
 		}
+		tbl.AddRow(r)
 	}
-	return nil
+	// Drain the channel to avoid leaking goroutines in the case the loop above was interrupted by an error.
+	for range ts {
+		continue
+	}
+
+	return err
 }
 
 // objectToCell returns a cell containing the data boxed in the object.
@@ -558,7 +579,8 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 	}
 	if cls.PAnchorBinding != "" {
 		if p.Type() != predicate.Temporal {
-			return nil, fmt.Errorf("cannot retrieve the time anchor value for non temporal predicate %q in binding %q", p, cls.PAnchorBinding)
+			// in the case of time anchor binding (eg: "bought"@[?time]) for an immutable predicate we just want to skip this triple and proceed to the next one, not returning any errors.
+			return nil, nil
 		}
 		t, err := p.TimeAnchor()
 		if err != nil {
@@ -570,10 +592,10 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 			return nil, nil
 		}
 	}
-
 	if cls.PAnchorAlias != "" {
 		if p.Type() != predicate.Temporal {
-			return nil, fmt.Errorf("cannot retrieve the time anchor value for non temporal predicate %q in binding %q", p, cls.PAnchorAlias)
+			// in the case of AT binding for an immutable predicate we just want to skip this triple and proceed to the next one, not returning any errors.
+			return nil, nil
 		}
 		t, err := p.TimeAnchor()
 		if err != nil {
@@ -612,7 +634,8 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 	if cls.OTypeAlias != "" {
 		n, err := o.Node()
 		if err != nil {
-			return nil, err
+			// in the case of TYPE binding for a non-node object we just want to skip this triple and proceed to the next one, not returning any errors.
+			return nil, nil
 		}
 		c := &table.Cell{S: table.CellString(n.Type().String())}
 		r[cls.OTypeAlias] = c
