@@ -538,20 +538,10 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 
 func TestDataAccessTripleToRowObjectBindingsDropping(t *testing.T) {
 	n, p, _ := testNodeTemporalPredicateLiteral(t)
-	ta, err := p.TimeAnchor()
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	testTable := []struct {
-		t              string
-		cls            *semantic.GraphClause
-		oBinding       *table.Cell
-		oAlias         *table.Cell
-		oTypeAlias     *table.Cell
-		oIDAlias       *table.Cell
-		oAnchorBinding *table.Cell
-		oAnchorAlias   *table.Cell
+		t   string
+		cls *semantic.GraphClause
 	}{
 		{
 			t: fmt.Sprintf("%s\t%s\t%s", n, p, n),
@@ -561,10 +551,6 @@ func TestDataAccessTripleToRowObjectBindingsDropping(t *testing.T) {
 				OTypeAlias: "?o",
 				OIDAlias:   "?id",
 			},
-			oBinding:   &table.Cell{N: n},
-			oAlias:     &table.Cell{N: n},
-			oTypeAlias: &table.Cell{S: table.CellString(n.Type().String())},
-			oIDAlias:   &table.Cell{S: table.CellString(n.ID().String())},
 		},
 		{
 			t: fmt.Sprintf("%s\t%s\t%s", n, p, p),
@@ -575,11 +561,6 @@ func TestDataAccessTripleToRowObjectBindingsDropping(t *testing.T) {
 				OAnchorBinding: "?anchorBinding",
 				OAnchorAlias:   "?o",
 			},
-			oBinding:       &table.Cell{P: p},
-			oAlias:         &table.Cell{P: p},
-			oIDAlias:       &table.Cell{S: table.CellString(string(p.ID()))},
-			oAnchorBinding: &table.Cell{T: ta},
-			oAnchorAlias:   &table.Cell{T: ta},
 		},
 	}
 
