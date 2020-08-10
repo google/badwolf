@@ -475,9 +475,10 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 		if err != nil {
 			break
 		}
-		if r != nil {
-			tbl.AddRow(r)
+		if r == nil {
+			continue
 		}
+		tbl.AddRow(r)
 	}
 	// Drain the channel to avoid leaking goroutines in the case the loop above was interrupted by an error.
 	for range ts {
