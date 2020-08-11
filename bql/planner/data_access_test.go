@@ -349,8 +349,7 @@ func TestDataAccessBasicBindings(t *testing.T) {
 		// Actual test:
 		r, err := tripleToRow(tpl, cls)
 		if err != nil {
-			t.Errorf(`tripleToRow(for triple "%s" and clause %q) got error: %v; want nil error`, tpl, cls, err)
-			continue
+			t.Fatalf(`tripleToRow(for triple "%s" and clause %q) got error: %v; want nil error`, tpl, cls, err)
 		}
 		bindings := []string{"?s", "?p", "?o"}
 		entryCells := []*table.Cell{entry.sBinding, entry.pBinding, entry.oBinding}
@@ -397,8 +396,7 @@ func TestDataAccessTripleToRowSubjectBindings(t *testing.T) {
 		// Actual test:
 		r, err := tripleToRow(tpl, entry.cls)
 		if err != nil {
-			t.Errorf(`tripleToRow(for triple "%s" and clause %q) got error: %v; want nil error`, tpl, entry.cls, err)
-			continue
+			t.Fatalf(`tripleToRow(for triple "%s" and clause %q) got error: %v; want nil error`, tpl, entry.cls, err)
 		}
 		bindings := []string{"?s", "?alias", "?type", "?id"}
 		entryCells := []*table.Cell{entry.sBinding, entry.sAlias, entry.sTypeAlias, entry.sIDAlias}
@@ -453,8 +451,7 @@ func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
 		// Actual test:
 		r, err := tripleToRow(tpl, entry.cls)
 		if err != nil {
-			t.Errorf(`tripleToRow(for triple "%s" and clause %q) got error: %v; want nil error`, tpl, entry.cls, err)
-			continue
+			t.Fatalf(`tripleToRow(for triple "%s" and clause %q) got error: %v; want nil error`, tpl, entry.cls, err)
 		}
 		bindings := []string{"?p", "?alias", "?id", "?anchorBinding", "?anchorAlias"}
 		entryCells := []*table.Cell{entry.pBinding, entry.pAlias, entry.pIDAlias, entry.pAnchorBinding, entry.pAnchorAlias}
@@ -523,8 +520,7 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 		// Actual test:
 		r, err := tripleToRow(tpl, entry.cls)
 		if err != nil {
-			t.Errorf(`tripleToRow(for triple "%s" and clause %q) got error: %v; want nil error`, tpl, entry.cls, err)
-			continue
+			t.Fatalf(`tripleToRow(for triple "%s" and clause %q) got error: %v; want nil error`, tpl, entry.cls, err)
 		}
 		bindings := []string{"?o", "?alias", "?type", "?id", "?anchorBinding", "?anchorAlias"}
 		entryCells := []*table.Cell{entry.oBinding, entry.oAlias, entry.oTypeAlias, entry.oIDAlias, entry.oAnchorBinding, entry.oAnchorAlias}
@@ -574,8 +570,7 @@ func TestDataAccessTripleToRowObjectBindingsDropping(t *testing.T) {
 		// Actual test:
 		r, err := tripleToRow(tpl, entry.cls)
 		if err != nil {
-			t.Errorf(`tripleToRow(for triple "%s" and clause %q) got error: %v; want nil error`, tpl, entry.cls, err)
-			continue
+			t.Fatalf(`tripleToRow(for triple "%s" and clause %q) got error: %v; want nil error`, tpl, entry.cls, err)
 		}
 		if r != nil {
 			t.Errorf(`tripleToRow(for triple "%s" and clause %q) failed to drop triple and returned row: %v; want nil row`, tpl, entry.cls, r)
