@@ -698,6 +698,42 @@ func TestPlannerQuery(t *testing.T) {
 			nBindings: 3,
 			nRows:     0,
 		},
+		{
+			q: `SELECT ?s, ?s_alias, ?s_id, ?s_type
+				FROM ?test
+				WHERE {
+					?s AS ?s_alias ID ?s_id TYPE ?s_type "parent_of"@[] ?o
+				};`,
+			nBindings: 4,
+			nRows:     4,
+		},
+		{
+			q: `SELECT ?s, ?s_alias, ?s_id, ?s_type
+				FROM ?test
+				WHERE {
+					?s AS ?s_alias TYPE ?s_type ID ?s_id "parent_of"@[] ?o
+				};`,
+			nBindings: 4,
+			nRows:     4,
+		},
+		{
+			q: `SELECT ?o, ?o_alias, ?o_id, ?o_type
+				FROM ?test
+				WHERE {
+					?s "parent_of"@[] ?o AS ?o_alias ID ?o_id TYPE ?o_type
+				};`,
+			nBindings: 4,
+			nRows:     4,
+		},
+		{
+			q: `SELECT ?o, ?o_alias, ?o_id, ?o_type
+				FROM ?test
+				WHERE {
+					?s "parent_of"@[] ?o AS ?o_alias TYPE ?o_type ID ?o_id
+				};`,
+			nBindings: 4,
+			nRows:     4,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
