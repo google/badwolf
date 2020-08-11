@@ -343,20 +343,20 @@ func TestDataAccessBasicBindings(t *testing.T) {
 		// Setup for test:
 		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
-			t.Fatalf(`triple.Parse failed to parse valid triple "%s" with error: %v`, entry.t, err)
+			t.Fatalf(`triple.Parse failed for triple "%s", got error: %v`, entry.t, err)
 		}
 
 		// Actual test:
 		r, err := tripleToRow(tpl, cls)
 		if err != nil {
-			t.Errorf(`tripleToRow for triple "%s" and clause %q failed with error: %v`, tpl, cls, err)
+			t.Errorf(`tripleToRow(for triple "%s" and clause %q) got error: %v; want nil error`, tpl, cls, err)
 			continue
 		}
 		bindings := []string{"?s", "?p", "?o"}
 		entryCells := []*table.Cell{entry.sBinding, entry.pBinding, entry.oBinding}
 		for i, binding := range bindings {
 			if got, want := r[binding], entryCells[i]; !reflect.DeepEqual(got, want) {
-				t.Errorf(`tripleToRow(%q) = "%s"; want "%s"`, binding, got, want)
+				t.Errorf(`tripleToRow(%q) = "%s", _; want "%s", _`, binding, got, want)
 			}
 		}
 	}
@@ -391,20 +391,20 @@ func TestDataAccessTripleToRowSubjectBindings(t *testing.T) {
 		// Setup for test:
 		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
-			t.Fatalf(`triple.Parse failed to parse valid triple "%s" with error: %v`, entry.t, err)
+			t.Fatalf(`triple.Parse failed for triple "%s", got error: %v`, entry.t, err)
 		}
 
 		// Actual test:
 		r, err := tripleToRow(tpl, entry.cls)
 		if err != nil {
-			t.Errorf(`tripleToRow for triple "%s" and clause %q failed with error: %v`, tpl, entry.cls, err)
+			t.Errorf(`tripleToRow(for triple "%s" and clause %q) got error: %v; want nil error`, tpl, entry.cls, err)
 			continue
 		}
 		bindings := []string{"?s", "?alias", "?type", "?id"}
 		entryCells := []*table.Cell{entry.sBinding, entry.sAlias, entry.sTypeAlias, entry.sIDAlias}
 		for i, binding := range bindings {
 			if got, want := r[binding], entryCells[i]; !reflect.DeepEqual(got, want) {
-				t.Errorf(`tripleToRow(%q) = "%s"; want "%s"`, binding, got, want)
+				t.Errorf(`tripleToRow(%q) = "%s", _; want "%s", _`, binding, got, want)
 			}
 		}
 	}
@@ -447,20 +447,20 @@ func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
 		// Setup for test:
 		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
-			t.Fatalf(`triple.Parse failed to parse valid triple "%s" with error: %v`, entry.t, err)
+			t.Fatalf(`triple.Parse failed for triple "%s", got error: %v`, entry.t, err)
 		}
 
 		// Actual test:
 		r, err := tripleToRow(tpl, entry.cls)
 		if err != nil {
-			t.Errorf(`tripleToRow for triple "%s" and clause %q failed with error: %v`, tpl, entry.cls, err)
+			t.Errorf(`tripleToRow(for triple "%s" and clause %q) got error: %v; want nil error`, tpl, entry.cls, err)
 			continue
 		}
 		bindings := []string{"?p", "?alias", "?id", "?anchorBinding", "?anchorAlias"}
 		entryCells := []*table.Cell{entry.pBinding, entry.pAlias, entry.pIDAlias, entry.pAnchorBinding, entry.pAnchorAlias}
 		for i, binding := range bindings {
 			if got, want := r[binding], entryCells[i]; !reflect.DeepEqual(got, want) {
-				t.Errorf(`tripleToRow(%q) = "%s"; want "%s"`, binding, got, want)
+				t.Errorf(`tripleToRow(%q) = "%s", _; want "%s", _`, binding, got, want)
 			}
 		}
 	}
@@ -517,20 +517,20 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 		// Setup for test:
 		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
-			t.Fatalf(`triple.Parse failed to parse valid triple "%s" with error: %v`, entry.t, err)
+			t.Fatalf(`triple.Parse failed for triple "%s", got error: %v`, entry.t, err)
 		}
 
 		// Actual test:
 		r, err := tripleToRow(tpl, entry.cls)
 		if err != nil {
-			t.Errorf(`tripleToRow for triple "%s" and clause %q failed with error: %v`, tpl, entry.cls, err)
+			t.Errorf(`tripleToRow(for triple "%s" and clause %q) got error: %v; want nil error`, tpl, entry.cls, err)
 			continue
 		}
 		bindings := []string{"?o", "?alias", "?type", "?id", "?anchorBinding", "?anchorAlias"}
 		entryCells := []*table.Cell{entry.oBinding, entry.oAlias, entry.oTypeAlias, entry.oIDAlias, entry.oAnchorBinding, entry.oAnchorAlias}
 		for i, binding := range bindings {
 			if got, want := r[binding], entryCells[i]; !reflect.DeepEqual(got, want) {
-				t.Errorf(`tripleToRow(%q) = "%s"; want "%s"`, binding, got, want)
+				t.Errorf(`tripleToRow(%q) = "%s", _; want "%s", _`, binding, got, want)
 			}
 		}
 	}
@@ -568,17 +568,17 @@ func TestDataAccessTripleToRowObjectBindingsDropping(t *testing.T) {
 		// Setup for test:
 		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
-			t.Fatalf(`triple.Parse failed to parse valid triple "%s" with error: %v`, entry.t, err)
+			t.Fatalf(`triple.Parse failed for triple "%s", got error: %v`, entry.t, err)
 		}
 
 		// Actual test:
 		r, err := tripleToRow(tpl, entry.cls)
 		if err != nil {
-			t.Errorf(`tripleToRow for triple "%s" and clause %q failed with error: %v`, tpl, entry.cls, err)
+			t.Errorf(`tripleToRow(for triple "%s" and clause %q) got error: %v; want nil error`, tpl, entry.cls, err)
 			continue
 		}
 		if r != nil {
-			t.Errorf(`tripleToRow for triple "%s" and clause %q failed to drop triple and returned: %v; want nil`, tpl, entry.cls, r)
+			t.Errorf(`tripleToRow(for triple "%s" and clause %q) failed to drop triple and returned row: %v; want nil row`, tpl, entry.cls, r)
 		}
 	}
 }
