@@ -406,6 +406,7 @@ func subjectExtractClauses() []*Clause {
 			Elements: []Element{
 				NewTokenType(lexer.ItemID),
 				NewTokenType(lexer.ItemBinding),
+				NewSymbol("SUBJECT_TYPE"),
 			},
 		},
 		{},
