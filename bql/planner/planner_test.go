@@ -720,8 +720,7 @@ func TestPlannerQuery(t *testing.T) {
 		// Actual test:
 		tbl, err := plnr.Execute(ctx)
 		if err != nil {
-			t.Errorf("planner.Execute(%s)\n= _, %v; want nil error", entry.q, err)
-			continue
+			t.Fatalf("planner.Execute(%s)\n= _, %v; want nil error", entry.q, err)
 		}
 		if got, want := len(tbl.Bindings()), entry.nBindings; got != want {
 			t.Errorf("planner.Execute(%s)\n= a Table with %d bindings; want %d", entry.q, got, want)
