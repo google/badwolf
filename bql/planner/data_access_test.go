@@ -343,7 +343,7 @@ func TestDataAccessBasicBindings(t *testing.T) {
 		// Setup for test:
 		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
-			t.Fatalf(`triple.Parse failed for triple "%s", got error: %v`, entry.t, err)
+			t.Fatalf(`triple.Parse failed for triple "%s": %v`, entry.t, err)
 		}
 
 		// Actual test:
@@ -390,7 +390,7 @@ func TestDataAccessTripleToRowSubjectBindings(t *testing.T) {
 		// Setup for test:
 		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
-			t.Fatalf(`triple.Parse failed for triple "%s", got error: %v`, entry.t, err)
+			t.Fatalf(`triple.Parse failed for triple "%s": %v`, entry.t, err)
 		}
 
 		// Actual test:
@@ -445,7 +445,7 @@ func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
 		// Setup for test:
 		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
-			t.Fatalf(`triple.Parse failed for triple "%s", got error: %v`, entry.t, err)
+			t.Fatalf(`triple.Parse failed for triple "%s": %v`, entry.t, err)
 		}
 
 		// Actual test:
@@ -514,7 +514,7 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 		// Setup for test:
 		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
-			t.Fatalf(`triple.Parse failed for triple "%s", got error: %v`, entry.t, err)
+			t.Fatalf(`triple.Parse failed for triple "%s": %v`, entry.t, err)
 		}
 
 		// Actual test:
@@ -564,7 +564,7 @@ func TestDataAccessTripleToRowObjectBindingsDropping(t *testing.T) {
 		// Setup for test:
 		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
 		if err != nil {
-			t.Fatalf(`triple.Parse failed for triple "%s", got error: %v`, entry.t, err)
+			t.Fatalf(`triple.Parse failed for triple "%s": %v`, entry.t, err)
 		}
 
 		// Actual test:
