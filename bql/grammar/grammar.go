@@ -548,7 +548,7 @@ func objectClauses() []*Clause {
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemNode),
-				NewSymbol("OBJECT_SUBJECT_EXTRACT"),
+				NewSymbol("OBJECT_NODE_EXTRACT"),
 			},
 		},
 		{
@@ -576,34 +576,35 @@ func objectClauses() []*Clause {
 	}
 }
 
-func objectSubjectExtractClauses() []*Clause {
-	return []*Clause{{
-		Elements: []Element{
-			NewTokenType(lexer.ItemAs),
-			NewTokenType(lexer.ItemBinding),
-			NewSymbol("OBJECT_SUBJECT_TYPE"),
-			NewSymbol("OBJECT_SUBJECT_ID"),
+func objectNodeExtractClauses() []*Clause {
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAs),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_NODE_TYPE"),
+				NewSymbol("OBJECT_NODE_ID"),
+			},
 		},
-	},
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemType),
 				NewTokenType(lexer.ItemBinding),
-				NewSymbol("OBJECT_SUBJECT_ID"),
+				NewSymbol("OBJECT_NODE_ID"),
 			},
 		},
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemID),
 				NewTokenType(lexer.ItemBinding),
-				NewSymbol("OBJECT_SUBJECT_TYPE"),
+				NewSymbol("OBJECT_NODE_TYPE"),
 			},
 		},
 		{},
 	}
 }
 
-func objectSubjectTypeClauses() []*Clause {
+func objectNodeTypeClauses() []*Clause {
 	return []*Clause{
 		{
 			Elements: []Element{
@@ -615,7 +616,7 @@ func objectSubjectTypeClauses() []*Clause {
 	}
 }
 
-func objectSubjectIDClauses() []*Clause {
+func objectNodeIDClauses() []*Clause {
 	return []*Clause{
 		{
 			Elements: []Element{
@@ -714,23 +715,23 @@ func objectBindingExtractClauses() []*Clause {
 			Elements: []Element{
 				NewTokenType(lexer.ItemAs),
 				NewTokenType(lexer.ItemBinding),
-				NewSymbol("OBJECT_LITERAL_BINDING_TYPE"),
-				NewSymbol("OBJECT_LITERAL_BINDING_ID"),
-				NewSymbol("OBJECT_LITERAL_BINDING_AT"),
+				NewSymbol("OBJECT_BINDING_TYPE"),
+				NewSymbol("OBJECT_BINDING_ID"),
+				NewSymbol("OBJECT_BINDING_AT"),
 			},
 		},
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemType),
 				NewTokenType(lexer.ItemBinding),
-				NewSymbol("OBJECT_LITERAL_BINDING_ID"),
+				NewSymbol("OBJECT_BINDING_ID"),
 			},
 		},
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemID),
 				NewTokenType(lexer.ItemBinding),
-				NewSymbol("OBJECT_LITERAL_BINDING_TYPE"),
+				NewSymbol("OBJECT_BINDING_TYPE"),
 			},
 		},
 		{},
@@ -748,18 +749,19 @@ func objectLiteralBindingAsClauses() []*Clause {
 	}
 }
 
-func objectLiteralBindingTypeClauses() []*Clause {
-	return []*Clause{{
-		Elements: []Element{
-			NewTokenType(lexer.ItemType),
-			NewTokenType(lexer.ItemBinding),
+func objectBindingTypeClauses() []*Clause {
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemType),
+				NewTokenType(lexer.ItemBinding),
+			},
 		},
-	},
 		{},
 	}
 }
 
-func objectLiteralBindingIDClauses() []*Clause {
+func objectBindingIDClauses() []*Clause {
 	return []*Clause{
 		{
 			Elements: []Element{
@@ -771,13 +773,14 @@ func objectLiteralBindingIDClauses() []*Clause {
 	}
 }
 
-func objectLiteralBindingAtClauses() []*Clause {
-	return []*Clause{{
-		Elements: []Element{
-			NewTokenType(lexer.ItemAt),
-			NewTokenType(lexer.ItemBinding),
+func objectBindingAtClauses() []*Clause {
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAt),
+				NewTokenType(lexer.ItemBinding),
+			},
 		},
-	},
 		{},
 	}
 }
@@ -1205,9 +1208,9 @@ func BQL() *Grammar {
 		"PREDICATE_BOUND_AT_BINDINGS":            predicateBoundAtBindingsClauses(),
 		"PREDICATE_BOUND_AT_BINDINGS_END":        predicateBoundAtBindingsEndClauses(),
 		"OBJECT":                                 objectClauses(),
-		"OBJECT_SUBJECT_EXTRACT":                 objectSubjectExtractClauses(),
-		"OBJECT_SUBJECT_TYPE":                    objectSubjectTypeClauses(),
-		"OBJECT_SUBJECT_ID":                      objectSubjectIDClauses(),
+		"OBJECT_NODE_EXTRACT":                    objectNodeExtractClauses(),
+		"OBJECT_NODE_TYPE":                       objectNodeTypeClauses(),
+		"OBJECT_NODE_ID":                         objectNodeIDClauses(),
 		"OBJECT_PREDICATE_AS":                    objectPredicateAsClauses(),
 		"OBJECT_PREDICATE_ID":                    objectPredicateIDClauses(),
 		"OBJECT_PREDICATE_AT":                    objectPredicateAtClauses(),
@@ -1217,9 +1220,9 @@ func BQL() *Grammar {
 		"OBJECT_LITERAL_AS":                      objectLiteralAsClauses(),
 		"OBJECT_LITERAL_BINDING_AS":              objectLiteralBindingAsClauses(),
 		"OBJECT_BINDING_EXTRACT":                 objectBindingExtractClauses(),
-		"OBJECT_LITERAL_BINDING_TYPE":            objectLiteralBindingTypeClauses(),
-		"OBJECT_LITERAL_BINDING_ID":              objectLiteralBindingIDClauses(),
-		"OBJECT_LITERAL_BINDING_AT":              objectLiteralBindingAtClauses(),
+		"OBJECT_BINDING_TYPE":                    objectBindingTypeClauses(),
+		"OBJECT_BINDING_ID":                      objectBindingIDClauses(),
+		"OBJECT_BINDING_AT":                      objectBindingAtClauses(),
 		"GROUP_BY":                               groupByClauses(),
 		"GROUP_BY_BINDINGS":                      groupByBindingsClauses(),
 		"ORDER_BY":                               orderByClauses(),
@@ -1317,12 +1320,12 @@ func SemanticBQL() *Grammar {
 	setElementHook(semanticBQL, predSymbols, semantic.WherePredicateClauseHook(), nil)
 
 	objSymbols := []semantic.Symbol{
-		"OBJECT", "OBJECT_SUBJECT_EXTRACT", "OBJECT_SUBJECT_TYPE", "OBJECT_SUBJECT_ID",
+		"OBJECT", "OBJECT_NODE_EXTRACT", "OBJECT_NODE_TYPE", "OBJECT_NODE_ID",
 		"OBJECT_PREDICATE_AS", "OBJECT_PREDICATE_ID", "OBJECT_PREDICATE_AT",
 		"OBJECT_PREDICATE_BOUND_AT", "OBJECT_PREDICATE_BOUND_AT_BINDINGS",
 		"OBJECT_PREDICATE_BOUND_AT_BINDINGS_END", "OBJECT_LITERAL_AS",
-		"OBJECT_BINDING_EXTRACT", "OBJECT_LITERAL_BINDING_AS", "OBJECT_LITERAL_BINDING_TYPE",
-		"OBJECT_LITERAL_BINDING_ID", "OBJECT_LITERAL_BINDING_AT",
+		"OBJECT_BINDING_EXTRACT", "OBJECT_LITERAL_BINDING_AS", "OBJECT_BINDING_TYPE",
+		"OBJECT_BINDING_ID", "OBJECT_BINDING_AT",
 	}
 	setElementHook(semanticBQL, objSymbols, semantic.WhereObjectClauseHook(), nil)
 
