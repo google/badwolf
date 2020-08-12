@@ -570,10 +570,7 @@ func objectClauses() []*Clause {
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemBinding),
-				NewSymbol("OBJECT_LITERAL_BINDING_AS"),
-				NewSymbol("OBJECT_LITERAL_BINDING_TYPE"),
-				NewSymbol("OBJECT_LITERAL_BINDING_ID"),
-				NewSymbol("OBJECT_LITERAL_BINDING_AT"),
+				NewSymbol("OBJECT_BINDING_EXTRACT"),
 			},
 		},
 	}
@@ -710,6 +707,35 @@ func objectLiteralAsClauses() []*Clause {
 	}
 }
 
+func objectBindingExtractClauses() []*Clause {
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAs),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_LITERAL_BINDING_TYPE"),
+				NewSymbol("OBJECT_LITERAL_BINDING_ID"),
+				NewSymbol("OBJECT_LITERAL_BINDING_AT"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemType),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_LITERAL_BINDING_ID"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemID),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_LITERAL_BINDING_TYPE"),
+			},
+		},
+		{},
+	}
+}
+
 func objectLiteralBindingAsClauses() []*Clause {
 	return []*Clause{{
 		Elements: []Element{
@@ -720,6 +746,7 @@ func objectLiteralBindingAsClauses() []*Clause {
 		{},
 	}
 }
+
 func objectLiteralBindingTypeClauses() []*Clause {
 	return []*Clause{{
 		Elements: []Element{
@@ -1188,6 +1215,7 @@ func BQL() *Grammar {
 		"OBJECT_PREDICATE_BOUND_AT_BINDINGS_END": objectPredicateBoundAtBindingsEndClauses(),
 		"OBJECT_LITERAL_AS":                      objectLiteralAsClauses(),
 		"OBJECT_LITERAL_BINDING_AS":              objectLiteralBindingAsClauses(),
+		"OBJECT_BINDING_EXTRACT":                 objectBindingExtractClauses(),
 		"OBJECT_LITERAL_BINDING_TYPE":            objectLiteralBindingTypeClauses(),
 		"OBJECT_LITERAL_BINDING_ID":              objectLiteralBindingIDClauses(),
 		"OBJECT_LITERAL_BINDING_AT":              objectLiteralBindingAtClauses(),
@@ -1292,7 +1320,7 @@ func SemanticBQL() *Grammar {
 		"OBJECT_PREDICATE_AS", "OBJECT_PREDICATE_ID", "OBJECT_PREDICATE_AT",
 		"OBJECT_PREDICATE_BOUND_AT", "OBJECT_PREDICATE_BOUND_AT_BINDINGS",
 		"OBJECT_PREDICATE_BOUND_AT_BINDINGS_END", "OBJECT_LITERAL_AS",
-		"OBJECT_LITERAL_BINDING_AS", "OBJECT_LITERAL_BINDING_TYPE",
+		"OBJECT_BINDING_EXTRACT", "OBJECT_LITERAL_BINDING_AS", "OBJECT_LITERAL_BINDING_TYPE",
 		"OBJECT_LITERAL_BINDING_ID", "OBJECT_LITERAL_BINDING_AT",
 	}
 	setElementHook(semanticBQL, objSymbols, semantic.WhereObjectClauseHook(), nil)
