@@ -391,8 +391,7 @@ func subjectExtractClauses() []*Clause {
 			Elements: []Element{
 				NewTokenType(lexer.ItemAs),
 				NewTokenType(lexer.ItemBinding),
-				NewSymbol("SUBJECT_TYPE"),
-				NewSymbol("SUBJECT_ID"),
+				NewSymbol("SUBJECT_ID_TYPE_PERMUTATION"),
 			},
 		},
 		{
@@ -407,6 +406,26 @@ func subjectExtractClauses() []*Clause {
 				NewTokenType(lexer.ItemID),
 				NewTokenType(lexer.ItemBinding),
 				NewSymbol("SUBJECT_TYPE"),
+			},
+		},
+		{},
+	}
+}
+
+func subjectIDTypePermutationClauses() []*Clause {
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemID),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("SUBJECT_TYPE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemType),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("SUBJECT_ID"),
 			},
 		},
 		{},
@@ -1200,6 +1219,7 @@ func BQL() *Grammar {
 		"SUBJECT_EXTRACT":                        subjectExtractClauses(),
 		"SUBJECT_TYPE":                           subjectTypeClauses(),
 		"SUBJECT_ID":                             subjectIDClauses(),
+		"SUBJECT_ID_TYPE_PERMUTATION":            subjectIDTypePermutationClauses(),
 		"PREDICATE":                              predicateClauses(),
 		"PREDICATE_AS":                           predicateAsClauses(),
 		"PREDICATE_ID":                           predicateIDClauses(),
@@ -1309,7 +1329,7 @@ func SemanticBQL() *Grammar {
 	setClauseHook(semanticBQL, clauseSymbols, semantic.WhereNextWorkingClauseHook(), semantic.WhereNextWorkingClauseHook())
 
 	subSymbols := []semantic.Symbol{
-		"FIRST_CLAUSE", "CLAUSES", "OPTIONAL_CLAUSE", "SUBJECT_EXTRACT", "SUBJECT_TYPE", "SUBJECT_ID",
+		"FIRST_CLAUSE", "CLAUSES", "OPTIONAL_CLAUSE", "SUBJECT_EXTRACT", "SUBJECT_TYPE", "SUBJECT_ID", "SUBJECT_ID_TYPE_PERMUTATION",
 	}
 	setElementHook(semanticBQL, subSymbols, semantic.WhereSubjectClauseHook(), nil)
 
