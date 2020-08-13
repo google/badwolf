@@ -391,8 +391,7 @@ func subjectExtractClauses() []*Clause {
 			Elements: []Element{
 				NewTokenType(lexer.ItemAs),
 				NewTokenType(lexer.ItemBinding),
-				NewSymbol("SUBJECT_TYPE"),
-				NewSymbol("SUBJECT_ID"),
+				NewSymbol("SUBJECT_ID_TYPE_PERMUTATION"),
 			},
 		},
 		{
@@ -406,6 +405,27 @@ func subjectExtractClauses() []*Clause {
 			Elements: []Element{
 				NewTokenType(lexer.ItemID),
 				NewTokenType(lexer.ItemBinding),
+				NewSymbol("SUBJECT_TYPE"),
+			},
+		},
+		{},
+	}
+}
+
+func subjectIDTypePermutationClauses() []*Clause {
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemID),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("SUBJECT_TYPE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemType),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("SUBJECT_ID"),
 			},
 		},
 		{},
@@ -547,7 +567,7 @@ func objectClauses() []*Clause {
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemNode),
-				NewSymbol("OBJECT_SUBJECT_EXTRACT"),
+				NewSymbol("OBJECT_NODE_EXTRACT"),
 			},
 		},
 		{
@@ -569,42 +589,60 @@ func objectClauses() []*Clause {
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemBinding),
-				NewSymbol("OBJECT_LITERAL_BINDING_AS"),
-				NewSymbol("OBJECT_LITERAL_BINDING_TYPE"),
-				NewSymbol("OBJECT_LITERAL_BINDING_ID"),
-				NewSymbol("OBJECT_LITERAL_BINDING_AT"),
+				NewSymbol("OBJECT_BINDING_EXTRACT"),
 			},
 		},
 	}
 }
 
-func objectSubjectExtractClauses() []*Clause {
-	return []*Clause{{
-		Elements: []Element{
-			NewTokenType(lexer.ItemAs),
-			NewTokenType(lexer.ItemBinding),
-			NewSymbol("OBJECT_SUBJECT_TYPE"),
-			NewSymbol("OBJECT_SUBJECT_ID"),
+func objectNodeExtractClauses() []*Clause {
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAs),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_NODE_ID_TYPE_PERMUTATION"),
+			},
 		},
-	},
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemType),
 				NewTokenType(lexer.ItemBinding),
-				NewSymbol("OBJECT_SUBJECT_ID"),
+				NewSymbol("OBJECT_NODE_ID"),
 			},
 		},
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemID),
 				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_NODE_TYPE"),
 			},
 		},
 		{},
 	}
 }
 
-func objectSubjectTypeClauses() []*Clause {
+func objectNodeIDTypePermutationClauses() []*Clause {
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemID),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_NODE_TYPE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemType),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_NODE_ID"),
+			},
+		},
+		{},
+	}
+}
+
+func objectNodeTypeClauses() []*Clause {
 	return []*Clause{
 		{
 			Elements: []Element{
@@ -616,7 +654,7 @@ func objectSubjectTypeClauses() []*Clause {
 	}
 }
 
-func objectSubjectIDClauses() []*Clause {
+func objectNodeIDClauses() []*Clause {
 	return []*Clause{
 		{
 			Elements: []Element{
@@ -709,28 +747,69 @@ func objectLiteralAsClauses() []*Clause {
 	}
 }
 
-func objectLiteralBindingAsClauses() []*Clause {
-	return []*Clause{{
-		Elements: []Element{
-			NewTokenType(lexer.ItemAs),
-			NewTokenType(lexer.ItemBinding),
+func objectBindingExtractClauses() []*Clause {
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAs),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_BINDING_ID_TYPE_PERMUTATION"),
+				NewSymbol("OBJECT_BINDING_AT"),
+			},
 		},
-	},
-		{},
-	}
-}
-func objectLiteralBindingTypeClauses() []*Clause {
-	return []*Clause{{
-		Elements: []Element{
-			NewTokenType(lexer.ItemType),
-			NewTokenType(lexer.ItemBinding),
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemType),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_BINDING_ID"),
+				NewSymbol("OBJECT_BINDING_AT"),
+			},
 		},
-	},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemID),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_BINDING_TYPE"),
+				NewSymbol("OBJECT_BINDING_AT"),
+			},
+		},
 		{},
 	}
 }
 
-func objectLiteralBindingIDClauses() []*Clause {
+func objectBindingIDTypePermutationClauses() []*Clause {
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemID),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_BINDING_TYPE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemType),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_BINDING_ID"),
+			},
+		},
+		{},
+	}
+}
+
+func objectBindingTypeClauses() []*Clause {
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemType),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
+		{},
+	}
+}
+
+func objectBindingIDClauses() []*Clause {
 	return []*Clause{
 		{
 			Elements: []Element{
@@ -742,13 +821,14 @@ func objectLiteralBindingIDClauses() []*Clause {
 	}
 }
 
-func objectLiteralBindingAtClauses() []*Clause {
-	return []*Clause{{
-		Elements: []Element{
-			NewTokenType(lexer.ItemAt),
-			NewTokenType(lexer.ItemBinding),
+func objectBindingAtClauses() []*Clause {
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAt),
+				NewTokenType(lexer.ItemBinding),
+			},
 		},
-	},
 		{},
 	}
 }
@@ -1168,6 +1248,7 @@ func BQL() *Grammar {
 		"SUBJECT_EXTRACT":                        subjectExtractClauses(),
 		"SUBJECT_TYPE":                           subjectTypeClauses(),
 		"SUBJECT_ID":                             subjectIDClauses(),
+		"SUBJECT_ID_TYPE_PERMUTATION":            subjectIDTypePermutationClauses(),
 		"PREDICATE":                              predicateClauses(),
 		"PREDICATE_AS":                           predicateAsClauses(),
 		"PREDICATE_ID":                           predicateIDClauses(),
@@ -1176,9 +1257,10 @@ func BQL() *Grammar {
 		"PREDICATE_BOUND_AT_BINDINGS":            predicateBoundAtBindingsClauses(),
 		"PREDICATE_BOUND_AT_BINDINGS_END":        predicateBoundAtBindingsEndClauses(),
 		"OBJECT":                                 objectClauses(),
-		"OBJECT_SUBJECT_EXTRACT":                 objectSubjectExtractClauses(),
-		"OBJECT_SUBJECT_TYPE":                    objectSubjectTypeClauses(),
-		"OBJECT_SUBJECT_ID":                      objectSubjectIDClauses(),
+		"OBJECT_NODE_EXTRACT":                    objectNodeExtractClauses(),
+		"OBJECT_NODE_TYPE":                       objectNodeTypeClauses(),
+		"OBJECT_NODE_ID":                         objectNodeIDClauses(),
+		"OBJECT_NODE_ID_TYPE_PERMUTATION":        objectNodeIDTypePermutationClauses(),
 		"OBJECT_PREDICATE_AS":                    objectPredicateAsClauses(),
 		"OBJECT_PREDICATE_ID":                    objectPredicateIDClauses(),
 		"OBJECT_PREDICATE_AT":                    objectPredicateAtClauses(),
@@ -1186,10 +1268,11 @@ func BQL() *Grammar {
 		"OBJECT_PREDICATE_BOUND_AT_BINDINGS":     objectPredicateBoundAtBindingsClauses(),
 		"OBJECT_PREDICATE_BOUND_AT_BINDINGS_END": objectPredicateBoundAtBindingsEndClauses(),
 		"OBJECT_LITERAL_AS":                      objectLiteralAsClauses(),
-		"OBJECT_LITERAL_BINDING_AS":              objectLiteralBindingAsClauses(),
-		"OBJECT_LITERAL_BINDING_TYPE":            objectLiteralBindingTypeClauses(),
-		"OBJECT_LITERAL_BINDING_ID":              objectLiteralBindingIDClauses(),
-		"OBJECT_LITERAL_BINDING_AT":              objectLiteralBindingAtClauses(),
+		"OBJECT_BINDING_EXTRACT":                 objectBindingExtractClauses(),
+		"OBJECT_BINDING_TYPE":                    objectBindingTypeClauses(),
+		"OBJECT_BINDING_ID":                      objectBindingIDClauses(),
+		"OBJECT_BINDING_ID_TYPE_PERMUTATION":     objectBindingIDTypePermutationClauses(),
+		"OBJECT_BINDING_AT":                      objectBindingAtClauses(),
 		"GROUP_BY":                               groupByClauses(),
 		"GROUP_BY_BINDINGS":                      groupByBindingsClauses(),
 		"ORDER_BY":                               orderByClauses(),
@@ -1276,7 +1359,7 @@ func SemanticBQL() *Grammar {
 	setClauseHook(semanticBQL, clauseSymbols, semantic.WhereNextWorkingClauseHook(), semantic.WhereNextWorkingClauseHook())
 
 	subSymbols := []semantic.Symbol{
-		"FIRST_CLAUSE", "CLAUSES", "OPTIONAL_CLAUSE", "SUBJECT_EXTRACT", "SUBJECT_TYPE", "SUBJECT_ID",
+		"FIRST_CLAUSE", "CLAUSES", "OPTIONAL_CLAUSE", "SUBJECT_EXTRACT", "SUBJECT_TYPE", "SUBJECT_ID", "SUBJECT_ID_TYPE_PERMUTATION",
 	}
 	setElementHook(semanticBQL, subSymbols, semantic.WhereSubjectClauseHook(), nil)
 
@@ -1287,12 +1370,12 @@ func SemanticBQL() *Grammar {
 	setElementHook(semanticBQL, predSymbols, semantic.WherePredicateClauseHook(), nil)
 
 	objSymbols := []semantic.Symbol{
-		"OBJECT", "OBJECT_SUBJECT_EXTRACT", "OBJECT_SUBJECT_TYPE", "OBJECT_SUBJECT_ID",
-		"OBJECT_PREDICATE_AS", "OBJECT_PREDICATE_ID", "OBJECT_PREDICATE_AT",
+		"OBJECT", "OBJECT_NODE_EXTRACT", "OBJECT_NODE_TYPE", "OBJECT_NODE_ID",
+		"OBJECT_NODE_ID_TYPE_PERMUTATION", "OBJECT_PREDICATE_AS", "OBJECT_PREDICATE_ID", "OBJECT_PREDICATE_AT",
 		"OBJECT_PREDICATE_BOUND_AT", "OBJECT_PREDICATE_BOUND_AT_BINDINGS",
 		"OBJECT_PREDICATE_BOUND_AT_BINDINGS_END", "OBJECT_LITERAL_AS",
-		"OBJECT_LITERAL_BINDING_AS", "OBJECT_LITERAL_BINDING_TYPE",
-		"OBJECT_LITERAL_BINDING_ID", "OBJECT_LITERAL_BINDING_AT",
+		"OBJECT_BINDING_EXTRACT", "OBJECT_BINDING_TYPE",
+		"OBJECT_BINDING_ID", "OBJECT_BINDING_ID_TYPE_PERMUTATION", "OBJECT_BINDING_AT",
 	}
 	setElementHook(semanticBQL, objSymbols, semantic.WhereObjectClauseHook(), nil)
 
