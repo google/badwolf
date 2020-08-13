@@ -795,17 +795,6 @@ func objectBindingIDTypePermutationClauses() []*Clause {
 	}
 }
 
-func objectLiteralBindingAsClauses() []*Clause {
-	return []*Clause{{
-		Elements: []Element{
-			NewTokenType(lexer.ItemAs),
-			NewTokenType(lexer.ItemBinding),
-		},
-	},
-		{},
-	}
-}
-
 func objectBindingTypeClauses() []*Clause {
 	return []*Clause{
 		{
@@ -1277,7 +1266,6 @@ func BQL() *Grammar {
 		"OBJECT_PREDICATE_BOUND_AT_BINDINGS":     objectPredicateBoundAtBindingsClauses(),
 		"OBJECT_PREDICATE_BOUND_AT_BINDINGS_END": objectPredicateBoundAtBindingsEndClauses(),
 		"OBJECT_LITERAL_AS":                      objectLiteralAsClauses(),
-		"OBJECT_LITERAL_BINDING_AS":              objectLiteralBindingAsClauses(),
 		"OBJECT_BINDING_EXTRACT":                 objectBindingExtractClauses(),
 		"OBJECT_BINDING_TYPE":                    objectBindingTypeClauses(),
 		"OBJECT_BINDING_ID":                      objectBindingIDClauses(),
@@ -1384,7 +1372,7 @@ func SemanticBQL() *Grammar {
 		"OBJECT_NODE_ID_TYPE_PERMUTATION", "OBJECT_PREDICATE_AS", "OBJECT_PREDICATE_ID", "OBJECT_PREDICATE_AT",
 		"OBJECT_PREDICATE_BOUND_AT", "OBJECT_PREDICATE_BOUND_AT_BINDINGS",
 		"OBJECT_PREDICATE_BOUND_AT_BINDINGS_END", "OBJECT_LITERAL_AS",
-		"OBJECT_BINDING_EXTRACT", "OBJECT_LITERAL_BINDING_AS", "OBJECT_BINDING_TYPE",
+		"OBJECT_BINDING_EXTRACT", "OBJECT_BINDING_TYPE",
 		"OBJECT_BINDING_ID", "OBJECT_BINDING_ID_TYPE_PERMUTATION", "OBJECT_BINDING_AT",
 	}
 	setElementHook(semanticBQL, objSymbols, semantic.WhereObjectClauseHook(), nil)
