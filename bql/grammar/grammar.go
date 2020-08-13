@@ -601,8 +601,7 @@ func objectNodeExtractClauses() []*Clause {
 			Elements: []Element{
 				NewTokenType(lexer.ItemAs),
 				NewTokenType(lexer.ItemBinding),
-				NewSymbol("OBJECT_NODE_TYPE"),
-				NewSymbol("OBJECT_NODE_ID"),
+				NewSymbol("OBJECT_NODE_ID_TYPE_PERMUTATION"),
 			},
 		},
 		{
@@ -617,6 +616,26 @@ func objectNodeExtractClauses() []*Clause {
 				NewTokenType(lexer.ItemID),
 				NewTokenType(lexer.ItemBinding),
 				NewSymbol("OBJECT_NODE_TYPE"),
+			},
+		},
+		{},
+	}
+}
+
+func objectNodeIDTypePermutationClauses() []*Clause {
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemID),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_NODE_TYPE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemType),
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("OBJECT_NODE_ID"),
 			},
 		},
 		{},
@@ -1250,6 +1269,7 @@ func BQL() *Grammar {
 		"OBJECT_NODE_EXTRACT":                    objectNodeExtractClauses(),
 		"OBJECT_NODE_TYPE":                       objectNodeTypeClauses(),
 		"OBJECT_NODE_ID":                         objectNodeIDClauses(),
+		"OBJECT_NODE_ID_TYPE_PERMUTATION":        objectNodeIDTypePermutationClauses(),
 		"OBJECT_PREDICATE_AS":                    objectPredicateAsClauses(),
 		"OBJECT_PREDICATE_ID":                    objectPredicateIDClauses(),
 		"OBJECT_PREDICATE_AT":                    objectPredicateAtClauses(),
@@ -1361,7 +1381,7 @@ func SemanticBQL() *Grammar {
 
 	objSymbols := []semantic.Symbol{
 		"OBJECT", "OBJECT_NODE_EXTRACT", "OBJECT_NODE_TYPE", "OBJECT_NODE_ID",
-		"OBJECT_PREDICATE_AS", "OBJECT_PREDICATE_ID", "OBJECT_PREDICATE_AT",
+		"OBJECT_NODE_ID_TYPE_PERMUTATION", "OBJECT_PREDICATE_AS", "OBJECT_PREDICATE_ID", "OBJECT_PREDICATE_AT",
 		"OBJECT_PREDICATE_BOUND_AT", "OBJECT_PREDICATE_BOUND_AT_BINDINGS",
 		"OBJECT_PREDICATE_BOUND_AT_BINDINGS_END", "OBJECT_LITERAL_AS",
 		"OBJECT_BINDING_EXTRACT", "OBJECT_LITERAL_BINDING_AS", "OBJECT_BINDING_TYPE",
