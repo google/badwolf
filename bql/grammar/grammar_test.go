@@ -51,6 +51,7 @@ func TestAcceptByParse(t *testing.T) {
 		`select ?a from ?b where{?s ?p ?o as ?x id ?y type ?z};`,
 		`select ?a from ?b where{?s ?p ?o as ?x type ?y id ?z at ?t};`,
 		`select ?a from ?b where{?s ?p ?o as ?x id ?y type ?z at ?t};`,
+		`select ?a from ?b where{?s ?p ?o at ?x};`,
 		// Test more permutations of the keywords "type" and "id".
 		`select ?a from ?b where{?s id ?x type ?y ?p ?o};`,
 		`select ?a from ?b where{?s type ?x id ?y ?p ?o};`,
