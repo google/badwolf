@@ -773,6 +773,12 @@ func objectBindingExtractClauses() []*Clause {
 				NewSymbol("OBJECT_BINDING_AT"),
 			},
 		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemAt),
+				NewTokenType(lexer.ItemBinding),
+			},
+		},
 		{},
 	}
 }
