@@ -762,6 +762,7 @@ func objectBindingExtractClauses() []*Clause {
 				NewTokenType(lexer.ItemType),
 				NewTokenType(lexer.ItemBinding),
 				NewSymbol("OBJECT_BINDING_ID"),
+				NewSymbol("OBJECT_BINDING_AT"),
 			},
 		},
 		{
@@ -769,6 +770,7 @@ func objectBindingExtractClauses() []*Clause {
 				NewTokenType(lexer.ItemID),
 				NewTokenType(lexer.ItemBinding),
 				NewSymbol("OBJECT_BINDING_TYPE"),
+				NewSymbol("OBJECT_BINDING_AT"),
 			},
 		},
 		{},
