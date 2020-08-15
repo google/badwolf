@@ -684,13 +684,42 @@ func TestPlannerQuery(t *testing.T) {
 					/u<peter> ?p AT ?time ?o
 				};`,
 			nBindings: 3,
+			nRows:     4,
+		},
+		{
+			q: `SELECT ?p, ?time, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ?o .
+					OPTIONAL { /u<peter> ?p AT ?time ?o }
+				};`,
+			nBindings: 3,
 			nRows:     6,
 		},
 		{
-			q: `SELECT ?s, ?time, ?o
+			q: `SELECT ?time, ?o
 				FROM ?test
 				WHERE {
-					?s "parent_of"@[?time] ?o
+					/u<joe> "parent_of"@[?time] ?o
+				};`,
+			nBindings: 2,
+			nRows:     0,
+		},
+		{
+			q: `SELECT ?time, ?o
+				FROM ?test
+				WHERE {
+					/u<joe> ?p ?o .
+					OPTIONAL { /u<joe> "parent_of"@[?time] ?o }
+				};`,
+			nBindings: 2,
+			nRows:     2,
+		},
+		{
+			q: `SELECT ?p, ?o, ?time_o
+				FROM ?test
+				WHERE {
+					/l<barcelona> ?p ?o AT ?time_o
 				};`,
 			nBindings: 3,
 			nRows:     4,
@@ -699,7 +728,8 @@ func TestPlannerQuery(t *testing.T) {
 			q: `SELECT ?p, ?o, ?time_o
 				FROM ?test
 				WHERE {
-					/l<barcelona> ?p ?o AT ?time_o
+					/l<barcelona> ?p ?o .
+					OPTIONAL { /l<barcelona> ?p ?o AT ?time_o }
 				};`,
 			nBindings: 3,
 			nRows:     5,
@@ -711,7 +741,17 @@ func TestPlannerQuery(t *testing.T) {
 					/l<barcelona> ?p "immutable_predicate"@[?o_time]
 				};`,
 			nBindings: 2,
-			nRows:     1,
+			nRows:     0,
+		},
+		{
+			q: `SELECT ?p, ?o_time
+				FROM ?test
+				WHERE {
+					/l<barcelona> ?p ?o .
+					OPTIONAL { /l<barcelona> ?p "immutable_predicate"@[?o_time] }
+				};`,
+			nBindings: 2,
+			nRows:     5,
 		},
 		{
 			q: `SELECT ?s, ?s_alias, ?s_id, ?s_type
