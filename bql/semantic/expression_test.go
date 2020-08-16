@@ -16,7 +16,9 @@ package semantic
 
 import (
 	"fmt"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/bql/table"
@@ -203,6 +205,14 @@ func mustBuildNodeFromStrings(nodeType, nodeID string) *node.Node {
 		panic(fmt.Sprintf("could not build node from type %q and ID %q, got error: %v", nodeType, nodeID, err))
 	}
 	return n
+}
+
+func mustBuildTime(timeLiteral string) *time.Time {
+	time, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(timeLiteral))
+	if err != nil {
+		panic(fmt.Sprintf("could not parse time literal %q, got error: %v", timeLiteral, err))
+	}
+	return &time
 }
 
 func TestEvaluatorEvaluate(t *testing.T) {
@@ -640,6 +650,126 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				"?foo": &table.Cell{L: mustBuildLiteral(`"10"^^type:int64`)},
 			},
 			want: false,
+		},
+		{
+			id: `?time < 2012-03-10T00:00:00-08:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2012-03-10T00:00:00-08:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(`2012-02-10T00:00:00-08:00`)},
+			},
+			want: true,
+		},
+		{
+			id: `?time > 2012-04-10T00:00:00-08:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2012-04-10T00:00:00-08:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(`2011-04-10T00:00:00-08:00`)},
+			},
+			want: false,
+		},
+		{
+			id: `?time = 2012-03-10T00:00:00-08:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2012-03-10T00:00:00-08:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(`2012-03-10T02:00:00-06:00`)},
+			},
+			want: true,
+		},
+		{
+			id: `?time = 2012-03-10T00:00:00-08:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2012-03-10T00:00:00-08:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(`2012-03-10T09:00:00+01:00`)},
+			},
+			want: true,
+		},
+		{
+			id: `?time < 2012-03-10T00:00:00-08:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2012-03-10T00:00:00-08:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(`2012-03-10T01:00:00-06:00`)},
+			},
+			want: true,
+		},
+		{
+			id: `?time > 2012-03-10T01:00:00-07:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2012-03-10T01:00:00-07:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(`2012-03-10T00:00:00-09:00`)},
+			},
+			want: true,
 		},
 	}
 	for _, entry := range testTable {
