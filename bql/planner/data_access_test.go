@@ -443,15 +443,21 @@ func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
 		{
 			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, n),
 			cls: &semantic.GraphClause{
-				PBinding:       "?p",
-				PAlias:         "?alias",
-				PIDAlias:       "?id",
+				PBinding: "?p",
+				PAlias:   "?alias",
+				PIDAlias: "?id",
+			},
+			pBinding: &table.Cell{P: pImmutable},
+			pAlias:   &table.Cell{P: pImmutable},
+			pIDAlias: &table.Cell{S: table.CellString(string(pImmutable.ID()))},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, n),
+			cls: &semantic.GraphClause{
 				PAnchorBinding: "?anchorBinding",
 				PAnchorAlias:   "?anchorAlias",
+				Optional:       true,
 			},
-			pBinding:       &table.Cell{P: pImmutable},
-			pAlias:         &table.Cell{P: pImmutable},
-			pIDAlias:       &table.Cell{S: table.CellString(string(pImmutable.ID()))},
 			pAnchorBinding: &table.Cell{},
 			pAnchorAlias:   &table.Cell{},
 		},
@@ -475,6 +481,42 @@ func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
 			if got, want := r[binding], entryCells[i]; !reflect.DeepEqual(got, want) {
 				t.Errorf(`tripleToRow(%q) = "%s", _; want "%s", _`, binding, got, want)
 			}
+		}
+	}
+}
+
+func TestDataAccessTripleToRowPredicateBindingsError(t *testing.T) {
+	n, pImmutable, _ := testNodePredicateLiteral(t)
+
+	testTable := []struct {
+		t   string
+		cls *semantic.GraphClause
+	}{
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, n),
+			cls: &semantic.GraphClause{
+				PAnchorBinding: "?anchorBinding",
+			},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, n),
+			cls: &semantic.GraphClause{
+				PAnchorAlias: "?anchorAlias",
+			},
+		},
+	}
+
+	for _, entry := range testTable {
+		// Setup for test:
+		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
+		if err != nil {
+			t.Fatalf(`triple.Parse failed for triple "%s": %v`, entry.t, err)
+		}
+
+		// Actual test:
+		_, err = tripleToRow(tpl, entry.cls)
+		if _, ok := err.(*skippableError); !ok {
+			t.Errorf(`tripleToRow("%s", %q) = _, %v; want _, skippableError`, tpl, entry.cls, err)
 		}
 	}
 }
@@ -575,15 +617,21 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 		{
 			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, pImmutable),
 			cls: &semantic.GraphClause{
-				OBinding:       "?o",
-				OAlias:         "?alias",
-				OIDAlias:       "?id",
+				OBinding: "?o",
+				OAlias:   "?alias",
+				OIDAlias: "?id",
+			},
+			oBinding: &table.Cell{P: pImmutable},
+			oAlias:   &table.Cell{P: pImmutable},
+			oIDAlias: &table.Cell{S: table.CellString(string(pImmutable.ID()))},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, pImmutable),
+			cls: &semantic.GraphClause{
 				OAnchorBinding: "?anchorBinding",
 				OAnchorAlias:   "?anchorAlias",
+				Optional:       true,
 			},
-			oBinding:       &table.Cell{P: pImmutable},
-			oAlias:         &table.Cell{P: pImmutable},
-			oIDAlias:       &table.Cell{S: table.CellString(string(pImmutable.ID()))},
 			oAnchorBinding: &table.Cell{},
 			oAnchorAlias:   &table.Cell{},
 		},
@@ -659,6 +707,18 @@ func TestDataAccessTripleToRowObjectBindingsError(t *testing.T) {
 			t: fmt.Sprintf("%s\t%s\t%s", n, pTemporal, pTemporal),
 			cls: &semantic.GraphClause{
 				OTypeAlias: "?type",
+			},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, pImmutable),
+			cls: &semantic.GraphClause{
+				OAnchorBinding: "?anchorBinding",
+			},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, pImmutable),
+			cls: &semantic.GraphClause{
+				OAnchorAlias: "?anchorAlias",
 			},
 		},
 	}
