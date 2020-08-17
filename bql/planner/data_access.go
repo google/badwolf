@@ -30,6 +30,17 @@ import (
 	"github.com/google/badwolf/triple/predicate"
 )
 
+type skippableError struct {
+	situation string
+	err       error
+}
+
+func (e *skippableError) Error() string {
+	return e.situation + ": " + e.err.Error()
+}
+
+var _ error = (*skippableError)(nil)
+
 // updateTimeBounds updates the time bounds use for the lookup based on the
 // provided graph clause.
 func updateTimeBounds(lo *storage.LookupOptions, cls *semantic.GraphClause) *storage.LookupOptions {
@@ -510,15 +521,6 @@ func objectToCell(o *triple.Object) (*table.Cell, error) {
 		return c, nil
 	}
 	return nil, fmt.Errorf("unknown object type in object %q", o)
-}
-
-type skippableError struct {
-	situation string
-	err       error
-}
-
-func (e *skippableError) Error() string {
-	return e.situation + ": " + e.err.Error()
 }
 
 // tripleToRow converts a triple into a row using the binndings specidfied
