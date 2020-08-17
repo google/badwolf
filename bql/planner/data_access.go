@@ -463,7 +463,8 @@ func shouldIgnoreTriple(t *triple.Triple, cls *semantic.GraphClause) (bool, erro
 func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.Table) error {
 	var err error
 	for t := range ts {
-		ignoreTriple, err := shouldIgnoreTriple(t, cls)
+		var ignoreTriple bool
+		ignoreTriple, err = shouldIgnoreTriple(t, cls)
 		if err != nil {
 			break
 		}
@@ -471,7 +472,8 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 			continue
 		}
 
-		r, err := tripleToRow(t, cls)
+		var r table.Row
+		r, err = tripleToRow(t, cls)
 		if err != nil {
 			break
 		}
