@@ -881,6 +881,35 @@ func TestPlannerQuery(t *testing.T) {
 			nBindings: 3,
 			nRows:     5,
 		},
+		{
+			q: `SELECT ?s, ?o, ?o_time
+				FROM ?test
+				WHERE {
+					?s ?p ?o AT ?o_time
+				};`,
+			nBindings: 3,
+			nRows:     4,
+		},
+		{
+			q: `SELECT ?s, ?o, ?o_time
+				FROM ?test
+				WHERE {
+					?s ?p ?o .
+					OPTIONAL { ?s ?p ?o AT ?o_time }
+				}
+				HAVING (?s = /l<barcelona>) OR (?s = /u<joe>) OR (?s = /u<bob>);`,
+			nBindings: 3,
+			nRows:     7,
+		},
+		{
+			q: `SELECT ?s, ?o_time
+				FROM ?test
+				WHERE {
+					?s ?p "turned"@[?o_time]
+				};`,
+			nBindings: 2,
+			nRows:     4,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
