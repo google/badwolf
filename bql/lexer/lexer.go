@@ -105,6 +105,8 @@ const (
 	ItemPredicate
 	// ItemPredicateBound represents a BadWolf predicate bound in BQL.
 	ItemPredicateBound
+	// ItemTime represents a BadWolf timestamp in BQL.
+	ItemTime
 	// ItemLBracket represents the left opening bracket token in BQL.
 	ItemLBracket
 	// ItemRBracket represents the right opening bracket token in BQL.
@@ -207,6 +209,8 @@ func (tt TokenType) String() string {
 		return "PREDICATE"
 	case ItemPredicateBound:
 		return "PREDICATE_BOUND"
+	case ItemTime:
+		return "TIME"
 	case ItemLBracket:
 		return "LEFT_BRACKET"
 	case ItemRBracket:
