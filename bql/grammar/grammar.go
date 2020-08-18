@@ -941,6 +941,12 @@ func havingClauses() []*Clause {
 		},
 		{
 			Elements: []Element{
+				NewTokenType(lexer.ItemPredicate),
+				NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
+			},
+		},
+		{
+			Elements: []Element{
 				NewTokenType(lexer.ItemNot),
 				NewSymbol("HAVING_CLAUSE"),
 			},
