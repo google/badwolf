@@ -928,7 +928,7 @@ func collectGlobalBounds() ElementHook {
 				return nil, fmt.Errorf("token %v can only be used in a between clause; previous token %v instead", tkn, lastToken)
 			}
 			lastToken = tkn
-		case lexer.ItemPredicate:
+		case lexer.ItemTime:
 			if lastToken == nil {
 				return nil, fmt.Errorf("invalid token %v without a global time modifier", tkn)
 			}
