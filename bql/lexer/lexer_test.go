@@ -54,6 +54,7 @@ func TestTokenTypeString(t *testing.T) {
 		{ItemLiteral, "LITERAL"},
 		{ItemPredicate, "PREDICATE"},
 		{ItemPredicateBound, "PREDICATE_BOUND"},
+		{ItemTime, "TIME"},
 		{ItemLBracket, "LEFT_BRACKET"},
 		{ItemRBracket, "RIGHT_BRACKET"},
 		{ItemLPar, "LEFT_PARENT"},
@@ -255,6 +256,28 @@ func TestIndividualTokens(t *testing.T) {
 			[]Token{
 				{Type: ItemLiteral, Text: `"Hallway\"1\""^^type:text`},
 				{Type: ItemEOF}}},
+		{`AFTER 2010-03-10T00:00:00-08:00;`,
+			[]Token{
+				{Type: ItemAfter, Text: "AFTER"},
+				{Type: ItemTime, Text: `2010-03-10T00:00:00-08:00`},
+				{Type: ItemSemicolon, Text: ";"},
+				{Type: ItemEOF}}},
+		{`AFTER 2010-03-10T00:00:00-08:00`,
+			[]Token{
+				{Type: ItemAfter, Text: "AFTER"},
+				{Type: ItemTime, Text: `2010-03-10T00:00:00-08:00`},
+				{Type: ItemEOF}}},
+		{`BEFORE 2010-03-10T00:00:00-08:00;`,
+			[]Token{
+				{Type: ItemBefore, Text: "BEFORE"},
+				{Type: ItemTime, Text: `2010-03-10T00:00:00-08:00`},
+				{Type: ItemSemicolon, Text: ";"},
+				{Type: ItemEOF}}},
+		{`BEFORE 2010-03-10T00:00:00-08:00`,
+			[]Token{
+				{Type: ItemBefore, Text: "BEFORE"},
+				{Type: ItemTime, Text: `2010-03-10T00:00:00-08:00`},
+				{Type: ItemEOF}}},
 	}
 
 	for _, test := range table {
@@ -319,6 +342,44 @@ func TestValidTokenQuery(t *testing.T) {
 			ItemBlankNode, ItemPredicate, ItemBinding, ItemRBracket, ItemInto, ItemBinding,
 			ItemFrom, ItemBinding, ItemWhere, ItemLBracket, ItemBinding, ItemPredicate,
 			ItemBinding, ItemRBracket, ItemSemicolon, ItemEOF}},
+		{`select ?s ?p ?o 
+			from ?foo 
+			where {
+				?s ?p ?o
+			}
+			after 2010-03-10T00:00:00-08:00;`, []TokenType{
+			ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
+			ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding,
+			ItemRBracket, ItemAfter, ItemTime, ItemSemicolon, ItemEOF}},
+		{`select ?s ?p ?o 
+			from ?foo 
+			where {
+				?s ?p ?o
+			}
+			before 2010-03-10T00:00:00-08:00;`, []TokenType{
+			ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
+			ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding,
+			ItemRBracket, ItemBefore, ItemTime, ItemSemicolon, ItemEOF}},
+		{`select ?s ?p ?o 
+			from ?foo 
+			where {
+				?s ?p ?o
+			}
+			after 2010-03-10T00:00:00-08:00
+			limit "10"^^type:int64;`, []TokenType{
+			ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
+			ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding,
+			ItemRBracket, ItemAfter, ItemTime, ItemLimit, ItemLiteral, ItemSemicolon, ItemEOF}},
+		{`select ?s ?p ?o 
+			from ?foo 
+			where {
+				?s ?p ?o
+			}
+			before 2010-03-10T00:00:00-08:00
+			limit "10"^^type:int64;`, []TokenType{
+			ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
+			ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding,
+			ItemRBracket, ItemBefore, ItemTime, ItemLimit, ItemLiteral, ItemSemicolon, ItemEOF}},
 	}
 	for _, test := range table {
 		_, c := lex(test.input, 0)
