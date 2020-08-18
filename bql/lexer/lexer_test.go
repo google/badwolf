@@ -91,10 +91,14 @@ func TestIndividualTokens(t *testing.T) {
 		input  string
 		tokens []Token
 	}{
-		{"",
+		{
+			"",
 			[]Token{
-				{Type: ItemEOF}}},
-		{"{}().;,<>=",
+				{Type: ItemEOF},
+			},
+		},
+		{
+			"{}().;,<>=",
 			[]Token{
 				{Type: ItemLBracket, Text: "{"},
 				{Type: ItemRBracket, Text: "}"},
@@ -106,18 +110,24 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemLT, Text: "<"},
 				{Type: ItemGT, Text: ">"},
 				{Type: ItemEQ, Text: "="},
-				{Type: ItemEOF}}},
-		{"?foo ?bar ?1234 ?foo_bar ?bar_foo",
+				{Type: ItemEOF},
+			},
+		},
+		{
+			"?foo ?bar ?1234 ?foo_bar ?bar_foo",
 			[]Token{
 				{Type: ItemBinding, Text: "?foo"},
 				{Type: ItemBinding, Text: "?bar"},
 				{Type: ItemBinding, Text: "?1234"},
 				{Type: ItemBinding, Text: "?foo_bar"},
 				{Type: ItemBinding, Text: "?bar_foo"},
-				{Type: ItemEOF}}},
-		{`SeLeCt FrOm WhErE As BeFoRe AfTeR BeTwEeN CoUnT SuM GrOuP bY HaViNg LiMiT
-		  OrDeR AsC DeSc NoT AnD Or Id TyPe At DiStInCt InSeRt DeLeTe DaTa InTo
-		  cONsTruCT CrEaTe DrOp GrApH OpTiOnAl`,
+				{Type: ItemEOF},
+			},
+		},
+		{
+			`SeLeCt FrOm WhErE As BeFoRe AfTeR BeTwEeN CoUnT SuM GrOuP bY HaViNg LiMiT
+		  	OrDeR AsC DeSc NoT AnD Or Id TyPe At DiStInCt InSeRt DeLeTe DaTa InTo
+		  	cONsTruCT CrEaTe DrOp GrApH OpTiOnAl`,
 			[]Token{
 				{Type: ItemQuery, Text: "SeLeCt"},
 				{Type: ItemFrom, Text: "FrOm"},
@@ -151,72 +161,110 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemDrop, Text: "DrOp"},
 				{Type: ItemGraph, Text: "GrApH"},
 				{Type: ItemOptional, Text: "OpTiOnAl"},
-				{Type: ItemEOF}}},
-		{"/_<foo>/_<bar>",
+				{Type: ItemEOF},
+			},
+		},
+		{
+			"/_<foo>/_<bar>",
 			[]Token{
 				{Type: ItemNode, Text: "/_<foo>"},
 				{Type: ItemNode, Text: "/_<bar>"},
-				{Type: ItemEOF}}},
-		{"/_<foo>/_\\<bar>",
+				{Type: ItemEOF},
+			},
+		},
+		{
+			"/_<foo>/_\\<bar>",
 			[]Token{
 				{Type: ItemNode, Text: "/_<foo>"},
 				{Type: ItemError, Text: "/_\\<bar>",
 					ErrorMessage: "[lexer:0:15] node should start ID section with a < delimiter"},
-				{Type: ItemEOF}}},
-		{"/_foo>",
+				{Type: ItemEOF},
+			},
+		},
+		{
+			"/_foo>",
 			[]Token{
 				{Type: ItemError, Text: "/_foo>",
 					ErrorMessage: "[lexer:0:6] node should start ID section with a < delimiter"},
-				{Type: ItemEOF}}},
-		{"/_<foo",
+				{Type: ItemEOF},
+			},
+		},
+		{
+			"/_<foo",
 			[]Token{
 				{Type: ItemError, Text: "/_<foo",
 					ErrorMessage: "[lexer:0:6] node is not properly terminated; missing final > delimiter"},
-				{Type: ItemEOF}}},
-		{"_:v1 _:foo_bar",
+				{Type: ItemEOF},
+			},
+		},
+		{
+			"_:v1 _:foo_bar",
 			[]Token{
 				{Type: ItemBlankNode, Text: "_:v1"},
 				{Type: ItemBlankNode, Text: "_:foo_bar"},
-				{Type: ItemEOF}}},
-		{"_v1",
+				{Type: ItemEOF},
+			},
+		},
+		{
+			"_v1",
 			[]Token{
 				{Type: ItemError, Text: "_v",
 					ErrorMessage: "[lexer:0:2] blank node should start with _:"},
-				{Type: ItemEOF}}},
-
-		{"_:1v",
+				{Type: ItemEOF},
+			},
+		},
+		{
+			"_:1v",
 			[]Token{
 				{Type: ItemError, Text: "_:1",
 					ErrorMessage: "[lexer:0:3] blank node label should begin with a letter"},
-				{Type: ItemEOF}}},
-		{"_:_",
+				{Type: ItemEOF},
+			},
+		},
+		{
+			"_:_",
 			[]Token{
 				{Type: ItemError, Text: "_:_",
 					ErrorMessage: "[lexer:0:3] blank node label should begin with a letter"},
-				{Type: ItemEOF}}},
-		{`"true"^^type:bool "1"^^type:int64"2"^^type:float64"t"^^type:text`,
+				{Type: ItemEOF},
+			},
+		},
+		{
+			`"true"^^type:bool "1"^^type:int64"2"^^type:float64"t"^^type:text`,
 			[]Token{
 				{Type: ItemLiteral, Text: `"true"^^type:bool`},
 				{Type: ItemLiteral, Text: `"1"^^type:int64`},
 				{Type: ItemLiteral, Text: `"2"^^type:float64`},
 				{Type: ItemLiteral, Text: `"t"^^type:text`},
-				{Type: ItemEOF}}},
-		{`"[1 2 3 4]"^^type:blob`,
+				{Type: ItemEOF},
+			},
+		},
+		{
+			`"[1 2 3 4]"^^type:blob`,
 			[]Token{
 				{Type: ItemLiteral, Text: `"[1 2 3 4]"^^type:blob`},
-				{Type: ItemEOF}}},
-		{"\"1\"^type:int64",
+				{Type: ItemEOF},
+			},
+		},
+		{
+			"\"1\"^type:int64",
 			[]Token{
 				{Type: ItemError,
 					ErrorMessage: "[lexer:0:0] failed to parse predicate or literal for opening \" delimiter"},
-				{Type: ItemEOF}}},
-		{"\"1\"^^type:int32",
+				{Type: ItemEOF},
+			},
+		},
+		{
+			"\"1\"^^type:int32",
 			[]Token{
 				{Type: ItemError,
 					Text:         `"1"^^type:int32`,
 					ErrorMessage: "[lexer:0:15] invalid literal type int32"},
-				{Type: ItemEOF}}},
-		{`"p1"@[] "p2"@["some data"]"p3"@["some data"]"p4"@["a","b"]"p4"@["a",]"p4"@[,"b"]"p4"@[,]`,
+				{Type: ItemEOF},
+			},
+		},
+		{
+			`"p1"@[] "p2"@["some data"]"p3"@["some data"]"p4"@["a","b"]"p4"@["a",]"p4"@[,"b"]"p4"@[,]`,
 			[]Token{
 				{Type: ItemPredicate, Text: `"p1"@[]`},
 				{Type: ItemPredicate, Text: `"p2"@["some data"]`},
@@ -225,24 +273,36 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemPredicateBound, Text: `"p4"@["a",]`},
 				{Type: ItemPredicateBound, Text: `"p4"@[,"b"]`},
 				{Type: ItemPredicateBound, Text: `"p4"@[,]`},
-				{Type: ItemEOF}}},
-		{`"p\"1"@[]`,
+				{Type: ItemEOF},
+			},
+		},
+		{
+			`"p\"1"@[]`,
 			[]Token{
 				{Type: ItemPredicate, Text: `"p\"1"@[]`},
-				{Type: ItemEOF}}},
-		{`"p1"@]`,
+				{Type: ItemEOF},
+			},
+		},
+		{
+			`"p1"@]`,
 			[]Token{
 				{Type: ItemError,
 					Text:         "",
 					ErrorMessage: "[lexer:0:0] failed to parse predicate or literal for opening \" delimiter"},
-				{Type: ItemEOF}}},
-		{`"p1"@[,,]`,
+				{Type: ItemEOF},
+			},
+		},
+		{
+			`"p1"@[,,]`,
 			[]Token{
 				{Type: ItemError,
 					Text:         `"p1"@[,,]`,
 					ErrorMessage: "[lexer:0:9] predicate bounds should only have one , to separate bounds"},
-				{Type: ItemEOF}}},
-		{`/room<000> "named"@[] "Hallway"^^type:text. /room<000> "connects_to"@[] /room<001>`,
+				{Type: ItemEOF},
+			},
+		},
+		{
+			`/room<000> "named"@[] "Hallway"^^type:text. /room<000> "connects_to"@[] /room<001>`,
 			[]Token{
 				{Type: ItemNode, Text: `/room<000>`},
 				{Type: ItemPredicate, Text: `"named"@[]`},
@@ -251,33 +311,50 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemNode, Text: `/room<000>`},
 				{Type: ItemPredicate, Text: `"connects_to"@[]`},
 				{Type: ItemNode, Text: `/room<001>`},
-				{Type: ItemEOF}}},
-		{`"Hallway\"1\""^^type:text`,
+				{Type: ItemEOF},
+			},
+		},
+		{
+			`"Hallway\"1\""^^type:text`,
 			[]Token{
 				{Type: ItemLiteral, Text: `"Hallway\"1\""^^type:text`},
-				{Type: ItemEOF}}},
-		{`AFTER 2010-03-10T00:00:00-08:00;`,
+				{Type: ItemEOF},
+			},
+		},
+		{
+			`AFTER 2010-03-10T00:00:00-08:00;`,
 			[]Token{
 				{Type: ItemAfter, Text: "AFTER"},
 				{Type: ItemTime, Text: `2010-03-10T00:00:00-08:00`},
 				{Type: ItemSemicolon, Text: ";"},
-				{Type: ItemEOF}}},
-		{`AFTER 2010-03-10T00:00:00-08:00`,
+				{Type: ItemEOF},
+			},
+		},
+		{
+			`AFTER 2010-03-10T00:00:00-08:00`,
 			[]Token{
 				{Type: ItemAfter, Text: "AFTER"},
 				{Type: ItemTime, Text: `2010-03-10T00:00:00-08:00`},
-				{Type: ItemEOF}}},
-		{`BEFORE 2010-03-10T00:00:00-08:00;`,
+				{Type: ItemEOF},
+			},
+		},
+		{
+			`BEFORE 2010-03-10T00:00:00-08:00;`,
 			[]Token{
 				{Type: ItemBefore, Text: "BEFORE"},
 				{Type: ItemTime, Text: `2010-03-10T00:00:00-08:00`},
 				{Type: ItemSemicolon, Text: ";"},
-				{Type: ItemEOF}}},
-		{`BEFORE 2010-03-10T00:00:00-08:00`,
+				{Type: ItemEOF},
+			},
+		},
+		{
+			`BEFORE 2010-03-10T00:00:00-08:00`,
 			[]Token{
 				{Type: ItemBefore, Text: "BEFORE"},
 				{Type: ItemTime, Text: `2010-03-10T00:00:00-08:00`},
-				{Type: ItemEOF}}},
+				{Type: ItemEOF},
+			},
+		},
 	}
 
 	for _, test := range table {
@@ -300,87 +377,126 @@ func TestValidTokenQuery(t *testing.T) {
 		input  string
 		tokens []TokenType
 	}{
-		{"select ?s?p?o from ?foo where {?s?p?o};", []TokenType{
-			ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
-			ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding,
-			ItemRBracket, ItemSemicolon, ItemEOF}},
-		{`select ?s
+		{
+			"select ?s?p?o from ?foo where {?s?p?o};",
+			[]TokenType{
+				ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
+				ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding,
+				ItemRBracket, ItemSemicolon, ItemEOF,
+			},
+		},
+		{
+			`select ?s
 		    from ?foo
 		    where {
-				  ?s "bar"@["123"] /_<foo> .
-					?s "foo"@[] "1"^^type:int64
-				};`, []TokenType{
-			ItemQuery, ItemBinding, ItemFrom, ItemBinding, ItemWhere, ItemLBracket,
-			ItemBinding, ItemPredicate, ItemNode, ItemDot, ItemBinding, ItemPredicate,
-			ItemLiteral, ItemRBracket, ItemSemicolon, ItemEOF}},
-		{`select count(?foo) as ?foo
+				?s "bar"@["123"] /_<foo> .
+				?s "foo"@[] "1"^^type:int64
+			};`,
+			[]TokenType{
+				ItemQuery, ItemBinding, ItemFrom, ItemBinding, ItemWhere, ItemLBracket,
+				ItemBinding, ItemPredicate, ItemNode, ItemDot, ItemBinding, ItemPredicate,
+				ItemLiteral, ItemRBracket, ItemSemicolon, ItemEOF,
+			},
+		},
+		{
+			`select count(?foo) as ?foo
 		    from ?foo
 		    where {
-				  ?s "bar"@["123"] /_<foo> .
-					?s "foo"@[] "1"^^type:int64
-				}
-				group by ?foo, ?foo
-				order by ?foo asc desc
-				having ?foo < ?foo and not ?foo or ?foo = ?foo
-				limit "1"^^type:int64;`, []TokenType{
-			ItemQuery, ItemCount, ItemLPar, ItemBinding, ItemRPar, ItemAs,
-			ItemBinding, ItemFrom, ItemBinding, ItemWhere, ItemLBracket, ItemBinding,
-			ItemPredicate, ItemNode, ItemDot, ItemBinding, ItemPredicate, ItemLiteral,
-			ItemRBracket, ItemGroup, ItemBy, ItemBinding, ItemComma, ItemBinding,
-			ItemOrder, ItemBy, ItemBinding, ItemAsc, ItemDesc, ItemHaving,
-			ItemBinding, ItemLT, ItemBinding, ItemAnd, ItemNot, ItemBinding, ItemOr,
-			ItemBinding, ItemEQ, ItemBinding, ItemLimit, ItemLiteral, ItemSemicolon,
-			ItemEOF}},
-		{`construct {?s "foo"@[] ?o} into ?a from ?b where {?s "foo"@[] ?o};`, []TokenType{
-			ItemConstruct, ItemLBracket, ItemBinding, ItemPredicate, ItemBinding,
-			ItemRBracket, ItemInto, ItemBinding, ItemFrom, ItemBinding, ItemWhere,
-			ItemLBracket, ItemBinding, ItemPredicate, ItemBinding, ItemRBracket,
-			ItemSemicolon, ItemEOF}},
-		{`construct {_:v1 "predicate"@[] ?p.
-		             _:v1 "object"@[] ?o} into ?a from ?b where {?s "foo"@[] ?o};`, []TokenType{
-			ItemConstruct, ItemLBracket, ItemBlankNode, ItemPredicate, ItemBinding, ItemDot,
-			ItemBlankNode, ItemPredicate, ItemBinding, ItemRBracket, ItemInto, ItemBinding,
-			ItemFrom, ItemBinding, ItemWhere, ItemLBracket, ItemBinding, ItemPredicate,
-			ItemBinding, ItemRBracket, ItemSemicolon, ItemEOF}},
-		{`select ?s ?p ?o 
+				?s "bar"@["123"] /_<foo> .
+				?s "foo"@[] "1"^^type:int64
+			}
+			group by ?foo, ?foo
+			order by ?foo asc desc
+			having ?foo < ?foo and not ?foo or ?foo = ?foo
+			limit "1"^^type:int64;`,
+			[]TokenType{
+				ItemQuery, ItemCount, ItemLPar, ItemBinding, ItemRPar, ItemAs,
+				ItemBinding, ItemFrom, ItemBinding, ItemWhere, ItemLBracket, ItemBinding,
+				ItemPredicate, ItemNode, ItemDot, ItemBinding, ItemPredicate, ItemLiteral,
+				ItemRBracket, ItemGroup, ItemBy, ItemBinding, ItemComma, ItemBinding,
+				ItemOrder, ItemBy, ItemBinding, ItemAsc, ItemDesc, ItemHaving,
+				ItemBinding, ItemLT, ItemBinding, ItemAnd, ItemNot, ItemBinding, ItemOr,
+				ItemBinding, ItemEQ, ItemBinding, ItemLimit, ItemLiteral, ItemSemicolon,
+				ItemEOF,
+			},
+		},
+		{
+			`construct {?s "foo"@[] ?o} into ?a from ?b where {?s "foo"@[] ?o};`,
+			[]TokenType{
+				ItemConstruct, ItemLBracket, ItemBinding, ItemPredicate, ItemBinding,
+				ItemRBracket, ItemInto, ItemBinding, ItemFrom, ItemBinding, ItemWhere,
+				ItemLBracket, ItemBinding, ItemPredicate, ItemBinding, ItemRBracket,
+				ItemSemicolon, ItemEOF,
+			},
+		},
+		{
+			`construct {
+				_:v1 "predicate"@[] ?p .
+				_:v1 "object"@[] ?o} into ?a from ?b where {?s "foo"@[] ?o
+			};`,
+			[]TokenType{
+				ItemConstruct, ItemLBracket, ItemBlankNode, ItemPredicate, ItemBinding, ItemDot,
+				ItemBlankNode, ItemPredicate, ItemBinding, ItemRBracket, ItemInto, ItemBinding,
+				ItemFrom, ItemBinding, ItemWhere, ItemLBracket, ItemBinding, ItemPredicate,
+				ItemBinding, ItemRBracket, ItemSemicolon, ItemEOF,
+			},
+		},
+		{
+			`select ?s ?p ?o 
 			from ?foo 
 			where {
 				?s ?p ?o
 			}
-			after 2010-03-10T00:00:00-08:00;`, []TokenType{
-			ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
-			ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding,
-			ItemRBracket, ItemAfter, ItemTime, ItemSemicolon, ItemEOF}},
-		{`select ?s ?p ?o 
+			after 2010-03-10T00:00:00-08:00;`,
+			[]TokenType{
+				ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
+				ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding,
+				ItemRBracket, ItemAfter, ItemTime, ItemSemicolon, ItemEOF,
+			},
+		},
+		{
+			`select ?s ?p ?o 
 			from ?foo 
 			where {
 				?s ?p ?o
 			}
-			before 2010-03-10T00:00:00-08:00;`, []TokenType{
-			ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
-			ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding,
-			ItemRBracket, ItemBefore, ItemTime, ItemSemicolon, ItemEOF}},
-		{`select ?s ?p ?o 
+			before 2010-03-10T00:00:00-08:00;`,
+			[]TokenType{
+				ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
+				ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding,
+				ItemRBracket, ItemBefore, ItemTime, ItemSemicolon, ItemEOF,
+			},
+		},
+		{
+			`select ?s ?p ?o 
 			from ?foo 
 			where {
 				?s ?p ?o
 			}
 			after 2010-03-10T00:00:00-08:00
-			limit "10"^^type:int64;`, []TokenType{
-			ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
-			ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding,
-			ItemRBracket, ItemAfter, ItemTime, ItemLimit, ItemLiteral, ItemSemicolon, ItemEOF}},
-		{`select ?s ?p ?o 
+			limit "10"^^type:int64;`,
+			[]TokenType{
+				ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
+				ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding,
+				ItemRBracket, ItemAfter, ItemTime, ItemLimit, ItemLiteral, ItemSemicolon, ItemEOF,
+			},
+		},
+		{
+			`select ?s ?p ?o 
 			from ?foo 
 			where {
 				?s ?p ?o
 			}
 			before 2010-03-10T00:00:00-08:00
-			limit "10"^^type:int64;`, []TokenType{
-			ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
-			ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding,
-			ItemRBracket, ItemBefore, ItemTime, ItemLimit, ItemLiteral, ItemSemicolon, ItemEOF}},
+			limit "10"^^type:int64;`,
+			[]TokenType{
+				ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
+				ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding,
+				ItemRBracket, ItemBefore, ItemTime, ItemLimit, ItemLiteral, ItemSemicolon, ItemEOF,
+			},
+		},
 	}
+
 	for _, test := range table {
 		_, c := lex(test.input, 0)
 		idx := 0
@@ -394,5 +510,4 @@ func TestValidTokenQuery(t *testing.T) {
 			idx++
 		}
 	}
-
 }
