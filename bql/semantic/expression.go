@@ -240,12 +240,8 @@ func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 	switch e.op {
 	case EQ:
 		return csEL == csER, nil
-	case LT:
-		return csEL < csER, nil
-	case GT:
-		return csEL > csER, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op.String())
+		return false, fmt.Errorf(`comparisonForNodeLiteral.Evaluate got operation %q, but it accepts only the "=" operation. For ">" and "<" think about extracting bindings with the keywords ID/TYPE and using them for comparisons`, e.op)
 	}
 }
 
