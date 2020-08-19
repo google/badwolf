@@ -491,21 +491,6 @@ func TestPlannerQuery(t *testing.T) {
 			nBindings: 2,
 			nRows:     1,
 		},
-		{
-			q:         `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?s > /u<zzzzz>;`,
-			nBindings: 2,
-			nRows:     0,
-		},
-		{
-			q:         `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?s > /u<alice>;`,
-			nBindings: 2,
-			nRows:     3,
-		},
-		{
-			q:         `select ?s, ?height from ?test where {?s "height_cm"@[] ?height} having ?s > /u<bob>;`,
-			nBindings: 2,
-			nRows:     2,
-		},
 		/*
 			/c<model s> "is_a"@[] /t<car>
 			/c<model x> "is_a"@[] /t<car>
@@ -876,6 +861,26 @@ func TestPlannerQuery(t *testing.T) {
 			nBindings: 1,
 			nRows:     4,
 		},
+		{
+			q: `SELECT ?s, ?height
+				FROM ?test
+				WHERE {
+					?s "height_cm"@[] ?height
+				}
+				HAVING ?s = /u<bob>;`,
+			nBindings: 2,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o
+				FROM ?test
+				WHERE {
+					?s ?p ?o
+				}
+				HAVING (?s = /u<bob>) OR (?o = /t<car>);`,
+			nBindings: 3,
+			nRows:     5,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
@@ -944,6 +949,22 @@ func TestPlannerQueryError(t *testing.T) {
 					?s ?p ?o
 				}
 				HAVING ?p > "bought"@[2016-01-01T00:00:00-08:00];`,
+		},
+		{
+			q: `SELECT ?s, ?height
+				FROM ?test
+				WHERE {
+					?s "height_cm"@[] ?height
+				}
+				HAVING ?s < /u<zzzzz>;`,
+		},
+		{
+			q: `SELECT ?s, ?height
+				FROM ?test
+				WHERE {
+					?s "height_cm"@[] ?height
+				}
+				HAVING ?s > /u<alice>;`,
 		},
 	}
 
