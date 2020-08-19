@@ -943,7 +943,48 @@ func TestEvaluatorEvaluate(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			id: `?s = /u<paul>`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?s",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemNode,
+					Text: "/u<paul>",
+				}),
+			},
+			r: table.Row{
+				"?s": &table.Cell{N: mustBuildNodeFromStrings(t, "/u", "paul")},
+			},
+			want: true,
+		},
+		{
+			id: `?s = /u<paul>`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?s",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemNode,
+					Text: "/u<paul>",
+				}),
+			},
+			r: table.Row{
+				"?s": &table.Cell{N: mustBuildNodeFromStrings(t, "/u", "peter")},
+			},
+			want: false,
+		},
 	}
+
 	for _, entry := range testTable {
 		eval, err := NewEvaluator(entry.in)
 		if err != nil {
@@ -1040,6 +1081,44 @@ func TestEvaluatorEvaluateError(t *testing.T) {
 			},
 			r: table.Row{
 				"?p": &table.Cell{P: mustBuildPredicate(t, `"height_cm"@[2016-01-01T00:00:00-08:00]`)},
+			},
+		},
+		{
+			id: `?s > /u<paul>`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?s",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemNode,
+					Text: "/u<paul>",
+				}),
+			},
+			r: table.Row{
+				"?s": &table.Cell{N: mustBuildNodeFromStrings(t, "/u", "peter")},
+			},
+		},
+		{
+			id: `?s < /u<paul>`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?s",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemNode,
+					Text: "/u<paul>",
+				}),
+			},
+			r: table.Row{
+				"?s": &table.Cell{N: mustBuildNodeFromStrings(t, "/u", "alice")},
 			},
 		},
 	}
