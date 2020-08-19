@@ -952,7 +952,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 
 		got, err := eval.Evaluate(entry.r)
 		if err != nil {
-			t.Errorf("%s: eval.Evaluate(%v) = _, %v; want nil error", entry.id, entry.r, err)
+			t.Errorf("%s: eval.Evaluate(%v) = _, %v; want _, nil error", entry.id, entry.r, err)
 		}
 		if want := entry.want; got != want {
 			t.Errorf("%s: eval.Evaluate(%v) = %v, _; want %v, _", entry.id, entry.r, got, want)
@@ -1057,7 +1057,7 @@ func TestEvaluatorEvaluateError(t *testing.T) {
 
 		got, err := eval.Evaluate(entry.r)
 		if err == nil {
-			t.Errorf("%s: eval.Evaluate(%v) = _, nil; want non-nil error", entry.id, entry.r)
+			t.Errorf("%s: eval.Evaluate(%v) = _, nil; want _, non-nil error", entry.id, entry.r)
 		}
 		if want := entry.want; got != want {
 			t.Errorf("%s: eval.Evaluate(%v) = %v, _; want %v, _", entry.id, entry.r, got, want)
