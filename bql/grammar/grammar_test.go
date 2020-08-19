@@ -100,6 +100,8 @@ func TestAcceptByParse(t *testing.T) {
 		`select ?a from ?b where {?a ?p ?o} having ?b = 2014-03-10T00:00:00-08:00 limit "10"^^type:int64;`,
 		`select ?a from ?b where {?a ?p ?o} having (?b and ?b) or not (?b = ?b);`,
 		`select ?a from ?b where {?a ?p ?o} having ((?b and ?b) or not (?b = ?b));`,
+		`select ?a from ?b where {?a ?p ?o} having ?b = "foo"@[];`,
+		`select ?a from ?b where {?a ?p ?o} having ?b = "foo"@[2016-04-01T00:00:00-08:00];`,
 		// Test global time bounds.
 		`select ?a from ?b where {?s ?p ?o} before 2006-01-01T15:04:05.999999999Z07:00;`,
 		`select ?a from ?b where {?s ?p ?o} after 2006-02-03T15:04:05.999999999Z07:00;`,
