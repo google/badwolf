@@ -81,6 +81,15 @@ func (o OP) String() string {
 	}
 }
 
+// cellFromRow retrieves the value of a binding from a given row.
+func cellFromRow(binding string, r table.Row) (*table.Cell, error) {
+	val, ok := r[binding]
+	if !ok {
+		return nil, fmt.Errorf("comparison operation requires the binding value for %q for row %v to exist", binding, r)
+	}
+	return val, nil
+}
+
 // formatCell formats a given cell into a trimmed comparable string.
 func formatCell(c *table.Cell) (string, error) {
 	if c.L != nil {
@@ -108,17 +117,13 @@ type evaluationNode struct {
 func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 	// Binary evaluation.
 	eval := func() (*table.Cell, *table.Cell, error) {
-		var (
-			eL, eR *table.Cell
-			ok     bool
-		)
-		eL, ok = r[e.lB]
-		if !ok {
-			return nil, nil, fmt.Errorf("comparison operation requires the binding value for %q for row %v to exist", e.lB, r)
+		eL, err := cellFromRow(e.lB, r)
+		if err != nil {
+			return nil, nil, fmt.Errorf("evaluationNode.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.lB, r, err)
 		}
-		eR, ok = r[e.rB]
-		if !ok {
-			return nil, nil, fmt.Errorf("comparison operation requires the binding value for %q for row %v to exist", e.rB, r)
+		eR, err := cellFromRow(e.rB, r)
+		if err != nil {
+			return nil, nil, fmt.Errorf("evaluationNode.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.rB, r, err)
 		}
 		return eL, eR, nil
 	}
@@ -147,19 +152,6 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 	default:
 		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op.String())
 	}
-}
-
-// cellFromRow retrives the value of a binding from a given row.
-func cellFromRow(binding string, r table.Row) (*table.Cell, error) {
-	var (
-		val *table.Cell
-		ok  bool
-	)
-	val, ok = r[binding]
-	if !ok {
-		return nil, fmt.Errorf("comparison operation requires the binding value for %q for row %v to exist", binding, r)
-	}
-	return val, nil
 }
 
 // comparisonForLiteral represents the internal representation of an expression of comparison between a binding and a literal.
