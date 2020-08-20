@@ -150,7 +150,7 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 	case GT:
 		return csEL > csER, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op.String())
+		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op)
 	}
 }
 
@@ -176,7 +176,7 @@ func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 		return false, fmt.Errorf("comparisonForLiteral.Evaluate failed, could not parse literal from the string %q, got error: %v", e.rS, err)
 	}
 	if leftCell.S != nil && rightLiteral.Type() != literal.Text {
-		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", rightLiteral.String())
+		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", rightLiteral)
 	}
 
 	if leftCell.L != nil && leftCell.L.Type() != rightLiteral.Type() {
@@ -199,7 +199,7 @@ func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 	case GT:
 		return csEL > csER, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op.String())
+		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op)
 	}
 }
 
@@ -271,7 +271,7 @@ func (e *comparisonForTimeLiteral) Evaluate(r table.Row) (bool, error) {
 	case GT:
 		return timeBinding.After(timeLiteral), nil
 	default:
-		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op.String())
+		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op)
 	}
 }
 
@@ -456,7 +456,7 @@ func (e *booleanNode) Evaluate(r table.Row) (bool, error) {
 		}
 		return !eL, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation requires a boolen operation; found %q instead", e.op.String())
+		return false, fmt.Errorf("boolean evaluation requires a boolen operation; found %q instead", e.op)
 	}
 }
 
