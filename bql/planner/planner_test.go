@@ -442,14 +442,14 @@ func TestPlannerQuery(t *testing.T) {
 			nRows:     2,
 		},
 		{
-			q:         `select ?o from ?test where {/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o} before 2014-01-01T00:00:00-08:00;`,
+			q:         `select ?o from ?test where {/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o} before 2016-03-01T00:00:00-08:00;`,
 			nBindings: 1,
-			nRows:     0,
+			nRows:     3,
 		},
 		{
-			q:         `select ?o from ?test where {/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o} after 2017-01-01T00:00:00-08:00;`,
+			q:         `select ?o from ?test where {/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o} after 2016-02-01T00:00:00-08:00;`,
 			nBindings: 1,
-			nRows:     0,
+			nRows:     3,
 		},
 		{
 			q:         `select ?o from ?test where {/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o} between 2014-01-01T00:00:00-08:00, 2017-01-01T00:00:00-08:00;`,
@@ -733,6 +733,28 @@ func TestPlannerQuery(t *testing.T) {
 				};`,
 			nBindings: 4,
 			nRows:     4,
+		},
+		{
+			q: `SELECT ?o
+				FROM ?test
+				WHERE {
+					/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o
+				}
+				BEFORE 2016-03-01T00:00:00-08:00
+				LIMIT "1"^^type:int64;`,
+			nBindings: 1,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?o
+				FROM ?test
+				WHERE {
+					/u<peter> "bought"@[2015-01-01T00:00:00-08:00,2017-01-01T00:00:00-08:00] ?o
+				}
+				AFTER 2016-02-01T00:00:00-08:00
+				LIMIT "1"^^type:int64;`,
+			nBindings: 1,
+			nRows:     1,
 		},
 	}
 

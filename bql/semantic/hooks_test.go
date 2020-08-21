@@ -1817,7 +1817,7 @@ func TestCollectGlobalBounds(t *testing.T) {
 				}),
 				NewConsumedSymbol("FOO"),
 				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemPredicate,
+					Type: lexer.ItemTime,
 					Text: pretty,
 				}),
 				NewConsumedSymbol("FOO"),
@@ -1836,7 +1836,7 @@ func TestCollectGlobalBounds(t *testing.T) {
 				}),
 				NewConsumedSymbol("FOO"),
 				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemPredicate,
+					Type: lexer.ItemTime,
 					Text: pretty,
 				}),
 				NewConsumedSymbol("FOO"),
@@ -1875,7 +1875,7 @@ func TestCollectGlobalBounds(t *testing.T) {
 				}),
 				NewConsumedSymbol("FOO"),
 				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemPredicate,
+					Type: lexer.ItemTime,
 					Text: invalid,
 				}),
 				NewConsumedSymbol("FOO"),
@@ -1891,7 +1891,7 @@ func TestCollectGlobalBounds(t *testing.T) {
 				}),
 				NewConsumedSymbol("FOO"),
 				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemPredicate,
+					Type: lexer.ItemTime,
 					Text: invalid,
 				}),
 				NewConsumedSymbol("FOO"),

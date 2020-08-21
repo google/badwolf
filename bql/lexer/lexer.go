@@ -105,6 +105,8 @@ const (
 	ItemPredicate
 	// ItemPredicateBound represents a BadWolf predicate bound in BQL.
 	ItemPredicateBound
+	// ItemTime represents a BadWolf timestamp in BQL.
+	ItemTime
 	// ItemLBracket represents the left opening bracket token in BQL.
 	ItemLBracket
 	// ItemRBracket represents the right opening bracket token in BQL.
@@ -207,6 +209,8 @@ func (tt TokenType) String() string {
 		return "PREDICATE"
 	case ItemPredicateBound:
 		return "PREDICATE_BOUND"
+	case ItemTime:
+		return "TIME"
 	case ItemLBracket:
 		return "LEFT_BRACKET"
 	case ItemRBracket:
@@ -377,7 +381,7 @@ func lexToken(l *lexer) stateFn {
 	for {
 		{
 			r := l.peek()
-			// special predicate parsing for global level timestamps
+			// Special parsing for global level timestamps.
 			if unicode.IsDigit(r) && (l.lastTokenType == ItemBefore || l.lastTokenType == ItemAfter || l.lastTokenType == ItemBetween) {
 				return lexPredicateGlobalTime
 			}
@@ -752,7 +756,7 @@ func lexPredicate(l *lexer) stateFn {
 	return lexSpace
 }
 
-// lexPredicateGlobalTime lexes a predicate out of the input specifically for the BEFORE, AFTER and BETWEEN global clauses.
+// lexPredicateGlobalTime lexes a global time (ItemTime or ItemPredicateBound) out of the input specifically for the BEFORE, AFTER and BETWEEN global clauses.
 func lexPredicateGlobalTime(l *lexer) stateFn {
 	l.next()
 	var (
@@ -786,7 +790,7 @@ func lexPredicateGlobalTime(l *lexer) stateFn {
 		}
 	}
 	if commas == 0 {
-		l.emit(ItemPredicate)
+		l.emit(ItemTime)
 	} else {
 		l.emit(ItemPredicateBound)
 	}

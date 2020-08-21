@@ -983,16 +983,17 @@ func havingClausesBinaryCompositeClauses() []*Clause {
 	}
 }
 func globalTimeBoundClauses() []*Clause {
-	return []*Clause{{
-		Elements: []Element{
-			NewTokenType(lexer.ItemBefore),
-			NewTokenType(lexer.ItemPredicate),
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBefore),
+				NewTokenType(lexer.ItemTime),
+			},
 		},
-	},
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemAfter),
-				NewTokenType(lexer.ItemPredicate),
+				NewTokenType(lexer.ItemTime),
 			},
 		},
 		{
