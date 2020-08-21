@@ -672,7 +672,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 			want: true,
 		},
 		{
-			id: `?time > 2012-04-10T00:00:00-08:00`,
+			id: `?time > 2012-03-10T00:00:00-08:00`,
 			in: []ConsumedElement{
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
@@ -683,31 +683,11 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemTime,
-					Text: `2012-04-10T00:00:00-08:00`,
-				}),
-			},
-			r: table.Row{
-				"?time": &table.Cell{T: mustBuildTime(`2011-04-10T00:00:00-08:00`)},
-			},
-			want: false,
-		},
-		{
-			id: `?time = 2012-03-10T00:00:00-08:00`,
-			in: []ConsumedElement{
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemBinding,
-					Text: "?time",
-				}),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemEQ,
-				}),
-				NewConsumedToken(&lexer.Token{
-					Type: lexer.ItemTime,
 					Text: `2012-03-10T00:00:00-08:00`,
 				}),
 			},
 			r: table.Row{
-				"?time": &table.Cell{T: mustBuildTime(`2012-03-10T02:00:00-06:00`)},
+				"?time": &table.Cell{T: mustBuildTime(`2012-04-10T00:00:00-08:00`)},
 			},
 			want: true,
 		},
@@ -727,12 +707,12 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?time": &table.Cell{T: mustBuildTime(`2012-03-10T09:00:00+01:00`)},
+				"?time": &table.Cell{T: mustBuildTime(`2012-03-10T00:00:00-08:00`)},
 			},
 			want: true,
 		},
 		{
-			id: `?time < 2012-03-10T00:00:00-08:00`,
+			id: `?time < 2012-01-10T00:00:00-08:00`,
 			in: []ConsumedElement{
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
@@ -743,16 +723,16 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemTime,
-					Text: `2012-03-10T00:00:00-08:00`,
+					Text: `2012-01-10T00:00:00-08:00`,
 				}),
 			},
 			r: table.Row{
-				"?time": &table.Cell{T: mustBuildTime(`2012-03-10T01:00:00-06:00`)},
+				"?time": &table.Cell{T: mustBuildTime(`2012-02-10T00:00:00-08:00`)},
 			},
-			want: true,
+			want: false,
 		},
 		{
-			id: `?time > 2012-03-10T01:00:00-07:00`,
+			id: `?time > 2012-05-10T00:00:00-08:00`,
 			in: []ConsumedElement{
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemBinding,
@@ -763,11 +743,131 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 				NewConsumedToken(&lexer.Token{
 					Type: lexer.ItemTime,
-					Text: `2012-03-10T01:00:00-07:00`,
+					Text: `2012-05-10T00:00:00-08:00`,
 				}),
 			},
 			r: table.Row{
-				"?time": &table.Cell{T: mustBuildTime(`2012-03-10T00:00:00-09:00`)},
+				"?time": &table.Cell{T: mustBuildTime(`2012-04-10T00:00:00-08:00`)},
+			},
+			want: false,
+		},
+		{
+			id: `?time = 2012-09-10T00:00:00-08:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2012-09-10T00:00:00-08:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(`2012-03-10T00:00:00-08:00`)},
+			},
+			want: false,
+		},
+		{
+			id: `?time = 2015-03-10T02:00:00-06:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2015-03-10T02:00:00-06:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(`2015-03-10T00:00:00-08:00`)},
+			},
+			want: true,
+		},
+		{
+			id: `?time = 2015-03-10T02:00:00-05:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2015-03-10T02:00:00-05:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(`2015-03-10T00:00:00-08:00`)},
+			},
+			want: false,
+		},
+		{
+			id: `?time = 2015-03-10T09:00:00+01:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2015-03-10T09:00:00+01:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(`2015-03-10T00:00:00-08:00`)},
+			},
+			want: true,
+		},
+		{
+			id: `?time < 2015-03-10T00:00:00-09:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2015-03-10T00:00:00-09:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(`2015-03-10T01:00:00-07:00`)},
+			},
+			want: true,
+		},
+		{
+			id: `?time > 2015-03-10T01:00:00-06:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2015-03-10T01:00:00-06:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(`2015-03-10T00:00:00-08:00`)},
 			},
 			want: true,
 		},
