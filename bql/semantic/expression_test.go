@@ -15,7 +15,6 @@
 package semantic
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -191,26 +190,26 @@ func TestBooleanEvaluationNode(t *testing.T) {
 	}
 }
 
-func mustBuildLiteral(textLiteral string) *literal.Literal {
+func mustBuildLiteral(t *testing.T, textLiteral string) *literal.Literal {
 	lit, err := literal.DefaultBuilder().Parse(textLiteral)
 	if err != nil {
-		panic(fmt.Sprintf("could not parse text literal %q, got error: %v", textLiteral, err))
+		t.Fatalf("could not parse text literal %q, got error: %v", textLiteral, err)
 	}
 	return lit
 }
 
-func mustBuildNodeFromStrings(nodeType, nodeID string) *node.Node {
+func mustBuildNodeFromStrings(t *testing.T, nodeType, nodeID string) *node.Node {
 	n, err := node.NewNodeFromStrings(nodeType, nodeID)
 	if err != nil {
-		panic(fmt.Sprintf("could not build node from type %q and ID %q, got error: %v", nodeType, nodeID, err))
+		t.Fatalf("could not build node from type %q and ID %q, got error: %v", nodeType, nodeID, err)
 	}
 	return n
 }
 
-func mustBuildTime(timeLiteral string) *time.Time {
+func mustBuildTime(t *testing.T, timeLiteral string) *time.Time {
 	time, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(timeLiteral))
 	if err != nil {
-		panic(fmt.Sprintf("could not parse time literal %q, got error: %v", timeLiteral, err))
+		t.Fatalf("could not parse time literal %q, got error: %v", timeLiteral, err)
 	}
 	return &time
 }
@@ -426,7 +425,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 			},
 			r: table.Row{
 				"?foo": &table.Cell{
-					L: mustBuildLiteral(`"abc"^^type:text`),
+					L: mustBuildLiteral(t, `"abc"^^type:text`),
 				},
 			},
 			want: true,
@@ -527,7 +526,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{L: mustBuildLiteral(`"99.0"^^type:float64`)},
+				"?foo": &table.Cell{L: mustBuildLiteral(t, `"99.0"^^type:float64`)},
 			},
 			want: true,
 		},
@@ -547,7 +546,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{L: mustBuildLiteral(`"100"^^type:int64`)},
+				"?foo": &table.Cell{L: mustBuildLiteral(t, `"100"^^type:int64`)},
 			},
 			want: true,
 		},
@@ -567,7 +566,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{L: mustBuildLiteral(`"100"^^type:int64`)},
+				"?foo": &table.Cell{L: mustBuildLiteral(t, `"100"^^type:int64`)},
 			},
 			want: false,
 		},
@@ -587,7 +586,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{N: mustBuildNodeFromStrings("/_", "meowth")},
+				"?foo": &table.Cell{N: mustBuildNodeFromStrings(t, "/_", "meowth")},
 			},
 			want: true,
 		},
@@ -607,7 +606,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?o": &table.Cell{N: mustBuildNodeFromStrings("/u", "paul")},
+				"?o": &table.Cell{N: mustBuildNodeFromStrings(t, "/u", "paul")},
 			},
 			want: false,
 		},
@@ -627,7 +626,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?o": &table.Cell{L: mustBuildLiteral(`"73"^^type:int64`)},
+				"?o": &table.Cell{L: mustBuildLiteral(t, `"73"^^type:int64`)},
 			},
 			want: false,
 		},
@@ -647,7 +646,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{L: mustBuildLiteral(`"10"^^type:int64`)},
+				"?foo": &table.Cell{L: mustBuildLiteral(t, `"10"^^type:int64`)},
 			},
 			want: false,
 		},
@@ -667,7 +666,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?time": &table.Cell{T: mustBuildTime(`2012-02-10T00:00:00-08:00`)},
+				"?time": &table.Cell{T: mustBuildTime(t, `2012-02-10T00:00:00-08:00`)},
 			},
 			want: true,
 		},
@@ -687,7 +686,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?time": &table.Cell{T: mustBuildTime(`2012-04-10T00:00:00-08:00`)},
+				"?time": &table.Cell{T: mustBuildTime(t, `2012-04-10T00:00:00-08:00`)},
 			},
 			want: true,
 		},
@@ -707,7 +706,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?time": &table.Cell{T: mustBuildTime(`2012-03-10T00:00:00-08:00`)},
+				"?time": &table.Cell{T: mustBuildTime(t, `2012-03-10T00:00:00-08:00`)},
 			},
 			want: true,
 		},
@@ -727,7 +726,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?time": &table.Cell{T: mustBuildTime(`2012-02-10T00:00:00-08:00`)},
+				"?time": &table.Cell{T: mustBuildTime(t, `2012-02-10T00:00:00-08:00`)},
 			},
 			want: false,
 		},
@@ -747,7 +746,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?time": &table.Cell{T: mustBuildTime(`2012-04-10T00:00:00-08:00`)},
+				"?time": &table.Cell{T: mustBuildTime(t, `2012-04-10T00:00:00-08:00`)},
 			},
 			want: false,
 		},
@@ -767,7 +766,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?time": &table.Cell{T: mustBuildTime(`2012-03-10T00:00:00-08:00`)},
+				"?time": &table.Cell{T: mustBuildTime(t, `2012-03-10T00:00:00-08:00`)},
 			},
 			want: false,
 		},
@@ -787,7 +786,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?time": &table.Cell{T: mustBuildTime(`2015-03-10T00:00:00-08:00`)},
+				"?time": &table.Cell{T: mustBuildTime(t, `2015-03-10T00:00:00-08:00`)},
 			},
 			want: true,
 		},
@@ -807,7 +806,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?time": &table.Cell{T: mustBuildTime(`2015-03-10T00:00:00-08:00`)},
+				"?time": &table.Cell{T: mustBuildTime(t, `2015-03-10T00:00:00-08:00`)},
 			},
 			want: false,
 		},
@@ -827,7 +826,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?time": &table.Cell{T: mustBuildTime(`2015-03-10T00:00:00-08:00`)},
+				"?time": &table.Cell{T: mustBuildTime(t, `2015-03-10T00:00:00-08:00`)},
 			},
 			want: true,
 		},
@@ -847,7 +846,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?time": &table.Cell{T: mustBuildTime(`2015-03-10T01:00:00-07:00`)},
+				"?time": &table.Cell{T: mustBuildTime(t, `2015-03-10T01:00:00-07:00`)},
 			},
 			want: true,
 		},
@@ -867,7 +866,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?time": &table.Cell{T: mustBuildTime(`2015-03-10T00:00:00-08:00`)},
+				"?time": &table.Cell{T: mustBuildTime(t, `2015-03-10T00:00:00-08:00`)},
 			},
 			want: true,
 		},
