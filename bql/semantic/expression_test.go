@@ -191,6 +191,7 @@ func TestBooleanEvaluationNode(t *testing.T) {
 }
 
 func mustBuildLiteral(t *testing.T, textLiteral string) *literal.Literal {
+	t.Helper()
 	lit, err := literal.DefaultBuilder().Parse(textLiteral)
 	if err != nil {
 		t.Fatalf("could not parse text literal %q, got error: %v", textLiteral, err)
@@ -199,6 +200,7 @@ func mustBuildLiteral(t *testing.T, textLiteral string) *literal.Literal {
 }
 
 func mustBuildNodeFromStrings(t *testing.T, nodeType, nodeID string) *node.Node {
+	t.Helper()
 	n, err := node.NewNodeFromStrings(nodeType, nodeID)
 	if err != nil {
 		t.Fatalf("could not build node from type %q and ID %q, got error: %v", nodeType, nodeID, err)
@@ -207,6 +209,7 @@ func mustBuildNodeFromStrings(t *testing.T, nodeType, nodeID string) *node.Node 
 }
 
 func mustBuildTime(t *testing.T, timeLiteral string) *time.Time {
+	t.Helper()
 	time, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(timeLiteral))
 	if err != nil {
 		t.Fatalf("could not parse time literal %q, got error: %v", timeLiteral, err)
