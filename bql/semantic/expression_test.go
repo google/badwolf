@@ -15,8 +15,9 @@
 package semantic
 
 import (
-	"fmt"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/bql/table"
@@ -189,20 +190,31 @@ func TestBooleanEvaluationNode(t *testing.T) {
 	}
 }
 
-func mustBuildLiteral(textLiteral string) *literal.Literal {
+func mustBuildLiteral(t *testing.T, textLiteral string) *literal.Literal {
+	t.Helper()
 	lit, err := literal.DefaultBuilder().Parse(textLiteral)
 	if err != nil {
-		panic(fmt.Sprintf("could not parse text literal %q, got error: %v", textLiteral, err))
+		t.Fatalf("could not parse text literal %q, got error: %v", textLiteral, err)
 	}
 	return lit
 }
 
-func mustBuildNodeFromStrings(nodeType, nodeID string) *node.Node {
+func mustBuildNodeFromStrings(t *testing.T, nodeType, nodeID string) *node.Node {
+	t.Helper()
 	n, err := node.NewNodeFromStrings(nodeType, nodeID)
 	if err != nil {
-		panic(fmt.Sprintf("could not build node from type %q and ID %q, got error: %v", nodeType, nodeID, err))
+		t.Fatalf("could not build node from type %q and ID %q, got error: %v", nodeType, nodeID, err)
 	}
 	return n
+}
+
+func mustBuildTime(t *testing.T, timeLiteral string) *time.Time {
+	t.Helper()
+	time, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(timeLiteral))
+	if err != nil {
+		t.Fatalf("could not parse time literal %q, got error: %v", timeLiteral, err)
+	}
+	return &time
 }
 
 func TestEvaluatorEvaluate(t *testing.T) {
@@ -416,7 +428,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 			},
 			r: table.Row{
 				"?foo": &table.Cell{
-					L: mustBuildLiteral(`"abc"^^type:text`),
+					L: mustBuildLiteral(t, `"abc"^^type:text`),
 				},
 			},
 			want: true,
@@ -517,7 +529,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{L: mustBuildLiteral(`"99.0"^^type:float64`)},
+				"?foo": &table.Cell{L: mustBuildLiteral(t, `"99.0"^^type:float64`)},
 			},
 			want: true,
 		},
@@ -537,7 +549,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{L: mustBuildLiteral(`"100"^^type:int64`)},
+				"?foo": &table.Cell{L: mustBuildLiteral(t, `"100"^^type:int64`)},
 			},
 			want: true,
 		},
@@ -557,7 +569,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{L: mustBuildLiteral(`"100"^^type:int64`)},
+				"?foo": &table.Cell{L: mustBuildLiteral(t, `"100"^^type:int64`)},
 			},
 			want: false,
 		},
@@ -577,7 +589,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{N: mustBuildNodeFromStrings("/_", "meowth")},
+				"?foo": &table.Cell{N: mustBuildNodeFromStrings(t, "/_", "meowth")},
 			},
 			want: true,
 		},
@@ -597,7 +609,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?o": &table.Cell{N: mustBuildNodeFromStrings("/u", "paul")},
+				"?o": &table.Cell{N: mustBuildNodeFromStrings(t, "/u", "paul")},
 			},
 			want: false,
 		},
@@ -617,7 +629,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?o": &table.Cell{L: mustBuildLiteral(`"73"^^type:int64`)},
+				"?o": &table.Cell{L: mustBuildLiteral(t, `"73"^^type:int64`)},
 			},
 			want: false,
 		},
@@ -637,9 +649,229 @@ func TestEvaluatorEvaluate(t *testing.T) {
 				}),
 			},
 			r: table.Row{
-				"?foo": &table.Cell{L: mustBuildLiteral(`"10"^^type:int64`)},
+				"?foo": &table.Cell{L: mustBuildLiteral(t, `"10"^^type:int64`)},
 			},
 			want: false,
+		},
+		{
+			id: `?time < 2012-03-10T00:00:00-08:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2012-03-10T00:00:00-08:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(t, `2012-02-10T00:00:00-08:00`)},
+			},
+			want: true,
+		},
+		{
+			id: `?time > 2012-03-10T00:00:00-08:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2012-03-10T00:00:00-08:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(t, `2012-04-10T00:00:00-08:00`)},
+			},
+			want: true,
+		},
+		{
+			id: `?time = 2012-03-10T00:00:00-08:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2012-03-10T00:00:00-08:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(t, `2012-03-10T00:00:00-08:00`)},
+			},
+			want: true,
+		},
+		{
+			id: `?time < 2012-01-10T00:00:00-08:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2012-01-10T00:00:00-08:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(t, `2012-02-10T00:00:00-08:00`)},
+			},
+			want: false,
+		},
+		{
+			id: `?time > 2012-05-10T00:00:00-08:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2012-05-10T00:00:00-08:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(t, `2012-04-10T00:00:00-08:00`)},
+			},
+			want: false,
+		},
+		{
+			id: `?time = 2012-09-10T00:00:00-08:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2012-09-10T00:00:00-08:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(t, `2012-03-10T00:00:00-08:00`)},
+			},
+			want: false,
+		},
+		{
+			id: `?time = 2015-03-10T02:00:00-06:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2015-03-10T02:00:00-06:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(t, `2015-03-10T00:00:00-08:00`)},
+			},
+			want: true,
+		},
+		{
+			id: `?time = 2015-03-10T02:00:00-05:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2015-03-10T02:00:00-05:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(t, `2015-03-10T00:00:00-08:00`)},
+			},
+			want: false,
+		},
+		{
+			id: `?time = 2015-03-10T09:00:00+01:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2015-03-10T09:00:00+01:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(t, `2015-03-10T00:00:00-08:00`)},
+			},
+			want: true,
+		},
+		{
+			id: `?time < 2015-03-10T00:00:00-09:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2015-03-10T00:00:00-09:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(t, `2015-03-10T01:00:00-07:00`)},
+			},
+			want: true,
+		},
+		{
+			id: `?time > 2015-03-10T01:00:00-06:00`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?time",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemTime,
+					Text: `2015-03-10T01:00:00-06:00`,
+				}),
+			},
+			r: table.Row{
+				"?time": &table.Cell{T: mustBuildTime(t, `2015-03-10T00:00:00-08:00`)},
+			},
+			want: true,
 		},
 	}
 	for _, entry := range testTable {

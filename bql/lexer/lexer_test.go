@@ -355,6 +355,39 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemEOF},
 			},
 		},
+		{
+			`HAVING ?time < 2010-03-10T00:00:00-08:00;`,
+			[]Token{
+				{Type: ItemHaving, Text: "HAVING"},
+				{Type: ItemBinding, Text: "?time"},
+				{Type: ItemLT, Text: "<"},
+				{Type: ItemTime, Text: `2010-03-10T00:00:00-08:00`},
+				{Type: ItemSemicolon, Text: ";"},
+				{Type: ItemEOF},
+			},
+		},
+		{
+			`HAVING ?time > 2010-03-10T00:00:00-08:00;`,
+			[]Token{
+				{Type: ItemHaving, Text: "HAVING"},
+				{Type: ItemBinding, Text: "?time"},
+				{Type: ItemGT, Text: ">"},
+				{Type: ItemTime, Text: `2010-03-10T00:00:00-08:00`},
+				{Type: ItemSemicolon, Text: ";"},
+				{Type: ItemEOF},
+			},
+		},
+		{
+			`HAVING ?time = 2010-03-10T00:00:00-08:00;`,
+			[]Token{
+				{Type: ItemHaving, Text: "HAVING"},
+				{Type: ItemBinding, Text: "?time"},
+				{Type: ItemEQ, Text: "="},
+				{Type: ItemTime, Text: `2010-03-10T00:00:00-08:00`},
+				{Type: ItemSemicolon, Text: ";"},
+				{Type: ItemEOF},
+			},
+		},
 	}
 
 	for _, test := range table {
@@ -493,6 +526,56 @@ func TestValidTokenQuery(t *testing.T) {
 				ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
 				ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding,
 				ItemRBracket, ItemBefore, ItemTime, ItemLimit, ItemLiteral, ItemSemicolon, ItemEOF,
+			},
+		},
+		{
+			`select ?s ?p ?time ?o
+			from ?foo
+			where {
+				?s ?p at ?time ?o
+			}
+			having ?time < 2010-03-10T00:00:00-08:00;`,
+			[]TokenType{
+				ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemBinding,
+				ItemFrom, ItemBinding,
+				ItemWhere, ItemLBracket,
+				ItemBinding, ItemBinding, ItemAt, ItemBinding, ItemBinding,
+				ItemRBracket,
+				ItemHaving, ItemBinding, ItemLT, ItemTime, ItemSemicolon, ItemEOF,
+			},
+		},
+		{
+			`select ?s ?p ?time ?o
+			from ?foo
+			where {
+				?s ?p at ?time ?o
+			}
+			having ?time > 2010-03-10T00:00:00-08:00
+			limit "10"^^type:int64;`,
+			[]TokenType{
+				ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemBinding,
+				ItemFrom, ItemBinding,
+				ItemWhere, ItemLBracket,
+				ItemBinding, ItemBinding, ItemAt, ItemBinding, ItemBinding,
+				ItemRBracket,
+				ItemHaving, ItemBinding, ItemGT, ItemTime,
+				ItemLimit, ItemLiteral, ItemSemicolon, ItemEOF,
+			},
+		},
+		{
+			`select ?s ?p ?time ?o
+			from ?foo
+			where {
+				?s ?p at ?time ?o
+			}
+			having ?time = 2010-03-10T00:00:00-08:00;`,
+			[]TokenType{
+				ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemBinding,
+				ItemFrom, ItemBinding,
+				ItemWhere, ItemLBracket,
+				ItemBinding, ItemBinding, ItemAt, ItemBinding, ItemBinding,
+				ItemRBracket,
+				ItemHaving, ItemBinding, ItemEQ, ItemTime, ItemSemicolon, ItemEOF,
 			},
 		},
 	}

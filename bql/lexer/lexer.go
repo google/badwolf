@@ -385,6 +385,10 @@ func lexToken(l *lexer) stateFn {
 			if unicode.IsDigit(r) && (l.lastTokenType == ItemBefore || l.lastTokenType == ItemAfter || l.lastTokenType == ItemBetween) {
 				return lexPredicateGlobalTime
 			}
+			// Special parsing for local level timestamps (used for comparisons inside the HAVING clause).
+			if unicode.IsDigit(r) && (l.lastTokenType == ItemLT || l.lastTokenType == ItemGT || l.lastTokenType == ItemEQ) {
+				return lexTime
+			}
 			switch r {
 			case binding:
 				l.next()
@@ -794,6 +798,24 @@ func lexPredicateGlobalTime(l *lexer) stateFn {
 	} else {
 		l.emit(ItemPredicateBound)
 	}
+	return lexSpace
+}
+
+// lexTime lexes a time out of the input specifically for timestamp comparisons inside the HAVING clause.
+func lexTime(l *lexer) stateFn {
+	l.next()
+	var nr rune
+	for {
+		nr = l.next()
+		if nr == semicolon || nr == rightPar {
+			l.backup()
+			break
+		}
+		if unicode.IsSpace(nr) || nr == eof {
+			break
+		}
+	}
+	l.emit(ItemTime)
 	return lexSpace
 }
 

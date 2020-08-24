@@ -914,12 +914,13 @@ func topHavingClauses() []*Clause {
 	}
 }
 func havingClauses() []*Clause {
-	return []*Clause{{
-		Elements: []Element{
-			NewTokenType(lexer.ItemBinding),
-			NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemBinding),
+				NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
+			},
 		},
-	},
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemNode),
@@ -929,6 +930,12 @@ func havingClauses() []*Clause {
 		{
 			Elements: []Element{
 				NewTokenType(lexer.ItemLiteral),
+				NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
+			},
+		},
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemTime),
 				NewSymbol("HAVING_CLAUSE_BINARY_COMPOSITE"),
 			},
 		},

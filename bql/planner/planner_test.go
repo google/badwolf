@@ -756,6 +756,57 @@ func TestPlannerQuery(t *testing.T) {
 			nBindings: 1,
 			nRows:     1,
 		},
+		{
+			q: `SELECT ?p, ?time
+				FROM ?test
+				WHERE {
+					/u<peter> ?p AT ?time ?o
+				}
+				HAVING ?time < 2016-03-01T00:00:00-08:00;`,
+			nBindings: 2,
+			nRows:     2,
+		},
+		{
+			q: `SELECT ?p, ?time
+				FROM ?test
+				WHERE {
+					/u<peter> ?p AT ?time ?o
+				}
+				HAVING ?time < 2016-03-01T00:00:00-08:00
+				LIMIT "1"^^type:int64;`,
+			nBindings: 2,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?s, ?p, ?p_id, ?time
+				FROM ?test
+				WHERE {
+					?s ?p ID ?p_id AT ?time ?o
+				}
+				HAVING (?p_id < "in"^^type:text) AND (?time > 2016-02-01T00:00:00-08:00);`,
+			nBindings: 4,
+			nRows:     2,
+		},
+		{
+			q: `SELECT ?p, ?time
+				FROM ?test
+				WHERE {
+					/u<peter> ?p AT ?time ?o
+				}
+				HAVING ?time = 2016-01-01T01:00:00-07:00;`,
+			nBindings: 2,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?p, ?time
+				FROM ?test
+				WHERE {
+					/u<peter> ?p AT ?time ?o
+				}
+				HAVING ?time > 2016-02-01T00:00:00-07:00;`,
+			nBindings: 2,
+			nRows:     3,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()

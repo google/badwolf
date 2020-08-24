@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/bql/table"
@@ -249,6 +250,44 @@ func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 	}
 }
 
+// comparisonForTimeLiteral is the internal representation of an expression of comparison between a binding and a time literal.
+type comparisonForTimeLiteral struct {
+	op OP // operation.
+
+	lB  string // left binding.
+	rTL string // right time literal.
+}
+
+func (e *comparisonForTimeLiteral) Evaluate(r table.Row) (bool, error) {
+	eL, err := cellFromRow(e.lB, r)
+	if err != nil {
+		return false, fmt.Errorf("comparisonForTimeLiteral.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.lB, r, err)
+	}
+	if eL.S != nil {
+		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", strings.TrimSpace(e.rTL))
+	}
+	if eL.T == nil {
+		return false, nil
+	}
+
+	timeBinding := eL.T
+	timeLiteral, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(e.rTL))
+	if err != nil {
+		return false, fmt.Errorf("comparisonForTimeLiteral.Evaluate failed, could not parse time from the string %q, got error: %v", strings.TrimSpace(e.rTL), err)
+	}
+
+	switch e.op {
+	case EQ:
+		return timeBinding.Equal(timeLiteral), nil
+	case LT:
+		return timeBinding.Before(timeLiteral), nil
+	case GT:
+		return timeBinding.After(timeLiteral), nil
+	default:
+		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op.String())
+	}
+}
+
 // NewEvaluationExpression creates a new evaluator for two bindings in a row.
 func NewEvaluationExpression(op OP, lB, rB string) (Evaluator, error) {
 	l, r := strings.TrimSpace(lB), strings.TrimSpace(rB)
@@ -300,6 +339,24 @@ func NewEvaluationExpressionForNodeLiteral(op OP, lB, rNL string) (Evaluator, er
 		}, nil
 	default:
 		return nil, errors.New("evaluation expressions require the operation to be one for the following '=', '<', '>'")
+	}
+}
+
+// NewEvaluationExpressionForTimeLiteral creates a new evaluator for binding and time literal.
+func NewEvaluationExpressionForTimeLiteral(op OP, lB, rTL string) (Evaluator, error) {
+	l, r := strings.TrimSpace(lB), strings.TrimSpace(rTL)
+	if l == "" || r == "" {
+		return nil, fmt.Errorf("evaluation expression got operands %q and %q, but operands cannot be empty", l, r)
+	}
+	switch op {
+	case EQ, LT, GT:
+		return &comparisonForTimeLiteral{
+			op:  op,
+			lB:  l,
+			rTL: r,
+		}, nil
+	default:
+		return nil, errors.New("evaluation expressions require the operation to be one of the following: '=', '<', '>'")
 	}
 }
 
@@ -473,6 +530,18 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 
 		if bndTkn.Type == lexer.ItemNode {
 			e, err := NewEvaluationExpressionForNodeLiteral(op, tkn.Text, bndTkn.Text)
+			if err != nil {
+				return nil, nil, err
+			}
+			var res []ConsumedElement
+			if len(tail) > 2 {
+				res = tail[2:]
+			}
+			return e, res, nil
+		}
+
+		if bndTkn.Type == lexer.ItemTime {
+			e, err := NewEvaluationExpressionForTimeLiteral(op, tkn.Text, bndTkn.Text)
 			if err != nil {
 				return nil, nil, err
 			}
