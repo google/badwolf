@@ -859,7 +859,7 @@ func TestPlannerQuery(t *testing.T) {
 		// Actual test:
 		tbl, err := plnr.Execute(ctx)
 		if err != nil {
-			t.Fatalf("planner.Execute(%s)\n= _, %v; want _, nil error", entry.q, err)
+			t.Fatalf("planner.Execute(%s)\n= _, %v; want _, nil", entry.q, err)
 		}
 		if got, want := len(tbl.Bindings()), entry.nBindings; got != want {
 			t.Errorf("planner.Execute(%s)\n= a Table with %d bindings; want %d", entry.q, got, want)
@@ -928,7 +928,7 @@ func TestPlannerQueryError(t *testing.T) {
 		// Actual test:
 		_, err = plnr.Execute(ctx)
 		if err == nil {
-			t.Errorf("planner.Execute(%s)\n= _, nil; want _, non-nil error", entry.q)
+			t.Errorf("planner.Execute(%s)\n= _, nil; want _, error", entry.q)
 		}
 	}
 }
