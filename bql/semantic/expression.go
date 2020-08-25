@@ -17,7 +17,6 @@ package semantic
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
 
@@ -140,7 +139,7 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 
 	switch e.op {
 	case EQ:
-		return reflect.DeepEqual(csEL, csER), nil
+		return csEL == csER, nil
 	case LT:
 		return csEL < csER, nil
 	case GT:
@@ -240,7 +239,7 @@ func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 
 	switch e.op {
 	case EQ:
-		return reflect.DeepEqual(csEL, csER), nil
+		return csEL == csER, nil
 	case LT:
 		return csEL < csER, nil
 	case GT:
@@ -285,6 +284,40 @@ func (e *comparisonForTimeLiteral) Evaluate(r table.Row) (bool, error) {
 		return timeBinding.After(timeLiteral), nil
 	default:
 		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op.String())
+	}
+}
+
+// comparisonForPredicateLiteral represents the internal representation of an expression of comparison between a binding and a predicate literal.
+type comparisonForPredicateLiteral struct {
+	op OP // operation.
+
+	lB  string // left binding.
+	rPL string // right predicate literal.
+}
+
+func (e *comparisonForPredicateLiteral) Evaluate(r table.Row) (bool, error) {
+	eL, err := cellFromRow(e.lB, r)
+	if err != nil {
+		return false, fmt.Errorf("comparisonForPredicateLiteral.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.lB, r, err)
+	}
+	if eL.S != nil {
+		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", strings.TrimSpace(e.rPL))
+	}
+	if eL.P == nil {
+		return false, nil
+	}
+
+	csEL, err := formatCell(eL)
+	if err != nil {
+		return false, fmt.Errorf("comparisonForPredicateLiteral.Evaluate failed, the call for formatCell(%s) returned error: %v", eL, err)
+	}
+	csER := strings.TrimSpace(e.rPL)
+
+	switch e.op {
+	case EQ:
+		return csEL == csER, nil
+	default:
+		return false, fmt.Errorf(`comparisonForPredicateLiteral.Evaluate got operation %q, but it accepts only the "=" operation. For ">" and "<" think about extracting bindings with the keywords ID/AT and using them for comparisons`, e.op)
 	}
 }
 
@@ -354,6 +387,24 @@ func NewEvaluationExpressionForTimeLiteral(op OP, lB, rTL string) (Evaluator, er
 			op:  op,
 			lB:  l,
 			rTL: r,
+		}, nil
+	default:
+		return nil, errors.New("evaluation expressions require the operation to be one of the following: '=', '<', '>'")
+	}
+}
+
+// NewEvaluationExpressionForPredicateLiteral creates a new evaluator for binding and predicate literal.
+func NewEvaluationExpressionForPredicateLiteral(op OP, lB, rTL string) (Evaluator, error) {
+	l, r := strings.TrimSpace(lB), strings.TrimSpace(rTL)
+	if l == "" || r == "" {
+		return nil, fmt.Errorf("evaluation expression got operands %q and %q, but operands cannot be empty", l, r)
+	}
+	switch op {
+	case EQ, LT, GT:
+		return &comparisonForPredicateLiteral{
+			op:  op,
+			lB:  l,
+			rPL: r,
 		}, nil
 	default:
 		return nil, errors.New("evaluation expressions require the operation to be one of the following: '=', '<', '>'")
@@ -542,6 +593,18 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 
 		if bndTkn.Type == lexer.ItemTime {
 			e, err := NewEvaluationExpressionForTimeLiteral(op, tkn.Text, bndTkn.Text)
+			if err != nil {
+				return nil, nil, err
+			}
+			var res []ConsumedElement
+			if len(tail) > 2 {
+				res = tail[2:]
+			}
+			return e, res, nil
+		}
+
+		if bndTkn.Type == lexer.ItemPredicate {
+			e, err := NewEvaluationExpressionForPredicateLiteral(op, tkn.Text, bndTkn.Text)
 			if err != nil {
 				return nil, nil, err
 			}

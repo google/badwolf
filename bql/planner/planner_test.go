@@ -807,6 +807,36 @@ func TestPlannerQuery(t *testing.T) {
 			nBindings: 2,
 			nRows:     3,
 		},
+		{
+			q: `SELECT ?s, ?p, ?o
+				FROM ?test
+				WHERE {
+					?s ?p ?o
+				}
+				HAVING ?p = "height_cm"@[];`,
+			nBindings: 3,
+			nRows:     4,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o
+				FROM ?test
+				WHERE {
+					?s ?p ?o
+				}
+				HAVING ?p = "bought"@[2016-03-01T00:00:00-08:00];`,
+			nBindings: 3,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o
+				FROM ?test
+				WHERE {
+					?s ?p ?o
+				}
+				HAVING (?p = "tag"@[]) OR (?p = "bought"@[2016-02-01T00:00:00-08:00]);`,
+			nBindings: 3,
+			nRows:     2,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
@@ -829,7 +859,7 @@ func TestPlannerQuery(t *testing.T) {
 		// Actual test:
 		tbl, err := plnr.Execute(ctx)
 		if err != nil {
-			t.Fatalf("planner.Execute(%s)\n= _, %v; want nil error", entry.q, err)
+			t.Fatalf("planner.Execute(%s)\n= _, %v; want _, nil", entry.q, err)
 		}
 		if got, want := len(tbl.Bindings()), entry.nBindings; got != want {
 			t.Errorf("planner.Execute(%s)\n= a Table with %d bindings; want %d", entry.q, got, want)
@@ -860,6 +890,22 @@ func TestPlannerQueryError(t *testing.T) {
 				}
 				HAVING ?s_id = /u<alice>;`,
 		},
+		{
+			q: `SELECT ?s, ?p, ?o
+				FROM ?test
+				WHERE {
+					?s ?p ?o
+				}
+				HAVING ?p < "height_cm"@[];`,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o
+				FROM ?test
+				WHERE {
+					?s ?p ?o
+				}
+				HAVING ?p > "bought"@[2016-01-01T00:00:00-08:00];`,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
@@ -882,7 +928,7 @@ func TestPlannerQueryError(t *testing.T) {
 		// Actual test:
 		_, err = plnr.Execute(ctx)
 		if err == nil {
-			t.Errorf("planner.Execute(%s)\n= _, nil; want non-nil error", entry.q)
+			t.Errorf("planner.Execute(%s)\n= _, nil; want _, error", entry.q)
 		}
 	}
 }

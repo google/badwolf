@@ -23,6 +23,7 @@ import (
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/triple/literal"
 	"github.com/google/badwolf/triple/node"
+	"github.com/google/badwolf/triple/predicate"
 )
 
 func TestEvaluationNode(t *testing.T) {
@@ -215,6 +216,15 @@ func mustBuildTime(t *testing.T, timeLiteral string) *time.Time {
 		t.Fatalf("could not parse time literal %q, got error: %v", timeLiteral, err)
 	}
 	return &time
+}
+
+func mustBuildPredicate(t *testing.T, predicateLiteral string) *predicate.Predicate {
+	t.Helper()
+	p, err := predicate.Parse(predicateLiteral)
+	if err != nil {
+		t.Fatalf("could not parse predicate literal %q, got error: %v", predicateLiteral, err)
+	}
+	return p
 }
 
 func TestEvaluatorEvaluate(t *testing.T) {
@@ -873,6 +883,66 @@ func TestEvaluatorEvaluate(t *testing.T) {
 			},
 			want: true,
 		},
+		{
+			id: `?p = "height_cm"@[]`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?p",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"height_cm"@[]`,
+				}),
+			},
+			r: table.Row{
+				"?p": &table.Cell{P: mustBuildPredicate(t, `"height_cm"@[]`)},
+			},
+			want: true,
+		},
+		{
+			id: `?p = "bought"@[2016-01-01T00:00:00-08:00]`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?p",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"bought"@[2016-01-01T00:00:00-08:00]`,
+				}),
+			},
+			r: table.Row{
+				"?p": &table.Cell{P: mustBuildPredicate(t, `"bought"@[2016-01-01T00:00:00-08:00]`)},
+			},
+			want: true,
+		},
+		{
+			id: `?p = "height_cm"@[]`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?p",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemEQ,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"height_cm"@[]`,
+				}),
+			},
+			r: table.Row{
+				"?p": &table.Cell{P: mustBuildPredicate(t, `"bought"@[2016-01-01T00:00:00-08:00]`)},
+			},
+			want: false,
+		},
 	}
 	for _, entry := range testTable {
 		eval, err := NewEvaluator(entry.in)
@@ -882,7 +952,7 @@ func TestEvaluatorEvaluate(t *testing.T) {
 
 		got, err := eval.Evaluate(entry.r)
 		if err != nil {
-			t.Errorf("%s: eval.Evaluate(%v) = _, %v; want nil error", entry.id, entry.r, err)
+			t.Errorf("%s: eval.Evaluate(%v) = _, %v; want _, nil error", entry.id, entry.r, err)
 		}
 		if want := entry.want; got != want {
 			t.Errorf("%s: eval.Evaluate(%v) = %v, _; want %v, _", entry.id, entry.r, got, want)
@@ -892,10 +962,9 @@ func TestEvaluatorEvaluate(t *testing.T) {
 
 func TestEvaluatorEvaluateError(t *testing.T) {
 	testTable := []struct {
-		id   string
-		in   []ConsumedElement
-		r    table.Row
-		want bool
+		id string
+		in []ConsumedElement
+		r  table.Row
 	}{
 		{
 			id: `?s ID ?id > "37"^^type:int64`,
@@ -915,7 +984,6 @@ func TestEvaluatorEvaluateError(t *testing.T) {
 			r: table.Row{
 				"?id": &table.Cell{S: table.CellString("peter")},
 			},
-			want: false,
 		},
 		{
 			id: `?s ID ?id = /u<peter>`,
@@ -935,7 +1003,44 @@ func TestEvaluatorEvaluateError(t *testing.T) {
 			r: table.Row{
 				"?id": &table.Cell{S: table.CellString("peter")},
 			},
-			want: false,
+		},
+		{
+			id: `?p < "height_cm"@[]`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?p",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"height_cm"@[]`,
+				}),
+			},
+			r: table.Row{
+				"?p": &table.Cell{P: mustBuildPredicate(t, `"bought"@[]`)},
+			},
+		},
+		{
+			id: `?p > "bought"@[2016-01-01T00:00:00-08:00]`,
+			in: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?p",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemGT,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemPredicate,
+					Text: `"bought"@[2016-01-01T00:00:00-08:00]`,
+				}),
+			},
+			r: table.Row{
+				"?p": &table.Cell{P: mustBuildPredicate(t, `"height_cm"@[2016-01-01T00:00:00-08:00]`)},
+			},
 		},
 	}
 
@@ -947,9 +1052,9 @@ func TestEvaluatorEvaluateError(t *testing.T) {
 
 		got, err := eval.Evaluate(entry.r)
 		if err == nil {
-			t.Errorf("%s: eval.Evaluate(%v) = _, nil; want non-nil error", entry.id, entry.r)
+			t.Errorf("%s: eval.Evaluate(%v) = _, nil; want _, non-nil error", entry.id, entry.r)
 		}
-		if want := entry.want; got != want {
+		if want := false; got != want {
 			t.Errorf("%s: eval.Evaluate(%v) = %v, _; want %v, _", entry.id, entry.r, got, want)
 		}
 	}
