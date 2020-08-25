@@ -17,7 +17,6 @@ package semantic
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
 
@@ -140,7 +139,7 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 
 	switch e.op {
 	case EQ:
-		return reflect.DeepEqual(csEL, csER), nil
+		return csEL == csER, nil
 	case LT:
 		return csEL < csER, nil
 	case GT:
@@ -240,7 +239,7 @@ func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
 
 	switch e.op {
 	case EQ:
-		return reflect.DeepEqual(csEL, csER), nil
+		return csEL == csER, nil
 	case LT:
 		return csEL < csER, nil
 	case GT:
@@ -316,7 +315,7 @@ func (e *comparisonForPredicateLiteral) Evaluate(r table.Row) (bool, error) {
 
 	switch e.op {
 	case EQ:
-		return reflect.DeepEqual(csEL, csER), nil
+		return csEL == csER, nil
 	default:
 		return false, fmt.Errorf(`comparisonForPredicateLiteral.Evaluate got operation %q, but it accepts only the "=" operation. For ">" and "<" think about extracting bindings with the keywords ID/AT and using them for comparisons`, e.op)
 	}
