@@ -983,6 +983,130 @@ func TestPlannerQuery(t *testing.T) {
 			nBindings: 2,
 			nRows:     5,
 		},
+		{
+			q: `SELECT ?p, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ?o .
+					FILTER latest(?p)
+				};`,
+			nBindings: 2,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?p_alias, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p AS ?p_alias ?o .
+					FILTER latest(?p_alias)
+				};`,
+			nBindings: 2,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?p, ?o
+				FROM ?test
+				WHERE {
+					/l<barcelona> ?p ?o .
+					FILTER latest(?o)
+				};`,
+			nBindings: 2,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?p, ?o_alias
+				FROM ?test
+				WHERE {
+					/l<barcelona> ?p ?o AS ?o_alias .
+					FILTER latest(?o_alias)
+				};`,
+			nBindings: 2,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?p1, ?p2
+				FROM ?test
+				WHERE {
+					/u<peter> ?p1 ?o1 .
+					/item/book<000> ?p2 ?o2 .
+					FILTER latest(?p1) .
+					FILTER latest(?p2)
+				};`,
+			nBindings: 2,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o
+				FROM ?test
+				WHERE {
+					?s ?p ?o .
+					FILTER latest(?p)
+				};`,
+			nBindings: 3,
+			nRows:     3,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o
+				FROM ?test
+				WHERE {
+					?s ?p ?o .
+					FILTER latest(?o)
+				};`,
+			nBindings: 3,
+			nRows:     2,
+		},
+		{
+			q: `SELECT ?s, ?p_alias, ?o
+				FROM ?test
+				WHERE {
+					?s "bought"@[2016-03-01T00:00:00-08:00] AS ?p_alias ?o .
+					FILTER latest(?p_alias)
+				};`,
+			nBindings: 3,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o_alias
+				FROM ?test
+				WHERE {
+					?s ?p "turned"@[2016-03-01T00:00:00-08:00] AS ?o_alias .
+					FILTER latest(?o_alias)
+				};`,
+			nBindings: 3,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o
+				FROM ?test
+				WHERE {
+					?s "bought"@[?time] ?o .
+					OPTIONAL { ?s ?p ?o } .
+					FILTER latest(?p)
+				};`,
+			nBindings: 3,
+			nRows:     6,
+		},
+		{
+			q: `SELECT ?p
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ?o1 .
+					/u<paul> ?p ?o2 .
+					FILTER latest(?p)
+				};`,
+			nBindings: 1,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?p, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ?o .
+					FILTER lAtEsT(?p) .
+				};`,
+			nBindings: 2,
+			nRows:     1,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
@@ -1067,6 +1191,40 @@ func TestPlannerQueryError(t *testing.T) {
 					?s "height_cm"@[] ?height
 				}
 				HAVING ?s > /u<alice>;`,
+		},
+		{
+			q: `SELECT ?p, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ?o .
+					FILTER latest(?p) .
+					FILTER latest(?p)
+				};`,
+		},
+		{
+			q: `SELECT ?p, ?o
+				FROM ?test
+				WHERE {
+					/l<barcelona> ?p ?o .
+					FILTER latest(?p) .
+					FILTER latest(?o)
+				};`,
+		},
+		{
+			q: `SELECT ?p, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ?o .
+					FILTER latest(?b_not_exist)
+				};`,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o
+				FROM ?test
+				WHERE {
+					?s ID ?sID ?p ?o .
+					FILTER latest(?sID)
+				};`,
 		},
 	}
 
