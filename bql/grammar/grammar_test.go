@@ -194,6 +194,41 @@ func TestAcceptByParse(t *testing.T) {
 			?n "_object"@[] ?o};`,
 		// Show the graphs.
 		`show graphs;`,
+		// Test optional trailing dot after the last clause inside WHERE.
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+		 };`,
+		`select ?a
+		 from ?b
+		 where {
+			/u<paul> ?p ?o .
+		 };`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+			/u<paul> ?p ?o .
+		 };`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+			?ss ?p ?o .
+		 };`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+			optional {?x ?w ?z } .
+		 };`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+			/u<paul> ?p ?o
+		 };`,
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
@@ -351,6 +386,31 @@ func TestRejectByParse(t *testing.T) {
 		 where {?n "_subject"@[] ?s.
 			?n "_predicate"@[] ?p.
 			?n "_object"@[] ?o};`,
+		// Test invalid trailing dot use inside WHERE.
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o
+			/u<paul> ?p ?o .
+		};`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o
+			?ss ?p ?o .
+		};`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o
+			optional {?x ?w ?z } .
+		};`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o
+			/u<paul> ?p ?o
+		};`,
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
