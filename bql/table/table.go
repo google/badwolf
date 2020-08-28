@@ -891,9 +891,9 @@ func toMap(aaps []AliasAccPair) map[string]map[string]AliasAccPair {
 // accumulator functions to each group. Finally, the table metadata gets
 // updated to reflect the reduce operation.
 func (t *Table) Reduce(cfg SortConfig, aaps []AliasAccPair) error {
+	maaps := toMap(aaps)
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	maaps := toMap(aaps)
 	// Input validation tests.
 	if len(t.AvailableBindings) != len(maaps) {
 		return fmt.Errorf("table.Reduce cannot project bindings; current %v, requested %v", t.AvailableBindings, aaps)
