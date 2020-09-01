@@ -361,6 +361,7 @@ func clauses() []*Clause {
 				NewSymbol("MORE_CLAUSES"),
 			},
 		},
+		{},
 	}
 }
 

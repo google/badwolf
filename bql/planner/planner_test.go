@@ -837,6 +837,45 @@ func TestPlannerQuery(t *testing.T) {
 			nBindings: 3,
 			nRows:     2,
 		},
+		{
+			q: `SELECT ?p, ?o
+				FROM ?test
+				WHERE {
+					/u<joe> ?p ?o .
+				};`,
+			nBindings: 2,
+			nRows:     2,
+		},
+		{
+			q: `SELECT ?o
+				FROM ?test
+				WHERE {
+					/u<joe> "parent_of"@[] ?o .
+					?o "parent_of"@[] /u<john> .
+				};`,
+			nBindings: 1,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?p1, ?p2
+				FROM ?test
+				WHERE {
+					/u<joe> ?p1 /u<mary> .
+					/u<joe> ?p2 /u<peter> .
+				};`,
+			nBindings: 2,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?car
+				FROM ?test
+				WHERE {
+					?car "is_a"@[] /t<car> .
+					OPTIONAL { /c<model O> "is_a"@[] /t<car> } .
+				};`,
+			nBindings: 1,
+			nRows:     4,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
