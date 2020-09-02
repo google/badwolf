@@ -327,6 +327,7 @@ func moreClauses() []*Clause {
 			Elements: []Element{
 				NewTokenType(lexer.ItemDot),
 				NewSymbol("CLAUSES"),
+				NewSymbol("FILTER_CLAUSES"),
 			},
 		},
 		{},
@@ -359,6 +360,33 @@ func clauses() []*Clause {
 				NewSymbol("PREDICATE"),
 				NewSymbol("OBJECT"),
 				NewSymbol("MORE_CLAUSES"),
+			},
+		},
+		{},
+	}
+}
+
+func moreFilterClauses() []*Clause {
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemDot),
+				NewSymbol("FILTER_CLAUSES"),
+			},
+		},
+		{},
+	}
+}
+func filterClauses() []*Clause {
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemFilter),
+				NewTokenType(lexer.ItemFilterFunction),
+				NewTokenType(lexer.ItemLPar),
+				NewTokenType(lexer.ItemBinding),
+				NewTokenType(lexer.ItemRPar),
+				NewSymbol("MORE_FILTER_CLAUSES"),
 			},
 		},
 		{},
@@ -1266,6 +1294,8 @@ func BQL() *Grammar {
 		"MORE_CLAUSES":                           moreClauses(),
 		"CLAUSES":                                clauses(),
 		"OPTIONAL_CLAUSE":                        optionalClauses(),
+		"FILTER_CLAUSES":                         filterClauses(),
+		"MORE_FILTER_CLAUSES":                    moreFilterClauses(),
 		"SUBJECT_EXTRACT":                        subjectExtractClauses(),
 		"SUBJECT_TYPE":                           subjectTypeClauses(),
 		"SUBJECT_ID":                             subjectIDClauses(),
