@@ -194,6 +194,20 @@ func TestAcceptByParse(t *testing.T) {
 			?n "_object"@[] ?o};`,
 		// Show the graphs.
 		`show graphs;`,
+		// Test FILTER clause inside WHERE.
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+			FILTER latest(?p)
+		 };`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+			FILTER latest(?p) .
+			FILTER latest(?o)
+		 };`,
 		// Test optional trailing dot after the last clause inside WHERE.
 		`select ?a
 		 from ?b
@@ -228,6 +242,19 @@ func TestAcceptByParse(t *testing.T) {
 		 where {
 			?s ?p ?o .
 			/u<paul> ?p ?o
+		 };`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+			FILTER latest(?p) .
+		 };`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+			FILTER latest(?p) .
+			FILTER latest(?o) .
 		 };`,
 	}
 	p, err := NewParser(BQL())
@@ -386,6 +413,46 @@ func TestRejectByParse(t *testing.T) {
 		 where {?n "_subject"@[] ?s.
 			?n "_predicate"@[] ?p.
 			?n "_object"@[] ?o};`,
+		// Test invalid FILTER clause inside WHERE.
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+			FILTER latest ?p
+		 };`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+			FILTER latest (?p)
+		 };`,
+		`select ?a
+		 from ?b
+		 where {
+			FILTER latest(?p) .
+			?s ?p ?o
+		 };`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+			FILTER latest(?p) .
+			/u<paul> ?p ?o
+		 };`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+			?s ?p ?o .
+			FILTER latest(?p) .
+			/u<paul> ?p ?o
+		 };`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+			FILTER late^st(?p)
+		 };`,
 		// Test invalid trailing dot use inside WHERE.
 		`select ?a
 		 from ?b
@@ -411,6 +478,19 @@ func TestRejectByParse(t *testing.T) {
 			?s ?p ?o
 			/u<paul> ?p ?o
 		};`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o
+			FILTER latest(?p)
+		 };`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+			FILTER latest(?p)
+			FILTER latest(?o)
+		 };`,
 	}
 	p, err := NewParser(BQL())
 	if err != nil {
@@ -565,6 +645,13 @@ func TestAcceptQueryBySemanticParse(t *testing.T) {
 		`select ?s from ?g where{/_<foo> as ?s  ?p "id"@[?foo, ?bar] as ?o} order by ?s;`,
 		`select ?s as ?a, ?o as ?b, ?o as ?c from ?g where{?s ?p ?o} order by ?a ASC, ?b DESC;`,
 		`select ?s as ?a, ?o as ?b, ?o as ?c from ?g where{?s ?p ?o} order by ?a ASC, ?b DESC, ?a ASC, ?b DESC, ?c;`,
+		// Test valid FILTER clause for grammar with hooks.
+		`select ?p
+		 from ?b
+		 where {
+			?s ?p ?o .
+			FILTER latest(?p)
+		 };`,
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
@@ -596,6 +683,13 @@ func TestRejectByParseAndSemantic(t *testing.T) {
 		`select ?s as ?a, ?o as ?b, ?o as ?c from ?g where{?s ?p ?o} order by ?a ASC, ?a DESC;`,
 		// Wrong limit literal.
 		`select ?s as ?a, ?o as ?b, ?o as ?c from ?g where{?s ?p ?o} LIMIT "true"^^type:bool;`,
+		// Reject not supported FILTER function.
+		`select ?p, ?o
+		 from ?test
+		 where {
+			/u<peter> ?p ?o .
+			FILTER notSupportedFilterFunction(?p)
+		 };`,
 	}
 	p, err := NewParser(SemanticBQL())
 	if err != nil {
