@@ -302,6 +302,7 @@ const (
 	from           = "from"
 	where          = "where"
 	optional       = "optional"
+	filter         = "filter"
 	as             = "as"
 	before         = "before"
 	after          = "after"
@@ -410,6 +411,9 @@ func lexToken(l *lexer) stateFn {
 				return lexPredicateOrLiteral
 			}
 			if unicode.IsLetter(r) {
+				if l.lastTokenType == ItemFilter {
+					return lexFilterFunction
+				}
 				return lexKeyword
 			}
 		}
@@ -625,6 +629,10 @@ func lexKeyword(l *lexer) stateFn {
 		consumeKeyword(l, ItemOptional)
 		return lexSpace
 	}
+	if strings.EqualFold(input, filter) {
+		consumeKeyword(l, ItemFilter)
+		return lexSpace
+	}
 	if strings.EqualFold(input, typeKeyword) {
 		consumeKeyword(l, ItemType)
 		return lexSpace
@@ -654,6 +662,25 @@ func lexKeyword(l *lexer) stateFn {
 	}
 	l.emitError("found unknown keyword")
 	return nil
+}
+
+// lexFilterFunction lexes a filter function out of the input (used in FILTER clauses).
+func lexFilterFunction(l *lexer) stateFn {
+	l.next()
+	var nr rune
+	for {
+		nr = l.next()
+		if nr == leftPar {
+			l.backup()
+			break
+		}
+		if !unicode.IsLetter(nr) {
+			l.emitError(`invalid rune in filter function: "` + string(nr) + `"; filter functions should be formed only by letters`)
+			return nil
+		}
+	}
+	l.emit(ItemFilterFunction)
+	return lexSpace
 }
 
 func lexNode(l *lexer) stateFn {
