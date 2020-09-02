@@ -139,6 +139,8 @@ const (
 	ItemGraphs
 	// ItemOptional identifies optional graph pattern clauses.
 	ItemOptional
+	// ItemFilter represents the filter keyword in BQL.
+	ItemFilter
 )
 
 func (tt TokenType) String() string {
@@ -253,6 +255,8 @@ func (tt TokenType) String() string {
 		return "GRAPHS"
 	case ItemOptional:
 		return "OPTIONAL"
+	case ItemFilter:
+		return "FILTER"
 	default:
 		return "UNKNOWN"
 	}
