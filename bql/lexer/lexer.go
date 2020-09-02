@@ -141,6 +141,8 @@ const (
 	ItemOptional
 	// ItemFilter represents the filter keyword in BQL.
 	ItemFilter
+	// ItemFilterFunction represents a filter function in BQL.
+	ItemFilterFunction
 )
 
 func (tt TokenType) String() string {
@@ -257,6 +259,8 @@ func (tt TokenType) String() string {
 		return "OPTIONAL"
 	case ItemFilter:
 		return "FILTER"
+	case ItemFilterFunction:
+		return "FILTER_FUNCTION"
 	default:
 		return "UNKNOWN"
 	}
