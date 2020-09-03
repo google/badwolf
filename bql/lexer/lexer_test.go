@@ -76,6 +76,8 @@ func TestTokenTypeString(t *testing.T) {
 		{ItemShow, "SHOW"},
 		{ItemGraphs, "GRAPHS"},
 		{ItemOptional, "OPTIONAL"},
+		{ItemFilter, "FILTER"},
+		{ItemFilterFunction, "FILTER_FUNCTION"},
 		{TokenType(-1), "UNKNOWN"},
 	}
 
@@ -388,6 +390,29 @@ func TestIndividualTokens(t *testing.T) {
 				{Type: ItemEOF},
 			},
 		},
+		{
+			`FILTER latest(?p)`,
+			[]Token{
+				{Type: ItemFilter, Text: "FILTER"},
+				{Type: ItemFilterFunction, Text: "latest"},
+				{Type: ItemLPar, Text: "("},
+				{Type: ItemBinding, Text: "?p"},
+				{Type: ItemRPar, Text: ")"},
+				{Type: ItemEOF},
+			},
+		},
+		{
+			`FILTER latest(?p) .`,
+			[]Token{
+				{Type: ItemFilter, Text: "FILTER"},
+				{Type: ItemFilterFunction, Text: "latest"},
+				{Type: ItemLPar, Text: "("},
+				{Type: ItemBinding, Text: "?p"},
+				{Type: ItemRPar, Text: ")"},
+				{Type: ItemDot, Text: "."},
+				{Type: ItemEOF},
+			},
+		},
 	}
 
 	for _, test := range table {
@@ -576,6 +601,36 @@ func TestValidTokenQuery(t *testing.T) {
 				ItemBinding, ItemBinding, ItemAt, ItemBinding, ItemBinding,
 				ItemRBracket,
 				ItemHaving, ItemBinding, ItemEQ, ItemTime, ItemSemicolon, ItemEOF,
+			},
+		},
+		{
+			`select ?s ?p ?o
+			from ?foo
+			where {
+				?s ?p ?o .
+				FILTER latest(?p)
+			};`,
+			[]TokenType{
+				ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
+				ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding, ItemDot,
+				ItemFilter, ItemFilterFunction, ItemLPar, ItemBinding, ItemRPar,
+				ItemRBracket, ItemSemicolon, ItemEOF,
+			},
+		},
+		{
+			`select ?s ?p ?o
+			from ?foo
+			where {
+				?s ?p ?o .
+				FILTER latest(?p) .
+				FILTER latest(?o)
+			};`,
+			[]TokenType{
+				ItemQuery, ItemBinding, ItemBinding, ItemBinding, ItemFrom, ItemBinding,
+				ItemWhere, ItemLBracket, ItemBinding, ItemBinding, ItemBinding, ItemDot,
+				ItemFilter, ItemFilterFunction, ItemLPar, ItemBinding, ItemRPar, ItemDot,
+				ItemFilter, ItemFilterFunction, ItemLPar, ItemBinding, ItemRPar,
+				ItemRBracket, ItemSemicolon, ItemEOF,
 			},
 		},
 	}
