@@ -267,6 +267,7 @@ type queryPlan struct {
 	grfsNames []string
 	grfs      []storage.Graph
 	cls       []*semantic.GraphClause
+	filters   []*semantic.FilterClause
 	tbl       *table.Table
 	chanSize  int
 	tracer    io.Writer
@@ -293,6 +294,7 @@ func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statem
 		bndgs:     bs,
 		grfsNames: stm.InputGraphNames(),
 		cls:       stm.GraphPatternClauses(),
+		filters:   stm.FilterClauses(),
 		tbl:       t,
 		chanSize:  chanSize,
 		tracer:    w,
