@@ -103,6 +103,7 @@ type Statement struct {
 	limitSet                  bool
 	limit                     int64
 	lookupOptions             storage.LookupOptions
+	filters                   []*FilterClause
 }
 
 // GraphClause represents a clause of a graph pattern in a where clause.
@@ -141,6 +142,16 @@ type GraphClause struct {
 	OLowerBoundAlias string
 	OUpperBoundAlias string
 	OTemporal        bool
+}
+
+// FilterClause represents a FILTER clause inside WHERE.
+// Operation below refers to the filter function being applied (eg: "latest"), Binding refers to the binding it
+// will be applied to and Value, when specified, contains the second argument of the filter function (not applicable for all
+// Operations - some like "latest" do not use it while others like "greaterThan" do, see Issue 129).
+type FilterClause struct {
+	Operation string
+	Binding   string
+	Value     string
 }
 
 // ConstructClause represents a singular clause within a construct statement.
@@ -582,6 +593,11 @@ func (s *Statement) Data() []*triple.Triple {
 // GraphPatternClauses returns the list of graph pattern clauses
 func (s *Statement) GraphPatternClauses() []*GraphClause {
 	return s.pattern
+}
+
+// FilterClauses returns the list of FILTER clauses.
+func (s *Statement) FilterClauses() []*FilterClause {
+	return s.filters
 }
 
 // ResetWorkingGraphClause resets the current working graph clause.
