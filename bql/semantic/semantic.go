@@ -411,6 +411,11 @@ func (c *GraphClause) IsEmpty() bool {
 	return reflect.DeepEqual(c, &GraphClause{})
 }
 
+// IsEmpty will return true if there are no set values in the filter clause.
+func (f *FilterClause) IsEmpty() bool {
+	return reflect.DeepEqual(f, &FilterClause{})
+}
+
 // String returns a readable representation of a construct clause.
 func (c *ConstructClause) String() string {
 	b := bytes.NewBufferString("{ ")
@@ -606,6 +611,11 @@ func (s *Statement) ResetWorkingGraphClause() {
 	s.workingClause = &GraphClause{}
 }
 
+// ResetWorkingFilterClause resets the current working filter clause.
+func (s *Statement) ResetWorkingFilterClause() {
+	s.workingFilter = &FilterClause{}
+}
+
 // WorkingClause returns the current working clause.
 func (s *Statement) WorkingClause() *GraphClause {
 	return s.workingClause
@@ -623,6 +633,12 @@ func (s *Statement) AddWorkingGraphClause() {
 		s.pattern = append(s.pattern, s.workingClause)
 	}
 	s.ResetWorkingGraphClause()
+}
+
+// AddWorkingFilterClause adds the current working filter clause to the filters list.
+func (s *Statement) AddWorkingFilterClause() {
+	s.filters = append(s.filters, s.workingFilter)
+	s.ResetWorkingFilterClause()
 }
 
 // Projection returns the available projections in the statement.

@@ -1430,6 +1430,12 @@ func SemanticBQL() *Grammar {
 	}
 	setElementHook(semanticBQL, objSymbols, semantic.WhereObjectClauseHook(), nil)
 
+	// Filter clause hook.
+	filterSymbols := []semantic.Symbol{
+		"FILTER_CLAUSES",
+	}
+	setElementHook(semanticBQL, filterSymbols, semantic.WhereFilterClauseHook(), nil)
+
 	// Collect binding variables variables.
 	varSymbols := []semantic.Symbol{
 		"VARS", "VARS_AS", "MORE_VARS", "COUNT_DISTINCT",
