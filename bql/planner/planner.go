@@ -838,6 +838,12 @@ func (p *queryPlan) String(ctx context.Context) string {
 		b.WriteString(c.String())
 		b.WriteString("\n")
 	}
+	b.WriteString("with filters\n")
+	for _, f := range p.filters {
+		b.WriteString("\t")
+		b.WriteString(f.String())
+		b.WriteString("\n")
+	}
 	b.WriteString("project results using\n")
 	for _, p := range p.stm.Projection() {
 		b.WriteString("\t")
