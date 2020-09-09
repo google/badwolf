@@ -416,6 +416,11 @@ func (f *FilterClause) IsEmpty() bool {
 	return reflect.DeepEqual(f, &FilterClause{})
 }
 
+// String returns a string representation of the filter clause.
+func (f *FilterClause) String() string {
+	return fmt.Sprintf("%+v", *f)
+}
+
 // String returns a readable representation of a construct clause.
 func (c *ConstructClause) String() string {
 	b := bytes.NewBufferString("{ ")
