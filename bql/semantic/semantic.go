@@ -104,6 +104,7 @@ type Statement struct {
 	limit                     int64
 	lookupOptions             storage.LookupOptions
 	filters                   []*FilterClause
+	workingFilter             *FilterClause
 }
 
 // GraphClause represents a clause of a graph pattern in a where clause.
@@ -608,6 +609,11 @@ func (s *Statement) ResetWorkingGraphClause() {
 // WorkingClause returns the current working clause.
 func (s *Statement) WorkingClause() *GraphClause {
 	return s.workingClause
+}
+
+// WorkingFilter returns the current working filter.
+func (s *Statement) WorkingFilter() *FilterClause {
+	return s.workingFilter
 }
 
 // AddWorkingGraphClause adds the current working graph clause to the set of
