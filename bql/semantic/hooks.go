@@ -92,6 +92,12 @@ func WhereObjectClauseHook() ElementHook {
 	return whereObjectClause()
 }
 
+// WhereFilterClauseHook returns the singleton for the working filter clause hook that
+// populates the filters list.
+func WhereFilterClauseHook() ElementHook {
+	return whereFilterClause()
+}
+
 // VarAccumulatorHook returns the singleton for accumulating variable
 // projections.
 func VarAccumulatorHook() ElementHook {
@@ -336,6 +342,7 @@ func whereInitWorkingClause() ClauseHook {
 	var f ClauseHook
 	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
 		s.ResetWorkingGraphClause()
+		s.ResetWorkingFilterClause()
 		return f, nil
 	}
 	return f
@@ -662,6 +669,59 @@ func whereObjectClause() ElementHook {
 		return f, nil
 	}
 	return f
+}
+
+// whereFilterClause returns an element hook that updates the working filter clause and,
+// if the filter clause is complete, populates the filters list of the statement.
+func whereFilterClause() ElementHook {
+	var hook ElementHook
+	supportedFilterFunctions := map[string]bool{
+		"latest": true,
+	}
+
+	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+		if ce.IsSymbol() {
+			return hook, nil
+		}
+
+		tkn := ce.Token()
+		currFilter := st.WorkingFilter()
+		switch tkn.Type {
+		case lexer.ItemFilterFunction:
+			if currFilter == nil {
+				return nil, fmt.Errorf("could not add filter function %q to nil filter clause", tkn.Text)
+			}
+			if currFilter.Operation != "" {
+				return nil, fmt.Errorf("invalid filter function %q on filter clause since already set to %q", tkn.Text, currFilter.Operation)
+			}
+			if !supportedFilterFunctions[tkn.Text] {
+				return nil, fmt.Errorf("filter function %q on filter clause is not supported", tkn.Text)
+			}
+			currFilter.Operation = tkn.Text
+			return hook, nil
+		case lexer.ItemBinding:
+			if currFilter == nil {
+				return nil, fmt.Errorf("could not add binding %q to nil filter clause", tkn.Text)
+			}
+			if currFilter.Operation == "" {
+				return nil, fmt.Errorf("could not add binding %q to a filter clause that does not have a filter function previously set", tkn.Text)
+			}
+			if currFilter.Binding != "" {
+				return nil, fmt.Errorf("invalid binding %q on filter clause since already set to %q", tkn.Text, currFilter.Binding)
+			}
+			currFilter.Binding = tkn.Text
+			return hook, nil
+		case lexer.ItemRPar:
+			if currFilter == nil || currFilter.Operation == "" || currFilter.Binding == "" {
+				return nil, fmt.Errorf("could not add invalid working filter %q to the statement filters list", currFilter)
+			}
+			st.AddWorkingFilterClause()
+		}
+
+		return hook, nil
+	}
+
+	return hook
 }
 
 // varAccumulator returns an element hook that updates the object
