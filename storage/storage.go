@@ -43,7 +43,16 @@ type LookupOptions struct {
 	// LatestAnchor only. If set, it will ignore the time boundaries provided and
 	// just use the last available anchor.
 	LatestAnchor bool
+
+	// FilterOptions, if provided, represent the specifications for the filtering to be executed.
+	FilterOptions *FilteringOptions
 }
+
+// FilteringOptions represent the storage level specifications for the filtering to be executed.
+// Operation below refers to the filter function being applied (eg: "latest"), Field refers to the position of the graph clause it
+// will be applied to ("subject", "predicate" or "object") and Value, when specified, contains the second argument of the filter
+// function (not applicable for all Operations - some like "latest" do not use it while others like "greaterThan" do, see Issue 129).
+type FilteringOptions struct{ Operation, Field, Value string }
 
 // String returns a readable version of the LookupOptions instance.
 func (l *LookupOptions) String() string {
