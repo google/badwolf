@@ -264,6 +264,7 @@ type queryPlan struct {
 	store storage.Store
 	// Prepared plan information.
 	bndgs     []string
+	bndgsMap  map[string]int
 	grfsNames []string
 	grfs      []storage.Graph
 	cls       []*semantic.GraphClause
@@ -292,6 +293,7 @@ func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statem
 		stm:       stm,
 		store:     store,
 		bndgs:     bs,
+		bndgsMap:  stm.BindingsMap(),
 		grfsNames: stm.InputGraphNames(),
 		cls:       stm.GraphPatternClauses(),
 		filters:   stm.FilterClauses(),
@@ -641,6 +643,59 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 	return grp.Wait()
 }
 
+// organizeFiltersByBinding takes the filters received as input and organize them in a map
+// on which the keys are the bindings of each filter.
+func organizeFiltersByBinding(filters []*semantic.FilterClause, bndgsMap map[string]int) (map[string]*semantic.FilterClause, error) {
+	filtersByBinding := map[string]*semantic.FilterClause{}
+	for _, f := range filters {
+		if _, ok := bndgsMap[f.Binding]; !ok {
+			return nil, fmt.Errorf("binding %q referenced by a filter clause does not exist", f.Binding)
+		}
+		if _, ok := filtersByBinding[f.Binding]; ok {
+			return nil, fmt.Errorf("multiple filters for the same binding are not supported at the moment")
+		}
+		filtersByBinding[f.Binding] = f
+	}
+
+	return filtersByBinding, nil
+}
+
+// addFilterOptions adds FilterOptions to lookup options if the given clause has bindings for which
+// filters were defined.
+func addFilterOptions(lo *storage.LookupOptions, cls *semantic.GraphClause, filtersByBinding map[string]*semantic.FilterClause) error {
+	bindingsByField := map[string][]string{
+		"predicate": {cls.PBinding, cls.PAlias},
+		"object":    {cls.OBinding, cls.OAlias},
+	}
+
+	for field, bs := range bindingsByField {
+		for _, b := range bs {
+			if b == "" {
+				continue
+			}
+			if _, ok := filtersByBinding[b]; !ok {
+				continue
+			}
+			if lo.FilterOptions != nil {
+				return fmt.Errorf("multiple filters for the same graph clause are not supported at the moment")
+			}
+			filter := filtersByBinding[b]
+			lo.FilterOptions = &storage.FilteringOptions{
+				Operation: filter.Operation,
+				Field:     field,
+				Value:     filter.Value,
+			}
+		}
+	}
+
+	return nil
+}
+
+// resetFilterOptions resets FilterOptions in lookup options to nil.
+func resetFilterOptions(lo *storage.LookupOptions) {
+	lo.FilterOptions = (*storage.FilteringOptions)(nil)
+}
+
 // processGraphPattern process the query graph pattern to retrieve the
 // data from the specified graphs.
 func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupOptions) error {
@@ -653,6 +708,11 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 			Msgs: res,
 		}
 	})
+
+	filtersByBinding, err := organizeFiltersByBinding(p.filters, p.bndgsMap)
+	if err != nil {
+		return err
+	}
 	for i, c := range p.cls {
 		i, cls := i, *c
 		tracer.Trace(p.tracer, func() *tracer.Arguments {
@@ -660,9 +720,13 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 				Msgs: []string{fmt.Sprintf("Processing clause %d: %v", i, &cls)},
 			}
 		})
-		// The current planner is based on naively executing clauses by
-		// specificity.
+
+		err = addFilterOptions(lo, &cls, filtersByBinding)
+		if err != nil {
+			return err
+		}
 		unresolvable, err := p.processClause(ctx, &cls, lo)
+		resetFilterOptions(lo)
 		if err != nil {
 			return err
 		}
@@ -671,6 +735,7 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 			return nil
 		}
 	}
+
 	return nil
 }
 
