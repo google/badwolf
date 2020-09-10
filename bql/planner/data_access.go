@@ -45,9 +45,10 @@ var _ error = (*skippableError)(nil)
 // provided graph clause.
 func updateTimeBounds(lo *storage.LookupOptions, cls *semantic.GraphClause) *storage.LookupOptions {
 	nlo := &storage.LookupOptions{
-		MaxElements: lo.MaxElements,
-		LowerAnchor: lo.LowerAnchor,
-		UpperAnchor: lo.UpperAnchor,
+		MaxElements:   lo.MaxElements,
+		LowerAnchor:   lo.LowerAnchor,
+		UpperAnchor:   lo.UpperAnchor,
+		FilterOptions: lo.FilterOptions,
 	}
 	if cls.PLowerBound != nil {
 		if lo.LowerAnchor == nil || (lo.LowerAnchor != nil && cls.PLowerBound.After(*lo.LowerAnchor)) {
