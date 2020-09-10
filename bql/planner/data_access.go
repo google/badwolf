@@ -30,6 +30,17 @@ import (
 	"github.com/google/badwolf/triple/predicate"
 )
 
+type skippableError struct {
+	situation string
+	err       error
+}
+
+func (e *skippableError) Error() string {
+	return e.situation + ": " + e.err.Error()
+}
+
+var _ error = (*skippableError)(nil)
+
 // updateTimeBounds updates the time bounds use for the lookup based on the
 // provided graph clause.
 func updateTimeBounds(lo *storage.LookupOptions, cls *semantic.GraphClause) *storage.LookupOptions {
@@ -475,6 +486,10 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 		var r table.Row
 		r, err = tripleToRow(t, cls)
 		if err != nil {
+			if _, ok := err.(*skippableError); ok {
+				err = nil
+				continue
+			}
 			break
 		}
 		if r == nil {
@@ -662,30 +677,42 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 		}
 	}
 	if cls.OAnchorBinding != "" {
+		var c *table.Cell
 		p, err := o.Predicate()
 		if err != nil {
-			return nil, err
+			// In the case of time anchor bindings for non-predicate objects we skip the triple if the clause is not optional, otherwise we provide an empty Cell as we want <NULL> to appear in the query result.
+			if !cls.Optional {
+				return nil, &skippableError{"cls.OAnchorBinding in non-optional clause", err}
+			}
+			c = &table.Cell{}
+		} else {
+			ts, err := p.TimeAnchor()
+			if err != nil {
+				return nil, err
+			}
+			c = &table.Cell{T: ts}
 		}
-		ts, err := p.TimeAnchor()
-		if err != nil {
-			return nil, err
-		}
-		c := &table.Cell{T: ts}
 		r[cls.OAnchorBinding] = c
 		if !validBinding(cls.OAnchorBinding, c) {
 			return nil, nil
 		}
 	}
 	if cls.OAnchorAlias != "" {
+		var c *table.Cell
 		p, err := o.Predicate()
 		if err != nil {
-			return nil, err
+			// In the case of AT bindings for non-predicate objects we skip the triple if the clause is not optional, otherwise we provide an empty Cell as we want <NULL> to appear in the query result.
+			if !cls.Optional {
+				return nil, &skippableError{"cls.OAnchorAlias in non-optional clause", err}
+			}
+			c = &table.Cell{}
+		} else {
+			ts, err := p.TimeAnchor()
+			if err != nil {
+				return nil, err
+			}
+			c = &table.Cell{T: ts}
 		}
-		ts, err := p.TimeAnchor()
-		if err != nil {
-			return nil, err
-		}
-		c := &table.Cell{T: ts}
 		r[cls.OAnchorAlias] = c
 		if !validBinding(cls.OAnchorAlias, c) {
 			return nil, nil

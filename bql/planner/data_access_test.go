@@ -464,7 +464,7 @@ func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
 }
 
 func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
-	n, p, _ := testNodeTemporalPredicateLiteral(t)
+	n, p, l := testNodeTemporalPredicateLiteral(t)
 	ta, err := p.TimeAnchor()
 	if err != nil {
 		t.Fatal(err)
@@ -508,6 +508,26 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 			oAnchorBinding: &table.Cell{T: ta},
 			oAnchorAlias:   &table.Cell{T: ta},
 		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, p, n),
+			cls: &semantic.GraphClause{
+				OAnchorBinding: "?anchorBinding",
+				OAnchorAlias:   "?anchorAlias",
+				Optional:       true,
+			},
+			oAnchorBinding: &table.Cell{},
+			oAnchorAlias:   &table.Cell{},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, p, l),
+			cls: &semantic.GraphClause{
+				OAnchorBinding: "?anchorBinding",
+				OAnchorAlias:   "?anchorAlias",
+				Optional:       true,
+			},
+			oAnchorBinding: &table.Cell{},
+			oAnchorAlias:   &table.Cell{},
+		},
 	}
 
 	for _, entry := range testTable {
@@ -528,6 +548,54 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 			if got, want := r[binding], entryCells[i]; !reflect.DeepEqual(got, want) {
 				t.Errorf(`tripleToRow(%q) = "%s", _; want "%s", _`, binding, got, want)
 			}
+		}
+	}
+}
+
+func TestDataAccessTripleToRowObjectBindingsError(t *testing.T) {
+	n, pImmutable, l := testNodePredicateLiteral(t)
+
+	testTable := []struct {
+		t   string
+		cls *semantic.GraphClause
+	}{
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, n),
+			cls: &semantic.GraphClause{
+				OAnchorBinding: "?anchorBinding",
+			},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, n),
+			cls: &semantic.GraphClause{
+				OAnchorAlias: "?anchorAlias",
+			},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, l),
+			cls: &semantic.GraphClause{
+				OAnchorBinding: "?anchorBinding",
+			},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, l),
+			cls: &semantic.GraphClause{
+				OAnchorAlias: "?anchorAlias",
+			},
+		},
+	}
+
+	for _, entry := range testTable {
+		// Setup for test:
+		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
+		if err != nil {
+			t.Fatalf(`triple.Parse failed for triple "%s": %v`, entry.t, err)
+		}
+
+		// Actual test:
+		_, err = tripleToRow(tpl, entry.cls)
+		if _, ok := err.(*skippableError); !ok {
+			t.Errorf(`tripleToRow("%s", %q) = _, %v; want _, skippableError`, tpl, entry.cls, err)
 		}
 	}
 }
