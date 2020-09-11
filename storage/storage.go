@@ -71,6 +71,8 @@ func (l *LookupOptions) String() string {
 		b.WriteString("nil")
 	}
 	b.WriteString(fmt.Sprintf(", LatestAnchor=%v", l.LatestAnchor))
+	b.WriteString(", FilterOptions=")
+	b.WriteString(fmt.Sprintf("%+v", l.FilterOptions))
 	b.WriteString(">")
 	return b.String()
 }
