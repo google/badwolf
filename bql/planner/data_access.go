@@ -468,41 +468,42 @@ func shouldIgnoreTriple(t *triple.Triple, cls *semantic.GraphClause) (bool, erro
 	return false, nil
 }
 
+// drainChannel drains the given channel to avoid leaking goroutines, consuming remaining elements sent through it if that is the case.
+func drainChannel(ch <-chan *triple.Triple) {
+	for range ch {
+		continue
+	}
+}
+
 // addTriples add all the retrieved triples from the graphs into the results
 // table. The semantic graph clause is also passed to be able to identify what
 // bindings to set.
 func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.Table) error {
-	var err error
+	// Drain the channel to avoid leaking goroutines in the case the loop below is interrupted by an error.
+	defer drainChannel(ts)
 	for t := range ts {
-		var ignoreTriple bool
-		ignoreTriple, err = shouldIgnoreTriple(t, cls)
+		ignoreTriple, err := shouldIgnoreTriple(t, cls)
 		if err != nil {
-			break
+			return err
 		}
 		if ignoreTriple {
 			continue
 		}
 
-		var r table.Row
-		r, err = tripleToRow(t, cls)
+		r, err := tripleToRow(t, cls)
 		if err != nil {
 			if _, ok := err.(*skippableError); ok {
-				err = nil
 				continue
 			}
-			break
+			return err
 		}
 		if r == nil {
 			continue
 		}
 		tbl.AddRow(r)
 	}
-	// Drain the channel to avoid leaking goroutines in the case the loop above was interrupted by an error.
-	for range ts {
-		continue
-	}
 
-	return err
+	return nil
 }
 
 // objectToCell returns a cell containing the data boxed in the object.
