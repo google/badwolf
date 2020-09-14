@@ -666,6 +666,17 @@ func TestPlannerQuery(t *testing.T) {
 			nRows:     2,
 		},
 		{
+			q: `SELECT ?o, ?o_type
+				FROM ?test
+				WHERE {
+					?s ?p ?o .
+					OPTIONAL { ?s ?p ?o TYPE ?o_type }
+				}
+				HAVING (?s = /u<joe>) OR (?s = /l<barcelona>) OR (?s = /u<alice>);`,
+			nBindings: 2,
+			nRows:     8,
+		},
+		{
 			q: `SELECT ?p, ?time, ?o
 				FROM ?test
 				WHERE {

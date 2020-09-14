@@ -464,11 +464,12 @@ func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
 }
 
 func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
-	n, p, l := testNodeTemporalPredicateLiteral(t)
-	ta, err := p.TimeAnchor()
+	n, pTemporal, l := testNodeTemporalPredicateLiteral(t)
+	ta, err := pTemporal.TimeAnchor()
 	if err != nil {
 		t.Fatal(err)
 	}
+	_, pImmutable, _ := testNodePredicateLiteral(t)
 
 	testTable := []struct {
 		t              string
@@ -481,7 +482,7 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 		oAnchorAlias   *table.Cell
 	}{
 		{
-			t: fmt.Sprintf("%s\t%s\t%s", n, p, n),
+			t: fmt.Sprintf("%s\t%s\t%s", n, pTemporal, n),
 			cls: &semantic.GraphClause{
 				OBinding:   "?o",
 				OAlias:     "?alias",
@@ -494,7 +495,7 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 			oIDAlias:   &table.Cell{S: table.CellString(n.ID().String())},
 		},
 		{
-			t: fmt.Sprintf("%s\t%s\t%s", n, p, p),
+			t: fmt.Sprintf("%s\t%s\t%s", n, pTemporal, pTemporal),
 			cls: &semantic.GraphClause{
 				OBinding:       "?o",
 				OAlias:         "?alias",
@@ -502,14 +503,30 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 				OAnchorBinding: "?anchorBinding",
 				OAnchorAlias:   "?anchorAlias",
 			},
-			oBinding:       &table.Cell{P: p},
-			oAlias:         &table.Cell{P: p},
-			oIDAlias:       &table.Cell{S: table.CellString(string(p.ID()))},
+			oBinding:       &table.Cell{P: pTemporal},
+			oAlias:         &table.Cell{P: pTemporal},
+			oIDAlias:       &table.Cell{S: table.CellString(string(pTemporal.ID()))},
 			oAnchorBinding: &table.Cell{T: ta},
 			oAnchorAlias:   &table.Cell{T: ta},
 		},
 		{
-			t: fmt.Sprintf("%s\t%s\t%s", n, p, n),
+			t: fmt.Sprintf("%s\t%s\t%s", n, pTemporal, pTemporal),
+			cls: &semantic.GraphClause{
+				OTypeAlias: "?type",
+				Optional:   true,
+			},
+			oTypeAlias: &table.Cell{},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, pImmutable),
+			cls: &semantic.GraphClause{
+				OTypeAlias: "?type",
+				Optional:   true,
+			},
+			oTypeAlias: &table.Cell{},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pTemporal, n),
 			cls: &semantic.GraphClause{
 				OAnchorBinding: "?anchorBinding",
 				OAnchorAlias:   "?anchorAlias",
@@ -519,14 +536,36 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 			oAnchorAlias:   &table.Cell{},
 		},
 		{
-			t: fmt.Sprintf("%s\t%s\t%s", n, p, l),
+			t: fmt.Sprintf("%s\t%s\t%s", n, pTemporal, l),
 			cls: &semantic.GraphClause{
+				OTypeAlias:     "?type",
 				OAnchorBinding: "?anchorBinding",
 				OAnchorAlias:   "?anchorAlias",
 				Optional:       true,
 			},
+			oTypeAlias:     &table.Cell{},
 			oAnchorBinding: &table.Cell{},
 			oAnchorAlias:   &table.Cell{},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pTemporal, l),
+			cls: &semantic.GraphClause{
+				OBinding: "?o",
+				OAlias:   "?alias",
+			},
+			oBinding: &table.Cell{L: l},
+			oAlias:   &table.Cell{L: l},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, pImmutable),
+			cls: &semantic.GraphClause{
+				OBinding: "?o",
+				OAlias:   "?alias",
+				OIDAlias: "?id",
+			},
+			oBinding: &table.Cell{P: pImmutable},
+			oAlias:   &table.Cell{P: pImmutable},
+			oIDAlias: &table.Cell{S: table.CellString(string(pImmutable.ID()))},
 		},
 	}
 
@@ -554,6 +593,7 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 
 func TestDataAccessTripleToRowObjectBindingsError(t *testing.T) {
 	n, pImmutable, l := testNodePredicateLiteral(t)
+	_, pTemporal, _ := testNodeTemporalPredicateLiteral(t)
 
 	testTable := []struct {
 		t   string
@@ -581,6 +621,24 @@ func TestDataAccessTripleToRowObjectBindingsError(t *testing.T) {
 			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, l),
 			cls: &semantic.GraphClause{
 				OAnchorAlias: "?anchorAlias",
+			},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, l),
+			cls: &semantic.GraphClause{
+				OTypeAlias: "?type",
+			},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, pImmutable),
+			cls: &semantic.GraphClause{
+				OTypeAlias: "?type",
+			},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pTemporal, pTemporal),
+			cls: &semantic.GraphClause{
+				OTypeAlias: "?type",
 			},
 		},
 	}
