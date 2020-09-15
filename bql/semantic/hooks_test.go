@@ -179,8 +179,220 @@ func TestWhereInitClauseHook(t *testing.T) {
 	f := whereInitWorkingClause()
 	st := &Statement{}
 	f(st, Symbol("FOO"))
-	if st.WorkingClause() == nil {
-		t.Errorf("semantic.WhereInitWorkingClause should have returned a valid working clause for statement %v", st)
+	if wc := st.WorkingClause(); wc == nil || !wc.IsEmpty() {
+		t.Errorf(`semantic.Statement.WorkingClause() = %q for statement "%v" after call to semantic.WhereInitWorkingClause; want empty GraphClause`, wc, st)
+	}
+	if wf := st.WorkingFilter(); wf == nil || !wf.IsEmpty() {
+		t.Errorf(`semantic.Statement.WorkingFilter() = %q for statement "%v" after call to semantic.WhereInitWorkingClause; want empty FilterClause`, wf, st)
+	}
+}
+
+func TestWhereFilterClauseHook(t *testing.T) {
+	st := &Statement{}
+	f := whereFilterClause()
+	st.ResetWorkingFilterClause()
+
+	testTable := []struct {
+		id   string
+		ces  []ConsumedElement
+		want *FilterClause
+	}{
+		{
+			id: "FILTER latest(?p)",
+			ces: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemFilter,
+					Text: "FILTER",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemFilterFunction,
+					Text: "latest",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+					Text: "(",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?p",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+					Text: ")",
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: &FilterClause{
+				Operation: "latest",
+				Binding:   "?p",
+			},
+		},
+		{
+			id: "FILTER latest(?o)",
+			ces: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemFilter,
+					Text: "FILTER",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemFilterFunction,
+					Text: "latest",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+					Text: "(",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?o",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+					Text: ")",
+				}),
+				NewConsumedSymbol("FOO"),
+			},
+			want: &FilterClause{
+				Operation: "latest",
+				Binding:   "?o",
+			},
+		},
+	}
+	for i, entry := range testTable {
+		for _, ce := range entry.ces {
+			if _, err := f(st, ce); err != nil {
+				t.Errorf("%q: semantic.WhereFilterClauseHook(%s) = _, %v; want _, nil", entry.id, ce, err)
+			}
+		}
+		if got, want := st.FilterClauses()[i], entry.want; !reflect.DeepEqual(got, want) {
+			t.Errorf("%q: semantic.Statement.FilterClauses()[%d] = %s; want %s", entry.id, i, got, want)
+		}
+	}
+
+	if got, want := len(st.FilterClauses()), len(testTable); got != want {
+		t.Errorf("len(semantic.Statement.FilterClauses()) = %d after consuming %d valid FILTER clauses; want %d", got, want, want)
+	}
+}
+
+func TestWhereFilterClauseHookError(t *testing.T) {
+	st := &Statement{}
+	f := whereFilterClause()
+	st.ResetWorkingFilterClause()
+
+	testTable := []struct {
+		id           string
+		ces          []ConsumedElement
+		ceIndexError int
+	}{
+		{
+			id: "FILTER notSupportedFilterFunction(?p)",
+			ces: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemFilter,
+					Text: "FILTER",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemFilterFunction,
+					Text: "notSupportedFilterFunction",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+					Text: "(",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?p",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+					Text: ")",
+				}),
+			},
+			ceIndexError: 1,
+		},
+		{
+			id: "FILTER latest latest(?p)",
+			ces: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemFilter,
+					Text: "FILTER",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemFilterFunction,
+					Text: "latest",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemFilterFunction,
+					Text: "latest",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+					Text: "(",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?p",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+					Text: ")",
+				}),
+			},
+			ceIndexError: 2,
+		},
+		{
+			id: "FILTER latest(?p, ?o)",
+			ces: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemFilter,
+					Text: "FILTER",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemFilterFunction,
+					Text: "latest",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+					Text: "(",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?p",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemComma,
+					Text: ",",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?o",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+					Text: ")",
+				}),
+			},
+			ceIndexError: 5,
+		},
+	}
+	for _, entry := range testTable {
+		var err error
+		for i, ce := range entry.ces {
+			if _, err = f(st, ce); err != nil {
+				if i != entry.ceIndexError {
+					t.Errorf("%q: semantic.WhereFilterClauseHook(%v) = _, %v; want _, nil since the expected error should be when consuming %v", entry.id, ce, err, entry.ces[entry.ceIndexError])
+				}
+				break
+			}
+		}
+		if err == nil {
+			t.Errorf("%q: semantic.WhereFilterClauseHook(%v) = _, nil; want _, error", entry.id, entry.ces[entry.ceIndexError])
+		}
+		st.ResetWorkingFilterClause()
+	}
+
+	if got, want := len(st.FilterClauses()), 0; got != want {
+		t.Errorf("len(semantic.Statement.FilterClauses()) = %d; want %d", got, want)
 	}
 }
 
