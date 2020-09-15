@@ -275,7 +275,7 @@ func TestObjects(t *testing.T) {
 	}
 }
 
-func TestObjectsLastestTemporal(t *testing.T) {
+func TestObjectsLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
@@ -329,7 +329,7 @@ func TestSubjects(t *testing.T) {
 	}
 }
 
-func TestSubjectsLatestTemporal(t *testing.T) {
+func TestSubjectsLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
@@ -380,7 +380,7 @@ func TestPredicatesForSubjectAndObject(t *testing.T) {
 		t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) failed to retrieve 1 predicate, got %d instead", ts[0].Subject(), ts[0].Object(), cnt)
 	}
 }
-func TestPredicatesForSubjectAndObjectLatestTemporal(t *testing.T) {
+func TestPredicatesForSubjectAndObjectLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
@@ -431,7 +431,7 @@ func TestPredicatesForSubject(t *testing.T) {
 	}
 }
 
-func TestPredicatesForSubjectLatestTemporal(t *testing.T) {
+func TestPredicatesForSubjectLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
@@ -481,7 +481,7 @@ func TestPredicatesForObject(t *testing.T) {
 		t.Errorf("g.PredicatesForObject(%s) failed to retrieve 1 predicate, got %d instead", ts[0].Object(), cnt)
 	}
 }
-func TestPredicatesForObjectLatestTemporal(t *testing.T) {
+func TestPredicatesForObjectLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
@@ -529,7 +529,7 @@ func TestTriplesForSubject(t *testing.T) {
 	}
 }
 
-func TestTriplesForSubjectLatestTemporal(t *testing.T) {
+func TestTriplesForSubjectLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
@@ -576,7 +576,7 @@ func TestTriplesForPredicate(t *testing.T) {
 		t.Errorf("g.triplesForPredicate(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Predicate(), cnt)
 	}
 }
-func TestTriplesForPredicateLatestTemporal(t *testing.T) {
+func TestTriplesForPredicateLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
@@ -624,7 +624,7 @@ func TestTriplesForObject(t *testing.T) {
 	}
 }
 
-func TestTriplesForObjectLatestTemporal(t *testing.T) {
+func TestTriplesForObjectLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
@@ -714,7 +714,7 @@ func TestTriplesForSubjectAndPredicate(t *testing.T) {
 		t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), ts[0].Predicate(), cnt)
 	}
 }
-func TestTriplesForSubjectAndPredicateLatestTemporal(t *testing.T) {
+func TestTriplesForSubjectAndPredicateLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
@@ -762,7 +762,7 @@ func TestTriplesForPredicateAndObject(t *testing.T) {
 	}
 }
 
-func TestTriplesForPredicateAndObjectLatestTemporal(t *testing.T) {
+func TestTriplesForPredicateAndObjectLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
@@ -827,7 +827,7 @@ func TestTriples(t *testing.T) {
 	}
 }
 
-func TestTriplesLastestTemporal(t *testing.T) {
+func TestTriplesLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
