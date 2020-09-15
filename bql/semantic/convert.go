@@ -69,6 +69,11 @@ func (c ConsumedElement) Token() *lexer.Token {
 	return c.token
 }
 
+// Token returns the boxed token.
+func (c ConsumedElement) String() string {
+	return fmt.Sprintf("{isSymbol=%v, symbol=%s, token=%s}", c.isSymbol, c.symbol, c.token)
+}
+
 // ToNode converts the node found by the lexer and converts it into a BadWolf
 // node.
 func ToNode(ce ConsumedElement) (*node.Node, error) {
