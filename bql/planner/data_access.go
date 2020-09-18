@@ -423,7 +423,7 @@ func shouldIgnoreTriple(t *triple.Triple, cls *semantic.GraphClause) (bool, erro
 		if string(t.Predicate().ID()) != cls.PID {
 			return true, nil
 		}
-		if cls.PTemporal {
+		if cls.PTemporal && cls.PAnchorBinding == "" {
 			if t.Predicate().Type() != predicate.Temporal {
 				return true, nil
 			}
@@ -446,7 +446,7 @@ func shouldIgnoreTriple(t *triple.Triple, cls *semantic.GraphClause) (bool, erro
 			if string(p.ID()) != cls.OID {
 				return true, nil
 			}
-			if cls.OTemporal {
+			if cls.OTemporal && cls.OAnchorBinding == "" {
 				if p.Type() != predicate.Temporal {
 					return true, nil
 				}
@@ -524,8 +524,8 @@ func objectToCell(o *triple.Object) (*table.Cell, error) {
 	return nil, fmt.Errorf("unknown object type in object %q", o)
 }
 
-// tripleToRow converts a triple into a row using the binndings specidfied
-// on the graph clause.
+// tripleToRow converts a triple into a row using the bindings specified
+// in the graph clause.
 func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error) {
 	r, s, p, o := make(table.Row), t.Subject(), t.Predicate(), t.Object()
 
@@ -596,30 +596,40 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 		}
 	}
 	if cls.PAnchorBinding != "" {
+		var c *table.Cell
 		if p.Type() != predicate.Temporal {
-			// in the case of time anchor binding (eg: "bought"@[?time]) for an immutable predicate we just want to skip this triple and proceed to the next one, not returning any errors.
-			return nil, nil
+			// In the case of time anchor bindings (eg: "bought"@[?time]) for immutable predicates we skip the triple if the clause is not optional, otherwise we provide an empty Cell as we want <NULL> to appear in the query result.
+			if !cls.Optional {
+				return nil, &skippableError{"cls.PAnchorBinding in non-optional clause", fmt.Errorf("tried to extract a time anchor binding from an immutable predicate")}
+			}
+			c = &table.Cell{}
+		} else {
+			t, err := p.TimeAnchor()
+			if err != nil {
+				return nil, fmt.Errorf("failed to retrieve the time anchor value for predicate %q in binding %q with error: %v", p, cls.PAnchorBinding, err)
+			}
+			c = &table.Cell{T: t}
 		}
-		t, err := p.TimeAnchor()
-		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve the time anchor value for predicate %q in binding %q with error %v", p, cls.PAnchorBinding, err)
-		}
-		c := &table.Cell{T: t}
 		r[cls.PAnchorBinding] = c
 		if !validBinding(cls.PAnchorBinding, c) {
 			return nil, nil
 		}
 	}
 	if cls.PAnchorAlias != "" {
+		var c *table.Cell
 		if p.Type() != predicate.Temporal {
-			// in the case of AT binding for an immutable predicate we just want to skip this triple and proceed to the next one, not returning any errors.
-			return nil, nil
+			// In the case of AT bindings for immutable predicates we skip the triple if the clause is not optional, otherwise we provide an empty Cell as we want <NULL> to appear in the query result.
+			if !cls.Optional {
+				return nil, &skippableError{"cls.PAnchorAlias in non-optional clause", fmt.Errorf("tried to extract an AT binding from an immutable predicate")}
+			}
+			c = &table.Cell{}
+		} else {
+			t, err := p.TimeAnchor()
+			if err != nil {
+				return nil, fmt.Errorf("failed to retrieve the time anchor value for predicate %q in binding %q with error: %v", p, cls.PAnchorAlias, err)
+			}
+			c = &table.Cell{T: t}
 		}
-		t, err := p.TimeAnchor()
-		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve the time anchor value for predicate %q in binding %q with error %v", p, cls.PAnchorAlias, err)
-		}
-		c := &table.Cell{T: t}
 		r[cls.PAnchorAlias] = c
 		if !validBinding(cls.PAnchorAlias, c) {
 			return nil, nil
@@ -691,12 +701,18 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 				return nil, &skippableError{"cls.OAnchorBinding in non-optional clause", err}
 			}
 			c = &table.Cell{}
-		} else {
-			ts, err := p.TimeAnchor()
-			if err != nil {
-				return nil, err
+		} else if p.Type() != predicate.Temporal {
+			// In the case of time anchor bindings for objects that are immutable predicates we skip the triple if the clause is not optional, otherwise we provide an empty Cell as we want <NULL> to appear in the query result.
+			if !cls.Optional {
+				return nil, &skippableError{"cls.OAnchorBinding in non-optional clause", fmt.Errorf("tried to extract a time anchor binding from an object that is an immutable predicate")}
 			}
-			c = &table.Cell{T: ts}
+			c = &table.Cell{}
+		} else {
+			t, err := p.TimeAnchor()
+			if err != nil {
+				return nil, fmt.Errorf("failed to retrieve the time anchor value for predicate %q in binding %q with error: %v", p, cls.OAnchorBinding, err)
+			}
+			c = &table.Cell{T: t}
 		}
 		r[cls.OAnchorBinding] = c
 		if !validBinding(cls.OAnchorBinding, c) {
@@ -712,12 +728,18 @@ func tripleToRow(t *triple.Triple, cls *semantic.GraphClause) (table.Row, error)
 				return nil, &skippableError{"cls.OAnchorAlias in non-optional clause", err}
 			}
 			c = &table.Cell{}
-		} else {
-			ts, err := p.TimeAnchor()
-			if err != nil {
-				return nil, err
+		} else if p.Type() != predicate.Temporal {
+			// In the case of AT bindings for objects that are immutable predicates we skip the triple if the clause is not optional, otherwise we provide an empty Cell as we want <NULL> to appear in the query result.
+			if !cls.Optional {
+				return nil, &skippableError{"cls.OAnchorAlias in non-optional clause", fmt.Errorf("tried to extract an AT binding from an object that is an immutable predicate")}
 			}
-			c = &table.Cell{T: ts}
+			c = &table.Cell{}
+		} else {
+			t, err := p.TimeAnchor()
+			if err != nil {
+				return nil, fmt.Errorf("failed to retrieve the time anchor value for predicate %q in binding %q with error: %v", p, cls.OAnchorAlias, err)
+			}
+			c = &table.Cell{T: t}
 		}
 		r[cls.OAnchorAlias] = c
 		if !validBinding(cls.OAnchorAlias, c) {

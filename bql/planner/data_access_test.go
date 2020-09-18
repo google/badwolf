@@ -409,11 +409,12 @@ func TestDataAccessTripleToRowSubjectBindings(t *testing.T) {
 }
 
 func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
-	n, p, _ := testNodeTemporalPredicateLiteral(t)
-	ta, err := p.TimeAnchor()
+	n, pTemporal, _ := testNodeTemporalPredicateLiteral(t)
+	ta, err := pTemporal.TimeAnchor()
 	if err != nil {
 		t.Fatal(err)
 	}
+	_, pImmutable, _ := testNodePredicateLiteral(t)
 
 	testTable := []struct {
 		t              string
@@ -425,7 +426,7 @@ func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
 		pAnchorAlias   *table.Cell
 	}{
 		{
-			t: fmt.Sprintf("%s\t%s\t%s", n, p, n),
+			t: fmt.Sprintf("%s\t%s\t%s", n, pTemporal, n),
 			cls: &semantic.GraphClause{
 				PBinding:       "?p",
 				PAlias:         "?alias",
@@ -433,11 +434,32 @@ func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
 				PAnchorBinding: "?anchorBinding",
 				PAnchorAlias:   "?anchorAlias",
 			},
-			pBinding:       &table.Cell{P: p},
-			pAlias:         &table.Cell{P: p},
-			pIDAlias:       &table.Cell{S: table.CellString(string(p.ID()))},
+			pBinding:       &table.Cell{P: pTemporal},
+			pAlias:         &table.Cell{P: pTemporal},
+			pIDAlias:       &table.Cell{S: table.CellString(string(pTemporal.ID()))},
 			pAnchorBinding: &table.Cell{T: ta},
 			pAnchorAlias:   &table.Cell{T: ta},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, n),
+			cls: &semantic.GraphClause{
+				PBinding: "?p",
+				PAlias:   "?alias",
+				PIDAlias: "?id",
+			},
+			pBinding: &table.Cell{P: pImmutable},
+			pAlias:   &table.Cell{P: pImmutable},
+			pIDAlias: &table.Cell{S: table.CellString(string(pImmutable.ID()))},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, n),
+			cls: &semantic.GraphClause{
+				PAnchorBinding: "?anchorBinding",
+				PAnchorAlias:   "?anchorAlias",
+				Optional:       true,
+			},
+			pAnchorBinding: &table.Cell{},
+			pAnchorAlias:   &table.Cell{},
 		},
 	}
 
@@ -459,6 +481,42 @@ func TestDataAccessTripleToRowPredicateBindings(t *testing.T) {
 			if got, want := r[binding], entryCells[i]; !reflect.DeepEqual(got, want) {
 				t.Errorf(`tripleToRow(%q) = "%s", _; want "%s", _`, binding, got, want)
 			}
+		}
+	}
+}
+
+func TestDataAccessTripleToRowPredicateBindingsError(t *testing.T) {
+	n, pImmutable, _ := testNodePredicateLiteral(t)
+
+	testTable := []struct {
+		t   string
+		cls *semantic.GraphClause
+	}{
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, n),
+			cls: &semantic.GraphClause{
+				PAnchorBinding: "?anchorBinding",
+			},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, n),
+			cls: &semantic.GraphClause{
+				PAnchorAlias: "?anchorAlias",
+			},
+		},
+	}
+
+	for _, entry := range testTable {
+		// Setup for test:
+		tpl, err := triple.Parse(entry.t, literal.DefaultBuilder())
+		if err != nil {
+			t.Fatalf(`triple.Parse failed for triple "%s": %v`, entry.t, err)
+		}
+
+		// Actual test:
+		_, err = tripleToRow(tpl, entry.cls)
+		if _, ok := err.(*skippableError); !ok {
+			t.Errorf(`tripleToRow("%s", %q) = _, %v; want _, skippableError`, tpl, entry.cls, err)
 		}
 	}
 }
@@ -567,6 +625,16 @@ func TestDataAccessTripleToRowObjectBindings(t *testing.T) {
 			oAlias:   &table.Cell{P: pImmutable},
 			oIDAlias: &table.Cell{S: table.CellString(string(pImmutable.ID()))},
 		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, pImmutable),
+			cls: &semantic.GraphClause{
+				OAnchorBinding: "?anchorBinding",
+				OAnchorAlias:   "?anchorAlias",
+				Optional:       true,
+			},
+			oAnchorBinding: &table.Cell{},
+			oAnchorAlias:   &table.Cell{},
+		},
 	}
 
 	for _, entry := range testTable {
@@ -639,6 +707,18 @@ func TestDataAccessTripleToRowObjectBindingsError(t *testing.T) {
 			t: fmt.Sprintf("%s\t%s\t%s", n, pTemporal, pTemporal),
 			cls: &semantic.GraphClause{
 				OTypeAlias: "?type",
+			},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, pImmutable),
+			cls: &semantic.GraphClause{
+				OAnchorBinding: "?anchorBinding",
+			},
+		},
+		{
+			t: fmt.Sprintf("%s\t%s\t%s", n, pImmutable, pImmutable),
+			cls: &semantic.GraphClause{
+				OAnchorAlias: "?anchorAlias",
 			},
 		},
 	}

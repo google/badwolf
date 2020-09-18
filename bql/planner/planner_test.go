@@ -47,6 +47,7 @@ const (
 		/l<barcelona> "predicate"@[] "turned"@[2016-02-01T00:00:00-08:00]
 		/l<barcelona> "predicate"@[] "turned"@[2016-03-01T00:00:00-08:00]
 		/l<barcelona> "predicate"@[] "turned"@[2016-04-01T00:00:00-08:00]
+		/l<barcelona> "predicate"@[] "immutable_predicate"@[]
 		/u<alice> "height_cm"@[] "174"^^type:int64
 		/u<alice> "tag"@[] "abc"^^type:text
 		/u<bob> "height_cm"@[] "151"^^type:int64
@@ -674,7 +675,7 @@ func TestPlannerQuery(t *testing.T) {
 				}
 				HAVING (?s = /u<joe>) OR (?s = /l<barcelona>) OR (?s = /u<alice>);`,
 			nBindings: 2,
-			nRows:     8,
+			nRows:     9,
 		},
 		{
 			q: `SELECT ?p, ?time, ?o
@@ -686,13 +687,71 @@ func TestPlannerQuery(t *testing.T) {
 			nRows:     4,
 		},
 		{
-			q: `SELECT ?s, ?time, ?o
+			q: `SELECT ?p, ?time, ?o
 				FROM ?test
 				WHERE {
-					?s "parent_of"@[?time] ?o
+					/u<peter> ?p ?o .
+					OPTIONAL { /u<peter> ?p AT ?time ?o }
 				};`,
 			nBindings: 3,
+			nRows:     6,
+		},
+		{
+			q: `SELECT ?time, ?o
+				FROM ?test
+				WHERE {
+					/u<joe> "parent_of"@[?time] ?o
+				};`,
+			nBindings: 2,
 			nRows:     0,
+		},
+		{
+			q: `SELECT ?time, ?o
+				FROM ?test
+				WHERE {
+					/u<joe> ?p ?o .
+					OPTIONAL { /u<joe> "parent_of"@[?time] ?o }
+				};`,
+			nBindings: 2,
+			nRows:     2,
+		},
+		{
+			q: `SELECT ?p, ?o, ?time_o
+				FROM ?test
+				WHERE {
+					/l<barcelona> ?p ?o AT ?time_o
+				};`,
+			nBindings: 3,
+			nRows:     4,
+		},
+		{
+			q: `SELECT ?p, ?o, ?time_o
+				FROM ?test
+				WHERE {
+					/l<barcelona> ?p ?o .
+					OPTIONAL { /l<barcelona> ?p ?o AT ?time_o }
+				};`,
+			nBindings: 3,
+			nRows:     5,
+		},
+		{
+			q: `SELECT ?p, ?o_time
+				FROM ?test
+				WHERE {
+					/l<barcelona> ?p "immutable_predicate"@[?o_time]
+				};`,
+			nBindings: 2,
+			nRows:     0,
+		},
+		{
+			q: `SELECT ?p, ?o_time
+				FROM ?test
+				WHERE {
+					/l<barcelona> ?p ?o .
+					OPTIONAL { /l<barcelona> ?p "immutable_predicate"@[?o_time] }
+				};`,
+			nBindings: 2,
+			nRows:     5,
 		},
 		{
 			q: `SELECT ?s, ?s_alias, ?s_id, ?s_type
@@ -910,7 +969,7 @@ func TestPlannerQuery(t *testing.T) {
 				}
 				HAVING (?s = /l<barcelona>) OR (?s = /u<joe>) OR (?s = /u<bob>);`,
 			nBindings: 3,
-			nRows:     7,
+			nRows:     8,
 		},
 		{
 			q: `SELECT ?s, ?o_time
