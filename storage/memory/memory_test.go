@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/badwolf/storage"
+	"github.com/google/badwolf/tools/testutil"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/literal"
 	"github.com/google/badwolf/triple/node"
@@ -649,14 +650,6 @@ func TestTriplesForObjectLatestTemporal(t *testing.T) {
 	}
 }
 
-func mustParse(t string) *time.Time {
-	r, err := time.Parse(time.RFC3339Nano, t)
-	if err != nil {
-		panic(err)
-	}
-	return &r
-}
-
 func TestTriplesForObjectWithLimit(t *testing.T) {
 	ts := createTriples(t, []string{
 		"/u<bob>\t\"kissed\"@[2015-01-01T00:00:00-09:00]\t/u<mary>",
@@ -677,8 +670,8 @@ func TestTriplesForObjectWithLimit(t *testing.T) {
 	trpls := make(chan *triple.Triple, 100)
 	lo := &storage.LookupOptions{
 		MaxElements: 2,
-		LowerAnchor: mustParse("2015-04-01T00:00:00-08:00"),
-		UpperAnchor: mustParse("2015-06-01T00:00:00-10:00"),
+		LowerAnchor: testutil.MustBuildTime(t, "2015-04-01T00:00:00-08:00"),
+		UpperAnchor: testutil.MustBuildTime(t, "2015-06-01T00:00:00-10:00"),
 	}
 	if err := g.TriplesForObject(ctx, ts[0].Object(), lo, trpls); err != nil {
 		t.Errorf("g.TriplesForObject(%s) failed with error %v", ts[0].Object(), err)
