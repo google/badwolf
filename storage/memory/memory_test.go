@@ -593,12 +593,12 @@ func TestTriplesForPredicateLatestAnchor(t *testing.T) {
 	cnt := 0
 	for rts := range trpls {
 		cnt++
-		if !reflect.DeepEqual(rts.Predicate().UUID(), ts[len(ts)-1].Predicate().UUID()) {
-			t.Errorf("g.PredicatesForObject(%s) failed to return a valid predicate; returned %s instead", ts[0].Object(), rts.Predicate())
+		if !reflect.DeepEqual(rts.Predicate().UUID(), ts[0].Predicate().UUID()) {
+			t.Errorf("g.TriplesForPredicate(%s) = %s for LatestAnchor; want %s", ts[0].Predicate(), rts.Predicate(), ts[0].Predicate())
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.triplesForPredicate(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Predicate(), cnt)
+		t.Errorf("g.triplesForPredicate(%s) retrieved %d predicates; want 1", ts[0].Predicate(), cnt)
 	}
 }
 
@@ -731,12 +731,12 @@ func TestTriplesForSubjectAndPredicateLatestAnchor(t *testing.T) {
 	cnt := 0
 	for rts := range trpls {
 		cnt++
-		if !reflect.DeepEqual(rts.Predicate().UUID(), ts[len(ts)-1].Predicate().UUID()) {
-			t.Errorf("g.PredicatesForObject(%s) failed to return a valid predicate; returned %s instead", ts[0].Object(), rts.Predicate())
+		if !reflect.DeepEqual(rts.Predicate().UUID(), ts[0].Predicate().UUID()) {
+			t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s) = %s for LatestAnchor; want %s", ts[0].Subject(), ts[0].Predicate(), rts.Predicate(), ts[0].Predicate())
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), ts[0].Predicate(), cnt)
+		t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s) retrieved %d predicates; want 1", ts[0].Subject(), ts[0].Predicate(), cnt)
 	}
 }
 
@@ -779,12 +779,12 @@ func TestTriplesForPredicateAndObjectLatestAnchor(t *testing.T) {
 	cnt := 0
 	for rts := range trpls {
 		cnt++
-		if !reflect.DeepEqual(rts.Predicate().UUID(), ts[len(ts)-1].Predicate().UUID()) {
-			t.Errorf("g.PredicatesForObject(%s) failed to return a valid predicate; returned %s instead", ts[0].Object(), rts.Predicate())
+		if !reflect.DeepEqual(rts.Predicate().UUID(), ts[0].Predicate().UUID()) {
+			t.Errorf("g.TriplesForPredicateAndObject(%s, %s) = %s for LatestAnchor; want %s", ts[0].Predicate(), ts[0].Object(), rts.Predicate(), ts[0].Predicate())
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed to retrieve 1 predicates, got %d instead", ts[0].Predicate(), ts[0].Object(), cnt)
+		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) retrieved %d predicates; want 1", ts[0].Predicate(), ts[0].Object(), cnt)
 	}
 }
 

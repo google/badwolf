@@ -275,14 +275,18 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 }
 
 // latestFilter executes the latest filter operation over memoryTriples following filterOptions.
-func latestFilter(memoryTriples map[string]*triple.Triple, filterOptions *storage.FilteringOptions) (map[string]*triple.Triple, error) {
+func latestFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Predicate, filterOptions *storage.FilteringOptions) (map[string]*triple.Triple, error) {
 	if filterOptions.Field != "predicate" && filterOptions.Field != "object" {
 		return nil, fmt.Errorf(`invalid field %q for "latest" filter operation, can accept only "predicate" or "object"`, filterOptions.Field)
 	}
 
 	lastTA := make(map[string]*time.Time)
-	trps := make(map[string]*triple.Triple)
+	trps := make(map[string]map[string]*triple.Triple)
 	for _, t := range memoryTriples {
+		if pQuery != nil && pQuery.String() != t.Predicate().String() {
+			continue
+		}
+
 		var p *predicate.Predicate
 		if filterOptions.Field == "predicate" {
 			p = t.Predicate()
@@ -301,19 +305,27 @@ func latestFilter(memoryTriples map[string]*triple.Triple, filterOptions *storag
 			return nil, err
 		}
 		if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
-			trps[ppUUID] = t
+			trps[ppUUID] = map[string]*triple.Triple{t.UUID().String(): t}
 			lastTA[ppUUID] = ta
+		} else if ta.Sub(*lta) == 0 {
+			trps[ppUUID][t.UUID().String()] = t
 		}
 	}
 
-	return trps, nil
+	trpsByUUID := make(map[string]*triple.Triple)
+	for _, m := range trps {
+		for tUUID, t := range m {
+			trpsByUUID[tUUID] = t
+		}
+	}
+	return trpsByUUID, nil
 }
 
 // executeFilter executes the proper filter operation over memoryTriples following the specifications given in filterOptions.
-func executeFilter(memoryTriples map[string]*triple.Triple, filterOptions *storage.FilteringOptions) (map[string]*triple.Triple, error) {
+func executeFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Predicate, filterOptions *storage.FilteringOptions) (map[string]*triple.Triple, error) {
 	switch filterOptions.Operation {
 	case "latest":
-		return latestFilter(memoryTriples, filterOptions)
+		return latestFilter(memoryTriples, pQuery, filterOptions)
 	default:
 		return nil, fmt.Errorf("filter operation %q not supported in the driver", filterOptions.Operation)
 	}
@@ -347,7 +359,7 @@ func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predica
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxSP[spIdx], lo.FilterOptions)
+		trps, err := executeFilter(m.idxSP[spIdx], p, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
@@ -396,7 +408,7 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxPO[poIdx], lo.FilterOptions)
+		trps, err := executeFilter(m.idxPO[poIdx], p, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
@@ -445,7 +457,7 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxSO[soIdx], lo.FilterOptions)
+		trps, err := executeFilter(m.idxSO[soIdx], nil, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
@@ -492,7 +504,7 @@ func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *sto
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxS[sUUID], lo.FilterOptions)
+		trps, err := executeFilter(m.idxS[sUUID], nil, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
@@ -539,7 +551,7 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxO[oUUID], lo.FilterOptions)
+		trps, err := executeFilter(m.idxO[oUUID], nil, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
@@ -586,7 +598,7 @@ func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storag
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxS[sUUID], lo.FilterOptions)
+		trps, err := executeFilter(m.idxS[sUUID], nil, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
@@ -633,7 +645,7 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxP[pUUID], lo.FilterOptions)
+		trps, err := executeFilter(m.idxP[pUUID], p, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
@@ -680,7 +692,7 @@ func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *sto
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxO[oUUID], lo.FilterOptions)
+		trps, err := executeFilter(m.idxO[oUUID], nil, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
@@ -729,7 +741,7 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxSP[spIdx], lo.FilterOptions)
+		trps, err := executeFilter(m.idxSP[spIdx], p, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
@@ -778,7 +790,7 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxPO[poIdx], lo.FilterOptions)
+		trps, err := executeFilter(m.idxPO[poIdx], p, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
@@ -833,7 +845,7 @@ func (m *memory) Triples(ctx context.Context, lo *storage.LookupOptions, trpls c
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idx, lo.FilterOptions)
+		trps, err := executeFilter(m.idx, nil, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
