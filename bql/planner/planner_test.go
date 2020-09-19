@@ -39,6 +39,8 @@ const (
 		/u<peter> "bought"@[2016-02-01T00:00:00-08:00] /c<model s>
 		/u<peter> "bought"@[2016-03-01T00:00:00-08:00] /c<model x>
 		/u<peter> "bought"@[2016-04-01T00:00:00-08:00] /c<model y>
+		/u<paul> "bought"@[2016-01-01T00:00:00-08:00] /c<model n>
+		/u<paul> "bought"@[2016-04-01T00:00:00-08:00] /c<model r>
 		/c<mini> "is_a"@[] /t<car>
 		/c<model s> "is_a"@[] /t<car>
 		/c<model x> "is_a"@[] /t<car>
@@ -48,6 +50,7 @@ const (
 		/l<barcelona> "predicate"@[] "turned"@[2016-03-01T00:00:00-08:00]
 		/l<barcelona> "predicate"@[] "turned"@[2016-04-01T00:00:00-08:00]
 		/l<barcelona> "predicate"@[] "immutable_predicate"@[]
+		/l<paris> "predicate"@[] "turned"@[2016-04-01T00:00:00-08:00]
 		/u<alice> "height_cm"@[] "174"^^type:int64
 		/u<alice> "tag"@[] "abc"^^type:text
 		/u<bob> "height_cm"@[] "151"^^type:int64
@@ -840,7 +843,7 @@ func TestPlannerQuery(t *testing.T) {
 				}
 				HAVING (?p_id < "in"^^type:text) AND (?time > 2016-02-01T00:00:00-08:00);`,
 			nBindings: 4,
-			nRows:     2,
+			nRows:     3,
 		},
 		{
 			q: `SELECT ?p, ?time
@@ -958,7 +961,7 @@ func TestPlannerQuery(t *testing.T) {
 					?s ?p ?o AT ?o_time
 				};`,
 			nBindings: 3,
-			nRows:     4,
+			nRows:     5,
 		},
 		{
 			q: `SELECT ?s, ?o, ?o_time
@@ -978,7 +981,7 @@ func TestPlannerQuery(t *testing.T) {
 					?s ?p "turned"@[?o_time]
 				};`,
 			nBindings: 2,
-			nRows:     4,
+			nRows:     5,
 		},
 	}
 
