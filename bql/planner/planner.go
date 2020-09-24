@@ -264,10 +264,9 @@ type queryPlan struct {
 	store storage.Store
 	// Prepared plan information.
 	bndgs     []string
-	bndgsMap  map[string]int
 	grfsNames []string
 	grfs      []storage.Graph
-	cls       []*semantic.GraphClause
+	clauses   []*semantic.GraphClause
 	filters   []*semantic.FilterClause
 	tbl       *table.Table
 	chanSize  int
@@ -293,9 +292,8 @@ func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statem
 		stm:       stm,
 		store:     store,
 		bndgs:     bs,
-		bndgsMap:  stm.BindingsMap(),
 		grfsNames: stm.InputGraphNames(),
-		cls:       stm.GraphPatternClauses(),
+		clauses:   stm.GraphPatternClauses(),
 		filters:   stm.FilterClauses(),
 		tbl:       t,
 		chanSize:  chanSize,
@@ -643,52 +641,86 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 	return grp.Wait()
 }
 
-// organizeFiltersByBinding takes the filters received as input and organize them in a map
-// on which the keys are the bindings of each filter.
-func organizeFiltersByBinding(filters []*semantic.FilterClause, bndgsMap map[string]int) (map[string]*semantic.FilterClause, error) {
-	filtersByBinding := map[string]*semantic.FilterClause{}
-	for _, f := range filters {
-		if _, ok := bndgsMap[f.Binding]; !ok {
-			return nil, fmt.Errorf("binding %q referenced by a filter clause does not exist", f.Binding)
+// organizeClausesByBinding takes the graph clauses received as input and organize them in a map
+// on which the keys are the bindings of these clauses.
+func organizeClausesByBinding(clauses []*semantic.GraphClause) map[string][]*semantic.GraphClause {
+	clausesByBinding := map[string][]*semantic.GraphClause{}
+	for _, cls := range clauses {
+		for b := range cls.BindingsMap() {
+			clausesByBinding[b] = append(clausesByBinding[b], cls)
 		}
-		if _, ok := filtersByBinding[f.Binding]; ok {
-			return nil, fmt.Errorf("multiple filters for the same binding are not supported at the moment")
-		}
-		filtersByBinding[f.Binding] = f
 	}
 
-	return filtersByBinding, nil
+	return clausesByBinding
+}
+
+// compatibleBindingsInClauseForFilterOperation returns the bindings in the given graph clause that
+// are compatible with the specified filter operation.
+func compatibleBindingsInClauseForFilterOperation(cls *semantic.GraphClause, operation string) (bindingsByField map[string]map[string]bool, err error) {
+	supportedFiltersAndBindings := map[string]map[string]map[string]bool{
+		"latest": {
+			"predicate": {cls.PBinding: true, cls.PAlias: true},
+			"object":    {cls.OBinding: true, cls.OAlias: true},
+		},
+	}
+
+	if _, ok := supportedFiltersAndBindings[operation]; !ok {
+		err = fmt.Errorf("filter function %q on filter clause is not supported", operation)
+		return
+	}
+
+	bindingsByField = supportedFiltersAndBindings[operation]
+	return
+}
+
+// organizeFilterOptionsByClause processes all the given filters and organize them in a map that has as keys the
+// clauses to which they must be applied.
+func organizeFilterOptionsByClause(filters []*semantic.FilterClause, clauses []*semantic.GraphClause) (map[*semantic.GraphClause]*storage.FilteringOptions, error) {
+	clausesByBinding := organizeClausesByBinding(clauses)
+	filterOptionsByClause := map[*semantic.GraphClause]*storage.FilteringOptions{}
+
+	for _, f := range filters {
+		if _, ok := clausesByBinding[f.Binding]; !ok {
+			return nil, fmt.Errorf("binding %q referenced by filter clause %q does not exist in the graph pattern", f.Binding, f)
+		}
+
+		for _, cls := range clausesByBinding[f.Binding] {
+			if _, ok := filterOptionsByClause[cls]; ok {
+				return nil, fmt.Errorf("multiple filters for the same graph clause or same binding are not supported at the moment")
+			}
+
+			compatibleBindingsByField, err := compatibleBindingsInClauseForFilterOperation(cls, f.Operation)
+			if err != nil {
+				return nil, err
+			}
+
+			filterBindingIsCompatible := false
+			for field, bndgs := range compatibleBindingsByField {
+				if bndgs[f.Binding] {
+					filterBindingIsCompatible = true
+					filterOptionsByClause[cls] = &storage.FilteringOptions{
+						Operation: f.Operation,
+						Field:     field,
+						Value:     f.Value,
+					}
+					break
+				}
+			}
+			if !filterBindingIsCompatible {
+				return nil, fmt.Errorf("binding %q occupies a position in graph clause %q that is incompatible with filter function %q", f.Binding, cls, f.Operation)
+			}
+		}
+	}
+
+	return filterOptionsByClause, nil
 }
 
 // addFilterOptions adds FilterOptions to lookup options if the given clause has bindings for which
-// filters were defined.
-func addFilterOptions(lo *storage.LookupOptions, cls *semantic.GraphClause, filtersByBinding map[string]*semantic.FilterClause) error {
-	bindingsByField := map[string][]string{
-		"predicate": {cls.PBinding, cls.PAlias},
-		"object":    {cls.OBinding, cls.OAlias},
+// filters were defined (organized in filterOptionsByClause).
+func addFilterOptions(lo *storage.LookupOptions, cls *semantic.GraphClause, filterOptionsByClause map[*semantic.GraphClause]*storage.FilteringOptions) {
+	if _, ok := filterOptionsByClause[cls]; ok {
+		lo.FilterOptions = filterOptionsByClause[cls]
 	}
-
-	for field, bs := range bindingsByField {
-		for _, b := range bs {
-			if b == "" {
-				continue
-			}
-			if _, ok := filtersByBinding[b]; !ok {
-				continue
-			}
-			if lo.FilterOptions != nil {
-				return fmt.Errorf("multiple filters for the same graph clause are not supported at the moment")
-			}
-			filter := filtersByBinding[b]
-			lo.FilterOptions = &storage.FilteringOptions{
-				Operation: filter.Operation,
-				Field:     field,
-				Value:     filter.Value,
-			}
-		}
-	}
-
-	return nil
 }
 
 // resetFilterOptions resets FilterOptions in lookup options to nil.
@@ -701,7 +733,7 @@ func resetFilterOptions(lo *storage.LookupOptions) {
 func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupOptions) error {
 	tracer.Trace(p.tracer, func() *tracer.Arguments {
 		var res []string
-		for i, cls := range p.cls {
+		for i, cls := range p.clauses {
 			res = append(res, fmt.Sprintf("Clause %d to process: %v", i, cls))
 		}
 		return &tracer.Arguments{
@@ -709,23 +741,19 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 		}
 	})
 
-	filtersByBinding, err := organizeFiltersByBinding(p.filters, p.bndgsMap)
+	filterOptionsByClause, err := organizeFilterOptionsByClause(p.filters, p.clauses)
 	if err != nil {
 		return err
 	}
-	for i, c := range p.cls {
-		i, cls := i, *c
+	for i, cls := range p.clauses {
 		tracer.Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
-				Msgs: []string{fmt.Sprintf("Processing clause %d: %v", i, &cls)},
+				Msgs: []string{fmt.Sprintf("Processing clause %d: %v", i, cls)},
 			}
 		})
 
-		err = addFilterOptions(lo, &cls, filtersByBinding)
-		if err != nil {
-			return err
-		}
-		unresolvable, err := p.processClause(ctx, &cls, lo)
+		addFilterOptions(lo, cls, filterOptionsByClause)
+		unresolvable, err := p.processClause(ctx, cls, lo)
 		resetFilterOptions(lo)
 		if err != nil {
 			return err
@@ -943,7 +971,7 @@ func (p *queryPlan) String(ctx context.Context) string {
 	b.WriteString("using store(\"")
 	b.WriteString(p.store.Name(nil))
 	b.WriteString(fmt.Sprintf("\") graphs %v\nresolve\n", p.grfsNames))
-	for _, c := range p.cls {
+	for _, c := range p.clauses {
 		b.WriteString("\t")
 		b.WriteString(c.String())
 		b.WriteString("\n")

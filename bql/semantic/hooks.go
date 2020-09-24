@@ -675,9 +675,6 @@ func whereObjectClause() ElementHook {
 // if the filter clause is complete, populates the filters list of the statement.
 func whereFilterClause() ElementHook {
 	var hook ElementHook
-	supportedFilterFunctions := map[string]bool{
-		"latest": true,
-	}
 
 	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
 		if ce.IsSymbol() {
@@ -693,9 +690,6 @@ func whereFilterClause() ElementHook {
 			}
 			if currFilter.Operation != "" {
 				return nil, fmt.Errorf("invalid filter function %q on filter clause since already set to %q", tkn.Text, currFilter.Operation)
-			}
-			if !supportedFilterFunctions[tkn.Text] {
-				return nil, fmt.Errorf("filter function %q on filter clause is not supported", tkn.Text)
 			}
 			currFilter.Operation = tkn.Text
 			return hook, nil
