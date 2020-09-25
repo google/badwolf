@@ -654,22 +654,22 @@ func organizeClausesByBinding(clauses []*semantic.GraphClause) map[string][]*sem
 	return clausesByBinding
 }
 
-// compatibleBindingsInClauseForFilterOperation returns the bindings in the given graph clause that
-// are compatible with the specified filter operation.
-func compatibleBindingsInClauseForFilterOperation(cls *semantic.GraphClause, operation string) (bindingsByField map[string]map[string]bool, err error) {
-	supportedFiltersAndBindings := map[string]map[string]map[string]bool{
-		"latest": {
-			"predicate": {cls.PBinding: true, cls.PAlias: true},
-			"object":    {cls.OBinding: true, cls.OAlias: true},
-		},
-	}
-
-	if _, ok := supportedFiltersAndBindings[operation]; !ok {
+// compatibleBindingsInClauseForFilterOperation returns a function that, for each given clause, returns the bindings that are
+// compatible with the specified filter operation.
+func compatibleBindingsInClauseForFilterOperation(operation string) (compatibleBindingsInClause func(cls *semantic.GraphClause) (bindingsByField map[string]map[string]bool), err error) {
+	switch operation {
+	case "latest":
+		compatibleBindingsInClause = func(cls *semantic.GraphClause) (bindingsByField map[string]map[string]bool) {
+			bindingsByField = map[string]map[string]bool{
+				"predicate": {cls.PBinding: true, cls.PAlias: true},
+				"object":    {cls.OBinding: true, cls.OAlias: true},
+			}
+			return
+		}
+	default:
 		err = fmt.Errorf("filter function %q on filter clause is not supported", operation)
-		return
 	}
 
-	bindingsByField = supportedFiltersAndBindings[operation]
 	return
 }
 
@@ -684,16 +684,16 @@ func organizeFilterOptionsByClause(filters []*semantic.FilterClause, clauses []*
 			return nil, fmt.Errorf("binding %q referenced by filter clause %q does not exist in the graph pattern", f.Binding, f)
 		}
 
+		compatibleBindingsInClause, err := compatibleBindingsInClauseForFilterOperation(f.Operation)
+		if err != nil {
+			return nil, err
+		}
 		for _, cls := range clausesByBinding[f.Binding] {
 			if _, ok := filterOptionsByClause[cls]; ok {
 				return nil, fmt.Errorf("multiple filters for the same graph clause or same binding are not supported at the moment")
 			}
 
-			compatibleBindingsByField, err := compatibleBindingsInClauseForFilterOperation(cls, f.Operation)
-			if err != nil {
-				return nil, err
-			}
-
+			compatibleBindingsByField := compatibleBindingsInClause(cls)
 			filterBindingIsCompatible := false
 			for field, bndgs := range compatibleBindingsByField {
 				if bndgs[f.Binding] {
