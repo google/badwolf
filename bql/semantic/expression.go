@@ -85,7 +85,7 @@ func (o OP) String() string {
 func cellFromRow(binding string, r table.Row) (*table.Cell, error) {
 	val, ok := r[binding]
 	if !ok {
-		return nil, fmt.Errorf("comparison operation requires the binding value for %q for row %v to exist", binding, r)
+		return nil, fmt.Errorf("value for binding %q not found in row %v", binding, r)
 	}
 	return val, nil
 }
