@@ -81,6 +81,15 @@ func (o OP) String() string {
 	}
 }
 
+// cellFromRow retrieves the value of a binding from a given row.
+func cellFromRow(binding string, r table.Row) (*table.Cell, error) {
+	val, ok := r[binding]
+	if !ok {
+		return nil, fmt.Errorf("value for binding %q not found in row %v", binding, r)
+	}
+	return val, nil
+}
+
 // formatCell formats a given cell into a trimmed comparable string.
 func formatCell(c *table.Cell) (string, error) {
 	if c.L != nil {
@@ -98,46 +107,44 @@ func formatCell(c *table.Cell) (string, error) {
 
 // evaluationNode represents the internal representation of one expression.
 type evaluationNode struct {
-	op OP // operation.
+	operation OP
 
-	lB string // left binding.
-	rB string // right binding.
+	leftBinding  string
+	rightBinding string
 }
 
 // Evaluate the expression.
 func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 	// Binary evaluation.
 	eval := func() (*table.Cell, *table.Cell, error) {
-		var (
-			eL, eR *table.Cell
-			ok     bool
-		)
-		eL, ok = r[e.lB]
-		if !ok {
-			return nil, nil, fmt.Errorf("comparison operation requires the binding value for %q for row %v to exist", e.lB, r)
+		leftBinding, err := cellFromRow(e.leftBinding, r)
+		if err != nil {
+			return nil, nil, fmt.Errorf("evaluationNode.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.leftBinding, r, err)
 		}
-		eR, ok = r[e.rB]
-		if !ok {
-			return nil, nil, fmt.Errorf("comparison operation requires the binding value for %q for row %v to exist", e.rB, r)
+		rightBinding, err := cellFromRow(e.rightBinding, r)
+		if err != nil {
+			return nil, nil, fmt.Errorf("evaluationNode.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.rightBinding, r, err)
 		}
-		return eL, eR, nil
+		return leftBinding, rightBinding, nil
 	}
 
-	eL, eR, err := eval()
+	leftBinding, rightBinding, err := eval()
 	if err != nil {
 		return false, err
 	}
 
-	csEL, err := formatCell(eL)
+	// comparable string expressions for left and right tokens.
+	var csEL, csER string
+	csEL, err = formatCell(leftBinding)
 	if err != nil {
-		return false, fmt.Errorf("evaluationNode.Evaluate failed, the call for formatCell(%s) returned error: %v", eL, err)
+		return false, fmt.Errorf("evaluationNode.Evaluate failed, the call for formatCell(%s) returned error: %v", leftBinding, err)
 	}
-	csER, err := formatCell(eR)
+	csER, err = formatCell(rightBinding)
 	if err != nil {
-		return false, fmt.Errorf("evaluationNode.Evaluate failed, the call for formatCell(%s) returned error: %v", eR, err)
+		return false, fmt.Errorf("evaluationNode.Evaluate failed, the call for formatCell(%s) returned error: %v", rightBinding, err)
 	}
 
-	switch e.op {
+	switch e.operation {
 	case EQ:
 		return csEL == csER, nil
 	case LT:
@@ -145,61 +152,48 @@ func (e *evaluationNode) Evaluate(r table.Row) (bool, error) {
 	case GT:
 		return csEL > csER, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op.String())
+		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.operation)
 	}
-}
-
-// cellFromRow retrives the value of a binding from a given row.
-func cellFromRow(binding string, r table.Row) (*table.Cell, error) {
-	var (
-		val *table.Cell
-		ok  bool
-	)
-	val, ok = r[binding]
-	if !ok {
-		return nil, fmt.Errorf("comparison operation requires the binding value for %q for row %v to exist", binding, r)
-	}
-	return val, nil
 }
 
 // comparisonForLiteral represents the internal representation of an expression of comparison between a binding and a literal.
 type comparisonForLiteral struct {
-	op OP // operation.
+	operation OP
 
-	lS string // left string.
-	rS string // right string.
+	leftBinding  string
+	rightLiteral string
 }
 
 func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
-	leftCell, err := cellFromRow(e.lS, r)
+	leftBinding, err := cellFromRow(e.leftBinding, r)
 	if err != nil {
-		return false, fmt.Errorf("comparisonForLiteral.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.lS, r, err)
+		return false, fmt.Errorf("comparisonForLiteral.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.leftBinding, r, err)
 	}
-	if leftCell.L == nil && leftCell.S == nil {
+	if leftBinding.L == nil && leftBinding.S == nil {
 		return false, nil
 	}
 
-	rightLiteral, err := literal.DefaultBuilder().Parse(e.rS)
+	rightLiteral, err := literal.DefaultBuilder().Parse(e.rightLiteral)
 	if err != nil {
-		return false, fmt.Errorf("comparisonForLiteral.Evaluate failed, could not parse literal from the string %q, got error: %v", e.rS, err)
+		return false, fmt.Errorf("comparisonForLiteral.Evaluate failed, could not parse literal from the string %q, got error: %v", e.rightLiteral, err)
 	}
-	if leftCell.S != nil && rightLiteral.Type() != literal.Text {
-		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", rightLiteral.String())
+	if leftBinding.S != nil && rightLiteral.Type() != literal.Text {
+		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", rightLiteral)
 	}
 
-	if leftCell.L != nil && leftCell.L.Type() != rightLiteral.Type() {
+	if leftBinding.L != nil && leftBinding.L.Type() != rightLiteral.Type() {
 		return false, nil
 	}
 
 	// comparable string expressions for left and right tokens.
 	var csEL, csER string
-	csEL, err = formatCell(leftCell)
+	csEL, err = formatCell(leftBinding)
 	if err != nil {
-		return false, fmt.Errorf("comparisonForLiteral.Evaluate failed, the call for formatCell(%s) returned error: %v", leftCell, err)
+		return false, fmt.Errorf("comparisonForLiteral.Evaluate failed, the call for formatCell(%s) returned error: %v", leftBinding, err)
 	}
 	csER = rightLiteral.ToComparableString()
 
-	switch e.op {
+	switch e.operation {
 	case EQ:
 		return csEL == csER, nil
 	case LT:
@@ -207,71 +201,73 @@ func (e *comparisonForLiteral) Evaluate(r table.Row) (bool, error) {
 	case GT:
 		return csEL > csER, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op.String())
+		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.operation)
 	}
 }
 
 // comparisonForNodeLiteral represents the internal representation of an expression of comparison between a binding and a node literal.
 type comparisonForNodeLiteral struct {
-	op OP // operation.
+	operation OP
 
-	lB  string // left binding.
-	rNL string // right node literal.
+	leftBinding      string
+	rightNodeLiteral string
 }
 
 func (e *comparisonForNodeLiteral) Evaluate(r table.Row) (bool, error) {
-	eL, err := cellFromRow(e.lB, r)
+	leftBinding, err := cellFromRow(e.leftBinding, r)
 	if err != nil {
-		return false, fmt.Errorf("comparisonForNodeLiteral.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.lB, r, err)
+		return false, fmt.Errorf("comparisonForNodeLiteral.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.leftBinding, r, err)
 	}
-	if eL.S != nil {
-		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", strings.TrimSpace(e.rNL))
+	if leftBinding.S != nil {
+		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", strings.TrimSpace(e.rightNodeLiteral))
 	}
-	if eL.N == nil {
+	if leftBinding.N == nil {
 		return false, nil
 	}
 
-	csEL, err := formatCell(eL)
+	// comparable string expressions for left and right tokens.
+	var csEL, csER string
+	csEL, err = formatCell(leftBinding)
 	if err != nil {
-		return false, fmt.Errorf("comparisonForNodeLiteral.Evaluate failed, the call for formatCell(%s) returned error: %v", eL, err)
+		return false, fmt.Errorf("comparisonForNodeLiteral.Evaluate failed, the call for formatCell(%s) returned error: %v", leftBinding, err)
 	}
-	csER := strings.TrimSpace(e.rNL)
+	csER = strings.TrimSpace(e.rightNodeLiteral)
 
-	switch e.op {
+	switch e.operation {
 	case EQ:
 		return csEL == csER, nil
 	default:
-		return false, fmt.Errorf(`comparisonForNodeLiteral.Evaluate got operation %q, but it accepts only the "=" operation. For ">" and "<" think about extracting bindings with the keywords ID/TYPE and using them for comparisons`, e.op)
+		return false, fmt.Errorf(`comparisonForNodeLiteral.Evaluate got operation %q, but it accepts only the "=" operation. For ">" and "<" think about extracting bindings with the keywords ID/TYPE and using them for comparisons`, e.operation)
 	}
 }
 
 // comparisonForTimeLiteral is the internal representation of an expression of comparison between a binding and a time literal.
 type comparisonForTimeLiteral struct {
-	op OP // operation.
+	operation OP
 
-	lB  string // left binding.
-	rTL string // right time literal.
+	leftBinding      string
+	rightTimeLiteral string
 }
 
 func (e *comparisonForTimeLiteral) Evaluate(r table.Row) (bool, error) {
-	eL, err := cellFromRow(e.lB, r)
+	leftBinding, err := cellFromRow(e.leftBinding, r)
 	if err != nil {
-		return false, fmt.Errorf("comparisonForTimeLiteral.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.lB, r, err)
+		return false, fmt.Errorf("comparisonForTimeLiteral.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.leftBinding, r, err)
 	}
-	if eL.S != nil {
-		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", strings.TrimSpace(e.rTL))
+	if leftBinding.S != nil {
+		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", strings.TrimSpace(e.rightTimeLiteral))
 	}
-	if eL.T == nil {
+	if leftBinding.T == nil {
 		return false, nil
 	}
 
-	timeBinding := eL.T
-	timeLiteral, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(e.rTL))
+	timeBinding := leftBinding.T
+	timeLiteral, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(e.rightTimeLiteral))
 	if err != nil {
-		return false, fmt.Errorf("comparisonForTimeLiteral.Evaluate failed, could not parse time from the string %q, got error: %v", strings.TrimSpace(e.rTL), err)
+		return false, fmt.Errorf("comparisonForTimeLiteral.Evaluate failed, could not parse time from the string %q, got error: %v", strings.TrimSpace(e.rightTimeLiteral), err)
 	}
 
-	switch e.op {
+	switch e.operation {
 	case EQ:
 		return timeBinding.Equal(timeLiteral), nil
 	case LT:
@@ -279,41 +275,43 @@ func (e *comparisonForTimeLiteral) Evaluate(r table.Row) (bool, error) {
 	case GT:
 		return timeBinding.After(timeLiteral), nil
 	default:
-		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.op.String())
+		return false, fmt.Errorf("boolean evaluation requires a boolean operation; found %q instead", e.operation)
 	}
 }
 
 // comparisonForPredicateLiteral represents the internal representation of an expression of comparison between a binding and a predicate literal.
 type comparisonForPredicateLiteral struct {
-	op OP // operation.
+	operation OP
 
-	lB  string // left binding.
-	rPL string // right predicate literal.
+	leftBinding           string
+	rightPredicateLiteral string
 }
 
 func (e *comparisonForPredicateLiteral) Evaluate(r table.Row) (bool, error) {
-	eL, err := cellFromRow(e.lB, r)
+	leftBinding, err := cellFromRow(e.leftBinding, r)
 	if err != nil {
-		return false, fmt.Errorf("comparisonForPredicateLiteral.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.lB, r, err)
+		return false, fmt.Errorf("comparisonForPredicateLiteral.Evaluate failed, the call for cellFromRow(%v, %v) returned error: %v", e.leftBinding, r, err)
 	}
-	if eL.S != nil {
-		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", strings.TrimSpace(e.rPL))
+	if leftBinding.S != nil {
+		return false, fmt.Errorf("a string binding can only be compared with a literal of type text, got literal %q instead", strings.TrimSpace(e.rightPredicateLiteral))
 	}
-	if eL.P == nil {
+	if leftBinding.P == nil {
 		return false, nil
 	}
 
-	csEL, err := formatCell(eL)
+	// comparable string expressions for left and right tokens.
+	var csEL, csER string
+	csEL, err = formatCell(leftBinding)
 	if err != nil {
-		return false, fmt.Errorf("comparisonForPredicateLiteral.Evaluate failed, the call for formatCell(%s) returned error: %v", eL, err)
+		return false, fmt.Errorf("comparisonForPredicateLiteral.Evaluate failed, the call for formatCell(%s) returned error: %v", leftBinding, err)
 	}
-	csER := strings.TrimSpace(e.rPL)
+	csER = strings.TrimSpace(e.rightPredicateLiteral)
 
-	switch e.op {
+	switch e.operation {
 	case EQ:
 		return csEL == csER, nil
 	default:
-		return false, fmt.Errorf(`comparisonForPredicateLiteral.Evaluate got operation %q, but it accepts only the "=" operation. For ">" and "<" think about extracting bindings with the keywords ID/AT and using them for comparisons`, e.op)
+		return false, fmt.Errorf(`comparisonForPredicateLiteral.Evaluate got operation %q, but it accepts only the "=" operation. For ">" and "<" think about extracting bindings with the keywords ID/AT and using them for comparisons`, e.operation)
 	}
 }
 
@@ -326,9 +324,9 @@ func NewEvaluationExpression(op OP, lB, rB string) (Evaluator, error) {
 	switch op {
 	case EQ, LT, GT:
 		return &evaluationNode{
-			op: op,
-			lB: lB,
-			rB: rB,
+			operation:    op,
+			leftBinding:  lB,
+			rightBinding: rB,
 		}, nil
 	default:
 		return nil, errors.New("evaluation expressions require the operation to be one for the following '=', '<', '>'")
@@ -344,9 +342,9 @@ func NewEvaluationExpressionForLiteral(op OP, lB, rL string) (Evaluator, error) 
 	switch op {
 	case EQ, LT, GT:
 		return &comparisonForLiteral{
-			op: op,
-			lS: l,
-			rS: r,
+			operation:    op,
+			leftBinding:  l,
+			rightLiteral: r,
 		}, nil
 	default:
 		return nil, errors.New("evaluation expressions require the operation to be one for the following '=', '<', '>'")
@@ -362,9 +360,9 @@ func NewEvaluationExpressionForNodeLiteral(op OP, lB, rNL string) (Evaluator, er
 	switch op {
 	case EQ, LT, GT:
 		return &comparisonForNodeLiteral{
-			op:  op,
-			lB:  l,
-			rNL: r,
+			operation:        op,
+			leftBinding:      l,
+			rightNodeLiteral: r,
 		}, nil
 	default:
 		return nil, errors.New("evaluation expressions require the operation to be one for the following '=', '<', '>'")
@@ -380,9 +378,9 @@ func NewEvaluationExpressionForTimeLiteral(op OP, lB, rTL string) (Evaluator, er
 	switch op {
 	case EQ, LT, GT:
 		return &comparisonForTimeLiteral{
-			op:  op,
-			lB:  l,
-			rTL: r,
+			operation:        op,
+			leftBinding:      l,
+			rightTimeLiteral: r,
 		}, nil
 	default:
 		return nil, errors.New("evaluation expressions require the operation to be one of the following: '=', '<', '>'")
@@ -398,9 +396,9 @@ func NewEvaluationExpressionForPredicateLiteral(op OP, lB, rTL string) (Evaluato
 	switch op {
 	case EQ, LT, GT:
 		return &comparisonForPredicateLiteral{
-			op:  op,
-			lB:  l,
-			rPL: r,
+			operation:             op,
+			leftBinding:           l,
+			rightPredicateLiteral: r,
 		}, nil
 	default:
 		return nil, errors.New("evaluation expressions require the operation to be one of the following: '=', '<', '>'")
@@ -464,7 +462,7 @@ func (e *booleanNode) Evaluate(r table.Row) (bool, error) {
 		}
 		return !eL, nil
 	default:
-		return false, fmt.Errorf("boolean evaluation requires a boolen operation; found %q instead", e.op.String())
+		return false, fmt.Errorf("boolean evaluation requires a boolen operation; found %q instead", e.op)
 	}
 }
 
