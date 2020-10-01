@@ -1,0 +1,44 @@
+// Copyright 2020 Google Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Package filter isolates core FILTER related implementation.
+package filter
+
+import (
+	"fmt"
+)
+
+// Operation represents a filter operation supported in BadWolf.
+type Operation int
+
+// List of supported filter operations.
+const (
+	Latest Operation = iota + 1
+)
+
+// SupportedOperations maps suported filter operation strings to their correspondant Operation.
+// Note that the string keys here must be in lowercase letters only (for compatibility with the WhereFilterClauseHook).
+var SupportedOperations = map[string]Operation{
+	"latest": Latest,
+}
+
+// String returns the string representation of Operation.
+func (op Operation) String() string {
+	switch op {
+	case Latest:
+		return "latest"
+	default:
+		return fmt.Sprintf(`not defined filter operation "%d"`, op)
+	}
+}

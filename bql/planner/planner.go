@@ -28,6 +28,7 @@ import (
 	"sync"
 
 	"github.com/google/badwolf/bql/lexer"
+	"github.com/google/badwolf/bql/planner/filter"
 	"github.com/google/badwolf/bql/planner/tracer"
 	"github.com/google/badwolf/bql/semantic"
 	"github.com/google/badwolf/bql/table"
@@ -637,9 +638,9 @@ func organizeClausesByBinding(clauses []*semantic.GraphClause) map[string][]*sem
 
 // compatibleBindingsInClauseForFilterOperation returns a function that, for each given clause, returns the bindings that are
 // compatible with the specified filter operation.
-func compatibleBindingsInClauseForFilterOperation(operation string) (compatibleBindingsInClause func(cls *semantic.GraphClause) (bindingsByField map[string]map[string]bool), err error) {
+func compatibleBindingsInClauseForFilterOperation(operation filter.Operation) (compatibleBindingsInClause func(cls *semantic.GraphClause) (bindingsByField map[string]map[string]bool), err error) {
 	switch operation {
-	case "latest":
+	case filter.Latest:
 		compatibleBindingsInClause = func(cls *semantic.GraphClause) (bindingsByField map[string]map[string]bool) {
 			bindingsByField = map[string]map[string]bool{
 				"predicate": {cls.PBinding: true, cls.PAlias: true},
@@ -648,7 +649,7 @@ func compatibleBindingsInClauseForFilterOperation(operation string) (compatibleB
 			return
 		}
 	default:
-		err = fmt.Errorf("filter function %q on filter clause is not supported", operation)
+		err = fmt.Errorf("filter function %q has no bindings in clause specified for it (planner level)", operation)
 	}
 
 	return
