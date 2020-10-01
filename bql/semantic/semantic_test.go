@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/badwolf/bql/planner/filter"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/literal"
 	"github.com/google/badwolf/triple/node"
@@ -274,7 +275,7 @@ func TestFilterClauseManipulation(t *testing.T) {
 
 	t.Run("test call to add workingFilter", func(t *testing.T) {
 		wf := st.WorkingFilter()
-		*wf = FilterClause{Operation: "latest", Binding: "?p"}
+		*wf = FilterClause{Operation: filter.Latest, Binding: "?p"}
 		st.AddWorkingFilterClause()
 		if got, want := len(st.FilterClauses()), 1; got != want {
 			t.Fatalf(`len(semantic.Statement.FilterClauses()) = %d for statement "%v"; want %d`, got, st, want)
@@ -360,7 +361,7 @@ func TestIsEmptyFilterClause(t *testing.T) {
 			want: true,
 		},
 		{
-			in:   &FilterClause{Operation: "latest", Binding: "?p"},
+			in:   &FilterClause{Operation: filter.Latest, Binding: "?p"},
 			want: false,
 		},
 	}
