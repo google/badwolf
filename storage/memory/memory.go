@@ -276,7 +276,7 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 }
 
 // latestFilter executes the latest filter operation over memoryTriples following filterOptions.
-func latestFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Predicate, filterOptions *storage.FilteringOptions) (map[string]*triple.Triple, error) {
+func latestFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Predicate, filterOptions *filter.StorageOptions) (map[string]*triple.Triple, error) {
 	if filterOptions.Field != "predicate" && filterOptions.Field != "object" {
 		return nil, fmt.Errorf(`invalid field %q for "latest" filter operation, can accept only "predicate" or "object"`, filterOptions.Field)
 	}
@@ -323,7 +323,7 @@ func latestFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Pre
 }
 
 // executeFilter executes the proper filter operation over memoryTriples following the specifications given in filterOptions.
-func executeFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Predicate, filterOptions *storage.FilteringOptions) (map[string]*triple.Triple, error) {
+func executeFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Predicate, filterOptions *filter.StorageOptions) (map[string]*triple.Triple, error) {
 	switch filterOptions.Operation {
 	case filter.Latest:
 		return latestFilter(memoryTriples, pQuery, filterOptions)
@@ -350,13 +350,13 @@ func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predica
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
-		lo.FilterOptions = &storage.FilteringOptions{
+		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
-			lo.FilterOptions = (*storage.FilteringOptions)(nil)
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
 		}()
 	}
 	if lo.FilterOptions != nil {
@@ -399,13 +399,13 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
-		lo.FilterOptions = &storage.FilteringOptions{
+		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
-			lo.FilterOptions = (*storage.FilteringOptions)(nil)
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
 		}()
 	}
 	if lo.FilterOptions != nil {
@@ -448,13 +448,13 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
-		lo.FilterOptions = &storage.FilteringOptions{
+		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
-			lo.FilterOptions = (*storage.FilteringOptions)(nil)
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
 		}()
 	}
 	if lo.FilterOptions != nil {
@@ -495,13 +495,13 @@ func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *sto
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
-		lo.FilterOptions = &storage.FilteringOptions{
+		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
-			lo.FilterOptions = (*storage.FilteringOptions)(nil)
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
 		}()
 	}
 	if lo.FilterOptions != nil {
@@ -542,13 +542,13 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
-		lo.FilterOptions = &storage.FilteringOptions{
+		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
-			lo.FilterOptions = (*storage.FilteringOptions)(nil)
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
 		}()
 	}
 	if lo.FilterOptions != nil {
@@ -589,13 +589,13 @@ func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storag
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
-		lo.FilterOptions = &storage.FilteringOptions{
+		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
-			lo.FilterOptions = (*storage.FilteringOptions)(nil)
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
 		}()
 	}
 	if lo.FilterOptions != nil {
@@ -636,13 +636,13 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
-		lo.FilterOptions = &storage.FilteringOptions{
+		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
-			lo.FilterOptions = (*storage.FilteringOptions)(nil)
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
 		}()
 	}
 	if lo.FilterOptions != nil {
@@ -683,13 +683,13 @@ func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *sto
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
-		lo.FilterOptions = &storage.FilteringOptions{
+		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
-			lo.FilterOptions = (*storage.FilteringOptions)(nil)
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
 		}()
 	}
 	if lo.FilterOptions != nil {
@@ -732,13 +732,13 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
-		lo.FilterOptions = &storage.FilteringOptions{
+		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
-			lo.FilterOptions = (*storage.FilteringOptions)(nil)
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
 		}()
 	}
 	if lo.FilterOptions != nil {
@@ -781,13 +781,13 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
-		lo.FilterOptions = &storage.FilteringOptions{
+		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
-			lo.FilterOptions = (*storage.FilteringOptions)(nil)
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
 		}()
 	}
 	if lo.FilterOptions != nil {
@@ -836,13 +836,13 @@ func (m *memory) Triples(ctx context.Context, lo *storage.LookupOptions, trpls c
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
-		lo.FilterOptions = &storage.FilteringOptions{
+		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
-			lo.FilterOptions = (*storage.FilteringOptions)(nil)
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
 		}()
 	}
 	if lo.FilterOptions != nil {
