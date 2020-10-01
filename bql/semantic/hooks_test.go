@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/badwolf/bql/lexer"
+	"github.com/google/badwolf/bql/planner/filter"
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"
@@ -223,7 +224,7 @@ func TestWhereFilterClauseHook(t *testing.T) {
 				NewConsumedSymbol("FOO"),
 			},
 			want: &FilterClause{
-				Operation: "latest",
+				Operation: filter.Latest,
 				Binding:   "?p",
 			},
 		},
@@ -253,7 +254,7 @@ func TestWhereFilterClauseHook(t *testing.T) {
 				NewConsumedSymbol("FOO"),
 			},
 			want: &FilterClause{
-				Operation: "latest",
+				Operation: filter.Latest,
 				Binding:   "?o",
 			},
 		},
