@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/badwolf/bql/lexer"
+	"github.com/google/badwolf/bql/planner/filter"
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/literal"
@@ -688,16 +689,20 @@ func whereFilterClause() ElementHook {
 			if currFilter == nil {
 				return nil, fmt.Errorf("could not add filter function %q to nil filter clause", tkn.Text)
 			}
-			if currFilter.Operation != "" {
+			if currFilter.Operation != filter.Operation(0) {
 				return nil, fmt.Errorf("invalid filter function %q on filter clause since already set to %q", tkn.Text, currFilter.Operation)
 			}
-			currFilter.Operation = tkn.Text
+			lowercaseFilter := strings.ToLower(tkn.Text)
+			if _, ok := filter.SupportedOperations[lowercaseFilter]; !ok {
+				return nil, fmt.Errorf("filter function %q on filter clause is not supported", tkn.Text)
+			}
+			currFilter.Operation = filter.SupportedOperations[lowercaseFilter]
 			return hook, nil
 		case lexer.ItemBinding:
 			if currFilter == nil {
 				return nil, fmt.Errorf("could not add binding %q to nil filter clause", tkn.Text)
 			}
-			if currFilter.Operation == "" {
+			if currFilter.Operation == filter.Operation(0) {
 				return nil, fmt.Errorf("could not add binding %q to a filter clause that does not have a filter function previously set", tkn.Text)
 			}
 			if currFilter.Binding != "" {
@@ -706,7 +711,7 @@ func whereFilterClause() ElementHook {
 			currFilter.Binding = tkn.Text
 			return hook, nil
 		case lexer.ItemRPar:
-			if currFilter == nil || currFilter.Operation == "" || currFilter.Binding == "" {
+			if currFilter == nil || currFilter.Operation == filter.Operation(0) || currFilter.Binding == "" {
 				return nil, fmt.Errorf("could not add invalid working filter %q to the statement filters list", currFilter)
 			}
 			st.AddWorkingFilterClause()
