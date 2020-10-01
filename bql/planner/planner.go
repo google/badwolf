@@ -676,9 +676,9 @@ func compatibleBindingsInClauseForFilterOperation(operation filter.Operation) (c
 
 // organizeFilterOptionsByClause processes all the given filters and organize them in a map that has as keys the
 // clauses to which they must be applied.
-func organizeFilterOptionsByClause(filters []*semantic.FilterClause, clauses []*semantic.GraphClause) (map[*semantic.GraphClause]*storage.FilteringOptions, error) {
+func organizeFilterOptionsByClause(filters []*semantic.FilterClause, clauses []*semantic.GraphClause) (map[*semantic.GraphClause]*filter.StorageOptions, error) {
 	clausesByBinding := organizeClausesByBinding(clauses)
-	filterOptionsByClause := map[*semantic.GraphClause]*storage.FilteringOptions{}
+	filterOptionsByClause := map[*semantic.GraphClause]*filter.StorageOptions{}
 
 	for _, f := range filters {
 		if _, ok := clausesByBinding[f.Binding]; !ok {
@@ -699,7 +699,7 @@ func organizeFilterOptionsByClause(filters []*semantic.FilterClause, clauses []*
 			for field, bndgs := range compatibleBindingsByField {
 				if bndgs[f.Binding] {
 					filterBindingIsCompatible = true
-					filterOptionsByClause[cls] = &storage.FilteringOptions{
+					filterOptionsByClause[cls] = &filter.StorageOptions{
 						Operation: f.Operation,
 						Field:     field,
 						Value:     f.Value,
@@ -718,7 +718,7 @@ func organizeFilterOptionsByClause(filters []*semantic.FilterClause, clauses []*
 
 // addFilterOptions adds FilterOptions to lookup options if the given clause has bindings for which
 // filters were defined (organized in filterOptionsByClause).
-func addFilterOptions(lo *storage.LookupOptions, cls *semantic.GraphClause, filterOptionsByClause map[*semantic.GraphClause]*storage.FilteringOptions) {
+func addFilterOptions(lo *storage.LookupOptions, cls *semantic.GraphClause, filterOptionsByClause map[*semantic.GraphClause]*filter.StorageOptions) {
 	if _, ok := filterOptionsByClause[cls]; ok {
 		lo.FilterOptions = filterOptionsByClause[cls]
 	}
@@ -726,7 +726,7 @@ func addFilterOptions(lo *storage.LookupOptions, cls *semantic.GraphClause, filt
 
 // resetFilterOptions resets FilterOptions in lookup options to nil.
 func resetFilterOptions(lo *storage.LookupOptions) {
-	lo.FilterOptions = (*storage.FilteringOptions)(nil)
+	lo.FilterOptions = (*filter.StorageOptions)(nil)
 }
 
 // processGraphPattern process the query graph pattern to retrieve the
