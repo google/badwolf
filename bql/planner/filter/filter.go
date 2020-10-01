@@ -52,3 +52,8 @@ func (op Operation) String() string {
 		return fmt.Sprintf(`not defined filter operation "%d"`, op)
 	}
 }
+
+// String returns the string representation of StorageOptions.
+func (so *StorageOptions) String() string {
+	return fmt.Sprintf("%+v", *so)
+}
