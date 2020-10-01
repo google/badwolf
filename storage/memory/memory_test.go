@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/badwolf/bql/planner/filter"
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/tools/testutil"
 	"github.com/google/badwolf/triple"
@@ -330,19 +331,19 @@ func TestObjectsFilter(t *testing.T) {
 		want map[string]int
 	}{
 		{
-			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			s:    testutil.MustBuildNodeFromStrings(t, "/u", "john"),
 			p:    testutil.MustBuildPredicate(t, `"meet"@[2012-04-10T04:21:00Z]`),
 			want: map[string]int{"/u<mary>": 1},
 		},
 		{
-			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			s:    testutil.MustBuildNodeFromStrings(t, "/u", "john"),
 			p:    testutil.MustBuildPredicate(t, `"meet"@[2014-04-10T04:21:00Z]`),
 			want: map[string]int{"/u<mary>": 1, "/u<bob>": 1},
 		},
 		{
-			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "object"}},
+			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "object"}},
 			s:    testutil.MustBuildNodeFromStrings(t, "/_", "bn"),
 			p:    testutil.MustBuildPredicate(t, `"_predicate"@[]`),
 			want: map[string]int{`"meet"@[2021-04-10T04:21:00Z]`: 1},
@@ -442,19 +443,19 @@ func TestSubjectsFilter(t *testing.T) {
 		want map[string]int
 	}{
 		{
-			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			p:    testutil.MustBuildPredicate(t, `"meet"@[2012-04-10T04:21:00Z]`),
 			o:    triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
 			want: map[string]int{"/u<john>": 1},
 		},
 		{
-			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			p:    testutil.MustBuildPredicate(t, `"meet"@[2014-04-10T04:21:00Z]`),
 			o:    triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
 			want: map[string]int{"/u<john>": 1},
 		},
 		{
-			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "object"}},
+			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "object"}},
 			p:    testutil.MustBuildPredicate(t, `"_predicate"@[]`),
 			o:    triple.NewPredicateObject(testutil.MustBuildPredicate(t, `"meet"@[2020-04-10T04:21:00Z]`)),
 			want: map[string]int{"/_<bn>": 1},
@@ -552,19 +553,19 @@ func TestPredicatesForSubjectAndObjectFilter(t *testing.T) {
 		want map[string]int
 	}{
 		{
-			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			s:    testutil.MustBuildNodeFromStrings(t, "/u", "john"),
 			o:    triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
 			want: map[string]int{`"meet"@[2014-04-10T04:21:00Z]`: 1},
 		},
 		{
-			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			s:    testutil.MustBuildNodeFromStrings(t, "/u", "john"),
 			o:    triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "bob")),
 			want: map[string]int{`"meet"@[2014-04-10T04:21:00Z]`: 1},
 		},
 		{
-			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "object"}},
+			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "object"}},
 			s:    testutil.MustBuildNodeFromStrings(t, "/_", "bn"),
 			o:    triple.NewPredicateObject(testutil.MustBuildPredicate(t, `"meet"@[2020-04-10T04:21:00Z]`)),
 			want: map[string]int{`"_predicate"@[]`: 1},
@@ -661,12 +662,12 @@ func TestPredicatesForSubjectFilter(t *testing.T) {
 		want map[string]int
 	}{
 		{
-			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			s:    testutil.MustBuildNodeFromStrings(t, "/u", "john"),
 			want: map[string]int{`"meet"@[2014-04-10T04:21:00Z]`: 2},
 		},
 		{
-			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "object"}},
+			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "object"}},
 			s:    testutil.MustBuildNodeFromStrings(t, "/_", "bn"),
 			want: map[string]int{`"_predicate"@[]`: 1},
 		},
@@ -761,17 +762,17 @@ func TestPredicatesForObjectFilter(t *testing.T) {
 		want map[string]int
 	}{
 		{
-			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			o:    triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
 			want: map[string]int{`"meet"@[2014-04-10T04:21:00Z]`: 1},
 		},
 		{
-			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			o:    triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "bob")),
 			want: map[string]int{`"meet"@[2014-04-10T04:21:00Z]`: 1},
 		},
 		{
-			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "object"}},
+			lo:   &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "object"}},
 			o:    triple.NewPredicateObject(testutil.MustBuildPredicate(t, `"meet"@[2020-04-10T04:21:00Z]`)),
 			want: map[string]int{`"_predicate"@[]`: 1},
 		},
@@ -863,12 +864,12 @@ func TestTriplesForSubjectFilter(t *testing.T) {
 		want map[string]int
 	}{
 		{
-			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			s:  testutil.MustBuildNodeFromStrings(t, "/u", "john"),
 			want: map[string]int{`/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<mary>`: 1, `/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<bob>`: 1},
 		},
 		{
-			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "object"}},
+			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "object"}},
 			s:  testutil.MustBuildNodeFromStrings(t, "/_", "bn"),
 			want: map[string]int{`/_<bn>	"_predicate"@[]	"meet"@[2021-04-10T04:21:00Z]`: 1},
 		},
@@ -960,17 +961,17 @@ func TestTriplesForPredicateFilter(t *testing.T) {
 		want map[string]int
 	}{
 		{
-			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			p:  testutil.MustBuildPredicate(t, `"meet"@[2012-04-10T04:21:00Z]`),
 			want: map[string]int{`/u<john>	"meet"@[2012-04-10T04:21:00Z]	/u<mary>`: 1},
 		},
 		{
-			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			p:  testutil.MustBuildPredicate(t, `"meet"@[2014-04-10T04:21:00Z]`),
 			want: map[string]int{`/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<mary>`: 1, `/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<bob>`: 1},
 		},
 		{
-			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "object"}},
+			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "object"}},
 			p:  testutil.MustBuildPredicate(t, `"_predicate"@[]`),
 			want: map[string]int{`/_<bn>	"_predicate"@[]	"meet"@[2021-04-10T04:21:00Z]`: 1},
 		},
@@ -1062,17 +1063,17 @@ func TestTriplesForObjectFilter(t *testing.T) {
 		want map[string]int
 	}{
 		{
-			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			o:  triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
 			want: map[string]int{`/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<mary>`: 1},
 		},
 		{
-			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			o:  triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "bob")),
 			want: map[string]int{`/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<bob>`: 1},
 		},
 		{
-			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "object"}},
+			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "object"}},
 			o:  triple.NewPredicateObject(testutil.MustBuildPredicate(t, `"meet"@[2020-04-10T04:21:00Z]`)),
 			want: map[string]int{`/_<bn>	"_predicate"@[]	"meet"@[2020-04-10T04:21:00Z]`: 1},
 		},
@@ -1208,19 +1209,19 @@ func TestTriplesForSubjectAndPredicateFilter(t *testing.T) {
 		want map[string]int
 	}{
 		{
-			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			s:  testutil.MustBuildNodeFromStrings(t, "/u", "john"),
 			p:  testutil.MustBuildPredicate(t, `"meet"@[2012-04-10T04:21:00Z]`),
 			want: map[string]int{`/u<john>	"meet"@[2012-04-10T04:21:00Z]	/u<mary>`: 1},
 		},
 		{
-			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			s:  testutil.MustBuildNodeFromStrings(t, "/u", "john"),
 			p:  testutil.MustBuildPredicate(t, `"meet"@[2014-04-10T04:21:00Z]`),
 			want: map[string]int{`/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<mary>`: 1, `/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<bob>`: 1},
 		},
 		{
-			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "object"}},
+			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "object"}},
 			s:  testutil.MustBuildNodeFromStrings(t, "/_", "bn"),
 			p:  testutil.MustBuildPredicate(t, `"_predicate"@[]`),
 			want: map[string]int{`/_<bn>	"_predicate"@[]	"meet"@[2021-04-10T04:21:00Z]`: 1},
@@ -1315,19 +1316,19 @@ func TestTriplesForPredicateAndObjectFilter(t *testing.T) {
 		want map[string]int
 	}{
 		{
-			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			p:  testutil.MustBuildPredicate(t, `"meet"@[2012-04-10T04:21:00Z]`),
 			o:  triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
 			want: map[string]int{`/u<john>	"meet"@[2012-04-10T04:21:00Z]	/u<mary>`: 1},
 		},
 		{
-			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			p:  testutil.MustBuildPredicate(t, `"meet"@[2014-04-10T04:21:00Z]`),
 			o:  triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
 			want: map[string]int{`/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<mary>`: 1},
 		},
 		{
-			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "object"}},
+			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "object"}},
 			p:  testutil.MustBuildPredicate(t, `"_predicate"@[]`),
 			o:  triple.NewPredicateObject(testutil.MustBuildPredicate(t, `"meet"@[2020-04-10T04:21:00Z]`)),
 			want: map[string]int{`/_<bn>	"_predicate"@[]	"meet"@[2020-04-10T04:21:00Z]`: 1},
@@ -1437,11 +1438,11 @@ func TestTriplesFilter(t *testing.T) {
 		want map[string]int
 	}{
 		{
-			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "predicate"}},
+			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "predicate"}},
 			want: map[string]int{`/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<mary>`: 1, `/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<bob>`: 1},
 		},
 		{
-			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: "latest", Field: "object"}},
+			lo: &storage.LookupOptions{FilterOptions: &storage.FilteringOptions{Operation: filter.Latest, Field: "object"}},
 			want: map[string]int{`/_<bn>	"_predicate"@[]	"meet"@[2021-04-10T04:21:00Z]`: 1},
 		},
 	}

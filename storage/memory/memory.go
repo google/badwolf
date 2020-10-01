@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/badwolf/bql/planner/filter"
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/node"
@@ -324,7 +325,7 @@ func latestFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Pre
 // executeFilter executes the proper filter operation over memoryTriples following the specifications given in filterOptions.
 func executeFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Predicate, filterOptions *storage.FilteringOptions) (map[string]*triple.Triple, error) {
 	switch filterOptions.Operation {
-	case "latest":
+	case filter.Latest:
 		return latestFilter(memoryTriples, pQuery, filterOptions)
 	default:
 		return nil, fmt.Errorf("filter operation %q not supported in the driver", filterOptions.Operation)
@@ -350,7 +351,7 @@ func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predica
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
 		lo.FilterOptions = &storage.FilteringOptions{
-			Operation: "latest",
+			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
@@ -399,7 +400,7 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
 		lo.FilterOptions = &storage.FilteringOptions{
-			Operation: "latest",
+			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
@@ -448,7 +449,7 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
 		lo.FilterOptions = &storage.FilteringOptions{
-			Operation: "latest",
+			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
@@ -495,7 +496,7 @@ func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *sto
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
 		lo.FilterOptions = &storage.FilteringOptions{
-			Operation: "latest",
+			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
@@ -542,7 +543,7 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
 		lo.FilterOptions = &storage.FilteringOptions{
-			Operation: "latest",
+			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
@@ -589,7 +590,7 @@ func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storag
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
 		lo.FilterOptions = &storage.FilteringOptions{
-			Operation: "latest",
+			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
@@ -636,7 +637,7 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
 		lo.FilterOptions = &storage.FilteringOptions{
-			Operation: "latest",
+			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
@@ -683,7 +684,7 @@ func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *sto
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
 		lo.FilterOptions = &storage.FilteringOptions{
-			Operation: "latest",
+			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
@@ -732,7 +733,7 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
 		lo.FilterOptions = &storage.FilteringOptions{
-			Operation: "latest",
+			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
@@ -781,7 +782,7 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
 		lo.FilterOptions = &storage.FilteringOptions{
-			Operation: "latest",
+			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
@@ -836,7 +837,7 @@ func (m *memory) Triples(ctx context.Context, lo *storage.LookupOptions, trpls c
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
 		}
 		lo.FilterOptions = &storage.FilteringOptions{
-			Operation: "latest",
+			Operation: filter.Latest,
 			Field:     "predicate",
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
