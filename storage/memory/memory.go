@@ -277,8 +277,8 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 
 // latestFilter executes the latest filter operation over memoryTriples following filterOptions.
 func latestFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Predicate, filterOptions *filter.StorageOptions) (map[string]*triple.Triple, error) {
-	if filterOptions.Field != "predicate" && filterOptions.Field != "object" {
-		return nil, fmt.Errorf(`invalid field %q for "latest" filter operation, can accept only "predicate" or "object"`, filterOptions.Field)
+	if filterOptions.Field != filter.PredicateField && filterOptions.Field != filter.ObjectField {
+		return nil, fmt.Errorf(`invalid field %q for %q filter operation, can accept only %q or %q`, filterOptions.Field, filter.Latest, filter.PredicateField, filter.ObjectField)
 	}
 
 	lastTA := make(map[string]*time.Time)
@@ -289,9 +289,9 @@ func latestFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Pre
 		}
 
 		var p *predicate.Predicate
-		if filterOptions.Field == "predicate" {
+		if filterOptions.Field == filter.PredicateField {
 			p = t.Predicate()
-		} else if pObj, err := t.Object().Predicate(); filterOptions.Field == "object" && err == nil {
+		} else if pObj, err := t.Object().Predicate(); filterOptions.Field == filter.ObjectField && err == nil {
 			p = pObj
 		} else {
 			continue
@@ -352,7 +352,7 @@ func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predica
 		}
 		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
-			Field:     "predicate",
+			Field:     filter.PredicateField,
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
@@ -401,7 +401,7 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 		}
 		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
-			Field:     "predicate",
+			Field:     filter.PredicateField,
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
@@ -450,7 +450,7 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 		}
 		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
-			Field:     "predicate",
+			Field:     filter.PredicateField,
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
@@ -497,7 +497,7 @@ func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *sto
 		}
 		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
-			Field:     "predicate",
+			Field:     filter.PredicateField,
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
@@ -544,7 +544,7 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 		}
 		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
-			Field:     "predicate",
+			Field:     filter.PredicateField,
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
@@ -591,7 +591,7 @@ func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storag
 		}
 		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
-			Field:     "predicate",
+			Field:     filter.PredicateField,
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
@@ -638,7 +638,7 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 		}
 		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
-			Field:     "predicate",
+			Field:     filter.PredicateField,
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
@@ -685,7 +685,7 @@ func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *sto
 		}
 		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
-			Field:     "predicate",
+			Field:     filter.PredicateField,
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
@@ -734,7 +734,7 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 		}
 		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
-			Field:     "predicate",
+			Field:     filter.PredicateField,
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
@@ -783,7 +783,7 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 		}
 		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
-			Field:     "predicate",
+			Field:     filter.PredicateField,
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
@@ -838,7 +838,7 @@ func (m *memory) Triples(ctx context.Context, lo *storage.LookupOptions, trpls c
 		}
 		lo.FilterOptions = &filter.StorageOptions{
 			Operation: filter.Latest,
-			Field:     "predicate",
+			Field:     filter.PredicateField,
 		}
 		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
 		defer func() {
