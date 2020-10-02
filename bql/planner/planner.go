@@ -638,13 +638,13 @@ func organizeClausesByBinding(clauses []*semantic.GraphClause) map[string][]*sem
 
 // compatibleBindingsInClauseForFilterOperation returns a function that, for each given clause, returns the bindings that are
 // compatible with the specified filter operation.
-func compatibleBindingsInClauseForFilterOperation(operation filter.Operation) (compatibleBindingsInClause func(cls *semantic.GraphClause) (bindingsByField map[string]map[string]bool), err error) {
+func compatibleBindingsInClauseForFilterOperation(operation filter.Operation) (compatibleBindingsInClause func(cls *semantic.GraphClause) (bindingsByField map[filter.Field]map[string]bool), err error) {
 	switch operation {
 	case filter.Latest:
-		compatibleBindingsInClause = func(cls *semantic.GraphClause) (bindingsByField map[string]map[string]bool) {
-			bindingsByField = map[string]map[string]bool{
-				"predicate": {cls.PBinding: true, cls.PAlias: true},
-				"object":    {cls.OBinding: true, cls.OAlias: true},
+		compatibleBindingsInClause = func(cls *semantic.GraphClause) (bindingsByField map[filter.Field]map[string]bool) {
+			bindingsByField = map[filter.Field]map[string]bool{
+				filter.PredicateField: {cls.PBinding: true, cls.PAlias: true},
+				filter.ObjectField:    {cls.OBinding: true, cls.OAlias: true},
 			}
 			return
 		}

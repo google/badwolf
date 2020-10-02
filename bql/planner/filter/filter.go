@@ -27,6 +27,16 @@ const (
 	Latest Operation = iota + 1
 )
 
+// Field represents the position of the semantic.GraphClause that will be operated by the filter at storage level.
+type Field int
+
+// List of filter fields.
+const (
+	SubjectField Field = iota + 1
+	PredicateField
+	ObjectField
+)
+
 // SupportedOperations maps suported filter operation strings to their correspondant Operation.
 // Note that the string keys here must be in lowercase letters only (for compatibility with the WhereFilterClauseHook).
 var SupportedOperations = map[string]Operation{
@@ -39,7 +49,7 @@ var SupportedOperations = map[string]Operation{
 // function (not applicable for all Operations - some like "latest" do not use it while others like "greaterThan" do, see Issue 129).
 type StorageOptions struct {
 	Operation Operation
-	Field     string
+	Field     Field
 	Value     string
 }
 
@@ -50,6 +60,20 @@ func (op Operation) String() string {
 		return "latest"
 	default:
 		return fmt.Sprintf(`not defined filter operation "%d"`, op)
+	}
+}
+
+// String returns the string representation of Field.
+func (f Field) String() string {
+	switch f {
+	case SubjectField:
+		return "subject field"
+	case PredicateField:
+		return "predicate field"
+	case ObjectField:
+		return "object field"
+	default:
+		return fmt.Sprintf(`not defined filter field "%d"`, f)
 	}
 }
 
