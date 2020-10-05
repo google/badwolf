@@ -689,7 +689,7 @@ func whereFilterClause() ElementHook {
 			if currFilter == nil {
 				return nil, fmt.Errorf("could not add filter function %q to nil filter clause", tkn.Text)
 			}
-			if currFilter.Operation != filter.Operation(0) {
+			if !currFilter.Operation.IsEmpty() {
 				return nil, fmt.Errorf("invalid filter function %q on filter clause since already set to %q", tkn.Text, currFilter.Operation)
 			}
 			lowercaseFilter := strings.ToLower(tkn.Text)
@@ -702,7 +702,7 @@ func whereFilterClause() ElementHook {
 			if currFilter == nil {
 				return nil, fmt.Errorf("could not add binding %q to nil filter clause", tkn.Text)
 			}
-			if currFilter.Operation == filter.Operation(0) {
+			if currFilter.Operation.IsEmpty() {
 				return nil, fmt.Errorf("could not add binding %q to a filter clause that does not have a filter function previously set", tkn.Text)
 			}
 			if currFilter.Binding != "" {
@@ -711,7 +711,7 @@ func whereFilterClause() ElementHook {
 			currFilter.Binding = tkn.Text
 			return hook, nil
 		case lexer.ItemRPar:
-			if currFilter == nil || currFilter.Operation == filter.Operation(0) || currFilter.Binding == "" {
+			if currFilter == nil || currFilter.Operation.IsEmpty() || currFilter.Binding == "" {
 				return nil, fmt.Errorf("could not add invalid working filter %q to the statement filters list", currFilter)
 			}
 			st.AddWorkingFilterClause()
