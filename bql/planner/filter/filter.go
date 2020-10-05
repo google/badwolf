@@ -63,6 +63,11 @@ func (op Operation) String() string {
 	}
 }
 
+// IsEmpty returns true if the Operation was not set yet.
+func (op Operation) IsEmpty() bool {
+	return op == Operation(0)
+}
+
 // String returns the string representation of Field.
 func (f Field) String() string {
 	switch f {
