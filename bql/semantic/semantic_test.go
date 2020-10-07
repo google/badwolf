@@ -262,7 +262,7 @@ func TestGraphClauseManipulation(t *testing.T) {
 func TestFilterClauseManipulation(t *testing.T) {
 	st := &Statement{}
 
-	t.Run("test workingFilter initial states", func(t *testing.T) {
+	t.Run("workingFilter initial states ok", func(t *testing.T) {
 		if wf := st.WorkingFilter(); wf != nil {
 			t.Fatalf(`semantic.Statement.WorkingFilter() = %q for statement "%v" without initialization; want nil`, wf, st)
 		}
@@ -272,7 +272,7 @@ func TestFilterClauseManipulation(t *testing.T) {
 		}
 	})
 
-	t.Run("test call to add workingFilter", func(t *testing.T) {
+	t.Run("add workingFilter success", func(t *testing.T) {
 		wf := st.WorkingFilter()
 		*wf = FilterClause{Operation: "latest", Binding: "?p"}
 		st.AddWorkingFilterClause()
