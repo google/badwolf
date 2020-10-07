@@ -69,7 +69,7 @@ func (c ConsumedElement) Token() *lexer.Token {
 	return c.token
 }
 
-// Token returns the boxed token.
+// String returns a string representation of the ConsumedElement.
 func (c ConsumedElement) String() string {
 	return fmt.Sprintf("{isSymbol=%v, symbol=%s, token=%s}", c.isSymbol, c.symbol, c.token)
 }
