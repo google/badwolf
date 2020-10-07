@@ -259,19 +259,23 @@ func TestWhereFilterClauseHook(t *testing.T) {
 		},
 	}
 	for i, entry := range testTable {
-		for _, ce := range entry.ces {
-			if _, err := f(st, ce); err != nil {
-				t.Errorf("%q: semantic.WhereFilterClauseHook(%s) = _, %v; want _, nil", entry.id, ce, err)
+		t.Run(entry.id, func(t *testing.T) {
+			for _, ce := range entry.ces {
+				if _, err := f(st, ce); err != nil {
+					t.Errorf("%q: semantic.WhereFilterClauseHook(%s) = _, %v; want _, nil", entry.id, ce, err)
+				}
 			}
-		}
-		if got, want := st.FilterClauses()[i], entry.want; !reflect.DeepEqual(got, want) {
-			t.Errorf("%q: semantic.Statement.FilterClauses()[%d] = %s; want %s", entry.id, i, got, want)
-		}
+			if got, want := st.FilterClauses()[i], entry.want; !reflect.DeepEqual(got, want) {
+				t.Errorf("%q: semantic.Statement.FilterClauses()[%d] = %s; want %s", entry.id, i, got, want)
+			}
+		})
 	}
 
-	if got, want := len(st.FilterClauses()), len(testTable); got != want {
-		t.Errorf("len(semantic.Statement.FilterClauses()) = %d after consuming %d valid FILTER clauses; want %d", got, want, want)
-	}
+	t.Run(fmt.Sprintf("final length filters list expects %d", len(testTable)), func(t *testing.T) {
+		if got, want := len(st.FilterClauses()), len(testTable); got != want {
+			t.Errorf("len(semantic.Statement.FilterClauses()) = %d after consuming %d valid FILTER clauses; want %d", got, want, want)
+		}
+	})
 }
 
 func TestWhereFilterClauseHookError(t *testing.T) {
@@ -376,24 +380,28 @@ func TestWhereFilterClauseHookError(t *testing.T) {
 		},
 	}
 	for _, entry := range testTable {
-		var err error
-		for i, ce := range entry.ces {
-			if _, err = f(st, ce); err != nil {
-				if i != entry.ceIndexError {
-					t.Errorf("%q: semantic.WhereFilterClauseHook(%v) = _, %v; want _, nil since the expected error should be when consuming %v", entry.id, ce, err, entry.ces[entry.ceIndexError])
+		t.Run(entry.id, func(t *testing.T) {
+			var err error
+			for i, ce := range entry.ces {
+				if _, err = f(st, ce); err != nil {
+					if i != entry.ceIndexError {
+						t.Errorf("%q: semantic.WhereFilterClauseHook(%v) = _, %v; want _, nil since the expected error should be when consuming %v", entry.id, ce, err, entry.ces[entry.ceIndexError])
+					}
+					break
 				}
-				break
 			}
-		}
-		if err == nil {
-			t.Errorf("%q: semantic.WhereFilterClauseHook(%v) = _, nil; want _, error", entry.id, entry.ces[entry.ceIndexError])
-		}
-		st.ResetWorkingFilterClause()
+			if err == nil {
+				t.Errorf("%q: semantic.WhereFilterClauseHook(%v) = _, nil; want _, error", entry.id, entry.ces[entry.ceIndexError])
+			}
+			st.ResetWorkingFilterClause()
+		})
 	}
 
-	if got, want := len(st.FilterClauses()), 0; got != want {
-		t.Errorf("len(semantic.Statement.FilterClauses()) = %d; want %d", got, want)
-	}
+	t.Run("final length filters list expects 0", func(t *testing.T) {
+		if got, want := len(st.FilterClauses()), 0; got != want {
+			t.Errorf("len(semantic.Statement.FilterClauses()) = %d; want %d", got, want)
+		}
+	})
 }
 
 func TestWhereWorkingClauseHook(t *testing.T) {
