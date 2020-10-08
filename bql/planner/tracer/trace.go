@@ -40,7 +40,7 @@ func init() {
 		for e := range c {
 			for _, msg := range e.tracerArgs().Msgs {
 				e.w.Write([]byte("["))
-				e.w.Write([]byte(e.t.Format("2006-01-02T15:04:05.999999-07:00")))
+				e.w.Write([]byte(e.t.Format(time.RFC3339Nano)))
 				e.w.Write([]byte("] "))
 				e.w.Write([]byte(msg))
 				e.w.Write([]byte("\n"))
