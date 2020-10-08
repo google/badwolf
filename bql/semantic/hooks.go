@@ -187,12 +187,12 @@ func NextWorkingConstructPredicateObjectPairClauseHook() ClauseHook {
 
 // TypeBindingClauseHook returns a ClauseHook that sets the binding type.
 func TypeBindingClauseHook(t StatementType) ClauseHook {
-	var f ClauseHook
-	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+	var hook ClauseHook
+	hook = func(s *Statement, _ Symbol) (ClauseHook, error) {
 		s.BindType(t)
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // dataAccumulator creates a element hook that tracks fully formed triples and
@@ -323,48 +323,48 @@ func outputGraphAccumulator() ElementHook {
 // whereNextWorkingClause returns a clause hook to close the current graphs
 // clause and starts a new working one.
 func whereNextWorkingClause() ClauseHook {
-	var f ClauseHook
-	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+	var hook ClauseHook
+	hook = func(s *Statement, _ Symbol) (ClauseHook, error) {
 		s.AddWorkingGraphClause()
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // whereInitWorkingClause initialize a new working graph clause.
 func whereInitWorkingClause() ClauseHook {
-	var f ClauseHook
-	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+	var hook ClauseHook
+	hook = func(s *Statement, _ Symbol) (ClauseHook, error) {
 		s.ResetWorkingGraphClause()
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // whereSubjectClause returns an element hook that updates the subject
 // modifiers on the working graph clause.
 func whereSubjectClause() ElementHook {
 	var (
-		f            ElementHook
+		hook         ElementHook
 		lastNopToken *lexer.Token
 	)
-	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
 		if ce.IsSymbol() {
-			return f, nil
+			return hook, nil
 		}
 		tkn := ce.Token()
 		c := st.WorkingClause()
 		switch tkn.Type {
 		case lexer.ItemLBracket:
 			lastNopToken = nil
-			return f, nil
+			return hook, nil
 		case lexer.ItemRBracket:
 			lastNopToken = nil
-			return f, nil
+			return hook, nil
 		case lexer.ItemOptional:
 			c.Optional = true
 			lastNopToken = nil
-			return f, nil
+			return hook, nil
 		case lexer.ItemNode:
 			if c.S != nil {
 				return nil, fmt.Errorf("invalid node in where clause that already has a subject; current %v, got %v", c.S, tkn.Type)
@@ -375,7 +375,7 @@ func whereSubjectClause() ElementHook {
 			}
 			c.S = n
 			lastNopToken = nil
-			return f, nil
+			return hook, nil
 		case lexer.ItemBinding:
 			if lastNopToken == nil {
 				if c.SBinding != "" {
@@ -383,7 +383,7 @@ func whereSubjectClause() ElementHook {
 				}
 				c.SBinding = tkn.Text
 				lastNopToken = nil
-				return f, nil
+				return hook, nil
 			}
 			if lastNopToken.Type == lexer.ItemAs {
 				if c.SAlias != "" {
@@ -391,7 +391,7 @@ func whereSubjectClause() ElementHook {
 				}
 				c.SAlias = tkn.Text
 				lastNopToken = nil
-				return f, nil
+				return hook, nil
 			}
 			if lastNopToken.Type == lexer.ItemType {
 				if c.STypeAlias != "" {
@@ -399,7 +399,7 @@ func whereSubjectClause() ElementHook {
 				}
 				c.STypeAlias = tkn.Text
 				lastNopToken = nil
-				return f, nil
+				return hook, nil
 			}
 			if c.SIDAlias == "" && lastNopToken.Type == lexer.ItemID {
 				if c.SIDAlias != "" {
@@ -407,13 +407,13 @@ func whereSubjectClause() ElementHook {
 				}
 				c.SIDAlias = tkn.Text
 				lastNopToken = nil
-				return f, nil
+				return hook, nil
 			}
 		}
 		lastNopToken = tkn
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // processPredicate parses a consumed element and returns a predicate and its attributes if possible.
@@ -500,12 +500,12 @@ func processPredicateBound(ce ConsumedElement) (string, string, string, *time.Ti
 // modifiers on the working graph clause.
 func wherePredicateClause() ElementHook {
 	var (
-		f            ElementHook
+		hook         ElementHook
 		lastNopToken *lexer.Token
 	)
-	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
 		if ce.IsSymbol() {
-			return f, nil
+			return hook, nil
 		}
 		tkn := ce.Token()
 		c := st.WorkingClause()
@@ -520,7 +520,7 @@ func wherePredicateClause() ElementHook {
 				return nil, err
 			}
 			c.P, c.PID, c.PAnchorBinding, c.PTemporal = p, pID, pAnchorBinding, pTemporal
-			return f, nil
+			return hook, nil
 		case lexer.ItemPredicateBound:
 			lastNopToken = nil
 			if c.PLowerBound != nil || c.PUpperBound != nil || c.PLowerBoundAlias != "" || c.PUpperBoundAlias != "" {
@@ -531,14 +531,14 @@ func wherePredicateClause() ElementHook {
 				return nil, err
 			}
 			c.PID, c.PLowerBoundAlias, c.PUpperBoundAlias, c.PLowerBound, c.PUpperBound, c.PTemporal = pID, pLowerBoundAlias, pUpperBoundAlias, pLowerBound, pUpperBound, pTemp
-			return f, nil
+			return hook, nil
 		case lexer.ItemBinding:
 			if lastNopToken == nil {
 				if c.PBinding != "" {
 					return nil, fmt.Errorf("invalid binding %q loose after no valid modifier", tkn.Text)
 				}
 				c.PBinding = tkn.Text
-				return f, nil
+				return hook, nil
 			}
 			switch lastNopToken.Type {
 			case lexer.ItemAs:
@@ -560,24 +560,24 @@ func wherePredicateClause() ElementHook {
 				return nil, fmt.Errorf("binding %q found after invalid token %s", tkn.Text, lastNopToken)
 			}
 			lastNopToken = nil
-			return f, nil
+			return hook, nil
 		}
 		lastNopToken = tkn
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // whereObjectClause returns an element hook that updates the object
 // modifiers on the working graph clause.
 func whereObjectClause() ElementHook {
 	var (
-		f            ElementHook
+		hook         ElementHook
 		lastNopToken *lexer.Token
 	)
-	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
 		if ce.IsSymbol() {
-			return f, nil
+			return hook, nil
 		}
 		tkn := ce.Token()
 		c := st.WorkingClause()
@@ -592,7 +592,7 @@ func whereObjectClause() ElementHook {
 				return nil, err
 			}
 			c.O = obj
-			return f, nil
+			return hook, nil
 		case lexer.ItemPredicate:
 			lastNopToken = nil
 			if c.O != nil {
@@ -609,7 +609,7 @@ func whereObjectClause() ElementHook {
 			if pred != nil {
 				c.O = triple.NewPredicateObject(pred)
 			}
-			return f, nil
+			return hook, nil
 		case lexer.ItemPredicateBound:
 			lastNopToken = nil
 			if c.OLowerBound != nil || c.OUpperBound != nil || c.OLowerBoundAlias != "" || c.OUpperBoundAlias != "" {
@@ -620,14 +620,14 @@ func whereObjectClause() ElementHook {
 				return nil, err
 			}
 			c.OID, c.OLowerBoundAlias, c.OUpperBoundAlias, c.OLowerBound, c.OUpperBound, c.OTemporal = oID, oLowerBoundAlias, oUpperBoundAlias, oLowerBound, oUpperBound, oTemp
-			return f, nil
+			return hook, nil
 		case lexer.ItemBinding:
 			if lastNopToken == nil {
 				if c.OBinding != "" {
 					return nil, fmt.Errorf("object binding %q is already set to %q", tkn.Text, c.SBinding)
 				}
 				c.OBinding = tkn.Text
-				return f, nil
+				return hook, nil
 			}
 			defer func() {
 				lastNopToken = nil
@@ -656,24 +656,24 @@ func whereObjectClause() ElementHook {
 			default:
 				return nil, fmt.Errorf("binding %q found after invalid token %s", tkn.Text, lastNopToken)
 			}
-			return f, nil
+			return hook, nil
 		}
 		lastNopToken = tkn
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // varAccumulator returns an element hook that updates the object
 // modifiers on the working graph clause.
 func varAccumulator() ElementHook {
 	var (
+		hook         ElementHook
 		lastNopToken *lexer.Token
-		f            func(st *Statement, ce ConsumedElement) (ElementHook, error)
 	)
-	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
 		if ce.IsSymbol() {
-			return f, nil
+			return hook, nil
 		}
 		tkn := ce.Token()
 		p := st.WorkingProjection()
@@ -701,16 +701,16 @@ func varAccumulator() ElementHook {
 		default:
 			lastNopToken = nil
 		}
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // bindingsGraphChecker validate that all input bindings are provided by the
 // graph pattern.
 func bindingsGraphChecker() ClauseHook {
-	var f ClauseHook
-	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+	var hook ClauseHook
+	hook = func(s *Statement, _ Symbol) (ClauseHook, error) {
 		// Force working projection flush.
 		s.AddWorkingProjection()
 		bs := s.BindingsMap()
@@ -719,32 +719,32 @@ func bindingsGraphChecker() ClauseHook {
 				return nil, fmt.Errorf("specified binding %s not found in where clause, only %v bindings are available", b, s.Bindings())
 			}
 		}
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // groupByBindings collects the bindings listed in the group by clause.
 func groupByBindings() ElementHook {
-	var f func(st *Statement, ce ConsumedElement) (ElementHook, error)
-	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+	var hook ElementHook
+	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
 		if ce.IsSymbol() {
-			return f, nil
+			return hook, nil
 		}
 		tkn := ce.Token()
 		if tkn.Type == lexer.ItemBinding {
 			st.groupBy = append(st.groupBy, tkn.Text)
 		}
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // groupByBindingsChecker checks that all group by bindings are valid output
 // bindings.
 func groupByBindingsChecker() ClauseHook {
-	var f ClauseHook
-	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+	var hook ClauseHook
+	hook = func(s *Statement, _ Symbol) (ClauseHook, error) {
 		// Force working projection flush.
 		var idxs map[int]bool
 		idxs = make(map[int]bool)
@@ -778,17 +778,17 @@ func groupByBindingsChecker() ClauseHook {
 				return nil, fmt.Errorf("Binding %q with aggregation %s function requires GROUP BY clause", s, prj.OP)
 			}
 		}
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // orderByBindings collects the bindings listed in the order by clause.
 func orderByBindings() ElementHook {
-	var f func(st *Statement, ce ConsumedElement) (ElementHook, error)
-	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+	var hook func(st *Statement, ce ConsumedElement) (ElementHook, error)
+	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
 		if ce.IsSymbol() {
-			return f, nil
+			return hook, nil
 		}
 		tkn := ce.Token()
 		switch tkn.Type {
@@ -799,16 +799,16 @@ func orderByBindings() ElementHook {
 		case lexer.ItemDesc:
 			st.orderBy[len(st.orderBy)-1].Desc = true
 		}
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // orderByBindingsChecker checks that all order by bindings are valid output
 // bindings.
 func orderByBindingsChecker() ClauseHook {
-	var f ClauseHook
-	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+	var hook ClauseHook
+	hook = func(s *Statement, _ Symbol) (ClauseHook, error) {
 		// Force working projection flush.
 		outs := make(map[string]bool)
 		for _, out := range s.OutputBindings() {
@@ -837,32 +837,32 @@ func orderByBindingsChecker() ClauseHook {
 				s.orderBy = append(s.orderBy, table.SortConfig{{Binding: b, Desc: d}}...)
 			}
 		}
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // havingExpression collects the tokens that form the HAVING clause.
 func havingExpression() ElementHook {
-	var f func(st *Statement, ce ConsumedElement) (ElementHook, error)
-	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+	var hook ElementHook
+	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
 		if ce.IsSymbol() {
-			return f, nil
+			return hook, nil
 		}
 		if ce.token.Type != lexer.ItemHaving {
 			st.havingExpression = append(st.havingExpression, ce)
 		}
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // havingExpressionBuilder given the collected tokens that forms the having
 // clause expression, it builds the expression to use when filtering values
 // on the final result table.
 func havingExpressionBuilder() ClauseHook {
-	var f ClauseHook
-	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+	var hook ClauseHook
+	hook = func(s *Statement, _ Symbol) (ClauseHook, error) {
 		s.havingExpressionEvaluator = &AlwaysReturn{V: true}
 		if len(s.havingExpression) > 0 {
 			eval, err := NewEvaluator(s.havingExpression)
@@ -871,18 +871,18 @@ func havingExpressionBuilder() ClauseHook {
 			}
 			s.havingExpressionEvaluator = eval
 		}
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // limitCollection collects the limit of rows to return as indicated by the
 // LIMIT clause.
 func limitCollection() ElementHook {
-	var f func(st *Statement, ce ConsumedElement) (ElementHook, error)
-	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+	var hook ElementHook
+	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
 		if ce.IsSymbol() || ce.token.Type == lexer.ItemLimit {
-			return f, nil
+			return hook, nil
 		}
 		if ce.token.Type != lexer.ItemLiteral {
 			return nil, fmt.Errorf("limit clause required an int64 literal; found %v instead", ce.token)
@@ -899,22 +899,22 @@ func limitCollection() ElementHook {
 			return nil, fmt.Errorf("failed to retrieve the int64 value for literal %v with error %v", l, err)
 		}
 		st.limitSet, st.limit = true, lv
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // collectGlobalBounds collects the global time bounds that should be applied
 // to all temporal predicates.
 func collectGlobalBounds() ElementHook {
 	var (
-		f         func(st *Statement, ce ConsumedElement) (ElementHook, error)
+		hook      ElementHook
 		opToken   *lexer.Token
 		lastToken *lexer.Token
 	)
-	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
 		if ce.IsSymbol() {
-			return f, nil
+			return hook, nil
 		}
 		tkn := ce.token
 		switch tkn.Type {
@@ -963,40 +963,40 @@ func collectGlobalBounds() ElementHook {
 		default:
 			return nil, fmt.Errorf("global bound found unexpected token %v", tkn)
 		}
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // InitWorkingConstructClause returns a clause hook to initialize a new working
 // construct clause.
 func InitWorkingConstructClause() ClauseHook {
-	var f ClauseHook
-	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+	var hook ClauseHook
+	hook = func(s *Statement, _ Symbol) (ClauseHook, error) {
 		s.ResetWorkingConstructClause()
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // NextWorkingConstructClause returns a clause hook to close the current working
 // construct clause and start a new working construct clause.
 func NextWorkingConstructClause() ClauseHook {
-	var f ClauseHook
-	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+	var hook ClauseHook
+	hook = func(s *Statement, _ Symbol) (ClauseHook, error) {
 		s.AddWorkingConstructClause()
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // constructSubject returns an element hook that updates the subject
 // modifiers on the working construct clause.
 func constructSubject() ElementHook {
-	var f ElementHook
-	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+	var hook ElementHook
+	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
 		if ce.IsSymbol() {
-			return f, nil
+			return hook, nil
 		}
 		tkn := ce.Token()
 		c := st.WorkingConstructClause()
@@ -1016,18 +1016,18 @@ func constructSubject() ElementHook {
 		case lexer.ItemBinding:
 			c.SBinding = tkn.Text
 		}
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // constructPredicate returns an element hook that updates the predicate
 // modifiers on the current predicate-object pair of the working graph clause.
 func constructPredicate() ElementHook {
-	var f ElementHook
-	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+	var hook ElementHook
+	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
 		if ce.IsSymbol() {
-			return f, nil
+			return hook, nil
 		}
 		tkn := ce.Token()
 		p := st.WorkingConstructClause().WorkingPredicateObjectPair()
@@ -1050,18 +1050,18 @@ func constructPredicate() ElementHook {
 		case lexer.ItemBinding:
 			p.PBinding = tkn.Text
 		}
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // constructObject returns an element hook that updates the object
 // modifiers on the current predicate-object pair of the working graph clause.
 func constructObject() ElementHook {
-	var f ElementHook
-	f = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
+	var hook ElementHook
+	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
 		if ce.IsSymbol() {
-			return f, nil
+			return hook, nil
 		}
 		tkn := ce.Token()
 		p := st.WorkingConstructClause().WorkingPredicateObjectPair()
@@ -1096,29 +1096,29 @@ func constructObject() ElementHook {
 		case lexer.ItemBinding:
 			p.OBinding = tkn.Text
 		}
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // NextWorkingConstructPredicateObjectPair returns a clause hook to close the current
 // predicate-object pair and start a new predicate-object pair within the working
 // construct clause.
 func NextWorkingConstructPredicateObjectPair() ClauseHook {
-	var f ClauseHook
-	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+	var hook ClauseHook
+	hook = func(s *Statement, _ Symbol) (ClauseHook, error) {
 		s.WorkingConstructClause().AddWorkingPredicateObjectPair()
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
 
 // ShowClauseHook returns a clause hook for the show statement.
 func ShowClauseHook() ClauseHook {
-	var f ClauseHook
-	f = func(s *Statement, _ Symbol) (ClauseHook, error) {
+	var hook ClauseHook
+	hook = func(s *Statement, _ Symbol) (ClauseHook, error) {
 		s.sType = Show
-		return f, nil
+		return hook, nil
 	}
-	return f
+	return hook
 }
