@@ -20,10 +20,15 @@ import (
 	"time"
 )
 
+// Arguments encapsulates the elements passed to the tracer.
+type Arguments struct {
+	Msgs []string
+}
+
 type event struct {
-	w    io.Writer
-	t    time.Time
-	msgs func() []string
+	w          io.Writer
+	t          time.Time
+	tracerArgs func() *Arguments
 }
 
 var c chan *event
@@ -33,9 +38,9 @@ func init() {
 
 	go func() {
 		for e := range c {
-			for _, msg := range e.msgs() {
+			for _, msg := range e.tracerArgs().Msgs {
 				e.w.Write([]byte("["))
-				e.w.Write([]byte(e.t.Format("2006-01-02T15:04:05.999999-07:00")))
+				e.w.Write([]byte(e.t.Format(time.RFC3339Nano)))
 				e.w.Write([]byte("] "))
 				e.w.Write([]byte(msg))
 				e.w.Write([]byte("\n"))
@@ -45,11 +50,11 @@ func init() {
 }
 
 // Trace attempts to write a trace if a valid writer is provided. The
-// tracer is lazy on the string generation to avoid adding too much
-// overhead when tracing ins not on.
-func Trace(w io.Writer, msgs func() []string) {
+// tracer is lazy on the arguments generation to avoid adding too much
+// overhead when tracing is not on.
+func Trace(w io.Writer, tracerArgs func() *Arguments) {
 	if w == nil {
 		return
 	}
-	c <- &event{w, time.Now(), msgs}
+	c <- &event{w, time.Now(), tracerArgs}
 }
