@@ -259,6 +259,32 @@ func TestGraphClauseManipulation(t *testing.T) {
 	}
 }
 
+func TestFilterClauseManipulation(t *testing.T) {
+	st := &Statement{}
+
+	t.Run("workingFilter initial states ok", func(t *testing.T) {
+		if wf := st.WorkingFilter(); wf != nil {
+			t.Fatalf(`semantic.Statement.WorkingFilter() = %q for statement "%v" without initialization; want nil`, wf, st)
+		}
+		st.ResetWorkingFilterClause()
+		if wf := st.WorkingFilter(); wf == nil || !wf.IsEmpty() {
+			t.Fatalf(`semantic.Statement.WorkingFilter() = %q for statement "%v" after call to ResetWorkingFilterClause; want empty FilterClause`, wf, st)
+		}
+	})
+
+	t.Run("add workingFilter success", func(t *testing.T) {
+		wf := st.WorkingFilter()
+		*wf = FilterClause{Operation: "latest", Binding: "?p"}
+		st.AddWorkingFilterClause()
+		if got, want := len(st.FilterClauses()), 1; got != want {
+			t.Fatalf(`len(semantic.Statement.FilterClauses()) = %d for statement "%v"; want %d`, got, st, want)
+		}
+		if wf = st.WorkingFilter(); wf == nil || !wf.IsEmpty() {
+			t.Fatalf(`semantic.Statement.WorkingFilter() = %q for statement "%v"; want empty FilterClause`, wf, st)
+		}
+	})
+}
+
 func TestBindingListing(t *testing.T) {
 	stm := Statement{}
 	stm.ResetWorkingGraphClause()
@@ -322,6 +348,27 @@ func TestIsEmptyClause(t *testing.T) {
 		}
 	}
 
+}
+
+func TestIsEmptyFilterClause(t *testing.T) {
+	testTable := []struct {
+		in   *FilterClause
+		want bool
+	}{
+		{
+			in:   &FilterClause{},
+			want: true,
+		},
+		{
+			in:   &FilterClause{Operation: "latest", Binding: "?p"},
+			want: false,
+		},
+	}
+	for _, entry := range testTable {
+		if got := entry.in.IsEmpty(); got != entry.want {
+			t.Errorf("FilterClause.IsEmpty(%q) = %v; want %v", entry.in, got, entry.want)
+		}
+	}
 }
 
 func TestSortedGraphPatternClauses(t *testing.T) {

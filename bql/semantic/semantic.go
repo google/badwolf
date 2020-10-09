@@ -103,6 +103,8 @@ type Statement struct {
 	limitSet                  bool
 	limit                     int64
 	lookupOptions             storage.LookupOptions
+	filters                   []*FilterClause
+	workingFilter             *FilterClause
 }
 
 // GraphClause represents a clause of a graph pattern in a where clause.
@@ -141,6 +143,16 @@ type GraphClause struct {
 	OLowerBoundAlias string
 	OUpperBoundAlias string
 	OTemporal        bool
+}
+
+// FilterClause represents a FILTER clause inside WHERE.
+// Operation below refers to the filter function being applied (eg: "latest"), Binding refers to the binding it
+// will be applied to and Value, when specified, contains the second argument of the filter function (not applicable for all
+// Operations - some like "latest" do not use it while others like "greaterThan" do, see Issue 129).
+type FilterClause struct {
+	Operation string
+	Binding   string
+	Value     string
 }
 
 // ConstructClause represents a singular clause within a construct statement.
@@ -399,6 +411,16 @@ func (c *GraphClause) IsEmpty() bool {
 	return reflect.DeepEqual(c, &GraphClause{})
 }
 
+// IsEmpty will return true if there are no set values in the filter clause.
+func (f *FilterClause) IsEmpty() bool {
+	return reflect.DeepEqual(f, &FilterClause{})
+}
+
+// String returns a string representation of the filter clause.
+func (f *FilterClause) String() string {
+	return fmt.Sprintf("%+v", *f)
+}
+
 // String returns a readable representation of a construct clause.
 func (c *ConstructClause) String() string {
 	b := bytes.NewBufferString("{ ")
@@ -584,14 +606,29 @@ func (s *Statement) GraphPatternClauses() []*GraphClause {
 	return s.pattern
 }
 
+// FilterClauses returns the list of FILTER clauses.
+func (s *Statement) FilterClauses() []*FilterClause {
+	return s.filters
+}
+
 // ResetWorkingGraphClause resets the current working graph clause.
 func (s *Statement) ResetWorkingGraphClause() {
 	s.workingClause = &GraphClause{}
 }
 
+// ResetWorkingFilterClause resets the current working filter clause.
+func (s *Statement) ResetWorkingFilterClause() {
+	s.workingFilter = &FilterClause{}
+}
+
 // WorkingClause returns the current working clause.
 func (s *Statement) WorkingClause() *GraphClause {
 	return s.workingClause
+}
+
+// WorkingFilter returns the current working filter.
+func (s *Statement) WorkingFilter() *FilterClause {
+	return s.workingFilter
 }
 
 // AddWorkingGraphClause adds the current working graph clause to the set of
@@ -601,6 +638,12 @@ func (s *Statement) AddWorkingGraphClause() {
 		s.pattern = append(s.pattern, s.workingClause)
 	}
 	s.ResetWorkingGraphClause()
+}
+
+// AddWorkingFilterClause adds the current working filter clause to the filters list.
+func (s *Statement) AddWorkingFilterClause() {
+	s.filters = append(s.filters, s.workingFilter)
+	s.ResetWorkingFilterClause()
 }
 
 // Projection returns the available projections in the statement.
