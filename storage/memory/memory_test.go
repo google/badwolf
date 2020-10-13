@@ -325,24 +325,28 @@ func TestObjectsFilter(t *testing.T) {
 	}
 
 	testTable := []struct {
+		id   string
 		lo   *storage.LookupOptions
 		s    *node.Node
 		p    *predicate.Predicate
 		want map[string]int
 	}{
 		{
+			id:   "FILTER latest predicate",
 			lo:   &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
 			s:    testutil.MustBuildNodeFromStrings(t, "/u", "john"),
 			p:    testutil.MustBuildPredicate(t, `"meet"@[2012-04-10T04:21:00Z]`),
 			want: map[string]int{"/u<mary>": 1},
 		},
 		{
+			id:   "FILTER latest predicate duplicate timestamp",
 			lo:   &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
 			s:    testutil.MustBuildNodeFromStrings(t, "/u", "john"),
 			p:    testutil.MustBuildPredicate(t, `"meet"@[2014-04-10T04:21:00Z]`),
 			want: map[string]int{"/u<mary>": 1, "/u<bob>": 1},
 		},
 		{
+			id:   "FILTER latest object",
 			lo:   &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.ObjectField}},
 			s:    testutil.MustBuildNodeFromStrings(t, "/_", "bn"),
 			p:    testutil.MustBuildPredicate(t, `"_predicate"@[]`),
@@ -351,28 +355,30 @@ func TestObjectsFilter(t *testing.T) {
 	}
 
 	for _, entry := range testTable {
-		// To avoid blocking on the test we use a buffered channel of size 100. On a real
-		// usage of the driver you would like to call the graph operation on a separated
-		// goroutine using a sync.WaitGroup to collect the error code eventually.
-		os := make(chan *triple.Object, 100)
-		s := entry.s
-		p := entry.p
-		if err := g.Objects(ctx, s, p, entry.lo, os); err != nil {
-			t.Fatalf("g.Objects(%s, %s, %s) = %v; want nil", s, p, entry.lo, err)
-		}
-		for o := range os {
-			oStr := o.String()
-			if _, ok := entry.want[oStr]; !ok {
-				t.Fatalf("g.Objects(%s, %s, %s) retrieved unexpected %s", s, p, entry.lo, oStr)
+		t.Run(entry.id, func(t *testing.T) {
+			// To avoid blocking on the test we use a buffered channel of size 100. On a real
+			// usage of the driver you would like to call the graph operation on a separated
+			// goroutine using a sync.WaitGroup to collect the error code eventually.
+			os := make(chan *triple.Object, 100)
+			s := entry.s
+			p := entry.p
+			if err := g.Objects(ctx, s, p, entry.lo, os); err != nil {
+				t.Fatalf("g.Objects(%s, %s, %s) = %v; want nil", s, p, entry.lo, err)
 			}
-			entry.want[oStr] = entry.want[oStr] - 1
-			if entry.want[oStr] == 0 {
-				delete(entry.want, oStr)
+			for o := range os {
+				oStr := o.String()
+				if _, ok := entry.want[oStr]; !ok {
+					t.Fatalf("g.Objects(%s, %s, %s) retrieved unexpected %s", s, p, entry.lo, oStr)
+				}
+				entry.want[oStr] = entry.want[oStr] - 1
+				if entry.want[oStr] == 0 {
+					delete(entry.want, oStr)
+				}
 			}
-		}
-		if len(entry.want) != 0 {
-			t.Errorf("g.Objects(%s, %s, %s) failed to retrieve some expected elements: %v", s, p, entry.lo, entry.want)
-		}
+			if len(entry.want) != 0 {
+				t.Errorf("g.Objects(%s, %s, %s) failed to retrieve some expected elements: %v", s, p, entry.lo, entry.want)
+			}
+		})
 	}
 }
 
@@ -437,24 +443,28 @@ func TestSubjectsFilter(t *testing.T) {
 	}
 
 	testTable := []struct {
+		id   string
 		lo   *storage.LookupOptions
 		p    *predicate.Predicate
 		o    *triple.Object
 		want map[string]int
 	}{
 		{
+			id:   "FILTER latest predicate",
 			lo:   &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
 			p:    testutil.MustBuildPredicate(t, `"meet"@[2012-04-10T04:21:00Z]`),
 			o:    triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
 			want: map[string]int{"/u<john>": 1},
 		},
 		{
+			id:   "FILTER latest predicate duplicate timestamp",
 			lo:   &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
 			p:    testutil.MustBuildPredicate(t, `"meet"@[2014-04-10T04:21:00Z]`),
 			o:    triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
 			want: map[string]int{"/u<john>": 1},
 		},
 		{
+			id:   "FILTER latest object",
 			lo:   &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.ObjectField}},
 			p:    testutil.MustBuildPredicate(t, `"_predicate"@[]`),
 			o:    triple.NewPredicateObject(testutil.MustBuildPredicate(t, `"meet"@[2020-04-10T04:21:00Z]`)),
@@ -463,28 +473,30 @@ func TestSubjectsFilter(t *testing.T) {
 	}
 
 	for _, entry := range testTable {
-		// To avoid blocking on the test we use a buffered channel of size 100. On a real
-		// usage of the driver you would like to call the graph operation on a separated
-		// goroutine using a sync.WaitGroup to collect the error code eventually.
-		ss := make(chan *node.Node, 100)
-		p := entry.p
-		o := entry.o
-		if err := g.Subjects(ctx, p, o, entry.lo, ss); err != nil {
-			t.Fatalf("g.Subjects(%s, %s, %s) = %v; want nil", p, o, entry.lo, err)
-		}
-		for s := range ss {
-			sStr := s.String()
-			if _, ok := entry.want[sStr]; !ok {
-				t.Fatalf("g.Subjects(%s, %s, %s) retrieved unexpected %s", p, o, entry.lo, sStr)
+		t.Run(entry.id, func(t *testing.T) {
+			// To avoid blocking on the test we use a buffered channel of size 100. On a real
+			// usage of the driver you would like to call the graph operation on a separated
+			// goroutine using a sync.WaitGroup to collect the error code eventually.
+			ss := make(chan *node.Node, 100)
+			p := entry.p
+			o := entry.o
+			if err := g.Subjects(ctx, p, o, entry.lo, ss); err != nil {
+				t.Fatalf("g.Subjects(%s, %s, %s) = %v; want nil", p, o, entry.lo, err)
 			}
-			entry.want[sStr] = entry.want[sStr] - 1
-			if entry.want[sStr] == 0 {
-				delete(entry.want, sStr)
+			for s := range ss {
+				sStr := s.String()
+				if _, ok := entry.want[sStr]; !ok {
+					t.Fatalf("g.Subjects(%s, %s, %s) retrieved unexpected %s", p, o, entry.lo, sStr)
+				}
+				entry.want[sStr] = entry.want[sStr] - 1
+				if entry.want[sStr] == 0 {
+					delete(entry.want, sStr)
+				}
 			}
-		}
-		if len(entry.want) != 0 {
-			t.Errorf("g.Subjects(%s, %s, %s) failed to retrieve some expected elements: %v", p, o, entry.lo, entry.want)
-		}
+			if len(entry.want) != 0 {
+				t.Errorf("g.Subjects(%s, %s, %s) failed to retrieve some expected elements: %v", p, o, entry.lo, entry.want)
+			}
+		})
 	}
 }
 
@@ -547,24 +559,21 @@ func TestPredicatesForSubjectAndObjectFilter(t *testing.T) {
 	}
 
 	testTable := []struct {
+		id   string
 		lo   *storage.LookupOptions
 		s    *node.Node
 		o    *triple.Object
 		want map[string]int
 	}{
 		{
+			id:   "FILTER latest predicate",
 			lo:   &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
 			s:    testutil.MustBuildNodeFromStrings(t, "/u", "john"),
 			o:    triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
 			want: map[string]int{`"meet"@[2014-04-10T04:21:00Z]`: 1},
 		},
 		{
-			lo:   &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
-			s:    testutil.MustBuildNodeFromStrings(t, "/u", "john"),
-			o:    triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "bob")),
-			want: map[string]int{`"meet"@[2014-04-10T04:21:00Z]`: 1},
-		},
-		{
+			id:   "FILTER latest object",
 			lo:   &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.ObjectField}},
 			s:    testutil.MustBuildNodeFromStrings(t, "/_", "bn"),
 			o:    triple.NewPredicateObject(testutil.MustBuildPredicate(t, `"meet"@[2020-04-10T04:21:00Z]`)),
@@ -573,28 +582,30 @@ func TestPredicatesForSubjectAndObjectFilter(t *testing.T) {
 	}
 
 	for _, entry := range testTable {
-		// To avoid blocking on the test we use a buffered channel of size 100. On a real
-		// usage of the driver you would like to call the graph operation on a separated
-		// goroutine using a sync.WaitGroup to collect the error code eventually.
-		pp := make(chan *predicate.Predicate, 100)
-		s := entry.s
-		o := entry.o
-		if err := g.PredicatesForSubjectAndObject(ctx, s, o, entry.lo, pp); err != nil {
-			t.Fatalf("g.PredicatesForSubjectAndObject(%s, %s, %s) = %v; want nil", s, o, entry.lo, err)
-		}
-		for p := range pp {
-			pStr := p.String()
-			if _, ok := entry.want[pStr]; !ok {
-				t.Fatalf("g.PredicatesForSubjectAndObject(%s, %s, %s) retrieved unexpected %s", s, o, entry.lo, pStr)
+		t.Run(entry.id, func(t *testing.T) {
+			// To avoid blocking on the test we use a buffered channel of size 100. On a real
+			// usage of the driver you would like to call the graph operation on a separated
+			// goroutine using a sync.WaitGroup to collect the error code eventually.
+			pp := make(chan *predicate.Predicate, 100)
+			s := entry.s
+			o := entry.o
+			if err := g.PredicatesForSubjectAndObject(ctx, s, o, entry.lo, pp); err != nil {
+				t.Fatalf("g.PredicatesForSubjectAndObject(%s, %s, %s) = %v; want nil", s, o, entry.lo, err)
 			}
-			entry.want[pStr] = entry.want[pStr] - 1
-			if entry.want[pStr] == 0 {
-				delete(entry.want, pStr)
+			for p := range pp {
+				pStr := p.String()
+				if _, ok := entry.want[pStr]; !ok {
+					t.Fatalf("g.PredicatesForSubjectAndObject(%s, %s, %s) retrieved unexpected %s", s, o, entry.lo, pStr)
+				}
+				entry.want[pStr] = entry.want[pStr] - 1
+				if entry.want[pStr] == 0 {
+					delete(entry.want, pStr)
+				}
 			}
-		}
-		if len(entry.want) != 0 {
-			t.Errorf("g.PredicatesForSubjectAndObject(%s, %s, %s) failed to retrieve some expected elements: %v", s, o, entry.lo, entry.want)
-		}
+			if len(entry.want) != 0 {
+				t.Errorf("g.PredicatesForSubjectAndObject(%s, %s, %s) failed to retrieve some expected elements: %v", s, o, entry.lo, entry.want)
+			}
+		})
 	}
 }
 
@@ -657,16 +668,19 @@ func TestPredicatesForSubjectFilter(t *testing.T) {
 	}
 
 	testTable := []struct {
+		id   string
 		lo   *storage.LookupOptions
 		s    *node.Node
 		want map[string]int
 	}{
 		{
+			id:   "FILTER latest predicate",
 			lo:   &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
 			s:    testutil.MustBuildNodeFromStrings(t, "/u", "john"),
 			want: map[string]int{`"meet"@[2014-04-10T04:21:00Z]`: 2},
 		},
 		{
+			id:   "FILTER latest object",
 			lo:   &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.ObjectField}},
 			s:    testutil.MustBuildNodeFromStrings(t, "/_", "bn"),
 			want: map[string]int{`"_predicate"@[]`: 1},
@@ -674,27 +688,29 @@ func TestPredicatesForSubjectFilter(t *testing.T) {
 	}
 
 	for _, entry := range testTable {
-		// To avoid blocking on the test we use a buffered channel of size 100. On a real
-		// usage of the driver you would like to call the graph operation on a separated
-		// goroutine using a sync.WaitGroup to collect the error code eventually.
-		pp := make(chan *predicate.Predicate, 100)
-		s := entry.s
-		if err := g.PredicatesForSubject(ctx, s, entry.lo, pp); err != nil {
-			t.Fatalf("g.PredicatesForSubject(%s, %s) = %v; want nil", s, entry.lo, err)
-		}
-		for p := range pp {
-			pStr := p.String()
-			if _, ok := entry.want[pStr]; !ok {
-				t.Fatalf("g.PredicatesForSubject(%s, %s) retrieved unexpected %s", s, entry.lo, pStr)
+		t.Run(entry.id, func(t *testing.T) {
+			// To avoid blocking on the test we use a buffered channel of size 100. On a real
+			// usage of the driver you would like to call the graph operation on a separated
+			// goroutine using a sync.WaitGroup to collect the error code eventually.
+			pp := make(chan *predicate.Predicate, 100)
+			s := entry.s
+			if err := g.PredicatesForSubject(ctx, s, entry.lo, pp); err != nil {
+				t.Fatalf("g.PredicatesForSubject(%s, %s) = %v; want nil", s, entry.lo, err)
 			}
-			entry.want[pStr] = entry.want[pStr] - 1
-			if entry.want[pStr] == 0 {
-				delete(entry.want, pStr)
+			for p := range pp {
+				pStr := p.String()
+				if _, ok := entry.want[pStr]; !ok {
+					t.Fatalf("g.PredicatesForSubject(%s, %s) retrieved unexpected %s", s, entry.lo, pStr)
+				}
+				entry.want[pStr] = entry.want[pStr] - 1
+				if entry.want[pStr] == 0 {
+					delete(entry.want, pStr)
+				}
 			}
-		}
-		if len(entry.want) != 0 {
-			t.Errorf("g.PredicatesForSubject(%s, %s) failed to retrieve some expected elements: %v", s, entry.lo, entry.want)
-		}
+			if len(entry.want) != 0 {
+				t.Errorf("g.PredicatesForSubject(%s, %s) failed to retrieve some expected elements: %v", s, entry.lo, entry.want)
+			}
+		})
 	}
 }
 
@@ -757,21 +773,19 @@ func TestPredicatesForObjectFilter(t *testing.T) {
 	}
 
 	testTable := []struct {
+		id   string
 		lo   *storage.LookupOptions
 		o    *triple.Object
 		want map[string]int
 	}{
 		{
+			id:   "FILTER latest predicate",
 			lo:   &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
 			o:    triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
 			want: map[string]int{`"meet"@[2014-04-10T04:21:00Z]`: 1},
 		},
 		{
-			lo:   &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
-			o:    triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "bob")),
-			want: map[string]int{`"meet"@[2014-04-10T04:21:00Z]`: 1},
-		},
-		{
+			id:   "FILTER latest object",
 			lo:   &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.ObjectField}},
 			o:    triple.NewPredicateObject(testutil.MustBuildPredicate(t, `"meet"@[2020-04-10T04:21:00Z]`)),
 			want: map[string]int{`"_predicate"@[]`: 1},
@@ -779,27 +793,29 @@ func TestPredicatesForObjectFilter(t *testing.T) {
 	}
 
 	for _, entry := range testTable {
-		// To avoid blocking on the test we use a buffered channel of size 100. On a real
-		// usage of the driver you would like to call the graph operation on a separated
-		// goroutine using a sync.WaitGroup to collect the error code eventually.
-		pp := make(chan *predicate.Predicate, 100)
-		o := entry.o
-		if err := g.PredicatesForObject(ctx, o, entry.lo, pp); err != nil {
-			t.Fatalf("g.PredicatesForObject(%s, %s) = %v; want nil", o, entry.lo, err)
-		}
-		for p := range pp {
-			pStr := p.String()
-			if _, ok := entry.want[pStr]; !ok {
-				t.Fatalf("g.PredicatesForObject(%s, %s) retrieved unexpected %s", o, entry.lo, pStr)
+		t.Run(entry.id, func(t *testing.T) {
+			// To avoid blocking on the test we use a buffered channel of size 100. On a real
+			// usage of the driver you would like to call the graph operation on a separated
+			// goroutine using a sync.WaitGroup to collect the error code eventually.
+			pp := make(chan *predicate.Predicate, 100)
+			o := entry.o
+			if err := g.PredicatesForObject(ctx, o, entry.lo, pp); err != nil {
+				t.Fatalf("g.PredicatesForObject(%s, %s) = %v; want nil", o, entry.lo, err)
 			}
-			entry.want[pStr] = entry.want[pStr] - 1
-			if entry.want[pStr] == 0 {
-				delete(entry.want, pStr)
+			for p := range pp {
+				pStr := p.String()
+				if _, ok := entry.want[pStr]; !ok {
+					t.Fatalf("g.PredicatesForObject(%s, %s) retrieved unexpected %s", o, entry.lo, pStr)
+				}
+				entry.want[pStr] = entry.want[pStr] - 1
+				if entry.want[pStr] == 0 {
+					delete(entry.want, pStr)
+				}
 			}
-		}
-		if len(entry.want) != 0 {
-			t.Errorf("g.PredicatesForObject(%s, %s) failed to retrieve some expected elements: %v", o, entry.lo, entry.want)
-		}
+			if len(entry.want) != 0 {
+				t.Errorf("g.PredicatesForObject(%s, %s) failed to retrieve some expected elements: %v", o, entry.lo, entry.want)
+			}
+		})
 	}
 }
 
@@ -859,16 +875,19 @@ func TestTriplesForSubjectFilter(t *testing.T) {
 	}
 
 	testTable := []struct {
+		id   string
 		lo   *storage.LookupOptions
 		s    *node.Node
 		want map[string]int
 	}{
 		{
+			id: "FILTER latest predicate",
 			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
 			s:  testutil.MustBuildNodeFromStrings(t, "/u", "john"),
 			want: map[string]int{`/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<mary>`: 1, `/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<bob>`: 1},
 		},
 		{
+			id: "FILTER latest object",
 			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.ObjectField}},
 			s:  testutil.MustBuildNodeFromStrings(t, "/_", "bn"),
 			want: map[string]int{`/_<bn>	"_predicate"@[]	"meet"@[2021-04-10T04:21:00Z]`: 1},
@@ -876,27 +895,29 @@ func TestTriplesForSubjectFilter(t *testing.T) {
 	}
 
 	for _, entry := range testTable {
-		// To avoid blocking on the test we use a buffered channel of size 100. On a real
-		// usage of the driver you would like to call the graph operation on a separated
-		// goroutine using a sync.WaitGroup to collect the error code eventually.
-		trpls := make(chan *triple.Triple, 100)
-		s := entry.s
-		if err := g.TriplesForSubject(ctx, s, entry.lo, trpls); err != nil {
-			t.Fatalf("g.TriplesForSubject(%s, %s) = %v; want nil", s, entry.lo, err)
-		}
-		for trpl := range trpls {
-			tStr := trpl.String()
-			if _, ok := entry.want[tStr]; !ok {
-				t.Fatalf("g.TriplesForSubject(%s, %s) retrieved unexpected %s", s, entry.lo, tStr)
+		t.Run(entry.id, func(t *testing.T) {
+			// To avoid blocking on the test we use a buffered channel of size 100. On a real
+			// usage of the driver you would like to call the graph operation on a separated
+			// goroutine using a sync.WaitGroup to collect the error code eventually.
+			trpls := make(chan *triple.Triple, 100)
+			s := entry.s
+			if err := g.TriplesForSubject(ctx, s, entry.lo, trpls); err != nil {
+				t.Fatalf("g.TriplesForSubject(%s, %s) = %v; want nil", s, entry.lo, err)
 			}
-			entry.want[tStr] = entry.want[tStr] - 1
-			if entry.want[tStr] == 0 {
-				delete(entry.want, tStr)
+			for trpl := range trpls {
+				tStr := trpl.String()
+				if _, ok := entry.want[tStr]; !ok {
+					t.Fatalf("g.TriplesForSubject(%s, %s) retrieved unexpected %s", s, entry.lo, tStr)
+				}
+				entry.want[tStr] = entry.want[tStr] - 1
+				if entry.want[tStr] == 0 {
+					delete(entry.want, tStr)
+				}
 			}
-		}
-		if len(entry.want) != 0 {
-			t.Errorf("g.TriplesForSubject(%s, %s) failed to retrieve some expected elements: %v", s, entry.lo, entry.want)
-		}
+			if len(entry.want) != 0 {
+				t.Errorf("g.TriplesForSubject(%s, %s) failed to retrieve some expected elements: %v", s, entry.lo, entry.want)
+			}
+		})
 	}
 }
 
@@ -956,21 +977,25 @@ func TestTriplesForPredicateFilter(t *testing.T) {
 	}
 
 	testTable := []struct {
+		id   string
 		lo   *storage.LookupOptions
 		p    *predicate.Predicate
 		want map[string]int
 	}{
 		{
+			id: "FILTER latest predicate",
 			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
 			p:  testutil.MustBuildPredicate(t, `"meet"@[2012-04-10T04:21:00Z]`),
 			want: map[string]int{`/u<john>	"meet"@[2012-04-10T04:21:00Z]	/u<mary>`: 1},
 		},
 		{
+			id: "FILTER latest predicate duplicate timestamp",
 			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
 			p:  testutil.MustBuildPredicate(t, `"meet"@[2014-04-10T04:21:00Z]`),
 			want: map[string]int{`/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<mary>`: 1, `/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<bob>`: 1},
 		},
 		{
+			id: "FILTER latest object",
 			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.ObjectField}},
 			p:  testutil.MustBuildPredicate(t, `"_predicate"@[]`),
 			want: map[string]int{`/_<bn>	"_predicate"@[]	"meet"@[2021-04-10T04:21:00Z]`: 1},
@@ -978,27 +1003,29 @@ func TestTriplesForPredicateFilter(t *testing.T) {
 	}
 
 	for _, entry := range testTable {
-		// To avoid blocking on the test we use a buffered channel of size 100. On a real
-		// usage of the driver you would like to call the graph operation on a separated
-		// goroutine using a sync.WaitGroup to collect the error code eventually.
-		trpls := make(chan *triple.Triple, 100)
-		p := entry.p
-		if err := g.TriplesForPredicate(ctx, p, entry.lo, trpls); err != nil {
-			t.Fatalf("g.TriplesForPredicate(%s, %s) = %v; want nil", p, entry.lo, err)
-		}
-		for trpl := range trpls {
-			tStr := trpl.String()
-			if _, ok := entry.want[tStr]; !ok {
-				t.Fatalf("g.TriplesForPredicate(%s, %s) retrieved unexpected %s", p, entry.lo, tStr)
+		t.Run(entry.id, func(t *testing.T) {
+			// To avoid blocking on the test we use a buffered channel of size 100. On a real
+			// usage of the driver you would like to call the graph operation on a separated
+			// goroutine using a sync.WaitGroup to collect the error code eventually.
+			trpls := make(chan *triple.Triple, 100)
+			p := entry.p
+			if err := g.TriplesForPredicate(ctx, p, entry.lo, trpls); err != nil {
+				t.Fatalf("g.TriplesForPredicate(%s, %s) = %v; want nil", p, entry.lo, err)
 			}
-			entry.want[tStr] = entry.want[tStr] - 1
-			if entry.want[tStr] == 0 {
-				delete(entry.want, tStr)
+			for trpl := range trpls {
+				tStr := trpl.String()
+				if _, ok := entry.want[tStr]; !ok {
+					t.Fatalf("g.TriplesForPredicate(%s, %s) retrieved unexpected %s", p, entry.lo, tStr)
+				}
+				entry.want[tStr] = entry.want[tStr] - 1
+				if entry.want[tStr] == 0 {
+					delete(entry.want, tStr)
+				}
 			}
-		}
-		if len(entry.want) != 0 {
-			t.Errorf("g.TriplesForPredicate(%s, %s) failed to retrieve some expected elements: %v", p, entry.lo, entry.want)
-		}
+			if len(entry.want) != 0 {
+				t.Errorf("g.TriplesForPredicate(%s, %s) failed to retrieve some expected elements: %v", p, entry.lo, entry.want)
+			}
+		})
 	}
 }
 
@@ -1058,21 +1085,19 @@ func TestTriplesForObjectFilter(t *testing.T) {
 	}
 
 	testTable := []struct {
+		id   string
 		lo   *storage.LookupOptions
 		o    *triple.Object
 		want map[string]int
 	}{
 		{
+			id: "FILTER latest predicate",
 			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
 			o:  triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
 			want: map[string]int{`/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<mary>`: 1},
 		},
 		{
-			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
-			o:  triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "bob")),
-			want: map[string]int{`/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<bob>`: 1},
-		},
-		{
+			id: "FILTER latest object",
 			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.ObjectField}},
 			o:  triple.NewPredicateObject(testutil.MustBuildPredicate(t, `"meet"@[2020-04-10T04:21:00Z]`)),
 			want: map[string]int{`/_<bn>	"_predicate"@[]	"meet"@[2020-04-10T04:21:00Z]`: 1},
@@ -1080,27 +1105,29 @@ func TestTriplesForObjectFilter(t *testing.T) {
 	}
 
 	for _, entry := range testTable {
-		// To avoid blocking on the test we use a buffered channel of size 100. On a real
-		// usage of the driver you would like to call the graph operation on a separated
-		// goroutine using a sync.WaitGroup to collect the error code eventually.
-		trpls := make(chan *triple.Triple, 100)
-		o := entry.o
-		if err := g.TriplesForObject(ctx, o, entry.lo, trpls); err != nil {
-			t.Fatalf("g.TriplesForObject(%s, %s) = %v; want nil", o, entry.lo, err)
-		}
-		for trpl := range trpls {
-			tStr := trpl.String()
-			if _, ok := entry.want[tStr]; !ok {
-				t.Fatalf("g.TriplesForObject(%s, %s) retrieved unexpected %s", o, entry.lo, tStr)
+		t.Run(entry.id, func(t *testing.T) {
+			// To avoid blocking on the test we use a buffered channel of size 100. On a real
+			// usage of the driver you would like to call the graph operation on a separated
+			// goroutine using a sync.WaitGroup to collect the error code eventually.
+			trpls := make(chan *triple.Triple, 100)
+			o := entry.o
+			if err := g.TriplesForObject(ctx, o, entry.lo, trpls); err != nil {
+				t.Fatalf("g.TriplesForObject(%s, %s) = %v; want nil", o, entry.lo, err)
 			}
-			entry.want[tStr] = entry.want[tStr] - 1
-			if entry.want[tStr] == 0 {
-				delete(entry.want, tStr)
+			for trpl := range trpls {
+				tStr := trpl.String()
+				if _, ok := entry.want[tStr]; !ok {
+					t.Fatalf("g.TriplesForObject(%s, %s) retrieved unexpected %s", o, entry.lo, tStr)
+				}
+				entry.want[tStr] = entry.want[tStr] - 1
+				if entry.want[tStr] == 0 {
+					delete(entry.want, tStr)
+				}
 			}
-		}
-		if len(entry.want) != 0 {
-			t.Errorf("g.TriplesForObject(%s, %s) failed to retrieve some expected elements: %v", o, entry.lo, entry.want)
-		}
+			if len(entry.want) != 0 {
+				t.Errorf("g.TriplesForObject(%s, %s) failed to retrieve some expected elements: %v", o, entry.lo, entry.want)
+			}
+		})
 	}
 }
 
@@ -1203,24 +1230,28 @@ func TestTriplesForSubjectAndPredicateFilter(t *testing.T) {
 	}
 
 	testTable := []struct {
+		id   string
 		lo   *storage.LookupOptions
 		s    *node.Node
 		p    *predicate.Predicate
 		want map[string]int
 	}{
 		{
+			id: "FILTER latest predicate",
 			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
 			s:  testutil.MustBuildNodeFromStrings(t, "/u", "john"),
 			p:  testutil.MustBuildPredicate(t, `"meet"@[2012-04-10T04:21:00Z]`),
 			want: map[string]int{`/u<john>	"meet"@[2012-04-10T04:21:00Z]	/u<mary>`: 1},
 		},
 		{
+			id: "FILTER latest predicate duplicate timestamp",
 			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
 			s:  testutil.MustBuildNodeFromStrings(t, "/u", "john"),
 			p:  testutil.MustBuildPredicate(t, `"meet"@[2014-04-10T04:21:00Z]`),
 			want: map[string]int{`/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<mary>`: 1, `/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<bob>`: 1},
 		},
 		{
+			id: "FILTER latest object",
 			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.ObjectField}},
 			s:  testutil.MustBuildNodeFromStrings(t, "/_", "bn"),
 			p:  testutil.MustBuildPredicate(t, `"_predicate"@[]`),
@@ -1229,28 +1260,30 @@ func TestTriplesForSubjectAndPredicateFilter(t *testing.T) {
 	}
 
 	for _, entry := range testTable {
-		// To avoid blocking on the test we use a buffered channel of size 100. On a real
-		// usage of the driver you would like to call the graph operation on a separated
-		// goroutine using a sync.WaitGroup to collect the error code eventually.
-		trpls := make(chan *triple.Triple, 100)
-		s := entry.s
-		p := entry.p
-		if err := g.TriplesForSubjectAndPredicate(ctx, s, p, entry.lo, trpls); err != nil {
-			t.Fatalf("g.TriplesForSubjectAndPredicate(%s, %s, %s) = %v; want nil", s, p, entry.lo, err)
-		}
-		for trpl := range trpls {
-			tStr := trpl.String()
-			if _, ok := entry.want[tStr]; !ok {
-				t.Fatalf("g.TriplesForSubjectAndPredicate(%s, %s, %s) retrieved unexpected %s", s, p, entry.lo, tStr)
+		t.Run(entry.id, func(t *testing.T) {
+			// To avoid blocking on the test we use a buffered channel of size 100. On a real
+			// usage of the driver you would like to call the graph operation on a separated
+			// goroutine using a sync.WaitGroup to collect the error code eventually.
+			trpls := make(chan *triple.Triple, 100)
+			s := entry.s
+			p := entry.p
+			if err := g.TriplesForSubjectAndPredicate(ctx, s, p, entry.lo, trpls); err != nil {
+				t.Fatalf("g.TriplesForSubjectAndPredicate(%s, %s, %s) = %v; want nil", s, p, entry.lo, err)
 			}
-			entry.want[tStr] = entry.want[tStr] - 1
-			if entry.want[tStr] == 0 {
-				delete(entry.want, tStr)
+			for trpl := range trpls {
+				tStr := trpl.String()
+				if _, ok := entry.want[tStr]; !ok {
+					t.Fatalf("g.TriplesForSubjectAndPredicate(%s, %s, %s) retrieved unexpected %s", s, p, entry.lo, tStr)
+				}
+				entry.want[tStr] = entry.want[tStr] - 1
+				if entry.want[tStr] == 0 {
+					delete(entry.want, tStr)
+				}
 			}
-		}
-		if len(entry.want) != 0 {
-			t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s, %s) failed to retrieve some expected elements: %v", s, p, entry.lo, entry.want)
-		}
+			if len(entry.want) != 0 {
+				t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s, %s) failed to retrieve some expected elements: %v", s, p, entry.lo, entry.want)
+			}
+		})
 	}
 }
 
@@ -1310,24 +1343,28 @@ func TestTriplesForPredicateAndObjectFilter(t *testing.T) {
 	}
 
 	testTable := []struct {
+		id   string
 		lo   *storage.LookupOptions
 		p    *predicate.Predicate
 		o    *triple.Object
 		want map[string]int
 	}{
 		{
+			id: "FILTER latest predicate",
 			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
 			p:  testutil.MustBuildPredicate(t, `"meet"@[2012-04-10T04:21:00Z]`),
 			o:  triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
 			want: map[string]int{`/u<john>	"meet"@[2012-04-10T04:21:00Z]	/u<mary>`: 1},
 		},
 		{
+			id: "FILTER latest predicate duplicate timestamp",
 			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
 			p:  testutil.MustBuildPredicate(t, `"meet"@[2014-04-10T04:21:00Z]`),
 			o:  triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
 			want: map[string]int{`/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<mary>`: 1},
 		},
 		{
+			id: "FILTER latest object",
 			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.ObjectField}},
 			p:  testutil.MustBuildPredicate(t, `"_predicate"@[]`),
 			o:  triple.NewPredicateObject(testutil.MustBuildPredicate(t, `"meet"@[2020-04-10T04:21:00Z]`)),
@@ -1336,28 +1373,30 @@ func TestTriplesForPredicateAndObjectFilter(t *testing.T) {
 	}
 
 	for _, entry := range testTable {
-		// To avoid blocking on the test we use a buffered channel of size 100. On a real
-		// usage of the driver you would like to call the graph operation on a separated
-		// goroutine using a sync.WaitGroup to collect the error code eventually.
-		trpls := make(chan *triple.Triple, 100)
-		p := entry.p
-		o := entry.o
-		if err := g.TriplesForPredicateAndObject(ctx, p, o, entry.lo, trpls); err != nil {
-			t.Fatalf("g.TriplesForPredicateAndObject(%s, %s, %s) = %v; want nil", p, o, entry.lo, err)
-		}
-		for trpl := range trpls {
-			tStr := trpl.String()
-			if _, ok := entry.want[tStr]; !ok {
-				t.Fatalf("g.TriplesForPredicateAndObject(%s, %s, %s) retrieved unexpected %s", p, o, entry.lo, tStr)
+		t.Run(entry.id, func(t *testing.T) {
+			// To avoid blocking on the test we use a buffered channel of size 100. On a real
+			// usage of the driver you would like to call the graph operation on a separated
+			// goroutine using a sync.WaitGroup to collect the error code eventually.
+			trpls := make(chan *triple.Triple, 100)
+			p := entry.p
+			o := entry.o
+			if err := g.TriplesForPredicateAndObject(ctx, p, o, entry.lo, trpls); err != nil {
+				t.Fatalf("g.TriplesForPredicateAndObject(%s, %s, %s) = %v; want nil", p, o, entry.lo, err)
 			}
-			entry.want[tStr] = entry.want[tStr] - 1
-			if entry.want[tStr] == 0 {
-				delete(entry.want, tStr)
+			for trpl := range trpls {
+				tStr := trpl.String()
+				if _, ok := entry.want[tStr]; !ok {
+					t.Fatalf("g.TriplesForPredicateAndObject(%s, %s, %s) retrieved unexpected %s", p, o, entry.lo, tStr)
+				}
+				entry.want[tStr] = entry.want[tStr] - 1
+				if entry.want[tStr] == 0 {
+					delete(entry.want, tStr)
+				}
 			}
-		}
-		if len(entry.want) != 0 {
-			t.Errorf("g.TriplesForPredicateAndObject(%s, %s, %s) failed to retrieve some expected elements: %v", p, o, entry.lo, entry.want)
-		}
+			if len(entry.want) != 0 {
+				t.Errorf("g.TriplesForPredicateAndObject(%s, %s, %s) failed to retrieve some expected elements: %v", p, o, entry.lo, entry.want)
+			}
+		})
 	}
 }
 
@@ -1434,39 +1473,44 @@ func TestTriplesFilter(t *testing.T) {
 	}
 
 	testTable := []struct {
+		id   string
 		lo   *storage.LookupOptions
 		want map[string]int
 	}{
 		{
+			id: "FILTER latest predicate",
 			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
 			want: map[string]int{`/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<mary>`: 1, `/u<john>	"meet"@[2014-04-10T04:21:00Z]	/u<bob>`: 1},
 		},
 		{
+			id: "FILTER latest object",
 			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.ObjectField}},
 			want: map[string]int{`/_<bn>	"_predicate"@[]	"meet"@[2021-04-10T04:21:00Z]`: 1},
 		},
 	}
 
 	for _, entry := range testTable {
-		// To avoid blocking on the test we use a buffered channel of size 100. On a real
-		// usage of the driver you would like to call the graph operation on a separated
-		// goroutine using a sync.WaitGroup to collect the error code eventually.
-		trpls := make(chan *triple.Triple, 100)
-		if err := g.Triples(ctx, entry.lo, trpls); err != nil {
-			t.Fatalf("g.Triples(%s) = %v; want nil", entry.lo, err)
-		}
-		for trpl := range trpls {
-			tStr := trpl.String()
-			if _, ok := entry.want[tStr]; !ok {
-				t.Fatalf("g.Triples(%s) retrieved unexpected %s", entry.lo, tStr)
+		t.Run(entry.id, func(t *testing.T) {
+			// To avoid blocking on the test we use a buffered channel of size 100. On a real
+			// usage of the driver you would like to call the graph operation on a separated
+			// goroutine using a sync.WaitGroup to collect the error code eventually.
+			trpls := make(chan *triple.Triple, 100)
+			if err := g.Triples(ctx, entry.lo, trpls); err != nil {
+				t.Fatalf("g.Triples(%s) = %v; want nil", entry.lo, err)
 			}
-			entry.want[tStr] = entry.want[tStr] - 1
-			if entry.want[tStr] == 0 {
-				delete(entry.want, tStr)
+			for trpl := range trpls {
+				tStr := trpl.String()
+				if _, ok := entry.want[tStr]; !ok {
+					t.Fatalf("g.Triples(%s) retrieved unexpected %s", entry.lo, tStr)
+				}
+				entry.want[tStr] = entry.want[tStr] - 1
+				if entry.want[tStr] == 0 {
+					delete(entry.want, tStr)
+				}
 			}
-		}
-		if len(entry.want) != 0 {
-			t.Errorf("g.Triples(%s) failed to retrieve some expected elements: %v", entry.lo, entry.want)
-		}
+			if len(entry.want) != 0 {
+				t.Errorf("g.Triples(%s) failed to retrieve some expected elements: %v", entry.lo, entry.want)
+			}
+		})
 	}
 }
