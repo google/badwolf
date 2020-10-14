@@ -665,13 +665,13 @@ func compatibleBindingsInClauseForFilterOperation(operation filter.Operation) (c
 				filter.PredicateField: {cls.PBinding: true, cls.PAlias: true},
 				filter.ObjectField:    {cls.OBinding: true, cls.OAlias: true},
 			}
-			return
+			return bindingsByField
 		}
 	default:
-		err = fmt.Errorf("filter function %q has no bindings in clause specified for it (planner level)", operation)
+		return nil, fmt.Errorf("filter function %q has no bindings in clause specified for it (planner level)", operation)
 	}
 
-	return
+	return compatibleBindingsInClause, nil
 }
 
 // organizeFilterOptionsByClause processes all the given filters and organize them in a map that has as keys the
