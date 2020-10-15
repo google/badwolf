@@ -306,6 +306,37 @@ func isImmutableFilter(memoryTriples map[string]*triple.Triple, pQuery *predicat
 	return trps, nil
 }
 
+// isTemporalFilter executes the isTemporal filter operation over memoryTriples following filterOptions.
+func isTemporalFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Predicate, filterOptions *filter.StorageOptions) (map[string]*triple.Triple, error) {
+	if filterOptions.Field != filter.PredicateField && filterOptions.Field != filter.ObjectField {
+		return nil, fmt.Errorf("invalid field %q for %q filter operation, can accept only %q or %q", filterOptions.Field, filter.IsTemporal, filter.PredicateField, filter.ObjectField)
+	}
+
+	trps := make(map[string]*triple.Triple)
+	for _, t := range memoryTriples {
+		if pQuery != nil && pQuery.String() != t.Predicate().String() {
+			continue
+		}
+
+		var p *predicate.Predicate
+		if filterOptions.Field == filter.PredicateField {
+			p = t.Predicate()
+		} else if pObj, err := t.Object().Predicate(); filterOptions.Field == filter.ObjectField && err == nil {
+			p = pObj
+		} else {
+			continue
+		}
+
+		if p.Type() != predicate.Temporal {
+			continue
+		}
+
+		trps[t.UUID().String()] = t
+	}
+
+	return trps, nil
+}
+
 // latestFilter executes the latest filter operation over memoryTriples following filterOptions.
 func latestFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Predicate, filterOptions *filter.StorageOptions) (map[string]*triple.Triple, error) {
 	if filterOptions.Field != filter.PredicateField && filterOptions.Field != filter.ObjectField {
@@ -360,6 +391,8 @@ func executeFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Pr
 		return latestFilter(memoryTriples, pQuery, filterOptions)
 	case filter.IsImmutable:
 		return isImmutableFilter(memoryTriples, pQuery, filterOptions)
+	case filter.IsTemporal:
+		return isTemporalFilter(memoryTriples, pQuery, filterOptions)
 	default:
 		return nil, fmt.Errorf("filter operation %q not supported in the driver", filterOptions.Operation)
 	}
