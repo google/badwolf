@@ -667,11 +667,10 @@ func compatibleBindingsInClauseForFilterOperation(operation filter.Operation) (c
 			}
 			return bindingsByField
 		}
+		return compatibleBindingsInClause, nil
 	default:
 		return nil, fmt.Errorf("filter function %q has no bindings in clause specified for it (planner level)", operation)
 	}
-
-	return compatibleBindingsInClause, nil
 }
 
 // organizeFilterOptionsByClause processes all the given filters and organize them in a map that has as keys the
