@@ -1147,6 +1147,46 @@ func TestPlannerQuery(t *testing.T) {
 			nBindings: 3,
 			nRows:     1,
 		},
+		{
+			q: `SELECT ?p, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ?o .
+					FILTER isTemporal(?p)
+				};`,
+			nBindings: 2,
+			nRows:     4,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o
+				FROM ?test
+				WHERE {
+					?s ?p ?o .
+					FILTER isTemporal(?o)
+				};`,
+			nBindings: 3,
+			nRows:     5,
+		},
+		{
+			q: `SELECT ?p_alias, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p AS ?p_alias ?o .
+					FILTER isTemporal(?p_alias)
+				};`,
+			nBindings: 2,
+			nRows:     4,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o_alias
+				FROM ?test
+				WHERE {
+					?s ?p ?o AS ?o_alias .
+					FILTER isTemporal(?o_alias)
+				};`,
+			nBindings: 3,
+			nRows:     5,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
