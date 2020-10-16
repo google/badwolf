@@ -39,6 +39,8 @@ const (
 		/u<peter> "bought"@[2016-02-01T00:00:00-08:00] /c<model s>
 		/u<peter> "bought"@[2016-03-01T00:00:00-08:00] /c<model x>
 		/u<peter> "bought"@[2016-04-01T00:00:00-08:00] /c<model y>
+		/u<paul> "bought"@[2016-01-01T00:00:00-08:00] /c<model n>
+		/u<paul> "bought"@[2016-04-01T00:00:00-08:00] /c<model r>
 		/c<mini> "is_a"@[] /t<car>
 		/c<model s> "is_a"@[] /t<car>
 		/c<model x> "is_a"@[] /t<car>
@@ -48,6 +50,7 @@ const (
 		/l<barcelona> "predicate"@[] "turned"@[2016-03-01T00:00:00-08:00]
 		/l<barcelona> "predicate"@[] "turned"@[2016-04-01T00:00:00-08:00]
 		/l<barcelona> "predicate"@[] "immutable_predicate"@[]
+		/l<paris> "predicate"@[] "turned"@[2016-04-01T00:00:00-08:00]
 		/u<alice> "height_cm"@[] "174"^^type:int64
 		/u<alice> "tag"@[] "abc"^^type:text
 		/u<bob> "height_cm"@[] "151"^^type:int64
@@ -840,7 +843,7 @@ func TestPlannerQuery(t *testing.T) {
 				}
 				HAVING (?p_id < "in"^^type:text) AND (?time > 2016-02-01T00:00:00-08:00);`,
 			nBindings: 4,
-			nRows:     2,
+			nRows:     3,
 		},
 		{
 			q: `SELECT ?p, ?time
@@ -958,7 +961,7 @@ func TestPlannerQuery(t *testing.T) {
 					?s ?p ?o AT ?o_time
 				};`,
 			nBindings: 3,
-			nRows:     4,
+			nRows:     5,
 		},
 		{
 			q: `SELECT ?s, ?o, ?o_time
@@ -978,7 +981,131 @@ func TestPlannerQuery(t *testing.T) {
 					?s ?p "turned"@[?o_time]
 				};`,
 			nBindings: 2,
-			nRows:     4,
+			nRows:     5,
+		},
+		{
+			q: `SELECT ?p, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ?o .
+					FILTER latest(?p)
+				};`,
+			nBindings: 2,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?p_alias, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p AS ?p_alias ?o .
+					FILTER latest(?p_alias)
+				};`,
+			nBindings: 2,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?p, ?o
+				FROM ?test
+				WHERE {
+					/l<barcelona> ?p ?o .
+					FILTER latest(?o)
+				};`,
+			nBindings: 2,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?p, ?o_alias
+				FROM ?test
+				WHERE {
+					/l<barcelona> ?p ?o AS ?o_alias .
+					FILTER latest(?o_alias)
+				};`,
+			nBindings: 2,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?p1, ?p2
+				FROM ?test
+				WHERE {
+					/u<peter> ?p1 ?o1 .
+					/item/book<000> ?p2 ?o2 .
+					FILTER latest(?p1) .
+					FILTER latest(?p2)
+				};`,
+			nBindings: 2,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o
+				FROM ?test
+				WHERE {
+					?s ?p ?o .
+					FILTER latest(?p)
+				};`,
+			nBindings: 3,
+			nRows:     3,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o
+				FROM ?test
+				WHERE {
+					?s ?p ?o .
+					FILTER latest(?o)
+				};`,
+			nBindings: 3,
+			nRows:     2,
+		},
+		{
+			q: `SELECT ?s, ?p_alias, ?o
+				FROM ?test
+				WHERE {
+					?s "bought"@[2016-03-01T00:00:00-08:00] AS ?p_alias ?o .
+					FILTER latest(?p_alias)
+				};`,
+			nBindings: 3,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o_alias
+				FROM ?test
+				WHERE {
+					?s ?p "turned"@[2016-03-01T00:00:00-08:00] AS ?o_alias .
+					FILTER latest(?o_alias)
+				};`,
+			nBindings: 3,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o
+				FROM ?test
+				WHERE {
+					?s "bought"@[?time] ?o .
+					OPTIONAL { ?s ?p ?o } .
+					FILTER latest(?p)
+				};`,
+			nBindings: 3,
+			nRows:     6,
+		},
+		{
+			q: `SELECT ?p
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ?o1 .
+					/u<paul> ?p ?o2 .
+					FILTER latest(?p)
+				};`,
+			nBindings: 1,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?p, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ?o .
+					FILTER lAtEsT(?p) .
+				};`,
+			nBindings: 2,
+			nRows:     1,
 		},
 	}
 
@@ -1064,6 +1191,40 @@ func TestPlannerQueryError(t *testing.T) {
 					?s "height_cm"@[] ?height
 				}
 				HAVING ?s > /u<alice>;`,
+		},
+		{
+			q: `SELECT ?p, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ?o .
+					FILTER latest(?p) .
+					FILTER latest(?p)
+				};`,
+		},
+		{
+			q: `SELECT ?p, ?o
+				FROM ?test
+				WHERE {
+					/l<barcelona> ?p ?o .
+					FILTER latest(?p) .
+					FILTER latest(?o)
+				};`,
+		},
+		{
+			q: `SELECT ?p, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ?o .
+					FILTER latest(?b_not_exist)
+				};`,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o
+				FROM ?test
+				WHERE {
+					?s ID ?sID ?p ?o .
+					FILTER latest(?sID)
+				};`,
 		},
 	}
 

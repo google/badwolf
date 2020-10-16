@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/google/badwolf/bql/lexer"
+	"github.com/google/badwolf/bql/planner/filter"
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"
@@ -146,11 +147,11 @@ type GraphClause struct {
 }
 
 // FilterClause represents a FILTER clause inside WHERE.
-// Operation below refers to the filter function being applied (eg: "latest"), Binding refers to the binding it
+// Operation below refers to the filter function being applied (eg: Latest), Binding refers to the binding it
 // will be applied to and Value, when specified, contains the second argument of the filter function (not applicable for all
-// Operations - some like "latest" do not use it while others like "greaterThan" do, see Issue 129).
+// Operations - some like Latest do not use it while others like GreaterThan do, see Issue 129).
 type FilterClause struct {
-	Operation string
+	Operation filter.Operation
 	Binding   string
 	Value     string
 }

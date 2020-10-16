@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/badwolf/bql/planner/filter"
 	"github.com/google/badwolf/storage"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/node"
@@ -274,6 +275,63 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 	return true
 }
 
+// latestFilter executes the latest filter operation over memoryTriples following filterOptions.
+func latestFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Predicate, filterOptions *filter.StorageOptions) (map[string]*triple.Triple, error) {
+	if filterOptions.Field != filter.PredicateField && filterOptions.Field != filter.ObjectField {
+		return nil, fmt.Errorf("invalid field %q for %q filter operation, can accept only %q or %q", filterOptions.Field, filter.Latest, filter.PredicateField, filter.ObjectField)
+	}
+
+	lastTA := make(map[string]*time.Time)
+	trps := make(map[string]map[string]*triple.Triple)
+	for _, t := range memoryTriples {
+		if pQuery != nil && pQuery.String() != t.Predicate().String() {
+			continue
+		}
+
+		var p *predicate.Predicate
+		if filterOptions.Field == filter.PredicateField {
+			p = t.Predicate()
+		} else if pObj, err := t.Object().Predicate(); filterOptions.Field == filter.ObjectField && err == nil {
+			p = pObj
+		} else {
+			continue
+		}
+		if p.Type() != predicate.Temporal {
+			continue
+		}
+
+		ppUUID := p.PartialUUID().String()
+		ta, err := p.TimeAnchor()
+		if err != nil {
+			return nil, err
+		}
+		if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
+			trps[ppUUID] = map[string]*triple.Triple{t.UUID().String(): t}
+			lastTA[ppUUID] = ta
+		} else if ta.Sub(*lta) == 0 {
+			trps[ppUUID][t.UUID().String()] = t
+		}
+	}
+
+	trpsByUUID := make(map[string]*triple.Triple)
+	for _, m := range trps {
+		for tUUID, t := range m {
+			trpsByUUID[tUUID] = t
+		}
+	}
+	return trpsByUUID, nil
+}
+
+// executeFilter executes the proper filter operation over memoryTriples following the specifications given in filterOptions.
+func executeFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Predicate, filterOptions *filter.StorageOptions) (map[string]*triple.Triple, error) {
+	switch filterOptions.Operation {
+	case filter.Latest:
+		return latestFilter(memoryTriples, pQuery, filterOptions)
+	default:
+		return nil, fmt.Errorf("filter operation %q not supported in the driver", filterOptions.Operation)
+	}
+}
+
 // Objects published the objects for the give object and predicate to the
 // provided channel.
 func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions, objs chan<- *triple.Object) error {
@@ -289,21 +347,22 @@ func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predica
 	defer close(objs)
 
 	if lo.LatestAnchor {
-		lastTA := make(map[string]*time.Time)
-		trps := make(map[string]*triple.Triple)
-		for _, t := range m.idxSP[spIdx] {
-			p := t.Predicate()
-			ppUUID := p.PartialUUID().String()
-			if p.Type() == predicate.Temporal {
-				ta, err := p.TimeAnchor()
-				if err != nil {
-					return err
-				}
-				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
-					trps[ppUUID] = t
-					lastTA[ppUUID] = ta
-				}
-			}
+		if lo.FilterOptions != nil {
+			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
+		}
+		lo.FilterOptions = &filter.StorageOptions{
+			Operation: filter.Latest,
+			Field:     filter.PredicateField,
+		}
+		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
+		defer func() {
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
+		}()
+	}
+	if lo.FilterOptions != nil {
+		trps, err := executeFilter(m.idxSP[spIdx], p, lo.FilterOptions)
+		if err != nil {
+			return err
 		}
 		for _, trp := range trps {
 			if trp != nil {
@@ -318,6 +377,7 @@ func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predica
 			objs <- t.Object()
 		}
 	}
+
 	return nil
 }
 
@@ -327,6 +387,7 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 	if subjs == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
+
 	pUUID := UUIDToByteString(p.PartialUUID())
 	oUUID := UUIDToByteString(o.UUID())
 	poIdx := pUUID + oUUID
@@ -335,21 +396,22 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 	defer close(subjs)
 
 	if lo.LatestAnchor {
-		lastTA := make(map[string]*time.Time)
-		trps := make(map[string]*triple.Triple)
-		for _, t := range m.idxPO[poIdx] {
-			p := t.Predicate()
-			ppUUID := p.PartialUUID().String()
-			if p.Type() == predicate.Temporal {
-				ta, err := p.TimeAnchor()
-				if err != nil {
-					return err
-				}
-				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
-					trps[ppUUID] = t
-					lastTA[ppUUID] = ta
-				}
-			}
+		if lo.FilterOptions != nil {
+			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
+		}
+		lo.FilterOptions = &filter.StorageOptions{
+			Operation: filter.Latest,
+			Field:     filter.PredicateField,
+		}
+		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
+		defer func() {
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
+		}()
+	}
+	if lo.FilterOptions != nil {
+		trps, err := executeFilter(m.idxPO[poIdx], p, lo.FilterOptions)
+		if err != nil {
+			return err
 		}
 		for _, trp := range trps {
 			if trp != nil {
@@ -364,6 +426,7 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 			subjs <- t.Subject()
 		}
 	}
+
 	return nil
 }
 
@@ -373,6 +436,7 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 	if prds == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
+
 	sUUID := UUIDToByteString(s.UUID())
 	oUUID := UUIDToByteString(o.UUID())
 	soIdx := sUUID + oUUID
@@ -381,21 +445,22 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 	defer close(prds)
 
 	if lo.LatestAnchor {
-		lastTA := make(map[string]*time.Time)
-		trps := make(map[string]*triple.Triple)
-		for _, t := range m.idxSO[soIdx] {
-			p := t.Predicate()
-			ppUUID := p.PartialUUID().String()
-			if p.Type() == predicate.Temporal {
-				ta, err := p.TimeAnchor()
-				if err != nil {
-					return err
-				}
-				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
-					trps[ppUUID] = t
-					lastTA[ppUUID] = ta
-				}
-			}
+		if lo.FilterOptions != nil {
+			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
+		}
+		lo.FilterOptions = &filter.StorageOptions{
+			Operation: filter.Latest,
+			Field:     filter.PredicateField,
+		}
+		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
+		defer func() {
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
+		}()
+	}
+	if lo.FilterOptions != nil {
+		trps, err := executeFilter(m.idxSO[soIdx], nil, lo.FilterOptions)
+		if err != nil {
+			return err
 		}
 		for _, trp := range trps {
 			if trp != nil {
@@ -410,6 +475,7 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 			prds <- t.Predicate()
 		}
 	}
+
 	return nil
 }
 
@@ -419,27 +485,29 @@ func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *sto
 	if prds == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
+
 	sUUID := UUIDToByteString(s.UUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(prds)
 
 	if lo.LatestAnchor {
-		lastTA := make(map[string]*time.Time)
-		trps := make(map[string]*triple.Triple)
-		for _, t := range m.idxS[sUUID] {
-			p := t.Predicate()
-			ppUUID := p.PartialUUID().String()
-			if p.Type() == predicate.Temporal {
-				ta, err := p.TimeAnchor()
-				if err != nil {
-					return err
-				}
-				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
-					trps[ppUUID] = t
-					lastTA[ppUUID] = ta
-				}
-			}
+		if lo.FilterOptions != nil {
+			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
+		}
+		lo.FilterOptions = &filter.StorageOptions{
+			Operation: filter.Latest,
+			Field:     filter.PredicateField,
+		}
+		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
+		defer func() {
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
+		}()
+	}
+	if lo.FilterOptions != nil {
+		trps, err := executeFilter(m.idxS[sUUID], nil, lo.FilterOptions)
+		if err != nil {
+			return err
 		}
 		for _, trp := range trps {
 			if trp != nil {
@@ -454,6 +522,7 @@ func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *sto
 			prds <- t.Predicate()
 		}
 	}
+
 	return nil
 }
 
@@ -463,27 +532,29 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 	if prds == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
+
 	oUUID := UUIDToByteString(o.UUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(prds)
 
 	if lo.LatestAnchor {
-		lastTA := make(map[string]*time.Time)
-		trps := make(map[string]*triple.Triple)
-		for _, t := range m.idxO[oUUID] {
-			p := t.Predicate()
-			ppUUID := p.PartialUUID().String()
-			if p.Type() == predicate.Temporal {
-				ta, err := p.TimeAnchor()
-				if err != nil {
-					return err
-				}
-				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
-					trps[ppUUID] = t
-					lastTA[ppUUID] = ta
-				}
-			}
+		if lo.FilterOptions != nil {
+			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
+		}
+		lo.FilterOptions = &filter.StorageOptions{
+			Operation: filter.Latest,
+			Field:     filter.PredicateField,
+		}
+		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
+		defer func() {
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
+		}()
+	}
+	if lo.FilterOptions != nil {
+		trps, err := executeFilter(m.idxO[oUUID], nil, lo.FilterOptions)
+		if err != nil {
+			return err
 		}
 		for _, trp := range trps {
 			if trp != nil {
@@ -498,6 +569,7 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 			prds <- t.Predicate()
 		}
 	}
+
 	return nil
 }
 
@@ -507,27 +579,29 @@ func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storag
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
+
 	sUUID := UUIDToByteString(s.UUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
 	if lo.LatestAnchor {
-		lastTA := make(map[string]*time.Time)
-		trps := make(map[string]*triple.Triple)
-		for _, t := range m.idxS[sUUID] {
-			p := t.Predicate()
-			ppUUID := p.PartialUUID().String()
-			if p.Type() == predicate.Temporal {
-				ta, err := p.TimeAnchor()
-				if err != nil {
-					return err
-				}
-				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
-					trps[ppUUID] = t
-					lastTA[ppUUID] = ta
-				}
-			}
+		if lo.FilterOptions != nil {
+			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
+		}
+		lo.FilterOptions = &filter.StorageOptions{
+			Operation: filter.Latest,
+			Field:     filter.PredicateField,
+		}
+		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
+		defer func() {
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
+		}()
+	}
+	if lo.FilterOptions != nil {
+		trps, err := executeFilter(m.idxS[sUUID], nil, lo.FilterOptions)
+		if err != nil {
+			return err
 		}
 		for _, trp := range trps {
 			if trp != nil {
@@ -542,6 +616,7 @@ func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storag
 			trpls <- t
 		}
 	}
+
 	return nil
 }
 
@@ -551,27 +626,29 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
+
 	pUUID := UUIDToByteString(p.PartialUUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
 	if lo.LatestAnchor {
-		lastTA := make(map[string]*time.Time)
-		trps := make(map[string]*triple.Triple)
-		for _, t := range m.idxP[pUUID] {
-			p := t.Predicate()
-			ppUUID := p.PartialUUID().String()
-			if p.Type() == predicate.Temporal {
-				ta, err := p.TimeAnchor()
-				if err != nil {
-					return err
-				}
-				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
-					trps[ppUUID] = t
-					lastTA[ppUUID] = ta
-				}
-			}
+		if lo.FilterOptions != nil {
+			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
+		}
+		lo.FilterOptions = &filter.StorageOptions{
+			Operation: filter.Latest,
+			Field:     filter.PredicateField,
+		}
+		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
+		defer func() {
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
+		}()
+	}
+	if lo.FilterOptions != nil {
+		trps, err := executeFilter(m.idxP[pUUID], p, lo.FilterOptions)
+		if err != nil {
+			return err
 		}
 		for _, trp := range trps {
 			if trp != nil {
@@ -586,6 +663,7 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 			trpls <- t
 		}
 	}
+
 	return nil
 }
 
@@ -595,27 +673,29 @@ func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *sto
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
+
 	oUUID := UUIDToByteString(o.UUID())
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
 	if lo.LatestAnchor {
-		lastTA := make(map[string]*time.Time)
-		trps := make(map[string]*triple.Triple)
-		for _, t := range m.idxO[oUUID] {
-			p := t.Predicate()
-			ppUUID := p.PartialUUID().String()
-			if p.Type() == predicate.Temporal {
-				ta, err := p.TimeAnchor()
-				if err != nil {
-					return err
-				}
-				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
-					trps[ppUUID] = t
-					lastTA[ppUUID] = ta
-				}
-			}
+		if lo.FilterOptions != nil {
+			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
+		}
+		lo.FilterOptions = &filter.StorageOptions{
+			Operation: filter.Latest,
+			Field:     filter.PredicateField,
+		}
+		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
+		defer func() {
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
+		}()
+	}
+	if lo.FilterOptions != nil {
+		trps, err := executeFilter(m.idxO[oUUID], nil, lo.FilterOptions)
+		if err != nil {
+			return err
 		}
 		for _, trp := range trps {
 			if trp != nil {
@@ -630,6 +710,7 @@ func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *sto
 			trpls <- t
 		}
 	}
+
 	return nil
 }
 
@@ -639,6 +720,7 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
+
 	sUUID := UUIDToByteString(s.UUID())
 	pUUID := UUIDToByteString(p.PartialUUID())
 	spIdx := sUUID + pUUID
@@ -647,21 +729,22 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 	defer close(trpls)
 
 	if lo.LatestAnchor {
-		lastTA := make(map[string]*time.Time)
-		trps := make(map[string]*triple.Triple)
-		for _, t := range m.idxSP[spIdx] {
-			p := t.Predicate()
-			ppUUID := p.PartialUUID().String()
-			if p.Type() == predicate.Temporal {
-				ta, err := p.TimeAnchor()
-				if err != nil {
-					return err
-				}
-				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
-					trps[ppUUID] = t
-					lastTA[ppUUID] = ta
-				}
-			}
+		if lo.FilterOptions != nil {
+			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
+		}
+		lo.FilterOptions = &filter.StorageOptions{
+			Operation: filter.Latest,
+			Field:     filter.PredicateField,
+		}
+		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
+		defer func() {
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
+		}()
+	}
+	if lo.FilterOptions != nil {
+		trps, err := executeFilter(m.idxSP[spIdx], p, lo.FilterOptions)
+		if err != nil {
+			return err
 		}
 		for _, trp := range trps {
 			if trp != nil {
@@ -676,6 +759,7 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 			trpls <- t
 		}
 	}
+
 	return nil
 }
 
@@ -685,6 +769,7 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
+
 	pUUID := UUIDToByteString(p.PartialUUID())
 	oUUID := UUIDToByteString(o.UUID())
 	poIdx := pUUID + oUUID
@@ -693,21 +778,22 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 	defer close(trpls)
 
 	if lo.LatestAnchor {
-		lastTA := make(map[string]*time.Time)
-		trps := make(map[string]*triple.Triple)
-		for _, t := range m.idxPO[poIdx] {
-			p := t.Predicate()
-			ppUUID := p.PartialUUID().String()
-			if p.Type() == predicate.Temporal {
-				ta, err := p.TimeAnchor()
-				if err != nil {
-					return err
-				}
-				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
-					trps[ppUUID] = t
-					lastTA[ppUUID] = ta
-				}
-			}
+		if lo.FilterOptions != nil {
+			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
+		}
+		lo.FilterOptions = &filter.StorageOptions{
+			Operation: filter.Latest,
+			Field:     filter.PredicateField,
+		}
+		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
+		defer func() {
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
+		}()
+	}
+	if lo.FilterOptions != nil {
+		trps, err := executeFilter(m.idxPO[poIdx], p, lo.FilterOptions)
+		if err != nil {
+			return err
 		}
 		for _, trp := range trps {
 			if trp != nil {
@@ -722,6 +808,7 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 			trpls <- t
 		}
 	}
+
 	return nil
 }
 
@@ -740,26 +827,28 @@ func (m *memory) Triples(ctx context.Context, lo *storage.LookupOptions, trpls c
 	if trpls == nil {
 		return fmt.Errorf("cannot provide an empty channel")
 	}
+
 	m.rwmu.RLock()
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
 	if lo.LatestAnchor {
-		lastTA := make(map[string]*time.Time)
-		trps := make(map[string]*triple.Triple)
-		for _, t := range m.idx {
-			p := t.Predicate()
-			ppUUID := p.PartialUUID().String()
-			if p.Type() == predicate.Temporal {
-				ta, err := p.TimeAnchor()
-				if err != nil {
-					return err
-				}
-				if lta := lastTA[ppUUID]; lta == nil || ta.Sub(*lta) > 0 {
-					trps[ppUUID] = t
-					lastTA[ppUUID] = ta
-				}
-			}
+		if lo.FilterOptions != nil {
+			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
+		}
+		lo.FilterOptions = &filter.StorageOptions{
+			Operation: filter.Latest,
+			Field:     filter.PredicateField,
+		}
+		// To guarantee that "lo.FilterOptions" will be cleaned at the driver level, since it was artificially created at the driver level for "LatestAnchor".
+		defer func() {
+			lo.FilterOptions = (*filter.StorageOptions)(nil)
+		}()
+	}
+	if lo.FilterOptions != nil {
+		trps, err := executeFilter(m.idx, nil, lo.FilterOptions)
+		if err != nil {
+			return err
 		}
 		for _, trp := range trps {
 			if trp != nil {
@@ -774,5 +863,6 @@ func (m *memory) Triples(ctx context.Context, lo *storage.LookupOptions, trpls c
 			trpls <- t
 		}
 	}
+
 	return nil
 }

@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/badwolf/bql/planner/filter"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/node"
 	"github.com/google/badwolf/triple/predicate"
@@ -43,6 +44,9 @@ type LookupOptions struct {
 	// LatestAnchor only. If set, it will ignore the time boundaries provided and
 	// just use the last available anchor.
 	LatestAnchor bool
+
+	// FilterOptions, if provided, represent the specifications for the filtering to be executed.
+	FilterOptions *filter.StorageOptions
 }
 
 // String returns a readable version of the LookupOptions instance.
@@ -62,7 +66,7 @@ func (l *LookupOptions) String() string {
 		b.WriteString("nil")
 	}
 	b.WriteString(fmt.Sprintf(", LatestAnchor=%v", l.LatestAnchor))
-	b.WriteString(">")
+	b.WriteString(fmt.Sprintf(", FilterOptions=%s>", l.FilterOptions))
 	return b.String()
 }
 

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/badwolf/bql/lexer"
+	"github.com/google/badwolf/bql/planner/filter"
 	"github.com/google/badwolf/bql/table"
 	"github.com/google/badwolf/triple"
 	"github.com/google/badwolf/triple/literal"
@@ -671,13 +672,49 @@ func whereObjectClause() ElementHook {
 	return hook
 }
 
+// addOperationToWorkingFilter takes the filter operation in its string format and tries to add the
+// correspondent filter.Operation to workingFilter.
+func addOperationToWorkingFilter(op string, workingFilter *FilterClause) error {
+	if workingFilter == nil {
+		return fmt.Errorf("could not add filter function %q to nil filter clause (which is still nil probably because a call to st.ResetWorkingFilterClause was not made before start processing the first filter clause)", op)
+	}
+	if !workingFilter.Operation.IsEmpty() {
+		return fmt.Errorf("invalid filter function %q on filter clause since already set to %q", op, workingFilter.Operation)
+	}
+	lowercaseOp := strings.ToLower(op)
+	if _, ok := filter.SupportedOperations[lowercaseOp]; !ok {
+		return fmt.Errorf("filter function %q on filter clause is not supported", op)
+	}
+
+	workingFilter.Operation = filter.SupportedOperations[lowercaseOp]
+	return nil
+}
+
+// addBindingToWorkingFilter takes the given binding and tries to add it to workingFilter.
+func addBindingToWorkingFilter(bndg string, workingFilter *FilterClause) error {
+	if workingFilter == nil {
+		return fmt.Errorf("could not add binding %q to nil filter clause (which is still nil probably because a call to st.ResetWorkingFilterClause was not made before start processing the first filter clause)", bndg)
+	}
+	if workingFilter.Operation.IsEmpty() {
+		return fmt.Errorf("could not add binding %q to a filter clause that does not have a filter function previously set", bndg)
+	}
+	if workingFilter.Binding != "" {
+		return fmt.Errorf("invalid binding %q on filter clause since already set to %q", bndg, workingFilter.Binding)
+	}
+
+	workingFilter.Binding = bndg
+	return nil
+}
+
+// isValidFilterClause returns true if the given filter clause is valid and complete.
+func isValidFilterClause(f *FilterClause) bool {
+	return f != nil && !f.Operation.IsEmpty() && f.Binding != ""
+}
+
 // whereFilterClause returns an element hook that updates the working filter clause and,
 // if the filter clause is complete, populates the filters list of the statement.
 func whereFilterClause() ElementHook {
 	var hook ElementHook
-	supportedFilterFunctions := map[string]bool{
-		"latest": true,
-	}
 
 	hook = func(st *Statement, ce ConsumedElement) (ElementHook, error) {
 		if ce.IsSymbol() {
@@ -685,35 +722,22 @@ func whereFilterClause() ElementHook {
 		}
 
 		tkn := ce.Token()
-		currFilter := st.WorkingFilter()
 		switch tkn.Type {
 		case lexer.ItemFilterFunction:
-			if currFilter == nil {
-				return nil, fmt.Errorf("could not add filter function %q to nil filter clause", tkn.Text)
+			err := addOperationToWorkingFilter(tkn.Text, st.WorkingFilter())
+			if err != nil {
+				return nil, err
 			}
-			if currFilter.Operation != "" {
-				return nil, fmt.Errorf("invalid filter function %q on filter clause since already set to %q", tkn.Text, currFilter.Operation)
-			}
-			if !supportedFilterFunctions[tkn.Text] {
-				return nil, fmt.Errorf("filter function %q on filter clause is not supported", tkn.Text)
-			}
-			currFilter.Operation = tkn.Text
 			return hook, nil
 		case lexer.ItemBinding:
-			if currFilter == nil {
-				return nil, fmt.Errorf("could not add binding %q to nil filter clause", tkn.Text)
+			err := addBindingToWorkingFilter(tkn.Text, st.WorkingFilter())
+			if err != nil {
+				return nil, err
 			}
-			if currFilter.Operation == "" {
-				return nil, fmt.Errorf("could not add binding %q to a filter clause that does not have a filter function previously set", tkn.Text)
-			}
-			if currFilter.Binding != "" {
-				return nil, fmt.Errorf("invalid binding %q on filter clause since already set to %q", tkn.Text, currFilter.Binding)
-			}
-			currFilter.Binding = tkn.Text
 			return hook, nil
 		case lexer.ItemRPar:
-			if currFilter == nil || currFilter.Operation == "" || currFilter.Binding == "" {
-				return nil, fmt.Errorf("could not add invalid working filter %q to the statement filters list", currFilter)
+			if !isValidFilterClause(st.WorkingFilter()) {
+				return nil, fmt.Errorf("could not add invalid working filter %q to the statement filters list", st.WorkingFilter())
 			}
 			st.AddWorkingFilterClause()
 		}
