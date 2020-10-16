@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime/pprof"
 	"strings"
 	"time"
 
@@ -88,10 +89,50 @@ func SimpleReadLine(done chan bool) <-chan string {
 	return c
 }
 
+// startProfilingIfEnabled starts profiling for the current call to runBQLFromFile if profilingEnabled is true,
+// returning the two files to which the profiling metrics will be printed.
+func startProfilingIfEnabled(profilingEnabled bool) (*os.File, *os.File) {
+	if !profilingEnabled {
+		return nil, nil
+	}
+
+	cpuProfile, err := os.Create("cpuprofile")
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println("Profiling for current BQL file was aborted.")
+		return nil, nil
+	}
+	memProfile, err := os.Create("memprofile")
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println("Profiling for current BQL file was aborted.")
+		return nil, nil
+	}
+	pprof.StartCPUProfile(cpuProfile)
+
+	return cpuProfile, memProfile
+}
+
+// stopProfilingIfEnabled stops profiling for the current call to runBQLFromFile if profilingEnabled is true,
+// writing the final profiling metrics to the correspondent files and closing them.
+func stopProfilingIfEnabled(profilingEnabled bool, cpuProfile, memProfile *os.File) {
+	if !profilingEnabled {
+		return
+	}
+	if cpuProfile == nil || memProfile == nil {
+		return
+	}
+
+	pprof.StopCPUProfile()
+	pprof.WriteHeapProfile(memProfile)
+	cpuProfile.Close()
+	memProfile.Close()
+}
+
 // REPL starts a read-evaluation-print-loop to run BQL commands.
 func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, builderSize int, done chan bool) int {
 	var tracer io.Writer
-	ctx, isTracingToFile, sessionStart := context.Background(), false, time.Now()
+	ctx, isTracingToFile, profilingEnabled, sessionStart := context.Background(), false, false, time.Now()
 
 	driverPlain := func() storage.Store {
 		return od
@@ -175,6 +216,18 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 			done <- false
 			continue
 		}
+		if strings.HasPrefix(l, "start profiling") {
+			profilingEnabled = true
+			fmt.Println("Profiling with pprof is enabled.")
+			done <- false
+			continue
+		}
+		if strings.HasPrefix(l, "stop profiling") {
+			profilingEnabled = false
+			fmt.Println("Profiling with pprof is disabled.")
+			done <- false
+			continue
+		}
 		if strings.HasPrefix(l, "export") {
 			now := time.Now()
 			args := strings.Split("bw "+strings.TrimSpace(l)[:len(l)-1], " ")
@@ -208,7 +261,11 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 		}
 		if strings.HasPrefix(l, "run") {
 			now := time.Now()
+
+			cpuProfile, memProfile := startProfilingIfEnabled(profilingEnabled)
 			path, cmds, err := runBQLFromFile(ctx, driver(), chanSize, bulkSize, strings.TrimSpace(l[:len(l)-1]), tracer)
+			stopProfilingIfEnabled(profilingEnabled, cpuProfile, memProfile)
+
 			if err != nil {
 				fmt.Printf("[ERROR] %s\n\n", err)
 			} else {
