@@ -695,9 +695,6 @@ func addBindingToWorkingFilter(bndg string, workingFilter *FilterClause) error {
 	if workingFilter == nil {
 		return fmt.Errorf("could not add binding %q to nil filter clause (which is still nil probably because a call to st.ResetWorkingFilterClause was not made before start processing the first filter clause)", bndg)
 	}
-	if workingFilter.Operation.IsEmpty() {
-		return fmt.Errorf("could not add binding %q to a filter clause that does not have a filter function previously set", bndg)
-	}
 	if workingFilter.Binding != "" {
 		return fmt.Errorf("invalid binding %q on filter clause since already set to %q", bndg, workingFilter.Binding)
 	}
@@ -706,9 +703,19 @@ func addBindingToWorkingFilter(bndg string, workingFilter *FilterClause) error {
 	return nil
 }
 
-// isValidFilterClause returns true if the given filter clause is valid and complete.
-func isValidFilterClause(f *FilterClause) bool {
-	return f != nil && !f.Operation.IsEmpty() && f.Binding != ""
+// validateFilterClause returns an error if the given filter clause is either invalid or incomplete.
+func validateFilterClause(f *FilterClause) error {
+	if f == nil {
+		return fmt.Errorf("nil filter clause")
+	}
+	if f.Operation.IsEmpty() {
+		return fmt.Errorf("filter clause Operation is missing")
+	}
+	if f.Binding == "" {
+		return fmt.Errorf("filter clause Binding is missing")
+	}
+
+	return nil
 }
 
 // whereFilterClause returns an element hook that updates the working filter clause and,
@@ -736,8 +743,8 @@ func whereFilterClause() ElementHook {
 			}
 			return hook, nil
 		case lexer.ItemRPar:
-			if !isValidFilterClause(st.WorkingFilter()) {
-				return nil, fmt.Errorf("could not add invalid working filter %q to the statement filters list", st.WorkingFilter())
+			if err := validateFilterClause(st.WorkingFilter()); err != nil {
+				return nil, fmt.Errorf("could not add invalid working filter %q to the statement filters list: %v", st.WorkingFilter(), err)
 			}
 			st.AddWorkingFilterClause()
 		}
