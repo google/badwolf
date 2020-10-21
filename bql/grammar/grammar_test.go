@@ -208,6 +208,12 @@ func TestAcceptByParse(t *testing.T) {
 			FILTER latest(?p) .
 			FILTER latest(?o)
 		 };`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+			FILTER greaterThan(?o, "37"^^type:int64)
+		 };`,
 		// Test optional trailing dot after the last clause inside WHERE.
 		`select ?a
 		 from ?b
@@ -453,6 +459,18 @@ func TestRejectByParse(t *testing.T) {
 			?s ?p ?o .
 			FILTER late^st(?p)
 		 };`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+			FILTER greaterThan(?o "37"^^type:int64)
+		 };`,
+		`select ?a
+		 from ?b
+		 where {
+			?s ?p ?o .
+			FILTER greaterThan(?o, /u<paul>)
+		 };`,
 		// Test invalid trailing dot use inside WHERE.
 		`select ?a
 		 from ?b
@@ -689,6 +707,13 @@ func TestRejectByParseAndSemantic(t *testing.T) {
 		 where {
 			/u<peter> ?p ?o .
 			FILTER notSupportedFilterFunction(?p)
+		 };`,
+		// Reject FILTER Value inconsistent with FILTER Operation.
+		`select ?p, ?o
+		 from ?test
+		 where {
+			/u<peter> ?p ?o .
+			FILTER latest(?p, "37"^^type:int64)
 		 };`,
 	}
 	p, err := NewParser(SemanticBQL())
