@@ -703,6 +703,19 @@ func addBindingToWorkingFilter(bndg string, workingFilter *FilterClause) error {
 	return nil
 }
 
+// addValueToWorkingFilter takes the given value and tries to add it to workingFilter.
+func addValueToWorkingFilter(value string, workingFilter *FilterClause) error {
+	if workingFilter == nil {
+		return fmt.Errorf("could not add value %q to nil filter clause (which is still nil probably because a call to st.ResetWorkingFilterClause was not made before start processing the first filter clause)", value)
+	}
+	if workingFilter.Value != "" {
+		return fmt.Errorf("invalid value %q on filter clause since already set to %q", value, workingFilter.Value)
+	}
+
+	workingFilter.Value = value
+	return nil
+}
+
 // validateFilterClause returns an error if the given filter clause is either invalid or incomplete.
 func validateFilterClause(f *FilterClause) error {
 	if f == nil {
@@ -738,6 +751,12 @@ func whereFilterClause() ElementHook {
 			return hook, nil
 		case lexer.ItemBinding:
 			err := addBindingToWorkingFilter(tkn.Text, st.WorkingFilter())
+			if err != nil {
+				return nil, err
+			}
+			return hook, nil
+		case lexer.ItemLiteral:
+			err := addValueToWorkingFilter(tkn.Text, st.WorkingFilter())
 			if err != nil {
 				return nil, err
 			}
