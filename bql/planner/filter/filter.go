@@ -25,6 +25,7 @@ type Operation int
 // List of supported filter operations.
 const (
 	Latest Operation = iota + 1
+	IsImmutable
 )
 
 // Field represents the position of the semantic.GraphClause that will be operated by the filter at storage level.
@@ -40,7 +41,8 @@ const (
 // SupportedOperations maps suported filter operation strings to their correspondant Operation.
 // Note that the string keys here must be in lowercase letters only (for compatibility with the WhereFilterClauseHook).
 var SupportedOperations = map[string]Operation{
-	"latest": Latest,
+	"latest":      Latest,
+	"isimmutable": IsImmutable,
 }
 
 // StorageOptions represent the storage level specifications for the filtering to be executed.
@@ -58,6 +60,8 @@ func (op Operation) String() string {
 	switch op {
 	case Latest:
 		return "latest"
+	case IsImmutable:
+		return "isImmutable"
 	default:
 		return fmt.Sprintf(`not defined filter operation "%d"`, op)
 	}

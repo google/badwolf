@@ -1107,6 +1107,46 @@ func TestPlannerQuery(t *testing.T) {
 			nBindings: 2,
 			nRows:     1,
 		},
+		{
+			q: `SELECT ?p, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ?o .
+					FILTER isImmutable(?p)
+				};`,
+			nBindings: 2,
+			nRows:     2,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o
+				FROM ?test
+				WHERE {
+					?s ?p ?o .
+					FILTER isImmutable(?o)
+				};`,
+			nBindings: 3,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?p_alias, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p AS ?p_alias ?o .
+					FILTER isImmutable(?p_alias)
+				};`,
+			nBindings: 2,
+			nRows:     2,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o_alias
+				FROM ?test
+				WHERE {
+					?s ?p ?o AS ?o_alias .
+					FILTER isImmutable(?o_alias)
+				};`,
+			nBindings: 3,
+			nRows:     1,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()
