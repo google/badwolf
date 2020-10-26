@@ -677,6 +677,15 @@ func compatibleBindingsInClauseForFilterOperation(operation filter.Operation) (c
 			return bindingsByField
 		}
 		return compatibleBindingsInClause, nil
+	case filter.IsTemporal:
+		compatibleBindingsInClause = func(cls *semantic.GraphClause) (bindingsByField map[filter.Field]map[string]bool) {
+			bindingsByField = map[filter.Field]map[string]bool{
+				filter.PredicateField: {cls.PBinding: true, cls.PAlias: true},
+				filter.ObjectField:    {cls.OBinding: true, cls.OAlias: true},
+			}
+			return bindingsByField
+		}
+		return compatibleBindingsInClause, nil
 	default:
 		return nil, fmt.Errorf("filter function %q has no bindings in clause specified for it (planner level)", operation)
 	}
