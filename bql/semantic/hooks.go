@@ -727,6 +727,12 @@ func validateFilterClause(f *FilterClause) error {
 	if f.Binding == "" {
 		return fmt.Errorf("filter clause Binding is missing")
 	}
+	if f.Value == "" && filter.OperationRequiresValue[f.Operation] {
+		return fmt.Errorf("filter clause Value is required for filter Operation %q", f.Operation)
+	}
+	if f.Value != "" && !filter.OperationRequiresValue[f.Operation] {
+		return fmt.Errorf("filter clause Value is inconsistent with filter Operation %q", f.Operation)
+	}
 
 	return nil
 }

@@ -47,6 +47,9 @@ var SupportedOperations = map[string]Operation{
 	"istemporal":  IsTemporal,
 }
 
+// OperationRequiresValue keeps track of the filter Operations that require Value in the filter clause.
+var OperationRequiresValue = map[Operation]bool{}
+
 // StorageOptions represent the storage level specifications for the filtering to be executed.
 // Operation below refers to the filter function being applied (eg: Latest), Field refers to the position of the graph clause it
 // will be applied to (subject, predicate, or object) and Value, when specified, contains the second argument of the filter
