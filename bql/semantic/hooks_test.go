@@ -379,6 +379,40 @@ func TestWhereFilterClauseHookError(t *testing.T) {
 			},
 			ceIndexError: 5,
 		},
+		{
+			id: `FILTER latest(?p, "37"^^type:int64)`,
+			ces: []ConsumedElement{
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemFilter,
+					Text: "FILTER",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemFilterFunction,
+					Text: "latest",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLPar,
+					Text: "(",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemBinding,
+					Text: "?p",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemComma,
+					Text: ",",
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemLiteral,
+					Text: `"37"^^type:int64)`,
+				}),
+				NewConsumedToken(&lexer.Token{
+					Type: lexer.ItemRPar,
+					Text: ")",
+				}),
+			},
+			ceIndexError: 6,
+		},
 	}
 	for _, entry := range testTable {
 		t.Run(entry.id, func(t *testing.T) {
