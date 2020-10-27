@@ -325,7 +325,7 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 		if err != nil {
 			return false, err
 		}
-		b, tbl, err := simpleExist(ctx, p.grfs, cls, t)
+		b, tbl, err := simpleExist(ctx, p.grfs, cls, t, p.tracer)
 		if err != nil {
 			return false, err
 		}
@@ -624,6 +624,11 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 				if err != nil {
 					return err
 				}
+				tracer.Trace(p.tracer, func() *tracer.Arguments {
+					return &tracer.Arguments{
+						Msgs: []string{fmt.Sprintf("g.Exist(%v)", t)},
+					}
+				})
 				b, err := g.Exist(gCtx, t)
 				if err != nil {
 					return err

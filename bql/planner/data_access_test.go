@@ -156,7 +156,7 @@ func TestDataAccessFeasibleSimpleExist(t *testing.T) {
 		P: p,
 		O: o,
 	}
-	unfeasible, tbl, err := simpleExist(ctx, []storage.Graph{g}, clsOK, tt[0])
+	unfeasible, tbl, err := simpleExist(ctx, []storage.Graph{g}, clsOK, tt[0], nil)
 	if err != nil {
 		t.Errorf("simpleExist should have not failed with error %v", err)
 	}
@@ -189,7 +189,7 @@ func TestDataAccessUnfeasibleSimpleExist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	unfeasible, tbl, err := simpleExist(ctx, []storage.Graph{g}, clsNotOK, tplNotOK)
+	unfeasible, tbl, err := simpleExist(ctx, []storage.Graph{g}, clsNotOK, tplNotOK, nil)
 	if err != nil {
 		t.Errorf("simpleExist should have not failed with error %v", err)
 	}

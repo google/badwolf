@@ -91,13 +91,18 @@ func updateTimeBoundsForRow(lo *storage.LookupOptions, cls *semantic.GraphClause
 
 // simpleExist returns true if the triple exist. Return the unfeasible state,
 // the table and the error if present.
-func simpleExist(ctx context.Context, gs []storage.Graph, cls *semantic.GraphClause, t *triple.Triple) (bool, *table.Table, error) {
+func simpleExist(ctx context.Context, gs []storage.Graph, cls *semantic.GraphClause, t *triple.Triple, w io.Writer) (bool, *table.Table, error) {
 	unfeasible := true
 	tbl, err := table.New(cls.Bindings())
 	if err != nil {
 		return true, nil, err
 	}
 	for _, g := range gs {
+		tracer.Trace(w, func() *tracer.Arguments {
+			return &tracer.Arguments{
+				Msgs: []string{fmt.Sprintf("g.Exist(%v)", t)},
+			}
+		})
 		b, err := g.Exist(ctx, t)
 		if err != nil {
 			return true, nil, err
@@ -131,12 +136,12 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 		if err != nil {
 			return nil, err
 		}
-		tracer.Trace(w, func() *tracer.Arguments {
-			return &tracer.Arguments{
-				Msgs: []string{fmt.Sprintf("g.Exist(%v, %v)", t, lo)},
-			}
-		})
 		for _, g := range gs {
+			tracer.Trace(w, func() *tracer.Arguments {
+				return &tracer.Arguments{
+					Msgs: []string{fmt.Sprintf("g.Exist(%v)", t)},
+				}
+			})
 			b, err := g.Exist(ctx, t)
 			if err != nil {
 				return nil, err
