@@ -22,7 +22,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"runtime/pprof"
+	"strconv"
 	"strings"
 	"time"
 
@@ -217,13 +219,33 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 			continue
 		}
 		if strings.HasPrefix(l, "start profiling") {
-			profilingEnabled = true
-			fmt.Println("Profiling with pprof is enabled.")
+			args := strings.Split(strings.TrimSpace(l)[:len(l)-1], " ")
+			switch len(args) {
+			case 2:
+				profilingEnabled = true
+				fmt.Println("Profiling with pprof is enabled.")
+			case 4:
+				if args[2] != "-cpurate" {
+					fmt.Printf("Invalid syntax with %q.\n\tstart profiling -cpurate <samples_per_second>\n", args[2])
+					break
+				}
+				cpuProfRate, err := strconv.ParseInt(args[3], 10, 32)
+				if err != nil {
+					fmt.Println(err)
+					break
+				}
+				runtime.SetCPUProfileRate(int(cpuProfRate))
+				profilingEnabled = true
+				fmt.Printf("Profiling with pprof is enabled (CPU profiling rate: %d samples per second).\n", cpuProfRate)
+			default:
+				fmt.Println("Invalid syntax.\n\tstart profiling -cpurate <samples_per_second>")
+			}
 			done <- false
 			continue
 		}
 		if strings.HasPrefix(l, "stop profiling") {
 			profilingEnabled = false
+			runtime.SetCPUProfileRate(0)
 			fmt.Println("Profiling with pprof is disabled.")
 			done <- false
 			continue
