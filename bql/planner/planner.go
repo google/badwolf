@@ -26,6 +26,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/bql/planner/filter"
@@ -768,16 +769,31 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 	if err != nil {
 		return err
 	}
+	tracer.Trace(p.tracer, func() *tracer.Arguments {
+		return &tracer.Arguments{
+			Msgs: []string{fmt.Sprintf("Starting to process clauses")},
+		}
+	})
+	tStartClauses := time.Now()
 	for i, cls := range p.clauses {
+		iCopy, clsCopy := i, cls // creating local copies of the loop variables to not pass them by reference to the closure of the lazy tracer.
 		tracer.Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
-				Msgs: []string{fmt.Sprintf("Processing clause %d: %v", i, cls)},
+				Msgs: []string{fmt.Sprintf("Starting to process clause %d: %v", iCopy, clsCopy)},
 			}
 		})
 
+		tStartCurrClause := time.Now()
 		addFilterOptions(lo, cls, filterOptionsByClause)
 		unresolvable, err := p.processClause(ctx, cls, lo)
 		resetFilterOptions(lo)
+		tElapsedCurrClause := time.Now().Sub(tStartCurrClause)
+
+		tracer.Trace(p.tracer, func() *tracer.Arguments {
+			return &tracer.Arguments{
+				Msgs: []string{fmt.Sprintf("Finished processing clause %d: %v, latency: %v", iCopy, clsCopy, tElapsedCurrClause)},
+			}
+		})
 		if err != nil {
 			return err
 		}
@@ -786,6 +802,12 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 			return nil
 		}
 	}
+	tElapsedClauses := time.Now().Sub(tStartClauses)
+	tracer.Trace(p.tracer, func() *tracer.Arguments {
+		return &tracer.Arguments{
+			Msgs: []string{fmt.Sprintf("Finished processing all clauses, total latency: %v", tElapsedClauses)},
+		}
+	})
 
 	return nil
 }
