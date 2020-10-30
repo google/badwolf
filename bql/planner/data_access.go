@@ -504,8 +504,10 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 	// Drain the channel to avoid leaking goroutines in the case the loop below is interrupted by an error.
 	defer drainChannel(ts)
 
+	nTrpls := 0
 	nRowsAdded := 0
 	for t := range ts {
+		nTrpls++
 		ignoreTriple, err := shouldIgnoreTriple(t, cls)
 		if err != nil {
 			return err
@@ -527,6 +529,11 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 		tbl.AddRow(r)
 		nRowsAdded++
 	}
+	tracer.Trace(w, func() *tracer.Arguments {
+		return &tracer.Arguments{
+			Msgs: []string{fmt.Sprintf("Received %d triples from driver, in planner.addTriples", nTrpls)},
+		}
+	})
 	tracer.Trace(w, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{fmt.Sprintf("Added %d rows to table, in planner.addTriples", nRowsAdded)},
