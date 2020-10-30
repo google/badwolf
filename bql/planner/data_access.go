@@ -112,7 +112,7 @@ func simpleExist(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 			ts := make(chan *triple.Triple, 1)
 			ts <- t
 			close(ts)
-			if err := addTriples(ts, cls, tbl); err != nil {
+			if err := addTriples(ts, cls, tbl, w); err != nil {
 				return true, nil, err
 			}
 		}
@@ -150,7 +150,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				ts := make(chan *triple.Triple, 1)
 				ts <- t
 				close(ts)
-				if err := addTriples(ts, cls, tbl); err != nil {
+				if err := addTriples(ts, cls, tbl, w); err != nil {
 					return nil, err
 				}
 			}
@@ -180,7 +180,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 			ts := make(chan *triple.Triple, chanSize)
 			go func() {
 				defer wg.Done()
-				aErr = addTriples(ts, cls, tbl)
+				aErr = addTriples(ts, cls, tbl, w)
 			}()
 			for o := range os {
 				if lErr != nil {
@@ -231,7 +231,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 			ts := make(chan *triple.Triple, chanSize)
 			go func() {
 				defer wg.Done()
-				aErr = addTriples(ts, cls, tbl)
+				aErr = addTriples(ts, cls, tbl, w)
 			}()
 			for p := range ps {
 				if lErr != nil {
@@ -282,7 +282,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 			ts := make(chan *triple.Triple, chanSize)
 			go func() {
 				defer wg.Done()
-				aErr = addTriples(ts, cls, tbl)
+				aErr = addTriples(ts, cls, tbl, w)
 			}()
 			for s := range ss {
 				if lErr != nil {
@@ -329,7 +329,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				defer wg.Done()
 				tErr = g.TriplesForSubject(ctx, s, lo, ts)
 			}()
-			aErr = addTriples(ts, cls, tbl)
+			aErr = addTriples(ts, cls, tbl, w)
 			wg.Wait()
 			if tErr != nil {
 				return nil, tErr
@@ -359,7 +359,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				defer wg.Done()
 				tErr = g.TriplesForPredicate(ctx, p, lo, ts)
 			}()
-			aErr = addTriples(ts, cls, tbl)
+			aErr = addTriples(ts, cls, tbl, w)
 			wg.Wait()
 			if tErr != nil {
 				return nil, tErr
@@ -388,7 +388,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				defer wg.Done()
 				tErr = g.TriplesForObject(ctx, o, lo, ts)
 			}()
-			aErr := addTriples(ts, cls, tbl)
+			aErr := addTriples(ts, cls, tbl, w)
 			wg.Wait()
 			if tErr != nil {
 				return nil, tErr
@@ -423,7 +423,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				}
 				tErr = g.Triples(ctx, &nlo, ts)
 			}()
-			aErr = addTriples(ts, cls, tbl)
+			aErr = addTriples(ts, cls, tbl, w)
 			wg.Wait()
 			if tErr != nil {
 				return nil, tErr
@@ -500,9 +500,11 @@ func drainChannel(ch <-chan *triple.Triple) {
 // addTriples add all the retrieved triples from the graphs into the results
 // table. The semantic graph clause is also passed to be able to identify what
 // bindings to set.
-func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.Table) error {
+func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.Table, w io.Writer) error {
 	// Drain the channel to avoid leaking goroutines in the case the loop below is interrupted by an error.
 	defer drainChannel(ts)
+
+	nRowsAdded := 0
 	for t := range ts {
 		ignoreTriple, err := shouldIgnoreTriple(t, cls)
 		if err != nil {
@@ -523,7 +525,13 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 			continue
 		}
 		tbl.AddRow(r)
+		nRowsAdded++
 	}
+	tracer.Trace(w, func() *tracer.Arguments {
+		return &tracer.Arguments{
+			Msgs: []string{fmt.Sprintf("Added %d rows to table, in planner.addTriples", nRowsAdded)},
+		}
+	})
 
 	return nil
 }

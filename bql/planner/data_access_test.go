@@ -228,7 +228,7 @@ func TestDataAccessAddTriples(t *testing.T) {
 	}()
 	go func() {
 		defer wg.Done()
-		if err := addTriples(ts, cls, tbl); err != nil {
+		if err := addTriples(ts, cls, tbl, nil); err != nil {
 			t.Errorf("addTriple failed with errorf %v", err)
 		}
 	}()
