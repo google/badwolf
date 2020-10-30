@@ -353,6 +353,9 @@ func printHelp() {
 	fmt.Println("run <file_with_bql_statements>                        - runs all the BQL statements in the file.")
 	fmt.Println("start tracing [trace_file]                            - starts tracing queries.")
 	fmt.Println("stop tracing                                          - stops tracing queries.")
+	fmt.Println("start profiling                                       - starts pprof profiling for queries.")
+	fmt.Println("start profiling -cpurate <samples_per_second>         - starts pprof profiling with customized CPU sampling rate.")
+	fmt.Println("stop profiling                                        - stops pprof profiling for queries.")
 	fmt.Println("quit                                                  - quits the console.")
 	fmt.Println()
 }
