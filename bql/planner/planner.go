@@ -937,13 +937,13 @@ func (p *queryPlan) having() error {
 	if p.stm.HasHavingClause() {
 		tracer.Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
-				Msgs: []string{"Having filtering"},
+				Msgs: []string{"Starting to process HAVING clause"},
 			}
 		})
 		eval := p.stm.HavingEvaluator()
 		ok := true
 		var eErr error
-		p.tbl.Filter(func(r table.Row) bool {
+		nRowsRemoved := p.tbl.Filter(func(r table.Row) bool {
 			b, err := eval.Evaluate(r)
 			if err != nil {
 				ok, eErr = false, err
@@ -951,8 +951,18 @@ func (p *queryPlan) having() error {
 			return !b
 		})
 		if !ok {
+			tracer.Trace(p.tracer, func() *tracer.Arguments {
+				return &tracer.Arguments{
+					Msgs: []string{eErr.Error()},
+				}
+			})
 			return eErr
 		}
+		tracer.Trace(p.tracer, func() *tracer.Arguments {
+			return &tracer.Arguments{
+				Msgs: []string{fmt.Sprintf("Finished processing HAVING clause, %d rows were removed from table", nRowsRemoved)},
+			}
+		})
 	}
 	return nil
 }
