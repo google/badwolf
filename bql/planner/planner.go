@@ -621,13 +621,14 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 			}
 			exist := false
 			for _, g := range p.stm.InputGraphs() {
+				gID := g.ID(gCtx)
 				t, err := triple.New(sbj, prd, obj)
 				if err != nil {
 					return err
 				}
 				tracer.Trace(p.tracer, func() *tracer.Arguments {
 					return &tracer.Arguments{
-						Msgs: []string{fmt.Sprintf("g.Exist(%v)", t)},
+						Msgs: []string{fmt.Sprintf("g.Exist(%v), graph: %s", t, gID)},
 					}
 				})
 				b, err := g.Exist(gCtx, t)

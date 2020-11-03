@@ -98,9 +98,10 @@ func simpleExist(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 		return true, nil, err
 	}
 	for _, g := range gs {
+		gID := g.ID(ctx)
 		tracer.Trace(w, func() *tracer.Arguments {
 			return &tracer.Arguments{
-				Msgs: []string{fmt.Sprintf("g.Exist(%v)", t)},
+				Msgs: []string{fmt.Sprintf("g.Exist(%v), graph: %s", t, gID)},
 			}
 		})
 		b, err := g.Exist(ctx, t)
@@ -137,9 +138,10 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 			return nil, err
 		}
 		for _, g := range gs {
+			gID := g.ID(ctx)
 			tracer.Trace(w, func() *tracer.Arguments {
 				return &tracer.Arguments{
-					Msgs: []string{fmt.Sprintf("g.Exist(%v)", t)},
+					Msgs: []string{fmt.Sprintf("g.Exist(%v), graph: %s", t, gID)},
 				}
 			})
 			b, err := g.Exist(ctx, t)
@@ -160,6 +162,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	if s != nil && p != nil && o == nil {
 		// SP request.
 		for _, g := range gs {
+			gID := g.ID(ctx)
 			var (
 				oErr error
 				aErr error
@@ -168,7 +171,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 			)
 			tracer.Trace(w, func() *tracer.Arguments {
 				return &tracer.Arguments{
-					Msgs: []string{fmt.Sprintf("g.Objects(%v, %v, %v)", s, p, lo)},
+					Msgs: []string{fmt.Sprintf("g.Objects(%v, %v, %v), graph: %s", s, p, lo, gID)},
 				}
 			})
 			wg.Add(2)
@@ -211,6 +214,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	if s != nil && p == nil && o != nil {
 		// SO request.
 		for _, g := range gs {
+			gID := g.ID(ctx)
 			var (
 				pErr error
 				aErr error
@@ -219,7 +223,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 			)
 			tracer.Trace(w, func() *tracer.Arguments {
 				return &tracer.Arguments{
-					Msgs: []string{fmt.Sprintf("g.PredicatesForSubjectAndObject(%v, %v, %v)", s, o, lo)},
+					Msgs: []string{fmt.Sprintf("g.PredicatesForSubjectAndObject(%v, %v, %v), graph: %s", s, o, lo, gID)},
 				}
 			})
 			wg.Add(2)
@@ -262,6 +266,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	if s == nil && p != nil && o != nil {
 		// PO request.
 		for _, g := range gs {
+			gID := g.ID(ctx)
 			var (
 				pErr error
 				aErr error
@@ -270,7 +275,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 			)
 			tracer.Trace(w, func() *tracer.Arguments {
 				return &tracer.Arguments{
-					Msgs: []string{fmt.Sprintf("g.Subjects(%v, %v, %v)", p, o, lo)},
+					Msgs: []string{fmt.Sprintf("g.Subjects(%v, %v, %v), graph: %s", p, o, lo, gID)},
 				}
 			})
 			wg.Add(2)
@@ -313,6 +318,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	if s != nil && p == nil && o == nil {
 		// S request.
 		for _, g := range gs {
+			gID := g.ID(ctx)
 			var (
 				tErr error
 				aErr error
@@ -320,7 +326,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 			)
 			tracer.Trace(w, func() *tracer.Arguments {
 				return &tracer.Arguments{
-					Msgs: []string{fmt.Sprintf("g.TriplesForSubject(%v, %v)", s, lo)},
+					Msgs: []string{fmt.Sprintf("g.TriplesForSubject(%v, %v), graph: %s", s, lo, gID)},
 				}
 			})
 			ts := make(chan *triple.Triple, chanSize)
@@ -343,6 +349,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	if s == nil && p != nil && o == nil {
 		// P request.
 		for _, g := range gs {
+			gID := g.ID(ctx)
 			var (
 				tErr error
 				aErr error
@@ -350,7 +357,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 			)
 			tracer.Trace(w, func() *tracer.Arguments {
 				return &tracer.Arguments{
-					Msgs: []string{fmt.Sprintf("g.TriplesForPredicate(%v, %v)", p, lo)},
+					Msgs: []string{fmt.Sprintf("g.TriplesForPredicate(%v, %v), graph: %s", p, lo, gID)},
 				}
 			})
 			ts := make(chan *triple.Triple, chanSize)
@@ -373,13 +380,14 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	if s == nil && p == nil && o != nil {
 		// O request.
 		for _, g := range gs {
+			gID := g.ID(ctx)
 			var (
 				tErr error
 				wg   sync.WaitGroup
 			)
 			tracer.Trace(w, func() *tracer.Arguments {
 				return &tracer.Arguments{
-					Msgs: []string{fmt.Sprintf("g.TriplesForObject(%v, %v)", o, lo)},
+					Msgs: []string{fmt.Sprintf("g.TriplesForObject(%v, %v), graph: %s", o, lo, gID)},
 				}
 			})
 			ts := make(chan *triple.Triple, chanSize)
@@ -402,6 +410,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	if s == nil && p == nil && o == nil {
 		// Full data request.
 		for _, g := range gs {
+			gID := g.ID(ctx)
 			var (
 				tErr error
 				aErr error
@@ -409,7 +418,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 			)
 			tracer.Trace(w, func() *tracer.Arguments {
 				return &tracer.Arguments{
-					Msgs: []string{fmt.Sprintf("g.Triples(%v)", lo)},
+					Msgs: []string{fmt.Sprintf("g.Triples(%v), graph: %s", lo, gID)},
 				}
 			})
 			ts := make(chan *triple.Triple, chanSize)
