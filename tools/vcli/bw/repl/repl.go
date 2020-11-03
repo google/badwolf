@@ -230,13 +230,14 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 			var err error
 			switch len(args) {
 			case 2:
-				if cpuProfile, memProfile, err = startProfiling(); err == nil {
-					isProfiling = true
-					fmt.Println("Profiling with pprof is on.")
-				} else {
+				cpuProfile, memProfile, err = startProfiling()
+				if err != nil {
 					fmt.Println(err)
 					fmt.Println("Profiling failed to start.")
+					break
 				}
+				isProfiling = true
+				fmt.Println("Profiling with pprof is on.")
 			case 4:
 				if args[2] != "-cpurate" {
 					fmt.Printf("Invalid syntax with %q.\n\tstart profiling -cpurate <samples_per_second>\n", args[2])
@@ -249,13 +250,14 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 					break
 				}
 				runtime.SetCPUProfileRate(int(cpuProfRate))
-				if cpuProfile, memProfile, err = startProfiling(); err == nil {
-					isProfiling = true
-					fmt.Printf("Profiling with pprof is on (CPU profiling rate: %d samples per second).\n", cpuProfRate)
-				} else {
+				cpuProfile, memProfile, err = startProfiling()
+				if err != nil {
 					fmt.Println(err)
 					fmt.Println("Profiling failed to start.")
+					break
 				}
+				isProfiling = true
+				fmt.Printf("Profiling with pprof is on (CPU profiling rate: %d samples per second).\n", cpuProfRate)
 			default:
 				fmt.Println("Invalid syntax.\n\tstart profiling -cpurate <samples_per_second>")
 			}
