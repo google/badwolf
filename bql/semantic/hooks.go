@@ -731,7 +731,7 @@ func validateFilterClause(f *FilterClause) error {
 		return fmt.Errorf("filter clause Value is required for filter Operation %q", f.Operation)
 	}
 	if f.Value != "" && !filter.OperationRequiresValue[f.Operation] {
-		return fmt.Errorf("filter clause Value is inconsistent with filter Operation %q", f.Operation)
+		return fmt.Errorf("filter clause Value is not required for filter Operation %q", f.Operation)
 	}
 
 	return nil
