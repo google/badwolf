@@ -385,8 +385,20 @@ func filterClauses() []*Clause {
 				NewTokenType(lexer.ItemFilterFunction),
 				NewTokenType(lexer.ItemLPar),
 				NewTokenType(lexer.ItemBinding),
+				NewSymbol("MORE_FILTER_ARGUMENTS"),
 				NewTokenType(lexer.ItemRPar),
 				NewSymbol("MORE_FILTER_CLAUSES"),
+			},
+		},
+		{},
+	}
+}
+func moreFilterArguments() []*Clause {
+	return []*Clause{
+		{
+			Elements: []Element{
+				NewTokenType(lexer.ItemComma),
+				NewTokenType(lexer.ItemLiteral),
 			},
 		},
 		{},
@@ -1296,6 +1308,7 @@ func BQL() *Grammar {
 		"OPTIONAL_CLAUSE":                        optionalClauses(),
 		"FILTER_CLAUSES":                         filterClauses(),
 		"MORE_FILTER_CLAUSES":                    moreFilterClauses(),
+		"MORE_FILTER_ARGUMENTS":                  moreFilterArguments(),
 		"SUBJECT_EXTRACT":                        subjectExtractClauses(),
 		"SUBJECT_TYPE":                           subjectTypeClauses(),
 		"SUBJECT_ID":                             subjectIDClauses(),
@@ -1432,7 +1445,7 @@ func SemanticBQL() *Grammar {
 
 	// Filter clause hook.
 	filterSymbols := []semantic.Symbol{
-		"FILTER_CLAUSES",
+		"FILTER_CLAUSES", "MORE_FILTER_ARGUMENTS",
 	}
 	setElementHook(semanticBQL, filterSymbols, semantic.WhereFilterClauseHook(), nil)
 
