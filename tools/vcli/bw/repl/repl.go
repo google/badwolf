@@ -22,6 +22,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
+	"runtime/pprof"
+	"strconv"
 	"strings"
 	"time"
 
@@ -88,10 +91,47 @@ func SimpleReadLine(done chan bool) <-chan string {
 	return c
 }
 
+// startProfiling tries to start pprof profiling, returning the two files to which the profiling metrics will be printed.
+func startProfiling() (*os.File, *os.File, error) {
+	cpuProfile, err := os.Create("cpuprofile")
+	if err != nil {
+		return nil, nil, err
+	}
+	memProfile, err := os.Create("memprofile")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	err = pprof.StartCPUProfile(cpuProfile)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return cpuProfile, memProfile, nil
+}
+
+// stopProfiling stops pprof profiling, writing the final profiling metrics to the correspondent files and closing them.
+func stopProfiling(cpuProfile, memProfile *os.File) {
+	if cpuProfile == nil || memProfile == nil {
+		fmt.Println("cpuProfile and memProfile must be both non-nil to stop profiling.")
+		return
+	}
+
+	pprof.StopCPUProfile()
+	err := pprof.WriteHeapProfile(memProfile)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	cpuProfile.Close()
+	memProfile.Close()
+}
+
 // REPL starts a read-evaluation-print-loop to run BQL commands.
 func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, builderSize int, done chan bool) int {
 	var tracer io.Writer
-	ctx, isTracingToFile, sessionStart := context.Background(), false, time.Now()
+	ctx, isTracingToFile, isProfiling, sessionStart := context.Background(), false, false, time.Now()
+	var cpuProfile, memProfile *os.File
 
 	driverPlain := func() storage.Store {
 		return od
@@ -125,6 +165,11 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 
 	for l := range rl(done) {
 		if strings.HasPrefix(l, "quit") {
+			if isProfiling {
+				fmt.Println("Stopping profiling and closing correspondent files.")
+				stopProfiling(cpuProfile, memProfile)
+				isProfiling = false
+			}
 			done <- true
 			break
 		}
@@ -172,6 +217,61 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 		if strings.HasPrefix(l, "stop tracing") {
 			stopTracing()
 			fmt.Println("Tracing is off.")
+			done <- false
+			continue
+		}
+		if strings.HasPrefix(l, "start profiling") {
+			if isProfiling {
+				fmt.Println("Profiling is already ongoing.")
+				done <- false
+				continue
+			}
+			args := strings.Split(strings.TrimSpace(l)[:len(l)-1], " ")
+			var err error
+			switch len(args) {
+			case 2:
+				cpuProfile, memProfile, err = startProfiling()
+				if err != nil {
+					fmt.Println(err)
+					fmt.Println("Profiling failed to start.")
+					break
+				}
+				isProfiling = true
+				fmt.Println("Profiling with pprof is on.")
+			case 4:
+				if args[2] != "-cpurate" {
+					fmt.Printf("Invalid syntax with %q.\n\tstart profiling -cpurate <samples_per_second>\n", args[2])
+					break
+				}
+				cpuProfRate, err := strconv.ParseInt(args[3], 10, 32)
+				if err != nil {
+					fmt.Println(err)
+					fmt.Println("Profiling failed to start.")
+					break
+				}
+				runtime.SetCPUProfileRate(int(cpuProfRate))
+				cpuProfile, memProfile, err = startProfiling()
+				if err != nil {
+					fmt.Println(err)
+					fmt.Println("Profiling failed to start.")
+					break
+				}
+				isProfiling = true
+				fmt.Printf("Profiling with pprof is on (CPU profiling rate: %d samples per second).\n", cpuProfRate)
+			default:
+				fmt.Println("Invalid syntax.\n\tstart profiling -cpurate <samples_per_second>")
+			}
+			done <- false
+			continue
+		}
+		if strings.HasPrefix(l, "stop profiling") {
+			if isProfiling {
+				stopProfiling(cpuProfile, memProfile)
+				isProfiling = false
+				fmt.Println("Profiling with pprof is turned off.")
+			} else {
+				fmt.Println("Profiling with pprof is already off.")
+			}
 			done <- false
 			continue
 		}
@@ -255,6 +355,9 @@ func printHelp() {
 	fmt.Println("run <file_with_bql_statements>                        - runs all the BQL statements in the file.")
 	fmt.Println("start tracing [trace_file]                            - starts tracing queries.")
 	fmt.Println("stop tracing                                          - stops tracing queries.")
+	fmt.Println("start profiling                                       - starts pprof profiling for queries.")
+	fmt.Println("start profiling -cpurate <samples_per_second>         - starts pprof profiling with customized CPU sampling rate.")
+	fmt.Println("stop profiling                                        - stops pprof profiling for queries.")
 	fmt.Println("quit                                                  - quits the console.")
 	fmt.Println()
 }
