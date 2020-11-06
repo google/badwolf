@@ -210,7 +210,7 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 				}
 				traceWriter, isTracingToFile = f, true
 				tracer.SetVerbosity(1)
-				fmt.Println("[WARNING] Tracing is on. This may slow your BQL queries.\nDefault verbosity level set to 1 (minimum).")
+				fmt.Printf("[WARNING] Tracing to %q is on. This may slow your BQL queries.\nDefault verbosity level set to 1 (minimum).\n", f.Name())
 			case 4:
 				// Start tracing to the console with specified verbosity level.
 				stopTracing()
@@ -248,7 +248,7 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 				}
 				traceWriter, isTracingToFile = f, true
 				verbositySet := tracer.SetVerbosity(int(verbosity))
-				fmt.Printf("[WARNING] Tracing is on. This may slow your BQL queries.\nVerbosity level set to %d.\n", verbositySet)
+				fmt.Printf("[WARNING] Tracing to %q is on. This may slow your BQL queries.\nVerbosity level set to %d.\n", f.Name(), verbositySet)
 			default:
 				fmt.Println("Invalid syntax.\n\tstart tracing [-v verbosity_level] [trace_file]")
 			}
