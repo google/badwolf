@@ -197,19 +197,60 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 				// Start tracing to the console.
 				stopTracing()
 				traceWriter, isTracingToFile = os.Stdout, false
-				fmt.Println("[WARNING] Tracing is on. This may slow your BQL queries.")
+				tracer.SetVerbosity(1)
+				fmt.Println("[WARNING] Tracing is on. This may slow your BQL queries.\nDefault verbosity level set to 1 (minimum).")
 			case 3:
 				// Start tracing to file.
 				stopTracing()
 				f, err := os.Create(args[2])
 				if err != nil {
 					fmt.Println(err)
-				} else {
-					traceWriter, isTracingToFile = f, true
-					fmt.Println("[WARNING] Tracing is on. This may slow your BQL queries.")
+					fmt.Println("Tracing failed to start.")
+					break
 				}
+				traceWriter, isTracingToFile = f, true
+				tracer.SetVerbosity(1)
+				fmt.Println("[WARNING] Tracing is on. This may slow your BQL queries.\nDefault verbosity level set to 1 (minimum).")
+			case 4:
+				// Start tracing to the console with specified verbosity level.
+				stopTracing()
+				if args[2] != "-v" {
+					fmt.Printf("Invalid syntax with %q.\n\tstart tracing [-v verbosity_level] [trace_file]\n", args[2])
+					break
+				}
+				verbosity, err := strconv.ParseInt(args[3], 10, 32)
+				if err != nil {
+					fmt.Println(err)
+					fmt.Println("Tracing failed to start.")
+					break
+				}
+				traceWriter, isTracingToFile = os.Stdout, false
+				verbositySet := tracer.SetVerbosity(int(verbosity))
+				fmt.Printf("[WARNING] Tracing is on. This may slow your BQL queries.\nVerbosity level set to %d.\n", verbositySet)
+			case 5:
+				// Start tracing to file with specified verbosity level.
+				stopTracing()
+				if args[2] != "-v" {
+					fmt.Printf("Invalid syntax with %q.\n\tstart tracing [-v verbosity_level] [trace_file]\n", args[2])
+					break
+				}
+				verbosity, err := strconv.ParseInt(args[3], 10, 32)
+				if err != nil {
+					fmt.Println(err)
+					fmt.Println("Tracing failed to start.")
+					break
+				}
+				f, err := os.Create(args[4])
+				if err != nil {
+					fmt.Println(err)
+					fmt.Println("Tracing failed to start.")
+					break
+				}
+				traceWriter, isTracingToFile = f, true
+				verbositySet := tracer.SetVerbosity(int(verbosity))
+				fmt.Printf("[WARNING] Tracing is on. This may slow your BQL queries.\nVerbosity level set to %d.\n", verbositySet)
 			default:
-				fmt.Println("Invalid syntax\n\tstart tracing [trace_file]")
+				fmt.Println("Invalid syntax.\n\tstart tracing [-v verbosity_level] [trace_file]")
 			}
 			done <- false
 			continue
@@ -353,7 +394,7 @@ func printHelp() {
 	fmt.Println("desc <BQL>                                            - prints the execution plan for a BQL statement.")
 	fmt.Println("load <file_path> <graph_names_separated_by_commas>    - load triples into the specified graphs.")
 	fmt.Println("run <file_with_bql_statements>                        - runs all the BQL statements in the file.")
-	fmt.Println("start tracing [trace_file]                            - starts tracing queries.")
+	fmt.Println("start tracing [-v verbosity_level] [trace_file]       - starts tracing queries, verbosity levels supported are 1, 2 and 3 (with 3 meaning maximum verbosity).")
 	fmt.Println("stop tracing                                          - stops tracing queries.")
 	fmt.Println("start profiling                                       - starts pprof profiling for queries.")
 	fmt.Println("start profiling -cpurate <samples_per_second>         - starts pprof profiling with customized CPU sampling rate.")
