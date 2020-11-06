@@ -31,9 +31,19 @@ type event struct {
 	tracerArgs func() *Arguments
 }
 
+// MessageTracer encapsulates the intrinsic verbosity of a given tracing message.
+type MessageTracer struct {
+	verbosity int
+}
+
+// tracerVerbosity represents the global verbosity level of the current tracer. Level 1 means minimum verbosity (printing
+// only what is crucial) while level 3 means maximum verbosity (printing all available tracing messages).
+var tracerVerbosity int
+
 var c chan *event
 
 func init() {
+	tracerVerbosity = 1          // The default tracer has minimum verbosity.
 	c = make(chan *event, 10000) // Large enought to avoid blocking as much as possible.
 
 	go func() {
@@ -49,11 +59,47 @@ func init() {
 	}()
 }
 
-// Trace attempts to write a trace if a valid writer is provided. The
-// tracer is lazy on the arguments generation to avoid adding too much
-// overhead when tracing is not on.
-func Trace(w io.Writer, tracerArgs func() *Arguments) {
-	if w == nil {
+// SetVerbosity sets the global verbosity of the current tracer to the value received as
+// input, 1 meaning minimum and 3 meaning maximum verbosity. If the received value is not
+// in the interval [1, 3], then it is truncated. The function returns the actual verbosity set.
+func SetVerbosity(verbosity int) int {
+	// Truncate verbosity if out of the range supported.
+	if verbosity < 1 {
+		verbosity = 1
+	} else if verbosity > 3 {
+		verbosity = 3
+	}
+
+	tracerVerbosity = verbosity
+	return tracerVerbosity
+}
+
+// V returns a MessageTracer with the specified verbosity level. Level 1 here means that the correspondent
+// message has the highest priority and will always be printed to the tracing output, while 3 means that this message
+// has the lowest priority and will be printed to the output only if the current tracer has maximum tracerVerbosity.
+// If the received verbosity level is out of the range [1, 3] supported, then it is truncated.
+func V(verbosity int) MessageTracer {
+	// Truncate verbosity if out of the range supported.
+	if verbosity < 1 {
+		verbosity = 1
+	} else if verbosity > 3 {
+		verbosity = 3
+	}
+
+	return MessageTracer{verbosity}
+}
+
+// isTraceable returns true if the current tracer is verbose enough to let the given MessageTracer
+// indeed trace its correspondent message.
+func (t MessageTracer) isTraceable() bool {
+	return t.verbosity <= tracerVerbosity
+}
+
+// Trace attempts to write a trace if a valid writer is provided and the verbosity level
+// of the MessageTracer is coherent with the global tracer verbosity. The tracer is lazy
+// on the arguments generation to avoid adding too much overhead when tracing is not on.
+func (t MessageTracer) Trace(w io.Writer, tracerArgs func() *Arguments) {
+	if w == nil || !t.isTraceable() {
 		return
 	}
 	c <- &event{w, time.Now(), tracerArgs}
