@@ -129,7 +129,7 @@ func stopProfiling(cpuProfile, memProfile *os.File) {
 
 // REPL starts a read-evaluation-print-loop to run BQL commands.
 func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, builderSize int, done chan bool) int {
-	var tracer io.Writer
+	var traceWriter io.Writer
 	ctx, isTracingToFile, isProfiling, sessionStart := context.Background(), false, false, time.Now()
 	var cpuProfile, memProfile *os.File
 
@@ -144,12 +144,12 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 	driver := driverWithMemoization
 
 	stopTracing := func() {
-		if tracer != nil {
+		if traceWriter != nil {
 			if isTracingToFile {
 				fmt.Println("Closing tracing file.")
-				tracer.(*os.File).Close()
+				traceWriter.(*os.File).Close()
 			}
-			tracer, isTracingToFile = nil, false
+			traceWriter, isTracingToFile = nil, false
 		}
 	}
 	defer stopTracing()
@@ -196,7 +196,7 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 			case 2:
 				// Start tracing to the console.
 				stopTracing()
-				tracer, isTracingToFile = os.Stdout, false
+				traceWriter, isTracingToFile = os.Stdout, false
 				fmt.Println("[WARNING] Tracing is on. This may slow your BQL queries.")
 			case 3:
 				// Start tracing to file.
@@ -205,7 +205,7 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 				if err != nil {
 					fmt.Println(err)
 				} else {
-					tracer, isTracingToFile = f, true
+					traceWriter, isTracingToFile = f, true
 					fmt.Println("[WARNING] Tracing is on. This may slow your BQL queries.")
 				}
 			default:
@@ -308,7 +308,7 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 		}
 		if strings.HasPrefix(l, "run") {
 			now := time.Now()
-			path, cmds, err := runBQLFromFile(ctx, driver(), chanSize, bulkSize, strings.TrimSpace(l[:len(l)-1]), tracer)
+			path, cmds, err := runBQLFromFile(ctx, driver(), chanSize, bulkSize, strings.TrimSpace(l[:len(l)-1]), traceWriter)
 			if err != nil {
 				fmt.Printf("[ERROR] %s\n\n", err)
 			} else {
@@ -320,7 +320,7 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 		}
 
 		now := time.Now()
-		table, err := runBQL(ctx, l, driver(), chanSize, bulkSize, tracer)
+		table, err := runBQL(ctx, l, driver(), chanSize, bulkSize, traceWriter)
 		bqlDiff := time.Now().Sub(now)
 		if err != nil {
 			fmt.Printf("[ERROR] %s\n", err)
