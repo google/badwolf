@@ -964,8 +964,9 @@ func (t *Table) Reduce(cfg SortConfig, aaps []AliasAccPair) error {
 	return nil
 }
 
-// Filter removes all the rows where the provided function returns true.
-func (t *Table) Filter(f func(Row) bool) {
+// Filter removes all the rows where the provided function returns true, returning
+// by the end the final number of rows removed.
+func (t *Table) Filter(f func(Row) bool) int {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	var newData []Row
@@ -974,7 +975,9 @@ func (t *Table) Filter(f func(Row) bool) {
 			newData = append(newData, r)
 		}
 	}
+	nRowsRemoved := len(t.Data) - len(newData)
 	t.Data = newData
+	return nRowsRemoved
 }
 
 // ToText convert the table into a readable text versions. It requires the

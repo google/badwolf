@@ -26,6 +26,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/badwolf/bql/lexer"
 	"github.com/google/badwolf/bql/planner/filter"
@@ -325,7 +326,7 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 		if err != nil {
 			return false, err
 		}
-		b, tbl, err := simpleExist(ctx, p.grfs, cls, t)
+		b, tbl, err := simpleExist(ctx, p.grfs, cls, t, p.tracer)
 		if err != nil {
 			return false, err
 		}
@@ -620,10 +621,16 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 			}
 			exist := false
 			for _, g := range p.stm.InputGraphs() {
+				gID := g.ID(gCtx)
 				t, err := triple.New(sbj, prd, obj)
 				if err != nil {
 					return err
 				}
+				tracer.Trace(p.tracer, func() *tracer.Arguments {
+					return &tracer.Arguments{
+						Msgs: []string{fmt.Sprintf("g.Exist(%v), graph: %s", t, gID)},
+					}
+				})
 				b, err := g.Exist(gCtx, t)
 				if err != nil {
 					return err
@@ -763,16 +770,31 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 	if err != nil {
 		return err
 	}
+	tracer.Trace(p.tracer, func() *tracer.Arguments {
+		return &tracer.Arguments{
+			Msgs: []string{fmt.Sprintf("Starting to process clauses")},
+		}
+	})
+	tStartClauses := time.Now()
 	for i, cls := range p.clauses {
+		iCopy, clsCopy := i, cls // creating local copies of the loop variables to not pass them by reference to the closure of the lazy tracer.
 		tracer.Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
-				Msgs: []string{fmt.Sprintf("Processing clause %d: %v", i, cls)},
+				Msgs: []string{fmt.Sprintf("Starting to process clause %d: %v", iCopy, clsCopy)},
 			}
 		})
 
+		tStartCurrClause := time.Now()
 		addFilterOptions(lo, cls, filterOptionsByClause)
 		unresolvable, err := p.processClause(ctx, cls, lo)
 		resetFilterOptions(lo)
+		tElapsedCurrClause := time.Now().Sub(tStartCurrClause)
+
+		tracer.Trace(p.tracer, func() *tracer.Arguments {
+			return &tracer.Arguments{
+				Msgs: []string{fmt.Sprintf("Finished processing clause %d: %v, latency: %v", iCopy, clsCopy, tElapsedCurrClause)},
+			}
+		})
 		if err != nil {
 			return err
 		}
@@ -781,6 +803,12 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 			return nil
 		}
 	}
+	tElapsedClauses := time.Now().Sub(tStartClauses)
+	tracer.Trace(p.tracer, func() *tracer.Arguments {
+		return &tracer.Arguments{
+			Msgs: []string{fmt.Sprintf("Finished processing all clauses, total latency: %v", tElapsedClauses)},
+		}
+	})
 
 	return nil
 }
@@ -909,13 +937,13 @@ func (p *queryPlan) having() error {
 	if p.stm.HasHavingClause() {
 		tracer.Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
-				Msgs: []string{"Having filtering"},
+				Msgs: []string{"Starting to process HAVING clause"},
 			}
 		})
 		eval := p.stm.HavingEvaluator()
 		ok := true
 		var eErr error
-		p.tbl.Filter(func(r table.Row) bool {
+		nRowsRemoved := p.tbl.Filter(func(r table.Row) bool {
 			b, err := eval.Evaluate(r)
 			if err != nil {
 				ok, eErr = false, err
@@ -923,8 +951,18 @@ func (p *queryPlan) having() error {
 			return !b
 		})
 		if !ok {
+			tracer.Trace(p.tracer, func() *tracer.Arguments {
+				return &tracer.Arguments{
+					Msgs: []string{eErr.Error()},
+				}
+			})
 			return eErr
 		}
+		tracer.Trace(p.tracer, func() *tracer.Arguments {
+			return &tracer.Arguments{
+				Msgs: []string{fmt.Sprintf("Finished processing HAVING clause, %d rows were removed from table", nRowsRemoved)},
+			}
+		})
 	}
 	return nil
 }
