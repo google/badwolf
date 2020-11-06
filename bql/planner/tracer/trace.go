@@ -44,7 +44,7 @@ var c chan *event
 
 func init() {
 	tracerVerbosity = 1          // The default tracer has minimum verbosity.
-	c = make(chan *event, 10000) // Large enought to avoid blocking as much as possible.
+	c = make(chan *event, 10000) // Large enough to avoid blocking as much as possible.
 
 	go func() {
 		for e := range c {
