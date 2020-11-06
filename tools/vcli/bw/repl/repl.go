@@ -281,7 +281,7 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 				fmt.Println("Profiling with pprof is on.")
 			case 4:
 				if args[2] != "-cpurate" {
-					fmt.Printf("Invalid syntax with %q.\n\tstart profiling -cpurate <samples_per_second>\n", args[2])
+					fmt.Printf("Invalid syntax with %q.\n\tstart profiling [-cpurate samples_per_second]\n", args[2])
 					break
 				}
 				cpuProfRate, err := strconv.ParseInt(args[3], 10, 32)
@@ -300,7 +300,7 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 				isProfiling = true
 				fmt.Printf("Profiling with pprof is on (CPU profiling rate: %d samples per second).\n", cpuProfRate)
 			default:
-				fmt.Println("Invalid syntax.\n\tstart profiling -cpurate <samples_per_second>")
+				fmt.Println("Invalid syntax.\n\tstart profiling [-cpurate samples_per_second]")
 			}
 			done <- false
 			continue
@@ -396,8 +396,7 @@ func printHelp() {
 	fmt.Println("run <file_with_bql_statements>                        - runs all the BQL statements in the file.")
 	fmt.Println("start tracing [-v verbosity_level] [trace_file]       - starts tracing queries, verbosity levels supported are 1, 2 and 3 (with 3 meaning maximum verbosity).")
 	fmt.Println("stop tracing                                          - stops tracing queries.")
-	fmt.Println("start profiling                                       - starts pprof profiling for queries.")
-	fmt.Println("start profiling -cpurate <samples_per_second>         - starts pprof profiling with customized CPU sampling rate.")
+	fmt.Println("start profiling [-cpurate samples_per_second]         - starts pprof profiling for queries (customizable CPU sampling rate).")
 	fmt.Println("stop profiling                                        - stops pprof profiling for queries.")
 	fmt.Println("quit                                                  - quits the console.")
 	fmt.Println()
