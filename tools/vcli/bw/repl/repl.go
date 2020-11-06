@@ -369,7 +369,7 @@ func runBQLFromFile(ctx context.Context, driver storage.Store, chanSize, bulkSiz
 		return "", 0, fmt.Errorf("wrong syntax: run <file_with_bql_statements>")
 	}
 	path := ss[1]
-	tracer.Trace(w, func() *tracer.Arguments {
+	tracer.V(1).Trace(w, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{fmt.Sprintf("Attempting to read file %q", path)},
 		}
@@ -377,7 +377,7 @@ func runBQLFromFile(ctx context.Context, driver storage.Store, chanSize, bulkSiz
 	lines, err := bio.GetStatementsFromFile(path)
 	if err != nil {
 		msg := fmt.Errorf("failed to read file %q; error %v", path, err)
-		tracer.Trace(w, func() *tracer.Arguments {
+		tracer.V(1).Trace(w, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{msg.Error()},
 			}
@@ -389,7 +389,7 @@ func runBQLFromFile(ctx context.Context, driver storage.Store, chanSize, bulkSiz
 		_, err := runBQL(ctx, stm, driver, chanSize, bulkSize, w)
 		if err != nil {
 			msg := fmt.Errorf("%q; %v", stm, err)
-			tracer.Trace(w, func() *tracer.Arguments {
+			tracer.V(1).Trace(w, func() *tracer.Arguments {
 				return &tracer.Arguments{
 					Msgs: []string{msg.Error()},
 				}
@@ -403,7 +403,7 @@ func runBQLFromFile(ctx context.Context, driver storage.Store, chanSize, bulkSiz
 
 // runBQL attempts to execute the provided query against the given store.
 func runBQL(ctx context.Context, bql string, s storage.Store, chanSize, bulkSize int, w io.Writer) (*table.Table, error) {
-	tracer.Trace(w, func() *tracer.Arguments {
+	tracer.V(1).Trace(w, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{fmt.Sprintf("Executing query: %s", bql)},
 		}
@@ -418,14 +418,14 @@ func runBQL(ctx context.Context, bql string, s storage.Store, chanSize, bulkSize
 	res, err := pln.Execute(ctx)
 	if err != nil {
 		msg := fmt.Errorf("planner.Execute: failed to execute; %v", err)
-		tracer.Trace(w, func() *tracer.Arguments {
+		tracer.V(1).Trace(w, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{msg.Error()},
 			}
 		})
 		return nil, msg
 	}
-	tracer.Trace(w, func() *tracer.Arguments {
+	tracer.V(1).Trace(w, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{fmt.Sprintf("Executed plan returned %d rows", res.NumRows())},
 		}
@@ -437,7 +437,7 @@ func runBQL(ctx context.Context, bql string, s storage.Store, chanSize, bulkSize
 func planBQL(ctx context.Context, bql string, s storage.Store, chanSize, bulkSize int, w io.Writer) (planner.Executor, error) {
 	bql = strings.TrimSpace(bql)
 	if bql == ";" {
-		tracer.Trace(w, func() *tracer.Arguments {
+		tracer.V(1).Trace(w, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{"Empty statement found"},
 			}
@@ -447,7 +447,7 @@ func planBQL(ctx context.Context, bql string, s storage.Store, chanSize, bulkSiz
 	p, err := grammar.NewParser(grammar.SemanticBQL())
 	if err != nil {
 		msg := fmt.Errorf("NewParser failed; %v", err)
-		tracer.Trace(w, func() *tracer.Arguments {
+		tracer.V(1).Trace(w, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{msg.Error()},
 			}
@@ -457,7 +457,7 @@ func planBQL(ctx context.Context, bql string, s storage.Store, chanSize, bulkSiz
 	stm := &semantic.Statement{}
 	if err := p.Parse(grammar.NewLLk(bql, 1), stm); err != nil {
 		msg := fmt.Errorf("NewLLk parser failed; %v", err)
-		tracer.Trace(w, func() *tracer.Arguments {
+		tracer.V(1).Trace(w, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{msg.Error()},
 			}
@@ -467,14 +467,14 @@ func planBQL(ctx context.Context, bql string, s storage.Store, chanSize, bulkSiz
 	pln, err := planner.New(ctx, s, stm, chanSize, bulkSize, w)
 	if err != nil {
 		msg := fmt.Errorf("planer.New failed failed; %v", err)
-		tracer.Trace(w, func() *tracer.Arguments {
+		tracer.V(1).Trace(w, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{msg.Error()},
 			}
 		})
 		return nil, msg
 	}
-	tracer.Trace(w, func() *tracer.Arguments {
+	tracer.V(1).Trace(w, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{"Plan successfully created"},
 		}

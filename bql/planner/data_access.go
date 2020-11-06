@@ -99,7 +99,7 @@ func simpleExist(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 	}
 	for _, g := range gs {
 		gID := g.ID(ctx)
-		tracer.Trace(w, func() *tracer.Arguments {
+		tracer.V(2).Trace(w, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{fmt.Sprintf("g.Exist(%v), graph: %s", t, gID)},
 			}
@@ -139,7 +139,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 		}
 		for _, g := range gs {
 			gID := g.ID(ctx)
-			tracer.Trace(w, func() *tracer.Arguments {
+			tracer.V(2).Trace(w, func() *tracer.Arguments {
 				return &tracer.Arguments{
 					Msgs: []string{fmt.Sprintf("g.Exist(%v), graph: %s", t, gID)},
 				}
@@ -169,7 +169,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				lErr error
 				wg   sync.WaitGroup
 			)
-			tracer.Trace(w, func() *tracer.Arguments {
+			tracer.V(2).Trace(w, func() *tracer.Arguments {
 				return &tracer.Arguments{
 					Msgs: []string{fmt.Sprintf("g.Objects(%v, %v, %v), graph: %s", s, p, lo, gID)},
 				}
@@ -221,7 +221,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				lErr error
 				wg   sync.WaitGroup
 			)
-			tracer.Trace(w, func() *tracer.Arguments {
+			tracer.V(2).Trace(w, func() *tracer.Arguments {
 				return &tracer.Arguments{
 					Msgs: []string{fmt.Sprintf("g.PredicatesForSubjectAndObject(%v, %v, %v), graph: %s", s, o, lo, gID)},
 				}
@@ -273,7 +273,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				lErr error
 				wg   sync.WaitGroup
 			)
-			tracer.Trace(w, func() *tracer.Arguments {
+			tracer.V(2).Trace(w, func() *tracer.Arguments {
 				return &tracer.Arguments{
 					Msgs: []string{fmt.Sprintf("g.Subjects(%v, %v, %v), graph: %s", p, o, lo, gID)},
 				}
@@ -324,7 +324,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				aErr error
 				wg   sync.WaitGroup
 			)
-			tracer.Trace(w, func() *tracer.Arguments {
+			tracer.V(2).Trace(w, func() *tracer.Arguments {
 				return &tracer.Arguments{
 					Msgs: []string{fmt.Sprintf("g.TriplesForSubject(%v, %v), graph: %s", s, lo, gID)},
 				}
@@ -355,7 +355,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				aErr error
 				wg   sync.WaitGroup
 			)
-			tracer.Trace(w, func() *tracer.Arguments {
+			tracer.V(2).Trace(w, func() *tracer.Arguments {
 				return &tracer.Arguments{
 					Msgs: []string{fmt.Sprintf("g.TriplesForPredicate(%v, %v), graph: %s", p, lo, gID)},
 				}
@@ -385,7 +385,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				tErr error
 				wg   sync.WaitGroup
 			)
-			tracer.Trace(w, func() *tracer.Arguments {
+			tracer.V(2).Trace(w, func() *tracer.Arguments {
 				return &tracer.Arguments{
 					Msgs: []string{fmt.Sprintf("g.TriplesForObject(%v, %v), graph: %s", o, lo, gID)},
 				}
@@ -416,7 +416,7 @@ func simpleFetch(ctx context.Context, gs []storage.Graph, cls *semantic.GraphCla
 				aErr error
 				wg   sync.WaitGroup
 			)
-			tracer.Trace(w, func() *tracer.Arguments {
+			tracer.V(2).Trace(w, func() *tracer.Arguments {
 				return &tracer.Arguments{
 					Msgs: []string{fmt.Sprintf("g.Triples(%v), graph: %s", lo, gID)},
 				}
@@ -538,12 +538,12 @@ func addTriples(ts <-chan *triple.Triple, cls *semantic.GraphClause, tbl *table.
 		tbl.AddRow(r)
 		nRowsAdded++
 	}
-	tracer.Trace(w, func() *tracer.Arguments {
+	tracer.V(2).Trace(w, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{fmt.Sprintf("Received %d triples from driver, in planner.addTriples", nTrpls)},
 		}
 	})
-	tracer.Trace(w, func() *tracer.Arguments {
+	tracer.V(2).Trace(w, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{fmt.Sprintf("Added %d rows to table, in planner.addTriples", nRowsAdded)},
 		}
