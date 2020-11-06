@@ -25,6 +25,7 @@ type Arguments struct {
 	Msgs []string
 }
 
+// event encapsulates a single tracing event.
 type event struct {
 	w          io.Writer
 	t          time.Time
@@ -40,14 +41,16 @@ type MessageTracer struct {
 // only what is crucial) while level 3 means maximum verbosity (printing all available tracing messages).
 var tracerVerbosity int
 
-var c chan *event
+// events is the channel through which all the tracing events will be sent for being, in the
+// future, consumed and written to the output.
+var events chan *event
 
 func init() {
-	tracerVerbosity = 1          // The default tracer has minimum verbosity.
-	c = make(chan *event, 10000) // Large enough to avoid blocking as much as possible.
+	tracerVerbosity = 1               // The default tracer has minimum verbosity.
+	events = make(chan *event, 10000) // Large enough to avoid blocking as much as possible.
 
 	go func() {
-		for e := range c {
+		for e := range events {
 			for _, msg := range e.tracerArgs().Msgs {
 				e.w.Write([]byte("["))
 				e.w.Write([]byte(e.t.Format(time.RFC3339Nano)))
@@ -102,5 +105,5 @@ func (t MessageTracer) Trace(w io.Writer, tracerArgs func() *Arguments) {
 	if w == nil || !t.isTraceable() {
 		return
 	}
-	c <- &event{w, time.Now(), tracerArgs}
+	events <- &event{w, time.Now(), tracerArgs}
 }
