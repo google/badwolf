@@ -113,13 +113,14 @@ func (p *dropPlan) Execute(ctx context.Context) (*table.Table, error) {
 		return nil, err
 	}
 	errs := []string{}
-	for _, g := range p.stm.GraphNames() {
+	for _, gName := range p.stm.GraphNames() {
+		gNameCopy := gName // creating a local copy of the loop variable to not pass it by reference to the closure of the lazy tracer.
 		tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
-				Msgs: []string{"Deleting graph \"" + g + "\""},
+				Msgs: []string{fmt.Sprintf("Deleting graph %q", gNameCopy)},
 			}
 		})
-		if err := p.store.DeleteGraph(ctx, g); err != nil {
+		if err := p.store.DeleteGraph(ctx, gName); err != nil {
 			errs = append(errs, err.Error())
 		}
 	}
