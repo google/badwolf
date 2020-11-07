@@ -994,9 +994,10 @@ func (p *queryPlan) Execute(ctx context.Context) (*table.Table, error) {
 	p.grfs = p.stm.InputGraphs()
 	// Retrieve the data.
 	lo := p.stm.GlobalLookupOptions()
+	loStr := lo.String()
 	tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 		return &tracer.Arguments{
-			Msgs: []string{"Setting global lookup options to " + lo.String()},
+			Msgs: []string{fmt.Sprintf("Setting global lookup options to %s", loStr)},
 		}
 	})
 	if err := p.processGraphPattern(ctx, lo); err != nil {
