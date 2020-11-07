@@ -193,9 +193,10 @@ func (p *insertPlan) Execute(ctx context.Context) (*table.Table, error) {
 	}
 	return t, update(ctx, p.stm.Data(), p.stm.OutputGraphNames(), p.store, func(g storage.Graph, d []*triple.Triple) error {
 		gID := g.ID(ctx)
+		nTrpls := len(d)
 		tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
-				Msgs: []string{fmt.Sprintf("Inserting triples to graph %q", gID)},
+				Msgs: []string{fmt.Sprintf("Inserting %d triples to graph %q", nTrpls, gID)},
 			}
 		})
 		return g.AddTriples(ctx, d)
@@ -238,9 +239,10 @@ func (p *deletePlan) Execute(ctx context.Context) (*table.Table, error) {
 	}
 	return t, update(ctx, p.stm.Data(), p.stm.InputGraphNames(), p.store, func(g storage.Graph, d []*triple.Triple) error {
 		gID := g.ID(ctx)
+		nTrpls := len(d)
 		tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
-				Msgs: []string{fmt.Sprintf("Removing triples from graph %q", gID)},
+				Msgs: []string{fmt.Sprintf("Removing %d triples from graph %q", nTrpls, gID)},
 			}
 		})
 		return g.RemoveTriples(ctx, d)
@@ -1196,9 +1198,10 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 		var ts []*triple.Triple
 		updateFunc := func(g storage.Graph, d []*triple.Triple) error {
 			gID := g.ID(ctx)
+			nTrpls := len(d)
 			tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 				return &tracer.Arguments{
-					Msgs: []string{fmt.Sprintf("Removing triples from graph %q", gID)},
+					Msgs: []string{fmt.Sprintf("Removing %d triples from graph %q", nTrpls, gID)},
 				}
 			})
 			return g.RemoveTriples(ctx, d)
@@ -1206,9 +1209,10 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 		if p.construct {
 			updateFunc = func(g storage.Graph, d []*triple.Triple) error {
 				gID := g.ID(ctx)
+				nTrpls := len(d)
 				tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 					return &tracer.Arguments{
-						Msgs: []string{fmt.Sprintf("Inserting triples to graph %q", gID)},
+						Msgs: []string{fmt.Sprintf("Inserting %d triples to graph %q", nTrpls, gID)},
 					}
 				})
 				return g.AddTriples(ctx, d)
