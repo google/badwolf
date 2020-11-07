@@ -72,13 +72,14 @@ func (p *createPlan) Execute(ctx context.Context) (*table.Table, error) {
 		return nil, err
 	}
 	errs := []string{}
-	for _, g := range p.stm.GraphNames() {
+	for _, gName := range p.stm.GraphNames() {
+		gNameCopy := gName // creating a local copy of the loop variable to not pass it by reference to the closure of the lazy tracer.
 		tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
-				Msgs: []string{"Creating new graph \"" + g + "\""},
+				Msgs: []string{fmt.Sprintf("Creating new graph %q", gNameCopy)},
 			}
 		})
-		if _, err := p.store.NewGraph(ctx, g); err != nil {
+		if _, err := p.store.NewGraph(ctx, gName); err != nil {
 			errs = append(errs, err.Error())
 		}
 	}
