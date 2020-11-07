@@ -465,9 +465,10 @@ func runBQL(ctx context.Context, bql string, s storage.Store, chanSize, bulkSize
 		})
 		return nil, msg
 	}
+	nRows := res.NumRows()
 	tracer.V(1).Trace(w, func() *tracer.Arguments {
 		return &tracer.Arguments{
-			Msgs: []string{fmt.Sprintf("Executed plan returned %d rows", res.NumRows())},
+			Msgs: []string{fmt.Sprintf("Executed plan returned %d rows", nRows)},
 		}
 	})
 	return res, nil

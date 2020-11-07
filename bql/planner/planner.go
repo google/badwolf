@@ -192,9 +192,10 @@ func (p *insertPlan) Execute(ctx context.Context) (*table.Table, error) {
 		return nil, err
 	}
 	return t, update(ctx, p.stm.Data(), p.stm.OutputGraphNames(), p.store, func(g storage.Graph, d []*triple.Triple) error {
+		gID := g.ID(ctx)
 		tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
-				Msgs: []string{"Inserting triples to graph \"" + g.ID(ctx) + "\""},
+				Msgs: []string{fmt.Sprintf("Inserting triples to graph %q", gID)},
 			}
 		})
 		return g.AddTriples(ctx, d)
@@ -236,9 +237,10 @@ func (p *deletePlan) Execute(ctx context.Context) (*table.Table, error) {
 		return nil, err
 	}
 	return t, update(ctx, p.stm.Data(), p.stm.InputGraphNames(), p.store, func(g storage.Graph, d []*triple.Triple) error {
+		gID := g.ID(ctx)
 		tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
-				Msgs: []string{"Removing triples from graph \"" + g.ID(ctx) + "\""},
+				Msgs: []string{fmt.Sprintf("Removing triples from graph %q", gID)},
 			}
 		})
 		return g.RemoveTriples(ctx, d)
@@ -758,9 +760,10 @@ func resetFilterOptions(lo *storage.LookupOptions) {
 // processGraphPattern process the query graph pattern to retrieve the
 // data from the specified graphs.
 func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupOptions) error {
+	clauses := p.clauses
 	tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 		var res []string
-		for i, cls := range p.clauses {
+		for i, cls := range clauses {
 			res = append(res, fmt.Sprintf("Clause %d to process: %v", i, cls))
 		}
 		return &tracer.Arguments{
@@ -832,12 +835,13 @@ func (p *queryPlan) projectAndGroupBy() error {
 				row[prj.Alias] = row[prj.Binding]
 			}
 		}
+		outputBindings := p.stm.OutputBindings()
 		tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
-				Msgs: []string{fmt.Sprintf("Output bindings projected %v", p.stm.OutputBindings())},
+				Msgs: []string{fmt.Sprintf("Output bindings projected %v", outputBindings)},
 			}
 		})
-		return p.tbl.ProjectBindings(p.stm.OutputBindings())
+		return p.tbl.ProjectBindings(outputBindings)
 	}
 	tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 		return &tracer.Arguments{
@@ -972,21 +976,23 @@ func (p *queryPlan) having() error {
 // limit truncates the table if the limit clause if available.
 func (p *queryPlan) limit() {
 	if p.stm.IsLimitSet() {
+		stmLimit := p.stm.Limit()
 		tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
-				Msgs: []string{"Limit results to " + strconv.Itoa(int(p.stm.Limit()))},
+				Msgs: []string{fmt.Sprintf("Limit results to %s", strconv.Itoa(int(stmLimit)))},
 			}
 		})
-		p.tbl.Limit(p.stm.Limit())
+		p.tbl.Limit(stmLimit)
 	}
 }
 
 // Execute queries the indicated graphs.
 func (p *queryPlan) Execute(ctx context.Context) (*table.Table, error) {
 	// Fetch and cache graph instances.
+	inputGraphNames := p.stm.InputGraphNames()
 	tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 		return &tracer.Arguments{
-			Msgs: []string{fmt.Sprintf("Caching graph instances for graphs %v", p.stm.InputGraphNames())},
+			Msgs: []string{fmt.Sprintf("Caching graph instances for graphs %v", inputGraphNames)},
 		}
 	})
 	if err := p.stm.Init(ctx, p.store); err != nil {
@@ -1189,18 +1195,20 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 	go func() {
 		var ts []*triple.Triple
 		updateFunc := func(g storage.Graph, d []*triple.Triple) error {
+			gID := g.ID(ctx)
 			tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 				return &tracer.Arguments{
-					Msgs: []string{"Removing triples from graph \"" + g.ID(ctx) + "\""},
+					Msgs: []string{fmt.Sprintf("Removing triples from graph %q", gID)},
 				}
 			})
 			return g.RemoveTriples(ctx, d)
 		}
 		if p.construct {
 			updateFunc = func(g storage.Graph, d []*triple.Triple) error {
+				gID := g.ID(ctx)
 				tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 					return &tracer.Arguments{
-						Msgs: []string{"Inserting triples to graph \"" + g.ID(ctx) + "\""},
+						Msgs: []string{fmt.Sprintf("Inserting triples to graph %q", gID)},
 					}
 				})
 				return g.AddTriples(ctx, d)
