@@ -858,9 +858,10 @@ func (p *queryPlan) projectAndGroupBy() error {
 	cfg := table.SortConfig{}
 	aaps := []table.AliasAccPair{}
 	for _, prj := range p.stm.Projections() {
+		prjCopy := prj // creating a local copy of the loop variable to not pass it by reference to the closure of the lazy tracer.
 		tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
-				Msgs: []string{"Analysing projection " + prj.String()},
+				Msgs: []string{fmt.Sprintf("Analysing projection %q", prjCopy)},
 			}
 		})
 		// Only include used incoming bindings.
