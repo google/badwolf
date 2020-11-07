@@ -323,7 +323,7 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 		if cls.Optional && !cls.HasAlias() {
 			tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 				return &tracer.Arguments{
-					Msgs: []string{fmt.Sprintf("Processing optional clause of specificity 3 %v", cls)},
+					Msgs: []string{fmt.Sprintf("Processing optional clause of specificity 3: %v", cls)},
 				}
 			})
 			return false, nil
@@ -372,7 +372,7 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 			if cls.Optional {
 				tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 					return &tracer.Arguments{
-						Msgs: []string{fmt.Sprintf("Processing optional clause of disjoint bindings %v", cls)},
+						Msgs: []string{fmt.Sprintf("Processing optional clause of disjoint bindings: %v", cls)},
 					}
 				})
 				return false, p.tbl.LeftOptionalJoin(tbl)
