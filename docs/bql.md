@@ -425,6 +425,34 @@ also query for all users that first followed Joe and then followed Mary. Such qu
   HAVING ?tm > ?tj;
 ```
 
+As an additional observation, remember that when using the `before`, `after`, and `between` keywords
+the final result may also include immutable triples along the temporal ones. To illustrate, given
+the query below:
+
+```
+SELECT ?p, ?o
+FROM ?supermarket
+WHERE {
+  /u<peter> ?p ?o
+}
+BETWEEN 2016-02-01T00:00:00-08:00, 2016-03-01T00:00:00-08:00;
+```
+
+If you have in your `?supermarket` graph both immutable and temporal triples that have `/u<peter>`
+as subject, then you will see those immutable triples in your result too, along with the temporal ones
+that fit in the given interval specified by `between`. But, if you do want only the temporal ones in your
+result you can make use of a `FILTER` clause with the `isTemporal` function (better explained below).
+
+```
+SELECT ?p, ?o
+FROM ?supermarket
+WHERE {
+  /u<peter> ?p ?o .
+  FILTER isTemporal(?p)
+}
+BETWEEN 2016-02-01T00:00:00-08:00, 2016-03-01T00:00:00-08:00;
+```
+
 ## Inserting data into graphs
 
 Triples can be inserted into one or more graphs. This can be achieved by
