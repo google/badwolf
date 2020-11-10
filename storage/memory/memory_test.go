@@ -98,10 +98,10 @@ func TestDefaultLookupChecker(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !c.CheckAndUpdate(ip) {
+	if !c.CheckGlobalTimeBounds(ip) {
 		t.Errorf("Immutable predicates should always validate with default lookup %v", dlu)
 	}
-	if !c.CheckAndUpdate(tp) {
+	if !c.CheckGlobalTimeBounds(tp) {
 		t.Errorf("Temporal predicates should always validate with default lookup %v", dlu)
 	}
 }
@@ -109,16 +109,12 @@ func TestDefaultLookupChecker(t *testing.T) {
 func TestLimitedItemsLookupChecker(t *testing.T) {
 	blu := &storage.LookupOptions{MaxElements: 1}
 	c := newChecker(blu, nil)
-	ip, err := predicate.NewImmutable("foo")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !c.CheckAndUpdate(ip) {
-		t.Errorf("The first predicate should always succeed on bounded lookup %v", blu)
+	if !c.CheckLimitAndUpdate() {
+		t.Errorf("The first call to CheckLimitAndUpdate() should always succeed on lookup %v that started with MaxElements set to 1", blu)
 	}
 	for i := 0; i < 10; i++ {
-		if c.CheckAndUpdate(ip) {
-			t.Errorf("Bounded lookup %v should never succeed after being exahausted", blu)
+		if c.CheckLimitAndUpdate() {
+			t.Errorf("Lookup %v should never succeed after being exahausted", blu)
 		}
 	}
 }
@@ -140,26 +136,26 @@ func TestTemporalBoundedLookupChecker(t *testing.T) {
 	lb, _ := lpa.TimeAnchor()
 	blu := &storage.LookupOptions{LowerAnchor: lb}
 	clu := newChecker(blu, nil)
-	if !clu.CheckAndUpdate(mpa) {
+	if !clu.CheckGlobalTimeBounds(mpa) {
 		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, clu)
 	}
 	lb, _ = mpa.TimeAnchor()
 	blu = &storage.LookupOptions{LowerAnchor: lb}
 	clu = newChecker(blu, nil)
-	if clu.CheckAndUpdate(lpa) {
+	if clu.CheckGlobalTimeBounds(lpa) {
 		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, clu)
 	}
 	// Check upper bound.
 	ub, _ := upa.TimeAnchor()
 	buu := &storage.LookupOptions{UpperAnchor: ub}
 	cuu := newChecker(buu, nil)
-	if !cuu.CheckAndUpdate(mpa) {
+	if !cuu.CheckGlobalTimeBounds(mpa) {
 		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, cuu)
 	}
 	ub, _ = mpa.TimeAnchor()
 	buu = &storage.LookupOptions{UpperAnchor: ub}
 	cuu = newChecker(buu, nil)
-	if cuu.CheckAndUpdate(upa) {
+	if cuu.CheckGlobalTimeBounds(upa) {
 		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, cuu)
 	}
 }
@@ -181,20 +177,20 @@ func TestTemporalExactChecker(t *testing.T) {
 	lb, _ := lpa.TimeAnchor()
 	blu := &storage.LookupOptions{LowerAnchor: lb}
 	clu := newChecker(blu, mpa)
-	if !clu.CheckAndUpdate(mpa) {
+	if !clu.CheckGlobalTimeBounds(mpa) {
 		t.Errorf("Failed to accept predicate %v by checker %v", mpa, clu)
 	}
 	lb, _ = mpa.TimeAnchor()
 	blu = &storage.LookupOptions{LowerAnchor: lb}
 	clu = newChecker(blu, mpa)
-	if clu.CheckAndUpdate(lpa) {
+	if clu.CheckGlobalTimeBounds(lpa) {
 		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, clu)
 	}
 	// Check upper bound.
 	ub, _ := upa.TimeAnchor()
 	buu := &storage.LookupOptions{UpperAnchor: ub}
 	cuu := newChecker(buu, mpa)
-	if !cuu.CheckAndUpdate(mpa) {
+	if !cuu.CheckGlobalTimeBounds(mpa) {
 		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, cuu)
 	}
 }
