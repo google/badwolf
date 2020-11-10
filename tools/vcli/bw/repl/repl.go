@@ -506,7 +506,7 @@ func planBQL(ctx context.Context, bql string, s storage.Store, chanSize, bulkSiz
 	}
 	pln, err := planner.New(ctx, s, stm, chanSize, bulkSize, w)
 	if err != nil {
-		msg := fmt.Errorf("planer.New failed failed; %v", err)
+		msg := fmt.Errorf("planner.New failed with error: %v", err)
 		tracer.V(1).Trace(w, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{msg.Error()},
