@@ -249,14 +249,10 @@ func newChecker(o *storage.LookupOptions, op *predicate.Predicate) *checker {
 	}
 }
 
-// CheckAndUpdate checks if a predicate should be considered and it also updates
-// the internal state in case counts are needed.
-func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
-	if c.max && c.c <= 0 {
-		return false
-	}
+// CheckGlobalTimeBounds checks if a predicate should be considered given the global
+// time bounds.
+func (c *checker) CheckGlobalTimeBounds(p *predicate.Predicate) bool {
 	if p.Type() == predicate.Immutable {
-		c.c--
 		return true
 	}
 
@@ -271,8 +267,32 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 			return false
 		}
 	}
+
+	return true
+}
+
+// CheckLimitAndUpdate checks the internal limit count if it is set and also updates
+// the internal state for the case these counts are needed.
+func (c *checker) CheckLimitAndUpdate() bool {
+	if c.max && c.c <= 0 {
+		return false
+	}
+
 	c.c--
 	return true
+}
+
+// applyGlobalTimeBounds applies the global time bound constraints specified by the checker to
+// the given triples, returning only the triples that satisfy these time bounds.
+func applyGlobalTimeBounds(trpls map[string]*triple.Triple, ckr *checker) map[string]*triple.Triple {
+	selectedTrpls := make(map[string]*triple.Triple)
+	for uuid, t := range trpls {
+		if t != nil && ckr.CheckGlobalTimeBounds(t.Predicate()) {
+			selectedTrpls[uuid] = t
+		}
+	}
+
+	return selectedTrpls
 }
 
 // isImmutableFilter executes the isImmutable filter operation over memoryTriples following filterOptions.
@@ -412,7 +432,9 @@ func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predica
 	defer m.rwmu.RUnlock()
 	defer close(objs)
 
-	trps := m.idxSP[spIdx]
+	ckr := newChecker(lo, p)
+	trps := applyGlobalTimeBounds(m.idxSP[spIdx], ckr)
+
 	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
@@ -434,9 +456,8 @@ func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predica
 		}
 	}
 
-	ckr := newChecker(lo, p)
 	for _, t := range trps {
-		if t != nil && ckr.CheckAndUpdate(t.Predicate()) {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			objs <- t.Object()
 		}
 	}
@@ -458,7 +479,9 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 	defer m.rwmu.RUnlock()
 	defer close(subjs)
 
-	trps := m.idxPO[poIdx]
+	ckr := newChecker(lo, p)
+	trps := applyGlobalTimeBounds(m.idxPO[poIdx], ckr)
+
 	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
@@ -480,9 +503,8 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 		}
 	}
 
-	ckr := newChecker(lo, p)
 	for _, t := range trps {
-		if t != nil && ckr.CheckAndUpdate(t.Predicate()) {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			subjs <- t.Subject()
 		}
 	}
@@ -504,7 +526,9 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 	defer m.rwmu.RUnlock()
 	defer close(prds)
 
-	trps := m.idxSO[soIdx]
+	ckr := newChecker(lo, nil)
+	trps := applyGlobalTimeBounds(m.idxSO[soIdx], ckr)
+
 	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
@@ -526,9 +550,8 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 		}
 	}
 
-	ckr := newChecker(lo, nil)
 	for _, t := range trps {
-		if t != nil && ckr.CheckAndUpdate(t.Predicate()) {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			prds <- t.Predicate()
 		}
 	}
@@ -548,7 +571,9 @@ func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *sto
 	defer m.rwmu.RUnlock()
 	defer close(prds)
 
-	trps := m.idxS[sUUID]
+	ckr := newChecker(lo, nil)
+	trps := applyGlobalTimeBounds(m.idxS[sUUID], ckr)
+
 	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
@@ -570,9 +595,8 @@ func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *sto
 		}
 	}
 
-	ckr := newChecker(lo, nil)
 	for _, t := range trps {
-		if t != nil && ckr.CheckAndUpdate(t.Predicate()) {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			prds <- t.Predicate()
 		}
 	}
@@ -592,7 +616,9 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 	defer m.rwmu.RUnlock()
 	defer close(prds)
 
-	trps := m.idxO[oUUID]
+	ckr := newChecker(lo, nil)
+	trps := applyGlobalTimeBounds(m.idxO[oUUID], ckr)
+
 	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
@@ -614,9 +640,8 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 		}
 	}
 
-	ckr := newChecker(lo, nil)
 	for _, t := range trps {
-		if t != nil && ckr.CheckAndUpdate(t.Predicate()) {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			prds <- t.Predicate()
 		}
 	}
@@ -636,7 +661,9 @@ func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storag
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
-	trps := m.idxS[sUUID]
+	ckr := newChecker(lo, nil)
+	trps := applyGlobalTimeBounds(m.idxS[sUUID], ckr)
+
 	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
@@ -658,9 +685,8 @@ func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storag
 		}
 	}
 
-	ckr := newChecker(lo, nil)
 	for _, t := range trps {
-		if t != nil && ckr.CheckAndUpdate(t.Predicate()) {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			trpls <- t
 		}
 	}
@@ -680,7 +706,9 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
-	trps := m.idxP[pUUID]
+	ckr := newChecker(lo, p)
+	trps := applyGlobalTimeBounds(m.idxP[pUUID], ckr)
+
 	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
@@ -702,9 +730,8 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 		}
 	}
 
-	ckr := newChecker(lo, p)
 	for _, t := range trps {
-		if t != nil && ckr.CheckAndUpdate(t.Predicate()) {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			trpls <- t
 		}
 	}
@@ -724,7 +751,9 @@ func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *sto
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
-	trps := m.idxO[oUUID]
+	ckr := newChecker(lo, nil)
+	trps := applyGlobalTimeBounds(m.idxO[oUUID], ckr)
+
 	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
@@ -746,9 +775,8 @@ func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *sto
 		}
 	}
 
-	ckr := newChecker(lo, nil)
 	for _, t := range trps {
-		if t != nil && ckr.CheckAndUpdate(t.Predicate()) {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			trpls <- t
 		}
 	}
@@ -770,7 +798,9 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
-	trps := m.idxSP[spIdx]
+	ckr := newChecker(lo, p)
+	trps := applyGlobalTimeBounds(m.idxSP[spIdx], ckr)
+
 	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
@@ -792,9 +822,8 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 		}
 	}
 
-	ckr := newChecker(lo, p)
 	for _, t := range trps {
-		if t != nil && ckr.CheckAndUpdate(t.Predicate()) {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			trpls <- t
 		}
 	}
@@ -816,7 +845,9 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
-	trps := m.idxPO[poIdx]
+	ckr := newChecker(lo, p)
+	trps := applyGlobalTimeBounds(m.idxPO[poIdx], ckr)
+
 	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
@@ -838,9 +869,8 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 		}
 	}
 
-	ckr := newChecker(lo, p)
 	for _, t := range trps {
-		if t != nil && ckr.CheckAndUpdate(t.Predicate()) {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			trpls <- t
 		}
 	}
@@ -868,7 +898,9 @@ func (m *memory) Triples(ctx context.Context, lo *storage.LookupOptions, trpls c
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
-	trps := m.idx
+	ckr := newChecker(lo, nil)
+	trps := applyGlobalTimeBounds(m.idx, ckr)
+
 	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
@@ -890,9 +922,8 @@ func (m *memory) Triples(ctx context.Context, lo *storage.LookupOptions, trpls c
 		}
 	}
 
-	ckr := newChecker(lo, nil)
 	for _, t := range trps {
-		if t != nil && ckr.CheckAndUpdate(t.Predicate()) {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			trpls <- t
 		}
 	}
