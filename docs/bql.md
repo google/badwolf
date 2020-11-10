@@ -412,9 +412,8 @@ limits of the intervals are included). You can then understand the `after` as a 
 sugar of using a comma inside the square brackets make sense only inside the `WHERE` clause,
 you cannot use it out of the `WHERE` scope as inside a `HAVING` clause for example.
 
-In addition to that, remember that bindings may take time anchor values so you could also query
-for all users that first followed Joe and then followed Mary. Such query would
-look like:
+In addition to that, remember that bindings may take time anchor values too. Then, you could
+also query for all users that first followed Joe and then followed Mary. Such query would look like:
 
 ```
   SELECT ?user, ?tj, ?tm
