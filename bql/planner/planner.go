@@ -73,7 +73,7 @@ func (p *createPlan) Execute(ctx context.Context) (*table.Table, error) {
 	}
 	errs := []string{}
 	for _, g := range p.stm.GraphNames() {
-		tracer.Trace(p.tracer, func() *tracer.Arguments {
+		tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{"Creating new graph \"" + g + "\""},
 			}
@@ -114,7 +114,7 @@ func (p *dropPlan) Execute(ctx context.Context) (*table.Table, error) {
 	}
 	errs := []string{}
 	for _, g := range p.stm.GraphNames() {
-		tracer.Trace(p.tracer, func() *tracer.Arguments {
+		tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{"Deleting graph \"" + g + "\""},
 			}
@@ -190,7 +190,7 @@ func (p *insertPlan) Execute(ctx context.Context) (*table.Table, error) {
 		return nil, err
 	}
 	return t, update(ctx, p.stm.Data(), p.stm.OutputGraphNames(), p.store, func(g storage.Graph, d []*triple.Triple) error {
-		tracer.Trace(p.tracer, func() *tracer.Arguments {
+		tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{"Inserting triples to graph \"" + g.ID(ctx) + "\""},
 			}
@@ -234,7 +234,7 @@ func (p *deletePlan) Execute(ctx context.Context) (*table.Table, error) {
 		return nil, err
 	}
 	return t, update(ctx, p.stm.Data(), p.stm.InputGraphNames(), p.store, func(g storage.Graph, d []*triple.Triple) error {
-		tracer.Trace(p.tracer, func() *tracer.Arguments {
+		tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{"Removing triples from graph \"" + g.ID(ctx) + "\""},
 			}
@@ -309,13 +309,13 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 	// This method decides how to process the clause based on the current
 	// list of bindings solved and data available.
 	if cls.Specificity() == 3 {
-		tracer.Trace(p.tracer, func() *tracer.Arguments {
+		tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{"Clause is fully specified"},
 			}
 		})
 		if cls.Optional && !cls.HasAlias() {
-			tracer.Trace(p.tracer, func() *tracer.Arguments {
+			tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 				return &tracer.Arguments{
 					Msgs: []string{fmt.Sprintf("Processing optional clause of specificity 3 %v", cls)},
 				}
@@ -347,7 +347,7 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 	}
 
 	if exist == 0 {
-		tracer.Trace(p.tracer, func() *tracer.Arguments {
+		tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{fmt.Sprintf("None of the clause binding exist %v/%v", cls.Bindings(), existing)},
 			}
@@ -364,7 +364,7 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 
 		if len(p.tbl.Bindings()) > 0 {
 			if cls.Optional {
-				tracer.Trace(p.tracer, func() *tracer.Arguments {
+				tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 					return &tracer.Arguments{
 						Msgs: []string{fmt.Sprintf("Processing optional clause of disjoint bindings %v", cls)},
 					}
@@ -376,7 +376,7 @@ func (p *queryPlan) processClause(ctx context.Context, cls *semantic.GraphClause
 		return false, p.tbl.AppendTable(tbl)
 	}
 
-	tracer.Trace(p.tracer, func() *tracer.Arguments {
+	tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{fmt.Sprintf("Some clause binding exist %v/%v", cls.Bindings(), existing)},
 		}
@@ -458,7 +458,7 @@ func (p *queryPlan) addSpecifiedData(ctx context.Context, r table.Row, cls *sema
 		lo = nlo
 	}
 
-	tracer.Trace(p.tracer, func() *tracer.Arguments {
+	tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{fmt.Sprintf("Corrected clause: %v", cls)},
 		}
@@ -626,7 +626,7 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 				if err != nil {
 					return err
 				}
-				tracer.Trace(p.tracer, func() *tracer.Arguments {
+				tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 					return &tracer.Arguments{
 						Msgs: []string{fmt.Sprintf("g.Exist(%v), graph: %s", t, gID)},
 					}
@@ -756,7 +756,7 @@ func resetFilterOptions(lo *storage.LookupOptions) {
 // processGraphPattern process the query graph pattern to retrieve the
 // data from the specified graphs.
 func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupOptions) error {
-	tracer.Trace(p.tracer, func() *tracer.Arguments {
+	tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 		var res []string
 		for i, cls := range p.clauses {
 			res = append(res, fmt.Sprintf("Clause %d to process: %v", i, cls))
@@ -770,7 +770,7 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 	if err != nil {
 		return err
 	}
-	tracer.Trace(p.tracer, func() *tracer.Arguments {
+	tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{fmt.Sprintf("Starting to process clauses")},
 		}
@@ -778,7 +778,7 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 	tStartClauses := time.Now()
 	for i, cls := range p.clauses {
 		iCopy, clsCopy := i, cls // creating local copies of the loop variables to not pass them by reference to the closure of the lazy tracer.
-		tracer.Trace(p.tracer, func() *tracer.Arguments {
+		tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{fmt.Sprintf("Starting to process clause %d: %v", iCopy, clsCopy)},
 			}
@@ -790,7 +790,7 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 		resetFilterOptions(lo)
 		tElapsedCurrClause := time.Now().Sub(tStartCurrClause)
 
-		tracer.Trace(p.tracer, func() *tracer.Arguments {
+		tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{fmt.Sprintf("Finished processing clause %d: %v, latency: %v", iCopy, clsCopy, tElapsedCurrClause)},
 			}
@@ -804,7 +804,7 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 		}
 	}
 	tElapsedClauses := time.Now().Sub(tStartClauses)
-	tracer.Trace(p.tracer, func() *tracer.Arguments {
+	tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{fmt.Sprintf("Finished processing all clauses, total latency: %v", tElapsedClauses)},
 		}
@@ -818,7 +818,7 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 func (p *queryPlan) projectAndGroupBy() error {
 	grp := p.stm.GroupByBindings()
 	if len(grp) == 0 { // The table only needs to be projected.
-		tracer.Trace(p.tracer, func() *tracer.Arguments {
+		tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{fmt.Sprintf("Running projection for %v", grp)},
 			}
@@ -830,14 +830,14 @@ func (p *queryPlan) projectAndGroupBy() error {
 				row[prj.Alias] = row[prj.Binding]
 			}
 		}
-		tracer.Trace(p.tracer, func() *tracer.Arguments {
+		tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{fmt.Sprintf("Output bindings projected %v", p.stm.OutputBindings())},
 			}
 		})
 		return p.tbl.ProjectBindings(p.stm.OutputBindings())
 	}
-	tracer.Trace(p.tracer, func() *tracer.Arguments {
+	tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{"Starting group reduce and projection"},
 		}
@@ -850,7 +850,7 @@ func (p *queryPlan) projectAndGroupBy() error {
 	cfg := table.SortConfig{}
 	aaps := []table.AliasAccPair{}
 	for _, prj := range p.stm.Projections() {
-		tracer.Trace(p.tracer, func() *tracer.Arguments {
+		tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{"Analysing projection " + prj.String()},
 			}
@@ -900,7 +900,7 @@ func (p *queryPlan) projectAndGroupBy() error {
 		}
 		aaps = append(aaps, aap)
 	}
-	tracer.Trace(p.tracer, func() *tracer.Arguments {
+	tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{fmt.Sprintf("Projecting %v", tmpBindings)},
 		}
@@ -908,7 +908,7 @@ func (p *queryPlan) projectAndGroupBy() error {
 	if err := p.tbl.ProjectBindings(tmpBindings); err != nil {
 		return err
 	}
-	tracer.Trace(p.tracer, func() *tracer.Arguments {
+	tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{"Reducing the table using configuration " + cfg.String()},
 		}
@@ -924,7 +924,7 @@ func (p *queryPlan) orderBy() {
 	if len(order) <= 0 {
 		return
 	}
-	tracer.Trace(p.tracer, func() *tracer.Arguments {
+	tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{"Ordering by " + order.String()},
 		}
@@ -935,7 +935,7 @@ func (p *queryPlan) orderBy() {
 // having runs the filtering based on the having clause if needed.
 func (p *queryPlan) having() error {
 	if p.stm.HasHavingClause() {
-		tracer.Trace(p.tracer, func() *tracer.Arguments {
+		tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{"Starting to process HAVING clause"},
 			}
@@ -951,14 +951,14 @@ func (p *queryPlan) having() error {
 			return !b
 		})
 		if !ok {
-			tracer.Trace(p.tracer, func() *tracer.Arguments {
+			tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 				return &tracer.Arguments{
 					Msgs: []string{eErr.Error()},
 				}
 			})
 			return eErr
 		}
-		tracer.Trace(p.tracer, func() *tracer.Arguments {
+		tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{fmt.Sprintf("Finished processing HAVING clause, %d rows were removed from table", nRowsRemoved)},
 			}
@@ -970,7 +970,7 @@ func (p *queryPlan) having() error {
 // limit truncates the table if the limit clause if available.
 func (p *queryPlan) limit() {
 	if p.stm.IsLimitSet() {
-		tracer.Trace(p.tracer, func() *tracer.Arguments {
+		tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
 				Msgs: []string{"Limit results to " + strconv.Itoa(int(p.stm.Limit()))},
 			}
@@ -982,7 +982,7 @@ func (p *queryPlan) limit() {
 // Execute queries the indicated graphs.
 func (p *queryPlan) Execute(ctx context.Context) (*table.Table, error) {
 	// Fetch and cache graph instances.
-	tracer.Trace(p.tracer, func() *tracer.Arguments {
+	tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{fmt.Sprintf("Caching graph instances for graphs %v", p.stm.InputGraphNames())},
 		}
@@ -993,7 +993,7 @@ func (p *queryPlan) Execute(ctx context.Context) (*table.Table, error) {
 	p.grfs = p.stm.InputGraphs()
 	// Retrieve the data.
 	lo := p.stm.GlobalLookupOptions()
-	tracer.Trace(p.tracer, func() *tracer.Arguments {
+	tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{"Setting global lookup options to " + lo.String()},
 		}
@@ -1186,7 +1186,7 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 	go func() {
 		var ts []*triple.Triple
 		updateFunc := func(g storage.Graph, d []*triple.Triple) error {
-			tracer.Trace(p.tracer, func() *tracer.Arguments {
+			tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 				return &tracer.Arguments{
 					Msgs: []string{"Removing triples from graph \"" + g.ID(ctx) + "\""},
 				}
@@ -1195,7 +1195,7 @@ func (p *constructPlan) Execute(ctx context.Context) (*table.Table, error) {
 		}
 		if p.construct {
 			updateFunc = func(g storage.Graph, d []*triple.Triple) error {
-				tracer.Trace(p.tracer, func() *tracer.Arguments {
+				tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 					return &tracer.Arguments{
 						Msgs: []string{"Inserting triples to graph \"" + g.ID(ctx) + "\""},
 					}
