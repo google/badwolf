@@ -249,14 +249,10 @@ func newChecker(o *storage.LookupOptions, op *predicate.Predicate) *checker {
 	}
 }
 
-// CheckAndUpdate checks if a predicate should be considered and it also updates
-// the internal state in case counts are needed.
-func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
-	if c.max && c.c <= 0 {
-		return false
-	}
+// CheckGlobalTimeBounds checks if a predicate should be considered given the global
+// time bounds.
+func (c *checker) CheckGlobalTimeBounds(p *predicate.Predicate) bool {
 	if p.Type() == predicate.Immutable {
-		c.c--
 		return true
 	}
 
@@ -271,8 +267,32 @@ func (c *checker) CheckAndUpdate(p *predicate.Predicate) bool {
 			return false
 		}
 	}
+
+	return true
+}
+
+// CheckLimitAndUpdate checks the internal limit count if it is set and also updates
+// the internal state for the case these counts are needed.
+func (c *checker) CheckLimitAndUpdate() bool {
+	if c.max && c.c <= 0 {
+		return false
+	}
+
 	c.c--
 	return true
+}
+
+// applyGlobalTimeBounds applies the global time bound constraints specified by the checker to
+// the given triples, returning only the triples that satisfy these time bounds.
+func applyGlobalTimeBounds(trpls map[string]*triple.Triple, ckr *checker) map[string]*triple.Triple {
+	selectedTrpls := make(map[string]*triple.Triple)
+	for uuid, t := range trpls {
+		if t != nil && ckr.CheckGlobalTimeBounds(t.Predicate()) {
+			selectedTrpls[uuid] = t
+		}
+	}
+
+	return selectedTrpls
 }
 
 // isImmutableFilter executes the isImmutable filter operation over memoryTriples following filterOptions.
@@ -412,6 +432,10 @@ func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predica
 	defer m.rwmu.RUnlock()
 	defer close(objs)
 
+	ckr := newChecker(lo, p)
+	selectedTrpls := applyGlobalTimeBounds(m.idxSP[spIdx], ckr)
+
+	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
@@ -426,20 +450,14 @@ func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predica
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxSP[spIdx], p, lo.FilterOptions)
+		selectedTrpls, err = executeFilter(selectedTrpls, p, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
-		for _, trp := range trps {
-			if trp != nil {
-				objs <- trp.Object()
-			}
-		}
-		return nil
 	}
-	ckr := newChecker(lo, p)
-	for _, t := range m.idxSP[spIdx] {
-		if ckr.CheckAndUpdate(t.Predicate()) {
+
+	for _, t := range selectedTrpls {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			objs <- t.Object()
 		}
 	}
@@ -461,6 +479,10 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 	defer m.rwmu.RUnlock()
 	defer close(subjs)
 
+	ckr := newChecker(lo, p)
+	selectedTrpls := applyGlobalTimeBounds(m.idxPO[poIdx], ckr)
+
+	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
@@ -475,20 +497,14 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxPO[poIdx], p, lo.FilterOptions)
+		selectedTrpls, err = executeFilter(selectedTrpls, p, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
-		for _, trp := range trps {
-			if trp != nil {
-				subjs <- trp.Subject()
-			}
-		}
-		return nil
 	}
-	ckr := newChecker(lo, p)
-	for _, t := range m.idxPO[poIdx] {
-		if ckr.CheckAndUpdate(t.Predicate()) {
+
+	for _, t := range selectedTrpls {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			subjs <- t.Subject()
 		}
 	}
@@ -510,6 +526,10 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 	defer m.rwmu.RUnlock()
 	defer close(prds)
 
+	ckr := newChecker(lo, nil)
+	selectedTrpls := applyGlobalTimeBounds(m.idxSO[soIdx], ckr)
+
+	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
@@ -524,20 +544,14 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxSO[soIdx], nil, lo.FilterOptions)
+		selectedTrpls, err = executeFilter(selectedTrpls, nil, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
-		for _, trp := range trps {
-			if trp != nil {
-				prds <- trp.Predicate()
-			}
-		}
-		return nil
 	}
-	ckr := newChecker(lo, nil)
-	for _, t := range m.idxSO[soIdx] {
-		if ckr.CheckAndUpdate(t.Predicate()) {
+
+	for _, t := range selectedTrpls {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			prds <- t.Predicate()
 		}
 	}
@@ -557,6 +571,10 @@ func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *sto
 	defer m.rwmu.RUnlock()
 	defer close(prds)
 
+	ckr := newChecker(lo, nil)
+	selectedTrpls := applyGlobalTimeBounds(m.idxS[sUUID], ckr)
+
+	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
@@ -571,20 +589,14 @@ func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *sto
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxS[sUUID], nil, lo.FilterOptions)
+		selectedTrpls, err = executeFilter(selectedTrpls, nil, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
-		for _, trp := range trps {
-			if trp != nil {
-				prds <- trp.Predicate()
-			}
-		}
-		return nil
 	}
-	ckr := newChecker(lo, nil)
-	for _, t := range m.idxS[sUUID] {
-		if ckr.CheckAndUpdate(t.Predicate()) {
+
+	for _, t := range selectedTrpls {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			prds <- t.Predicate()
 		}
 	}
@@ -604,6 +616,10 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 	defer m.rwmu.RUnlock()
 	defer close(prds)
 
+	ckr := newChecker(lo, nil)
+	selectedTrpls := applyGlobalTimeBounds(m.idxO[oUUID], ckr)
+
+	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
@@ -618,20 +634,14 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxO[oUUID], nil, lo.FilterOptions)
+		selectedTrpls, err = executeFilter(selectedTrpls, nil, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
-		for _, trp := range trps {
-			if trp != nil {
-				prds <- trp.Predicate()
-			}
-		}
-		return nil
 	}
-	ckr := newChecker(lo, nil)
-	for _, t := range m.idxO[oUUID] {
-		if ckr.CheckAndUpdate(t.Predicate()) {
+
+	for _, t := range selectedTrpls {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			prds <- t.Predicate()
 		}
 	}
@@ -651,6 +661,10 @@ func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storag
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
+	ckr := newChecker(lo, nil)
+	selectedTrpls := applyGlobalTimeBounds(m.idxS[sUUID], ckr)
+
+	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
@@ -665,20 +679,14 @@ func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storag
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxS[sUUID], nil, lo.FilterOptions)
+		selectedTrpls, err = executeFilter(selectedTrpls, nil, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
-		for _, trp := range trps {
-			if trp != nil {
-				trpls <- trp
-			}
-		}
-		return nil
 	}
-	ckr := newChecker(lo, nil)
-	for _, t := range m.idxS[sUUID] {
-		if ckr.CheckAndUpdate(t.Predicate()) {
+
+	for _, t := range selectedTrpls {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			trpls <- t
 		}
 	}
@@ -698,6 +706,10 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
+	ckr := newChecker(lo, p)
+	selectedTrpls := applyGlobalTimeBounds(m.idxP[pUUID], ckr)
+
+	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
@@ -712,20 +724,14 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxP[pUUID], p, lo.FilterOptions)
+		selectedTrpls, err = executeFilter(selectedTrpls, p, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
-		for _, trp := range trps {
-			if trp != nil {
-				trpls <- trp
-			}
-		}
-		return nil
 	}
-	ckr := newChecker(lo, p)
-	for _, t := range m.idxP[pUUID] {
-		if ckr.CheckAndUpdate(t.Predicate()) {
+
+	for _, t := range selectedTrpls {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			trpls <- t
 		}
 	}
@@ -745,6 +751,10 @@ func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *sto
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
+	ckr := newChecker(lo, nil)
+	selectedTrpls := applyGlobalTimeBounds(m.idxO[oUUID], ckr)
+
+	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
@@ -759,20 +769,14 @@ func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *sto
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxO[oUUID], nil, lo.FilterOptions)
+		selectedTrpls, err = executeFilter(selectedTrpls, nil, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
-		for _, trp := range trps {
-			if trp != nil {
-				trpls <- trp
-			}
-		}
-		return nil
 	}
-	ckr := newChecker(lo, nil)
-	for _, t := range m.idxO[oUUID] {
-		if ckr.CheckAndUpdate(t.Predicate()) {
+
+	for _, t := range selectedTrpls {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			trpls <- t
 		}
 	}
@@ -794,6 +798,10 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
+	ckr := newChecker(lo, p)
+	selectedTrpls := applyGlobalTimeBounds(m.idxSP[spIdx], ckr)
+
+	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
@@ -808,20 +816,14 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxSP[spIdx], p, lo.FilterOptions)
+		selectedTrpls, err = executeFilter(selectedTrpls, p, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
-		for _, trp := range trps {
-			if trp != nil {
-				trpls <- trp
-			}
-		}
-		return nil
 	}
-	ckr := newChecker(lo, p)
-	for _, t := range m.idxSP[spIdx] {
-		if ckr.CheckAndUpdate(t.Predicate()) {
+
+	for _, t := range selectedTrpls {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			trpls <- t
 		}
 	}
@@ -843,6 +845,10 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
+	ckr := newChecker(lo, p)
+	selectedTrpls := applyGlobalTimeBounds(m.idxPO[poIdx], ckr)
+
+	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
@@ -857,20 +863,14 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idxPO[poIdx], p, lo.FilterOptions)
+		selectedTrpls, err = executeFilter(selectedTrpls, p, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
-		for _, trp := range trps {
-			if trp != nil {
-				trpls <- trp
-			}
-		}
-		return nil
 	}
-	ckr := newChecker(lo, p)
-	for _, t := range m.idxPO[poIdx] {
-		if ckr.CheckAndUpdate(t.Predicate()) {
+
+	for _, t := range selectedTrpls {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			trpls <- t
 		}
 	}
@@ -898,6 +898,10 @@ func (m *memory) Triples(ctx context.Context, lo *storage.LookupOptions, trpls c
 	defer m.rwmu.RUnlock()
 	defer close(trpls)
 
+	ckr := newChecker(lo, nil)
+	selectedTrpls := applyGlobalTimeBounds(m.idx, ckr)
+
+	var err error
 	if lo.LatestAnchor {
 		if lo.FilterOptions != nil {
 			return fmt.Errorf("cannot have LatestAnchor and FilterOptions used at the same time inside lookup options")
@@ -912,20 +916,14 @@ func (m *memory) Triples(ctx context.Context, lo *storage.LookupOptions, trpls c
 		}()
 	}
 	if lo.FilterOptions != nil {
-		trps, err := executeFilter(m.idx, nil, lo.FilterOptions)
+		selectedTrpls, err = executeFilter(selectedTrpls, nil, lo.FilterOptions)
 		if err != nil {
 			return err
 		}
-		for _, trp := range trps {
-			if trp != nil {
-				trpls <- trp
-			}
-		}
-		return nil
 	}
-	ckr := newChecker(lo, nil)
-	for _, t := range m.idx {
-		if ckr.CheckAndUpdate(t.Predicate()) {
+
+	for _, t := range selectedTrpls {
+		if t != nil && ckr.CheckLimitAndUpdate() {
 			trpls <- t
 		}
 	}

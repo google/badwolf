@@ -1187,6 +1187,39 @@ func TestPlannerQuery(t *testing.T) {
 			nBindings: 3,
 			nRows:     5,
 		},
+		{
+			q: `SELECT ?p, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ?o .
+					FILTER isTemporal(?p)
+				}
+				BETWEEN 2016-02-01T00:00:00-08:00, 2016-03-01T00:00:00-08:00;`,
+			nBindings: 2,
+			nRows:     2,
+		},
+		{
+			q: `SELECT ?p, ?o
+				FROM ?test
+				WHERE {
+					/u<peter> ?p ?o .
+					FILTER latest(?p)
+				}
+				BETWEEN 2016-02-01T00:00:00-08:00, 2016-03-01T00:00:00-08:00;`,
+			nBindings: 2,
+			nRows:     1,
+		},
+		{
+			q: `SELECT ?s, ?p, ?o
+				FROM ?test
+				WHERE {
+					?s ?p ?o .
+					FILTER isTemporal(?p)
+				}
+				LIMIT "3"^^type:int64;`,
+			nBindings: 3,
+			nRows:     3,
+		},
 	}
 
 	s, ctx := memory.NewStore(), context.Background()

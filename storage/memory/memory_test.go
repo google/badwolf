@@ -98,10 +98,10 @@ func TestDefaultLookupChecker(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !c.CheckAndUpdate(ip) {
+	if !c.CheckGlobalTimeBounds(ip) {
 		t.Errorf("Immutable predicates should always validate with default lookup %v", dlu)
 	}
-	if !c.CheckAndUpdate(tp) {
+	if !c.CheckGlobalTimeBounds(tp) {
 		t.Errorf("Temporal predicates should always validate with default lookup %v", dlu)
 	}
 }
@@ -109,16 +109,12 @@ func TestDefaultLookupChecker(t *testing.T) {
 func TestLimitedItemsLookupChecker(t *testing.T) {
 	blu := &storage.LookupOptions{MaxElements: 1}
 	c := newChecker(blu, nil)
-	ip, err := predicate.NewImmutable("foo")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !c.CheckAndUpdate(ip) {
-		t.Errorf("The first predicate should always succeed on bounded lookup %v", blu)
+	if !c.CheckLimitAndUpdate() {
+		t.Errorf("The first call to CheckLimitAndUpdate() should always succeed on lookup %v that started with MaxElements set to 1", blu)
 	}
 	for i := 0; i < 10; i++ {
-		if c.CheckAndUpdate(ip) {
-			t.Errorf("Bounded lookup %v should never succeed after being exahausted", blu)
+		if c.CheckLimitAndUpdate() {
+			t.Errorf("Lookup %v should never succeed after being exahausted", blu)
 		}
 	}
 }
@@ -140,26 +136,26 @@ func TestTemporalBoundedLookupChecker(t *testing.T) {
 	lb, _ := lpa.TimeAnchor()
 	blu := &storage.LookupOptions{LowerAnchor: lb}
 	clu := newChecker(blu, nil)
-	if !clu.CheckAndUpdate(mpa) {
+	if !clu.CheckGlobalTimeBounds(mpa) {
 		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, clu)
 	}
 	lb, _ = mpa.TimeAnchor()
 	blu = &storage.LookupOptions{LowerAnchor: lb}
 	clu = newChecker(blu, nil)
-	if clu.CheckAndUpdate(lpa) {
+	if clu.CheckGlobalTimeBounds(lpa) {
 		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, clu)
 	}
 	// Check upper bound.
 	ub, _ := upa.TimeAnchor()
 	buu := &storage.LookupOptions{UpperAnchor: ub}
 	cuu := newChecker(buu, nil)
-	if !cuu.CheckAndUpdate(mpa) {
+	if !cuu.CheckGlobalTimeBounds(mpa) {
 		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, cuu)
 	}
 	ub, _ = mpa.TimeAnchor()
 	buu = &storage.LookupOptions{UpperAnchor: ub}
 	cuu = newChecker(buu, nil)
-	if cuu.CheckAndUpdate(upa) {
+	if cuu.CheckGlobalTimeBounds(upa) {
 		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, cuu)
 	}
 }
@@ -181,20 +177,20 @@ func TestTemporalExactChecker(t *testing.T) {
 	lb, _ := lpa.TimeAnchor()
 	blu := &storage.LookupOptions{LowerAnchor: lb}
 	clu := newChecker(blu, mpa)
-	if !clu.CheckAndUpdate(mpa) {
+	if !clu.CheckGlobalTimeBounds(mpa) {
 		t.Errorf("Failed to accept predicate %v by checker %v", mpa, clu)
 	}
 	lb, _ = mpa.TimeAnchor()
 	blu = &storage.LookupOptions{LowerAnchor: lb}
 	clu = newChecker(blu, mpa)
-	if clu.CheckAndUpdate(lpa) {
+	if clu.CheckGlobalTimeBounds(lpa) {
 		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, clu)
 	}
 	// Check upper bound.
 	ub, _ := upa.TimeAnchor()
 	buu := &storage.LookupOptions{UpperAnchor: ub}
 	cuu := newChecker(buu, mpa)
-	if !cuu.CheckAndUpdate(mpa) {
+	if !cuu.CheckGlobalTimeBounds(mpa) {
 		t.Errorf("Failed to reject invalid predicate %v by checker %v", mpa, cuu)
 	}
 }
@@ -380,6 +376,13 @@ func TestObjectsFilter(t *testing.T) {
 			p:    testutil.MustBuildPredicate(t, `"_predicate"@[]`),
 			want: map[string]int{`"meet"@[2020-04-10T04:21:00Z]`: 1, `"meet"@[2021-04-10T04:21:00Z]`: 1},
 		},
+		{
+			id:   "FILTER latest between",
+			lo:   &storage.LookupOptions{LowerAnchor: testutil.MustBuildTime(t, "2012-04-10T04:21:00Z"), UpperAnchor: testutil.MustBuildTime(t, "2013-04-10T04:21:00Z"), FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
+			s:    testutil.MustBuildNodeFromStrings(t, "/u", "john"),
+			p:    testutil.MustBuildPredicate(t, `"meet"@[2013-04-10T04:21:00Z]`),
+			want: map[string]int{"/u<mary>": 1},
+		},
 	}
 
 	for _, entry := range testTable {
@@ -526,6 +529,13 @@ func TestSubjectsFilter(t *testing.T) {
 			o:    triple.NewPredicateObject(testutil.MustBuildPredicate(t, `"height_cm"@[]`)),
 			want: map[string]int{},
 		},
+		{
+			id:   "FILTER latest between",
+			lo:   &storage.LookupOptions{LowerAnchor: testutil.MustBuildTime(t, "2012-04-10T04:21:00Z"), UpperAnchor: testutil.MustBuildTime(t, "2013-04-10T04:21:00Z"), FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
+			p:    testutil.MustBuildPredicate(t, `"meet"@[2013-04-10T04:21:00Z]`),
+			o:    triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
+			want: map[string]int{"/u<john>": 1},
+		},
 	}
 
 	for _, entry := range testTable {
@@ -663,6 +673,13 @@ func TestPredicatesForSubjectAndObjectFilter(t *testing.T) {
 			o:    triple.NewPredicateObject(testutil.MustBuildPredicate(t, `"meet"@[2020-04-10T04:21:00Z]`)),
 			want: map[string]int{`"_predicate"@[]`: 1},
 		},
+		{
+			id:   "FILTER latest between",
+			lo:   &storage.LookupOptions{LowerAnchor: testutil.MustBuildTime(t, "2012-04-10T04:21:00Z"), UpperAnchor: testutil.MustBuildTime(t, "2013-04-10T04:21:00Z"), FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
+			s:    testutil.MustBuildNodeFromStrings(t, "/u", "john"),
+			o:    triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
+			want: map[string]int{`"meet"@[2013-04-10T04:21:00Z]`: 1},
+		},
 	}
 
 	for _, entry := range testTable {
@@ -793,6 +810,12 @@ func TestPredicatesForSubjectFilter(t *testing.T) {
 			s:    testutil.MustBuildNodeFromStrings(t, "/_", "bn"),
 			want: map[string]int{`"_predicate"@[]`: 2},
 		},
+		{
+			id:   "FILTER latest between",
+			lo:   &storage.LookupOptions{LowerAnchor: testutil.MustBuildTime(t, "2012-04-10T04:21:00Z"), UpperAnchor: testutil.MustBuildTime(t, "2013-04-10T04:21:00Z"), FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
+			s:    testutil.MustBuildNodeFromStrings(t, "/u", "john"),
+			want: map[string]int{`"meet"@[2013-04-10T04:21:00Z]`: 1},
+		},
 	}
 
 	for _, entry := range testTable {
@@ -922,6 +945,12 @@ func TestPredicatesForObjectFilter(t *testing.T) {
 			o:    triple.NewPredicateObject(testutil.MustBuildPredicate(t, `"meet"@[2020-04-10T04:21:00Z]`)),
 			want: map[string]int{`"_predicate"@[]`: 1},
 		},
+		{
+			id:   "FILTER latest between",
+			lo:   &storage.LookupOptions{LowerAnchor: testutil.MustBuildTime(t, "2012-04-10T04:21:00Z"), UpperAnchor: testutil.MustBuildTime(t, "2013-04-10T04:21:00Z"), FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
+			o:    triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
+			want: map[string]int{`"meet"@[2013-04-10T04:21:00Z]`: 1},
+		},
 	}
 
 	for _, entry := range testTable {
@@ -1047,6 +1076,12 @@ func TestTriplesForSubjectFilter(t *testing.T) {
 			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.IsTemporal, Field: filter.ObjectField}},
 			s:  testutil.MustBuildNodeFromStrings(t, "/_", "bn"),
 			want: map[string]int{`/_<bn>	"_predicate"@[]	"meet"@[2020-04-10T04:21:00Z]`: 1, `/_<bn>	"_predicate"@[]	"meet"@[2021-04-10T04:21:00Z]`: 1},
+		},
+		{
+			id: "FILTER latest between",
+			lo: &storage.LookupOptions{LowerAnchor: testutil.MustBuildTime(t, "2012-04-10T04:21:00Z"), UpperAnchor: testutil.MustBuildTime(t, "2013-04-10T04:21:00Z"), FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
+			s:  testutil.MustBuildNodeFromStrings(t, "/u", "john"),
+			want: map[string]int{`/u<john>	"meet"@[2013-04-10T04:21:00Z]	/u<mary>`: 1},
 		},
 	}
 
@@ -1180,6 +1215,12 @@ func TestTriplesForPredicateFilter(t *testing.T) {
 			p:  testutil.MustBuildPredicate(t, `"_predicate"@[]`),
 			want: map[string]int{`/_<bn>	"_predicate"@[]	"meet"@[2020-04-10T04:21:00Z]`: 1, `/_<bn>	"_predicate"@[]	"meet"@[2021-04-10T04:21:00Z]`: 1},
 		},
+		{
+			id: "FILTER latest between",
+			lo: &storage.LookupOptions{LowerAnchor: testutil.MustBuildTime(t, "2012-04-10T04:21:00Z"), UpperAnchor: testutil.MustBuildTime(t, "2013-04-10T04:21:00Z"), FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
+			p:  testutil.MustBuildPredicate(t, `"meet"@[2013-04-10T04:21:00Z]`),
+			want: map[string]int{`/u<john>	"meet"@[2013-04-10T04:21:00Z]	/u<mary>`: 1},
+		},
 	}
 
 	for _, entry := range testTable {
@@ -1305,6 +1346,12 @@ func TestTriplesForObjectFilter(t *testing.T) {
 			lo:   &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.IsTemporal, Field: filter.ObjectField}},
 			o:    triple.NewPredicateObject(testutil.MustBuildPredicate(t, `"height_cm"@[]`)),
 			want: map[string]int{},
+		},
+		{
+			id: "FILTER latest between",
+			lo: &storage.LookupOptions{LowerAnchor: testutil.MustBuildTime(t, "2012-04-10T04:21:00Z"), UpperAnchor: testutil.MustBuildTime(t, "2013-04-10T04:21:00Z"), FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
+			o:  triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
+			want: map[string]int{`/u<john>	"meet"@[2013-04-10T04:21:00Z]	/u<mary>`: 1},
 		},
 	}
 
@@ -1489,6 +1536,13 @@ func TestTriplesForSubjectAndPredicateFilter(t *testing.T) {
 			p:  testutil.MustBuildPredicate(t, `"_predicate"@[]`),
 			want: map[string]int{`/_<bn>	"_predicate"@[]	"meet"@[2020-04-10T04:21:00Z]`: 1, `/_<bn>	"_predicate"@[]	"meet"@[2021-04-10T04:21:00Z]`: 1},
 		},
+		{
+			id: "FILTER latest between",
+			lo: &storage.LookupOptions{LowerAnchor: testutil.MustBuildTime(t, "2012-04-10T04:21:00Z"), UpperAnchor: testutil.MustBuildTime(t, "2013-04-10T04:21:00Z"), FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
+			s:  testutil.MustBuildNodeFromStrings(t, "/u", "john"),
+			p:  testutil.MustBuildPredicate(t, `"meet"@[2013-04-10T04:21:00Z]`),
+			want: map[string]int{`/u<john>	"meet"@[2013-04-10T04:21:00Z]	/u<mary>`: 1},
+		},
 	}
 
 	for _, entry := range testTable {
@@ -1630,6 +1684,13 @@ func TestTriplesForPredicateAndObjectFilter(t *testing.T) {
 			o:    triple.NewPredicateObject(testutil.MustBuildPredicate(t, `"height_cm"@[]`)),
 			want: map[string]int{},
 		},
+		{
+			id: "FILTER latest between",
+			lo: &storage.LookupOptions{LowerAnchor: testutil.MustBuildTime(t, "2012-04-10T04:21:00Z"), UpperAnchor: testutil.MustBuildTime(t, "2013-04-10T04:21:00Z"), FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
+			p:  testutil.MustBuildPredicate(t, `"meet"@[2013-04-10T04:21:00Z]`),
+			o:  triple.NewNodeObject(testutil.MustBuildNodeFromStrings(t, "/u", "mary")),
+			want: map[string]int{`/u<john>	"meet"@[2013-04-10T04:21:00Z]	/u<mary>`: 1},
+		},
 	}
 
 	for _, entry := range testTable {
@@ -1766,6 +1827,11 @@ func TestTriplesFilter(t *testing.T) {
 			id: "FILTER isTemporal object",
 			lo: &storage.LookupOptions{FilterOptions: &filter.StorageOptions{Operation: filter.IsTemporal, Field: filter.ObjectField}},
 			want: map[string]int{`/_<bn>	"_predicate"@[]	"meet"@[2020-04-10T04:21:00Z]`: 1, `/_<bn>	"_predicate"@[]	"meet"@[2021-04-10T04:21:00Z]`: 1},
+		},
+		{
+			id: "FILTER latest between",
+			lo: &storage.LookupOptions{LowerAnchor: testutil.MustBuildTime(t, "2012-04-10T04:21:00Z"), UpperAnchor: testutil.MustBuildTime(t, "2013-04-10T04:21:00Z"), FilterOptions: &filter.StorageOptions{Operation: filter.Latest, Field: filter.PredicateField}},
+			want: map[string]int{`/u<john>	"meet"@[2013-04-10T04:21:00Z]	/u<mary>`: 1},
 		},
 	}
 
