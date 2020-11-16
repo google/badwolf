@@ -221,6 +221,8 @@ variables instead as shown below:
 The above query would return all grandparents together with their
 grandchildren, one pair per row.
 
+### Bindings extraction with keywords `ID`, `TYPE` and `AT`
+
 Note that you could also extract just the names (only "Joe" instead of the entire `/user<Joe>`, for
 example). For that you can use the `ID` keyword as follows:
 
@@ -238,20 +240,33 @@ For subjects and objects you can use the keywords `ID` and `TYPE` just like abov
 predicates, you can also use the `ID` and `AT` keywords for extracting the predicate IDs and the 
 time anchors, respectively.
 
+### Aliases with `AS` keyword
+
 In some cases it is useful to return a different
 name for the variables, and not use the binding name used in the graph pattern
-directly. This is achieved using the `as` keyword as shown below:
+directly. This is achieved using the `AS` keyword as shown below:
 
 ```
-  SELECT ?grandparent as ?gp, ?grand_child as ?gc
+  SELECT ?grandparent AS ?gp, ?grand_child AS ?gc
   FROM ?family_tree
   WHERE {
     ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
   };
 ```
 
-It is important to note that aliases are defined outside the graph pattern scope.
-Hence, aliases cannot be used in graph patterns.
+It is important to note that aliases defined outside the graph pattern scope, such as the one above,
+cannot be used in graph patterns. You can also define aliases directly inside the graph pattern if
+you want, even for values (if you also want them to be shown in the query result, for example), as in:
+
+```
+  SELECT ?parent, ?specified_child
+  FROM ?family_tree
+  WHERE {
+    ?parent "parent_of"@[] /user<Bob> AS ?specified_child
+  };
+```
+
+### Grouping and Aggregation
 
 BQL supports basic grouping and aggregation. It is accomplished via
 `group by`. The above query may return duplicates depending on the data
@@ -259,7 +274,7 @@ available on the graph. If we want to get rid of the duplicates we could just
 group them as follows:
 
 ```
-  SELECT ?grandparent as ?gp, ?grand_child as ?gc
+  SELECT ?grandparent AS ?gp, ?grand_child AS ?gc
   FROM ?family_tree
   WHERE {
     ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
@@ -268,12 +283,12 @@ group them as follows:
 ```
 
 As you may have expected, you can group by multiple bindings or aliases. Also,
-grouping allows a small subset of aggregates. Those include `count` its
+grouping allows a small subset of aggregates. Those include `count`, its
 variant with `distinct`, and `sum`. Other functions will be added as needed.
 The queries below illustrate how these simple aggregations can be used:
 
 ```
-  SELECT ?grandparent as ?gp, count(?grand_child) as ?gc
+  SELECT ?grandparent AS ?gp, count(?grand_child) AS ?gc
   FROM ?family_tree
   WHERE {
     ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
@@ -287,7 +302,7 @@ resulting from the graph data are removed. The query below illustrates how
 the `distinct` variant works:
 
 ```
-  SELECT ?grandparent as ?gp, count(distinct ?grand_child) as ?gc
+  SELECT ?grandparent AS ?gp, count(distinct ?grand_child) AS ?gc
   FROM ?family_tree
   WHERE {
     ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
@@ -299,7 +314,7 @@ The sum aggregation only works if the binding is done against a literal of type
 `int64` or `float64`, as shown on the example below:
 
 ```
-  SELECT sum(?capacity) as ?total_capacity
+  SELECT sum(?capacity) AS ?total_capacity
   FROM ?gas_tanks
   WHERE {
     ?tank "capacity"@[] ?capacity
@@ -308,6 +323,8 @@ The sum aggregation only works if the binding is done against a literal of type
 
 You can also use `sum` to do partial accumulations in the same manner as it was
 done in the `count` examples above.
+
+### Sorting query results
 
 Results of the query can be sorted. By default, it is sorted in ascending
 order based on the provided variables. The example below orders first by
@@ -323,6 +340,8 @@ descending based on the grandchild name.
   ORDER BY ?grandparent, ?grand_child DESC;
 ```
 
+### `HAVING` clause
+
 The `having` modifier allows us to filter the returned data further. For
 instance, the query below would only return tanks with a capacity bigger
 than 10.
@@ -337,7 +356,7 @@ than 10.
 ```
 
 Within this `having` clause, you can also build more complicated boolean expressions 
-using operators such as AND or OR:
+using operators such as `AND` or `OR`:
 
 ```
   SELECT ?tank, ?capacity
@@ -347,6 +366,8 @@ using operators such as AND or OR:
   }
   HAVING (?capacity > "10"^^type:int64) AND (?capacity < "20"^^type:int64);
 ```
+
+### `LIMIT` keyword
 
 You could also limit the amount of data you will get back by simply appending
 a limit to the number of rows to be returned.
@@ -362,6 +383,8 @@ a limit to the number of rows to be returned.
 ```
 
 The above query would return at most only 20 rows.
+
+### Specifying time bounds
 
 BQL also provides syntactic sugar to make it easy to specify time bounds. Imagine
 you want to get all users who followed Joe and also followed Mary after a
