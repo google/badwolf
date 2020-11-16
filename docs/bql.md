@@ -236,9 +236,17 @@ example). For that you can use the `ID` keyword as follows:
 
 Which would extract only the names of all grandparents in `family_tree`. 
 
-For subjects and objects you can use the keywords `ID` and `TYPE` just like above. For 
-predicates, you can also use the `ID` and `AT` keywords for extracting the predicate IDs and the 
-time anchors, respectively.
+For subjects and objects (when they are nodes) you can use the keywords `ID` and `TYPE` just like above.
+For predicates, you can use the `ID` and `AT` keywords for extracting predicate IDs and time anchors,
+respectively, as in:
+
+```
+  SELECT ?user, ?pred_id, ?pred_time
+  FROM ?social_graph
+  WHERE {
+    ?user ?pred ID ?pred_id AT ?pred_time /user<Mary>
+  };
+```
 
 ### Aliases with `AS` keyword
 
@@ -379,6 +387,14 @@ In this case, the comparison will be done lexicographically as in:
   HAVING ?parent_name < "mary"^^type:text;
 ```
 
+Last, but not least, the `having` clause supports timestamp comparisons too, such as comparisons
+between `AT` bindings and time literals. This is better detailed and exemplified in the section "Specifying
+time bounds" below.
+
+Remember that you can also compare one binding with another inside the `having` clause, but they
+must be comparable for that: you can compare a `text` binding only with another `text` binding, an `int64`
+binding only with another `int64` binding, and so on.
+
 ### `LIMIT` keyword
 
 You could also limit the amount of data you will get back by simply appending
@@ -459,6 +475,23 @@ also query for all users that first followed Joe and then followed Mary. Such qu
   }
   HAVING ?tm > ?tj;
 ```
+
+You can also choose to compare only one of these time anchor bindings with a given
+time literal, as in:
+
+```
+  SELECT ?user, ?tj, ?tm
+  FROM ?social_graph
+  WHERE {
+    ?user "follows"@[?tj] /user<Joe> .
+    ?user "follows"@[?tm] /user<Mary>
+  }
+  HAVING ?tm > 2014-03-10T00:00:00-08:00;
+```
+
+These time comparisons inside the `having` clause also take into account the specific time zones of
+the timestamps being compared, as one should expect. With `AT` bindings we can do the same as above since
+the value extracted is also a timestamp.
 
 As an additional observation, remember that when using the `before`, `after`, and `between` keywords
 the final result may also include immutable triples along the temporal ones. To illustrate, given
