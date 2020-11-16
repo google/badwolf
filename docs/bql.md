@@ -221,7 +221,7 @@ variables instead as shown below:
 The above query would return all grandparents together with their
 grandchildren, one pair per row.
 
-Note that you could also extract just the names (only "Joe" instead of the entire "/user<Joe>", for 
+Note that you could also extract just the names (only "Joe" instead of the entire `/user<Joe>`, for
 example). For that you can use the `ID` keyword as follows:
 
 ```
