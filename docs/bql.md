@@ -342,9 +342,9 @@ descending based on the grandchild name.
 
 ### `HAVING` clause
 
-The `having` modifier allows us to filter the returned data further. For
-instance, the query below would only return tanks with a capacity bigger
-than 10.
+The `having` modifier allows us to refine the result data further, after it
+was already returned from the storage/drivel level. For instance, the query
+below would only return tanks with a capacity bigger than 10.
 
 ```
   SELECT ?tank, ?capacity
@@ -365,6 +365,18 @@ using operators such as `AND` or `OR`:
     ?tank "capacity"@[] ?capacity
   }
   HAVING (?capacity > "10"^^type:int64) AND (?capacity < "20"^^type:int64);
+```
+
+Also, inside the `having` clause you can compare `TYPE` and `ID` bindings with text literals.
+In this case, the comparison will be done lexicographically as in:
+
+```
+  SELECT ?parent_name
+  FROM ?family_tree
+  WHERE {
+    ?parent ID ?parent_name "parent_of"@[] ?child
+  }
+  HAVING ?parent_name < "mary"^^type:text;
 ```
 
 ### `LIMIT` keyword
