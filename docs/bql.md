@@ -38,7 +38,7 @@ All data in BadWolf is stored in graphs. Graphs need to be explicitly created.
 The `CREATE` graph statement allows you to create a graph as shown below.
 
 ```
-CREATE GRAPH ?a;
+  CREATE GRAPH ?a;
 ```
 
 The name of the graph is represented by a non interpreted binding (more on
@@ -47,7 +47,7 @@ the statement would create a graph named `?a`. You can create multiple
 graphs in a single statement as shown in the example below:
 
 ```
-CREATE GRAPH ?a, ?b, ?c;
+  CREATE GRAPH ?a, ?b, ?c;
 ```
 
 If you try to create a graph that already exists, it will fail saying that
@@ -63,13 +63,13 @@ Existing graphs can be dropped via the `DROP` statement. Be *very*
 Hence, all data contained in the graph with be lost. You can drop a graph via:
 
 ```
-DROP GRAPH ?a;
+  DROP GRAPH ?a;
 ```
 
 You can also drop multiple graphs at once:
 
 ```
-DROP GRAPH ?a, ?b ?c;
+  DROP GRAPH ?a, ?b ?c;
 ```
 
 The same consideration about failures on graph creation apply to dropping
@@ -84,7 +84,7 @@ There is a simple way to get a list of all the available graphs in a store.
 Just run:
 
 ```
-SHOW GRAPHS;
+  SHOW GRAPHS;
 ```
 
 This will return the list af available graphs currently available in the
@@ -465,12 +465,12 @@ the final result may also include immutable triples along the temporal ones. To 
 the query below:
 
 ```
-SELECT ?p, ?o
-FROM ?supermarket
-WHERE {
-  /u<peter> ?p ?o
-}
-BETWEEN 2016-02-01T00:00:00-08:00, 2016-03-01T00:00:00-08:00;
+  SELECT ?p, ?o
+  FROM ?supermarket
+  WHERE {
+    /u<peter> ?p ?o
+  }
+  BETWEEN 2016-02-01T00:00:00-08:00, 2016-03-01T00:00:00-08:00;
 ```
 
 If you have in your `?supermarket` graph both immutable and temporal triples that have `/u<peter>`
@@ -479,13 +479,13 @@ that fit in the given interval specified by `between`. But, if you do want only 
 result you can make use of a `FILTER` clause with the `isTemporal` function (better explained below).
 
 ```
-SELECT ?p, ?o
-FROM ?supermarket
-WHERE {
-  /u<peter> ?p ?o .
-  FILTER isTemporal(?p)
-}
-BETWEEN 2016-02-01T00:00:00-08:00, 2016-03-01T00:00:00-08:00;
+  SELECT ?p, ?o
+  FROM ?supermarket
+  WHERE {
+    /u<peter> ?p ?o .
+    FILTER isTemporal(?p)
+  }
+  BETWEEN 2016-02-01T00:00:00-08:00, 2016-03-01T00:00:00-08:00;
 ```
 
 ## Inserting data into graphs
