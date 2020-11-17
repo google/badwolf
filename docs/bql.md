@@ -523,6 +523,43 @@ result you can make use of a `FILTER` clause with the `isTemporal` function (bet
   BETWEEN 2016-02-01T00:00:00-08:00, 2016-03-01T00:00:00-08:00;
 ```
 
+### `FILTER` clause
+
+The `FILTER` keyword is a tool the user can leverage to improve query performance, being able to communicate
+directly with the storage/driver level to specify further the data they want to retrieve. This way, the user
+can avoid the search, retrieval and manipulation of heavy chunks of data that will not be used later, which would
+add an unnecessary overhead to the query processing.
+
+Note here the difference with the `HAVING` clause: the `HAVING` is mainly thought to work with conditions over
+aggregated data (such as involving `sum` and `count`), being processed after all the data was already returned
+from the driver level, while `FILTER` works directly at the moment of data retrievel in the driver, with instructions
+to customize and specify the data to return (thus improving performance).
+
+The `FILTER` clauses can be used as the last clauses inside `WHERE`, after the graph pattern was already specified.
+To illustrate:
+
+```
+  SELECT ?p1, ?p2
+  FROM ?supermarket
+  WHERE {
+    /u<peter> ?p1 ?o1 .
+    /item/book<Sophie's World> ?p2 ?o2 .
+    FILTER latest(?p1) .
+    FILTER latest(?p2)
+  };
+```
+
+On which the `latest` `FILTER` function will allow only the triples with the latest timestamp for the specified
+predicate bindings to be returned by the driver (a common use case for time series in BadWolf).
+
+Regarding trailing dots, the `FILTER` clauses are seen just like any other clauses inside `WHERE`. Remember that for
+these clauses the trailing dot is mandatory at the end of each clause with the exception of the last one, for which
+the dot is optional (as recommended by W3C).
+
+At the moment, BadWolf already supports the `isTemporal`, `isImmutable` and `latest` `FILTER` functions, with an example
+of their driver implementation for the volatile driver in `memory.go`. These functions can be applied to predicate bindings
+and object bindings as well (being effective when they wrap predicates in a reification scenario), working for aliases too.
+
 ### More on graph pattern enforcement
 
 A point that is worthy clarifying is that the graph pattern specified inside the `WHERE` clause is a strong
