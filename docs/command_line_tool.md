@@ -260,6 +260,21 @@ stop profiling                                        - stops pprof profiling fo
 quit                                                  - quits the console.
 ```
 
+### Tracing in BadWolf
+
+BadWolf has its own tracer implemented, that can be enabled/disabled with the `start` and `stop` commands detailed above.
+The current BadWolf tracer supports 3 levels of verbosity:
+
+- **`1`** for **minimum** verbosity: only the most crucial and basic messages to understand the query processing flow are sent to
+the tracing output. Messages informing which BQL query is being executed at each moment are shown here, for example;
+
+- **`2`** for **medium** verbosity: with this level set the user will see all messages from level `1` and also some additional others
+that may be useful, such as messages informing the latency on clause processing for each clause inside `WHERE` and also messages
+detailing the number of triples returned from each call to the driver.
+
+- **`3`** for **maximum** verbosity: all available tracing messages will be sent to the output, including messages from levels `1` and `2`
+and some others that come with additional details regarding the processing of the query.
+
 ### Profiling with `pprof`
 
 As shown above, BadWolf also has this integration with [pprof](https://github.com/google/pprof) profiling
