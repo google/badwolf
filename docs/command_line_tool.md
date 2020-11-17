@@ -253,10 +253,11 @@ export <graph_names_separated_by_commas> <file_path>  - dumps triples from graph
 desc <BQL>                                            - prints the execution plan for a BQL statement.
 load <file_path> <graph_names_separated_by_commas>    - load triples into the specified graphs.
 run <file_with_bql_statements>                        - runs all the BQL statements in the file.
-start tracing [trace_file]                            - starts tracing queries.
+start tracing [-v verbosity_level] [trace_file]       - starts tracing queries, verbosity levels supported are 1, 2 and 3 (with 3 meaning maximum verbosity).
 stop tracing                                          - stops tracing queries.
+start profiling [-cpurate samples_per_second]         - starts pprof profiling for queries (customizable CPU sampling rate).
+stop profiling                                        - stops pprof profiling for queries.
 quit                                                  - quits the console.
-bql> 
 ```
 
 ## Command: Benchmark
