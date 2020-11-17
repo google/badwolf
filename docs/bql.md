@@ -560,6 +560,8 @@ At the moment, BadWolf already supports the `isTemporal`, `isImmutable` and `lat
 of their driver implementation for the volatile driver in `memory.go`. These functions can be applied to predicate bindings
 and object bindings as well (being effective when they wrap predicates in a reification scenario), working for aliases too.
 
+To add support for a new `FILTER` function in BadWolf, the instructions to follow step by step are detailed [here](./support_new_filter_function.md).
+
 ### More on graph pattern enforcement
 
 A point that is worthy clarifying is that the graph pattern specified inside the `WHERE` clause is a strong
