@@ -161,7 +161,7 @@ Imagine you want to get the list of all users that are grandparents. You could
 express such pattern as:
 
 ```
-  ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+  ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
 ```
 
 You can combine multiple graph patterns together using `.` to separate clauses.
@@ -173,7 +173,7 @@ clause is matched against Joe as the parent of Peter, `?grandparent` gets
 bound against Joe and `?x` against Peter. To satisfy the second part of
 the composite clause, we now need to find triples where the subject is Peter
 (remember that once the value is bound in a context it cannot change) and the
-predicate is "parent of". If one exists, then `?grand_child` would get bound
+predicate is "parent of". If one exists, then `?grandchild` would get bound
 and take the value of Mary.
 
 As we will see in later examples, bindings can also be used to identify
@@ -185,10 +185,10 @@ Querying data in BQL is done via the `SELECT` statement. The simple form
 of a query is expressed as follows:
 
 ```
-  SELECT ?grand_child
+  SELECT ?grandchild
   FROM ?family_tree
   WHERE {
-    /user<Joe> "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    /user<Joe> "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
   };
 ```
 
@@ -200,10 +200,10 @@ whose ID is equal to `?family_tree`.
 You can also query against multiple graphs:
 
 ```
-  SELECT ?grand_child
+  SELECT ?grandchild
   FROM ?family_tree, ?other_family_tree
   WHERE {
-    /user<Joe> "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    /user<Joe> "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
   };
 ```
 
@@ -211,10 +211,10 @@ There is no limit on how many variables you may return. You can return multiple
 variables instead as shown below:
 
 ```
-  SELECT ?grandparent, ?grand_child
+  SELECT ?grandparent, ?grandchild
   FROM ?family_tree
   WHERE {
-    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
   };
 ```
 
@@ -229,10 +229,10 @@ Note that you could also extract just the names (only "Joe" instead of the entir
 example). For that you can use the `ID` keyword as follows:
 
 ```
-  SELECT ?grand_parent_name
+  SELECT ?grandparent_name
   FROM ?family_tree
   WHERE {
-    ?grand_parent ID ?grand_parent_name "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent ID ?grandparent_name "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
   };
 ```
 
@@ -257,10 +257,10 @@ name for the variables, and not use the binding name used in the graph pattern
 directly. This is achieved using the `AS` keyword as shown below:
 
 ```
-  SELECT ?grandparent AS ?gp, ?grand_child AS ?gc
+  SELECT ?grandparent AS ?gp, ?grandchild AS ?gc
   FROM ?family_tree
   WHERE {
-    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
   };
 ```
 
@@ -284,10 +284,10 @@ available on the graph. If we want to get rid of the duplicates we could just
 group them as follows:
 
 ```
-  SELECT ?grandparent AS ?gp, ?grand_child AS ?gc
+  SELECT ?grandparent AS ?gp, ?grandchild AS ?gc
   FROM ?family_tree
   WHERE {
-    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
   }
   GROUP BY ?gp, ?gc;
 ```
@@ -298,10 +298,10 @@ variant with `distinct`, and `sum`. Other functions will be added as needed.
 The queries below illustrate how these simple aggregations can be used:
 
 ```
-  SELECT ?grandparent AS ?gp, count(?grand_child) AS ?gc
+  SELECT ?grandparent AS ?gp, count(?grandchild) AS ?gc
   FROM ?family_tree
   WHERE {
-    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
   }
   GROUP BY ?gp;
 ```
@@ -312,10 +312,10 @@ resulting from the graph data are removed. The query below illustrates how
 the `distinct` variant works:
 
 ```
-  SELECT ?grandparent AS ?gp, count(distinct ?grand_child) AS ?gc
+  SELECT ?grandparent AS ?gp, count(distinct ?grandchild) AS ?gc
   FROM ?family_tree
   WHERE {
-    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
   }
   GROUP BY ?gp;
 ```
@@ -342,12 +342,12 @@ grandparent name ascending (implicit direction), and for each equal values,
 descending based on the grandchild name.
 
 ```
-  SELECT ?grandparent, ?grand_child
+  SELECT ?grandparent, ?grandchild
   FROM ?family_tree
   WHERE {
-    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
   }
-  ORDER BY ?grandparent, ?grand_child DESC;
+  ORDER BY ?grandparent, ?grandchild DESC;
 ```
 
 ### `HAVING` clause
