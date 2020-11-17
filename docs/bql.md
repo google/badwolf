@@ -521,6 +521,39 @@ result you can make use of a `FILTER` clause with the `isTemporal` function (bet
   BETWEEN 2016-02-01T00:00:00-08:00, 2016-03-01T00:00:00-08:00;
 ```
 
+### More on graph pattern enforcement
+
+A point that is worthy clarifying is that the graph pattern specified inside the `WHERE` clause is a strong
+constraint on the data to be returned, and must be followed in its entirity. To illustrate, given the
+query below:
+
+```
+  SELECT ?s, ?p, ?o, ?o_type
+  FROM ?supermarket
+  WHERE {
+    ?s ?p ?o TYPE ?o_type
+  };
+```
+
+We have that the `TYPE` keyword is being used to refer to the object of the graph pattern. This will force that
+this object must be a node. In other words, all the triples in the `?supermarket` graph for which the object is either
+a literal or a predicate (in the case of reification) will be discarded and not shown in this query result. The
+`TYPE` keyword is, then, part of the graph pattern to be matched.
+
+In a similar way, if we had:
+
+```
+  SELECT ?s, ?p, ?o, ?o_time
+  FROM ?supermarket
+  WHERE {
+    ?s ?p ?o AT ?o_time
+  };
+```
+
+All the triples from `?supermarket` whose object is not a temporal predicate (reification) will be discarded and not shown
+in the query result (the `AT` keyword is part of the graph pattern, in the position above it forces the object `?o` to have a
+time anchor to be extracted to the binding `?o_time`).
+
 ## Inserting data into graphs
 
 Triples can be inserted into one or more graphs. This can be achieved by
