@@ -27,3 +27,10 @@ each of the example files with a brief description.
    The `HAVING` clause is useful for filtering rows out from the resulting
    table. This file shows some simple examples of how you can easily achieve
    it by simply providing a boolean condition to the `HAVING` clause.
+
+* [Customizing data retrieval](../examples/bql/example_4.bql):
+   To customize the data retrieval directly in the storage/driver level you can
+   make use of the `FILTER` keyword, passing additional instructions to the driver
+   to help it access and return a more fine-grained portion of the data stored, improving
+   performance. This file, then, shows some simple examples of queries with `FILTER` clauses,
+   with different `FILTER` functions being applied to illustrate how they can be useful.
