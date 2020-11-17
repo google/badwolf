@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Create a graph.
-CREATE GRAPH ?family, ?cars;
+# Create graphs.
+CREATE GRAPH ?family, ?info;
 
-# Insert some data into the family graph.
+# Insert some data into the ?family graph.
 INSERT DATA INTO ?family {
   /u<joe>   "parent_of"@[] /u<mary> .
   /u<joe>   "parent_of"@[] /u<peter> .
@@ -24,6 +24,18 @@ INSERT DATA INTO ?family {
   /u<mary>  "parent_of"@[] /u<john> .
   /u<mary>  "parent_of"@[] /u<anne> .
   /u<mary>  "parent_of"@[] /u<amy>
+};
+
+# Insert some data into the ?info graph.
+INSERT DATA INTO ?info {
+  /u<joe>  "bought"@[2016-01-01T00:00:00-08:00] /car<model x> .
+  /u<mary> "bought"@[2018-01-01T00:00:00-08:00] /car<model y> .
+  /u<joe>  "bought"@[2020-01-01T00:00:00-08:00] /car<model z> .
+  /u<bob>  "bought"@[2021-01-01T00:00:00-08:00] /car<model x> .
+  /u<joe>  "height_cm"@[]                       "172"^^type:int64 .
+  /u<mary> "height_cm"@[]                       "174"^^type:int64 .
+  /u<bob>  "height_cm"@[]                       "168"^^type:int64 .
+  /u<joe>  "born_in"@[]                         /city<paris>
 };
 
 # Does any of Joe's grandchildren have the same name of his parent?
@@ -44,5 +56,52 @@ WHERE {
 }
 HAVING NOT(?offspring = ?grandchildren);
 
-# Drop the graph.
-DROP GRAPH ?family;
+# Which parents have name coming lexicographically after "joe"?
+SELECT ?parent_name
+FROM ?family
+WHERE {
+  ?parent ID ?parent_name "parent_of"@[] ?child
+}
+GROUP BY ?parent_name
+HAVING ?parent_name > "joe"^^type:text;
+
+# Who has height smaller than 173 cm?
+SELECT ?person, ?height
+FROM ?info
+WHERE {
+  ?person "height_cm"@[] ?height
+}
+HAVING ?height < "173"^^type:int64;
+
+# Who has ever bought a car "model y" or "model z"?
+SELECT ?person
+FROM ?info
+WHERE {
+  ?person "bought"@[,] ?product
+}
+HAVING (?product = /car<model y>) OR (?product = /car<model z>);
+
+# What are the triples in the ?info graph having either "height_cm"@[]
+# or "born_in"@[] as predicate?
+SELECT ?subj, ?pred, ?obj
+FROM ?info
+WHERE {
+  ?subj ?pred ?obj
+}
+HAVING (?pred = "height_cm"@[]) OR (?pred = "born_in"@[]);
+
+# N.B. for nodes and predicates you are allowed to use equalities inside the
+# HAVING clause (as done in the two examples above), but if you use inequalities
+# there for them you will receive an error prompting you to extract ID, TYPE or AT
+# bindings and use those bindings to do these comparisons in a more explicit way.
+
+# Who bought something before 2020?
+SELECT ?person, ?time
+FROM ?info
+WHERE {
+  ?person "bought"@[?time] ?product
+}
+HAVING ?time < 2020-01-01T00:00:00-08:00;
+
+# Drop graphs.
+DROP GRAPH ?family, ?info;
