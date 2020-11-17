@@ -18,12 +18,12 @@ each of the example files with a brief description.
 * [Summarizing and sorting data queries across graphs](../examples/bql/example_2.bql):
    Sometimes you want to query data that is stored across multiple graphs.
    This example shows how you can express queries across multiple graphs, by
-   simple listing them in the `FROM` clause, and summarize the results
+   simply listing them in the `FROM` clause, and summarize the results
    accordingly. It also shows how to sort the resulting tables using the
-   `ORDER BY` clause. It is important to highlight that BQL `FROM` clause does
+   `ORDER BY` clause. It is important to highlight that the BQL `FROM` clause does
    not express table joins, but the union of the specified graphs.
 
-* [Filtering results](../examples/bql/example_3.bql):
-   The HAVING clause is useful for filtering rows out from the resulting
+* [Refining results](../examples/bql/example_3.bql):
+   The `HAVING` clause is useful for filtering rows out from the resulting
    table. This file shows some simple examples of how you can easily achieve
-   it by simply providing the filtering criteria on the where clause.
+   it by simply providing a boolean condition to the `HAVING` clause.
