@@ -554,6 +554,25 @@ All the triples from `?supermarket` whose object is not a temporal predicate (re
 in the query result (the `AT` keyword is part of the graph pattern, in the position above it forces the object `?o` to have a
 time anchor to be extracted to the binding `?o_time`).
 
+### `OPTIONAL` clause
+
+Given what is said in the section above, the graph pattern is rigid and must be followed. But, there are cases on which we want
+to specify a given graph pattern with some clauses and bindings that may or may not be resolved, a graph pattern with "optional"
+parts. For that, we can make use of the `OPTIONAL` keyword. To illustrate, we can take the example of the section above and do:
+
+```
+  SELECT ?s, ?p, ?o, ?o_type
+  FROM ?supermarket
+  WHERE {
+    ?s ?p ?o .
+    OPTIONAL { ?s ?p ?o TYPE ?o_type }
+  };
+```
+
+Here we are querying for all triples `?s ?p ?o` from `?supermarket` and marking the `?o_type` binding as optional. This way, in
+the case this binding is not resolved for a given triple, when its object `?o` is a literal for example, the triple will not be
+discarded as before, it will still appear in the query result having its `?o_type` binding marked as `<NULL>` there.
+
 ## Inserting data into graphs
 
 Triples can be inserted into one or more graphs. This can be achieved by
