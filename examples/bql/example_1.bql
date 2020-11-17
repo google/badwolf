@@ -36,7 +36,8 @@ INSERT DATA INTO ?family {
   /u<anne>  "is_a"@[]      /t<mammal> .
   /u<anne>  "gender"@[]    /g<female> .
   /u<amy>   "is_a"@[]      /t<mammal> .
-  /u<amy>   "gender"@[]    /g<female>
+  /u<amy>   "gender"@[]    /g<female> .
+  /u<peter> "height_cm"@[] "50"^^type:int64
 };
 
 # How many grandchildren does Joe have?
@@ -105,6 +106,14 @@ WHERE {
   ?grandchildren          "gender"@[]    ?gender_node ID ?gender
 }
 GROUP BY ?gender;
+
+# Who are Joe's children and what are their heights (if specified)?
+SELECT ?offspring, ?height_in_cm
+FROM ?family
+WHERE {
+  /u<joe> "parent_of"@[] ?offspring .
+  OPTIONAL { ?offspring "height_cm"@[] ?height_in_cm }
+};
 
 # Drop the graph.
 DROP GRAPH ?family;

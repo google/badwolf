@@ -12,8 +12,8 @@ each of the example files with a brief description.
 
 * [Expressing graph patterns and grouping](../examples/bql/example_1.bql): This
   example shows how you can express complex graph queries by properly binding
-  graph clauses together. You will also find examples on how to summary the
-  results via the `GROUP BY` clause.
+  graph clauses together, `OPTIONAL` clauses included. You will also find examples
+  on how to summary the results via the `GROUP BY` clause.
 
 * [Summarizing and sorting data queries across graphs](../examples/bql/example_2.bql):
    Sometimes you want to query data that is stored across multiple graphs.
