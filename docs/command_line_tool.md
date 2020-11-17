@@ -260,6 +260,19 @@ stop profiling                                        - stops pprof profiling fo
 quit                                                  - quits the console.
 ```
 
+### Profiling with `pprof`
+
+As shown above, BadWolf also has this integration with [pprof](https://github.com/google/pprof) profiling
+directly through the BQL REPL. After it is activated with the `start` command detailed above the user can `run`
+BQLs that will be automatically profiled and, by the time of `stop profiling` or `quit`, two files will
+appear: `cpuprofile` with the metrics on CPU consumption and `memprofile` with the metrics on memory.
+
+Commands such as `go tool pprof -http=":8081" bw cpuprofile` open in the browser an interface to visualize the
+CPU metrics: the user can see the graph of function calls made and the latencies involved (useful to identify
+bottlenecks), they can visualize the correspondent [flame graph](https://github.com/google/pprof/issues/166) as
+well, and also an ordered list of the heaviest function calls made. Another useful command is `go tool pprof -pdf bw cpuprofile > cpuprofile.pdf`
+to generate pdfs from the profiling files. With `memprofile` the previous `go tool pprof` commands work similarly.
+
 ## Command: Benchmark
 
 The `benchmark` commands will run a battery of tests to collect timing measures
