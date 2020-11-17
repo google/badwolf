@@ -219,7 +219,9 @@ variables instead as shown below:
 ```
 
 The above query would return all grandparents together with their
-grandchildren, one pair per row.
+grandchildren, one pair per row. Also, note that you can have multiple clauses in
+the graph pattern inside `WHERE`, separated by `.`, and that the `.` after the last
+clause is optional.
 
 ### Bindings extraction with keywords `ID`, `TYPE` and `AT`
 
