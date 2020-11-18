@@ -613,6 +613,10 @@ Here we are querying for all triples `?s ?p ?o` from `?supermarket` and marking 
 the case this binding is not resolved for a given triple, when its object `?o` is a literal for example, the triple will not be
 discarded as before, it will still appear in the query result having its `?o_type` binding marked as `<NULL>` there.
 
+### More BQL examples
+
+For other useful BQL query examples, please refer to [BadWolf Query Language practical examples](./bql_practical_examples.md).
+
 ## Inserting data into graphs
 
 Triples can be inserted into one or more graphs. This can be achieved by
