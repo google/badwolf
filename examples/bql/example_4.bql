@@ -46,6 +46,15 @@ WHERE {
   FILTER isTemporal(?p)
 };
 
+# What is all the information we have regarding the latest "bought"
+# event in our graph? (Who was the last to buy what, and when?)
+SELECT ?s, ?p, ?o
+FROM ?info
+WHERE {
+  ?s "bought"@[?time] AS ?p ?o .
+  FILTER latest(?p)
+};
+
 # What are the latest triples of each time series present in the ?info
 # graph?
 SELECT ?s, ?p, ?o
