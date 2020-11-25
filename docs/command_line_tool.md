@@ -265,7 +265,7 @@ quit                                                  - quits the console.
 BadWolf has its own tracer implemented, that can be enabled/disabled with the `start` and `stop` commands detailed above.
 The current BadWolf tracer supports 3 levels of verbosity:
 
-- **`1`** for **minimum** verbosity: only the most crucial and basic messages to understand the query processing flow are sent to
+- **`1`** for **minimum** verbosity: only the most crucial messages to understand the query processing flow are sent to
 the tracing output. Messages informing which BQL query is being executed at each moment are shown here, for example;
 
 - **`2`** for **medium** verbosity: with this level set the user will see all messages from level `1` and also some additional others

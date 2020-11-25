@@ -29,7 +29,7 @@ like `IsTemporal` do not use it while others like `GreaterThan` do, see [Issue 1
 Then, to implement a given `FILTER` behavior in the driver level all the user shall do is use the instructions for data
 retrieval received inside `FilterOptions` and proceed accordingly for the specific storage infrastructure they have at hand.
 
-**N.B.** When implementing the driver side of the `FILTER` functions be attentive to the order to process the information
+**N.B.** When implementing the driver side of the `FILTER` functions, pay attention to the order to process the information
 from `LookupOptions`, as it may influence the final result. For the volatile driver in `memory.go`, for example, on which the
 processing is sequential, the order is:
 
