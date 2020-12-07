@@ -253,11 +253,40 @@ export <graph_names_separated_by_commas> <file_path>  - dumps triples from graph
 desc <BQL>                                            - prints the execution plan for a BQL statement.
 load <file_path> <graph_names_separated_by_commas>    - load triples into the specified graphs.
 run <file_with_bql_statements>                        - runs all the BQL statements in the file.
-start tracing [trace_file]                            - starts tracing queries.
+start tracing [-v verbosity_level] [trace_file]       - starts tracing queries, verbosity levels supported are 1, 2 and 3 (with 3 meaning maximum verbosity).
 stop tracing                                          - stops tracing queries.
+start profiling [-cpurate samples_per_second]         - starts pprof profiling for queries (customizable CPU sampling rate).
+stop profiling                                        - stops pprof profiling for queries.
 quit                                                  - quits the console.
-bql> 
 ```
+
+### Tracing in BadWolf
+
+BadWolf has its own tracer implemented, that can be enabled/disabled with the `start` and `stop` commands detailed above.
+The current BadWolf tracer supports 3 levels of verbosity:
+
+- **`1`** for **minimum** verbosity: only the most crucial messages to understand the query processing flow are sent to
+the tracing output. Messages informing which BQL query is being executed at each moment are shown here, for example;
+
+- **`2`** for **medium** verbosity: with this level set the user will see all messages from level `1` and also some additional others
+that may be useful, such as messages informing the latency on clause processing for each clause inside `WHERE` and also messages
+detailing the number of triples returned from each call to the driver.
+
+- **`3`** for **maximum** verbosity: all available tracing messages will be sent to the output, including messages from levels `1` and `2`
+and some others that come with additional details regarding the processing of the query.
+
+### Profiling with `pprof`
+
+As shown above, BadWolf also has this integration with [pprof](https://github.com/google/pprof) profiling
+directly through the BQL REPL. After it is activated with the `start` command detailed above the user can `run`
+BQLs that will be automatically profiled and, by the time of `stop profiling` or `quit`, two files will
+appear: `cpuprofile` with the metrics on CPU consumption and `memprofile` with the metrics on memory.
+
+Commands such as `go tool pprof -http=":8081" bw cpuprofile` open in the browser an interface to visualize the
+CPU metrics: the user can see the graph of function calls made and the latencies involved (useful to identify
+bottlenecks), they can visualize the correspondent [flame graph](https://github.com/google/pprof/issues/166) as
+well, and also an ordered list of the heaviest function calls made. Another useful command is `go tool pprof -pdf bw cpuprofile > cpuprofile.pdf`
+to generate pdfs from the profiling files. With `memprofile` the previous `go tool pprof` commands work similarly.
 
 ## Command: Benchmark
 

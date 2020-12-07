@@ -38,7 +38,7 @@ All data in BadWolf is stored in graphs. Graphs need to be explicitly created.
 The `CREATE` graph statement allows you to create a graph as shown below.
 
 ```
-CREATE GRAPH ?a;
+  CREATE GRAPH ?a;
 ```
 
 The name of the graph is represented by a non interpreted binding (more on
@@ -47,7 +47,7 @@ the statement would create a graph named `?a`. You can create multiple
 graphs in a single statement as shown in the example below:
 
 ```
-CREATE GRAPH ?a, ?b, ?c;
+  CREATE GRAPH ?a, ?b, ?c;
 ```
 
 If you try to create a graph that already exists, it will fail saying that
@@ -60,16 +60,16 @@ the rest.
 
 Existing graphs can be dropped via the `DROP` statement. Be *very*
 *careful* when dropping graphs. The operation is assumed to be irreversible.
-Hence, all data contained in the graph with be lost. You can drop a graph via:
+Hence, all data contained in the graph will be lost. You can drop a graph via:
 
 ```
-DROP GRAPH ?a;
+  DROP GRAPH ?a;
 ```
 
 You can also drop multiple graphs at once:
 
 ```
-DROP GRAPH ?a, ?b ?c;
+  DROP GRAPH ?a, ?b ?c;
 ```
 
 The same consideration about failures on graph creation apply to dropping
@@ -84,11 +84,10 @@ There is a simple way to get a list of all the available graphs in a store.
 Just run:
 
 ```
-SHOW GRAPHS;
+  SHOW GRAPHS;
 ```
 
-This will return the list af available graphs currently available in the
-store.
+This will return the list of graphs currently available in the store.
 
 ## Bindings and Graph Patterns
 
@@ -161,7 +160,7 @@ Imagine you want to get the list of all users that are grandparents. You could
 express such pattern as:
 
 ```
-  ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+  ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
 ```
 
 You can combine multiple graph patterns together using `.` to separate clauses.
@@ -173,7 +172,7 @@ clause is matched against Joe as the parent of Peter, `?grandparent` gets
 bound against Joe and `?x` against Peter. To satisfy the second part of
 the composite clause, we now need to find triples where the subject is Peter
 (remember that once the value is bound in a context it cannot change) and the
-predicate is "parent of". If one exists, then `?grand_child` would get bound
+predicate is "parent of". If one exists, then `?grandchild` would get bound
 and take the value of Mary.
 
 As we will see in later examples, bindings can also be used to identify
@@ -185,10 +184,10 @@ Querying data in BQL is done via the `SELECT` statement. The simple form
 of a query is expressed as follows:
 
 ```
-  SELECT ?grand_child
+  SELECT ?grandchild
   FROM ?family_tree
   WHERE {
-    /user<Joe> "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    /user<Joe> "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
   };
 ```
 
@@ -200,10 +199,10 @@ whose ID is equal to `?family_tree`.
 You can also query against multiple graphs:
 
 ```
-  SELECT ?grand_child
+  SELECT ?grandchild
   FROM ?family_tree, ?other_family_tree
   WHERE {
-    /user<Joe> "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    /user<Joe> "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
   };
 ```
 
@@ -211,47 +210,72 @@ There is no limit on how many variables you may return. You can return multiple
 variables instead as shown below:
 
 ```
-  SELECT ?grandparent, ?grand_child
+  SELECT ?grandparent, ?grandchild
   FROM ?family_tree
   WHERE {
-    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
   };
 ```
 
 The above query would return all grandparents together with their
-grandchildren, one pair per row.
+grandchildren, one pair per row. Also, note that you can have multiple clauses in
+the graph pattern inside `WHERE`, separated by `.`, and that the `.` after the last
+clause is optional.
 
-Note that you could also extract just the names (only "Joe" instead of the entire "/user<Joe>", for 
+### Bindings extraction with keywords `ID`, `TYPE` and `AT`
+
+Note that you could also extract just the names (only "Joe" instead of the entire `/user<Joe>`, for
 example). For that you can use the `ID` keyword as follows:
 
 ```
-  SELECT ?grand_parent_name
+  SELECT ?grandparent_name
   FROM ?family_tree
   WHERE {
-    ?grand_parent ID ?grand_parent_name "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent ID ?grandparent_name "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
   };
 ```
 
 Which would extract only the names of all grandparents in `family_tree`. 
 
-For subjects and objects you can use the keywords `ID` and `TYPE` just like above. For 
-predicates, you can also use the `ID` and `AT` keywords for extracting the predicate IDs and the 
-time anchors, respectively.
-
-In some cases it is useful to return a different
-name for the variables, and not use the binding name used in the graph pattern
-directly. This is achieved using the `as` keyword as shown below:
+For subjects and objects (when they are nodes) you can use the keywords `ID` and `TYPE` just like above.
+For predicates, you can use the `ID` and `AT` keywords for extracting predicate IDs and time anchors,
+respectively, as in:
 
 ```
-  SELECT ?grandparent as ?gp, ?grand_child as ?gc
-  FROM ?family_tree
+  SELECT ?user, ?pred_id, ?pred_time
+  FROM ?social_graph
   WHERE {
-    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?user ?pred ID ?pred_id AT ?pred_time /user<Mary>
   };
 ```
 
-It is important to note that aliases are defined outside the graph pattern scope.
-Hence, aliases cannot be used in graph patterns.
+### Aliases with `AS` keyword
+
+In some cases it is useful to return a different
+name for the variables, and not use the binding name used in the graph pattern
+directly. This is achieved using the `AS` keyword as shown below:
+
+```
+  SELECT ?grandparent AS ?gp, ?grandchild AS ?gc
+  FROM ?family_tree
+  WHERE {
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
+  };
+```
+
+It is important to note that aliases defined outside the graph pattern scope, such as the one above,
+cannot be used in graph patterns. You can also define aliases directly inside the graph pattern if
+you want, even for values (if you also want them to be shown in the query result, for example), as in:
+
+```
+  SELECT ?parent, ?specified_child
+  FROM ?family_tree
+  WHERE {
+    ?parent "parent_of"@[] /user<Bob> AS ?specified_child
+  };
+```
+
+### Grouping and Aggregation
 
 BQL supports basic grouping and aggregation. It is accomplished via
 `group by`. The above query may return duplicates depending on the data
@@ -259,24 +283,24 @@ available on the graph. If we want to get rid of the duplicates we could just
 group them as follows:
 
 ```
-  SELECT ?grandparent as ?gp, ?grand_child as ?gc
+  SELECT ?grandparent AS ?gp, ?grandchild AS ?gc
   FROM ?family_tree
   WHERE {
-    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
   }
   GROUP BY ?gp, ?gc;
 ```
 
 As you may have expected, you can group by multiple bindings or aliases. Also,
-grouping allows a small subset of aggregates. Those include `count` its
+grouping allows a small subset of aggregates. Those include `count`, its
 variant with `distinct`, and `sum`. Other functions will be added as needed.
 The queries below illustrate how these simple aggregations can be used:
 
 ```
-  SELECT ?grandparent as ?gp, count(?grand_child) as ?gc
+  SELECT ?grandparent AS ?gp, count(?grandchild) AS ?gc
   FROM ?family_tree
   WHERE {
-    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
   }
   GROUP BY ?gp;
 ```
@@ -287,10 +311,10 @@ resulting from the graph data are removed. The query below illustrates how
 the `distinct` variant works:
 
 ```
-  SELECT ?grandparent as ?gp, count(distinct ?grand_child) as ?gc
+  SELECT ?grandparent AS ?gp, count(distinct ?grandchild) AS ?gc
   FROM ?family_tree
   WHERE {
-    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
   }
   GROUP BY ?gp;
 ```
@@ -299,7 +323,7 @@ The sum aggregation only works if the binding is done against a literal of type
 `int64` or `float64`, as shown on the example below:
 
 ```
-  SELECT sum(?capacity) as ?total_capacity
+  SELECT sum(?capacity) AS ?total_capacity
   FROM ?gas_tanks
   WHERE {
     ?tank "capacity"@[] ?capacity
@@ -309,23 +333,27 @@ The sum aggregation only works if the binding is done against a literal of type
 You can also use `sum` to do partial accumulations in the same manner as it was
 done in the `count` examples above.
 
+### Sorting query results
+
 Results of the query can be sorted. By default, it is sorted in ascending
 order based on the provided variables. The example below orders first by
 grandparent name ascending (implicit direction), and for each equal values,
 descending based on the grandchild name.
 
 ```
-  SELECT ?grandparent, ?grand_child
+  SELECT ?grandparent, ?grandchild
   FROM ?family_tree
   WHERE {
-    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grand_child
+    ?grandparent "parent_of"@[] ?x . ?x "parent_of"@[] ?grandchild
   }
-  ORDER BY ?grandparent, ?grand_child DESC;
+  ORDER BY ?grandparent, ?grandchild DESC;
 ```
 
-The `having` modifier allows us to filter the returned data further. For
-instance, the query below would only return tanks with a capacity bigger
-than 10.
+### `HAVING` clause
+
+The `having` modifier allows us to refine the result data further, after it
+was already returned from the storage/driver level. For instance, the query
+below would only return tanks with a capacity bigger than 10.
 
 ```
   SELECT ?tank, ?capacity
@@ -337,7 +365,7 @@ than 10.
 ```
 
 Within this `having` clause, you can also build more complicated boolean expressions 
-using operators such as AND or OR:
+using operators such as `AND` or `OR`:
 
 ```
   SELECT ?tank, ?capacity
@@ -347,6 +375,28 @@ using operators such as AND or OR:
   }
   HAVING (?capacity > "10"^^type:int64) AND (?capacity < "20"^^type:int64);
 ```
+
+Also, inside the `having` clause you can compare `TYPE` and `ID` bindings with text literals.
+In this case, the comparison will be done lexicographically as in:
+
+```
+  SELECT ?parent_name
+  FROM ?family_tree
+  WHERE {
+    ?parent ID ?parent_name "parent_of"@[] ?child
+  }
+  HAVING ?parent_name < "mary"^^type:text;
+```
+
+Last, but not least, the `having` clause supports timestamp comparisons too, such as comparisons
+between `AT` bindings and time literals. This is better detailed and exemplified in the section "Specifying
+time bounds" below.
+
+Remember that you can also compare one binding with another inside the `having` clause, but they
+must be comparable for that: you can compare a `text` binding only with another `text` binding, an `int64`
+binding only with another `int64` binding, and so on.
+
+### `LIMIT` keyword
 
 You could also limit the amount of data you will get back by simply appending
 a limit to the number of rows to be returned.
@@ -362,6 +412,8 @@ a limit to the number of rows to be returned.
 ```
 
 The above query would return at most only 20 rows.
+
+### Specifying time bounds
 
 BQL also provides syntactic sugar to make it easy to specify time bounds. Imagine
 you want to get all users who followed Joe and also followed Mary after a
@@ -408,11 +460,12 @@ that would require multiple clauses and extra bindings:
 
 Note that the intervals defined by `before`, `after`, and `between` are always closed (the 
 limits of the intervals are included). You can then understand the `after` as a `>=`, the 
-`before` as a `<=` and the `between` as a combination of them.
+`before` as a `<=` and the `between` as a combination of them. Also, note that this syntactic
+sugar of using a comma inside the square brackets make sense only inside the `WHERE` clause,
+you cannot use it out of the `WHERE` scope as inside a `HAVING` clause for example.
 
-Also, remember that bindings may take time anchor values so you could also query
-for all users that first followed Joe and then followed Mary. Such query would
-look like:
+In addition to that, remember that bindings may take time anchor values too. Then, you could
+also query for all users that first followed Joe and then followed Mary. Such query would look like:
 
 ```
   SELECT ?user, ?tj, ?tm
@@ -423,6 +476,146 @@ look like:
   }
   HAVING ?tm > ?tj;
 ```
+
+You can also choose to compare only one of these time anchor bindings with a given
+time literal, as in:
+
+```
+  SELECT ?user, ?tj, ?tm
+  FROM ?social_graph
+  WHERE {
+    ?user "follows"@[?tj] /user<Joe> .
+    ?user "follows"@[?tm] /user<Mary>
+  }
+  HAVING ?tm > 2014-03-10T00:00:00-08:00;
+```
+
+These time comparisons inside the `having` clause also take into account the specific time zones of
+the timestamps being compared, as one should expect. With `AT` bindings we can do the same as above since
+the value extracted is also a timestamp.
+
+As an additional observation, remember that when using the `before`, `after`, and `between` keywords
+the final result may also include immutable triples along the temporal ones. To illustrate, given
+the query below:
+
+```
+  SELECT ?p, ?o
+  FROM ?supermarket
+  WHERE {
+    /u<peter> ?p ?o
+  }
+  BETWEEN 2016-02-01T00:00:00-08:00, 2016-03-01T00:00:00-08:00;
+```
+
+If you have in your `?supermarket` graph both immutable and temporal triples that have `/u<peter>`
+as subject, then you will see those immutable triples in your result too, along with the temporal ones
+that fit in the given interval specified by `between`. But, if you do want only the temporal ones in your
+result you can make use of a `FILTER` clause with the `isTemporal` function (better explained below).
+
+```
+  SELECT ?p, ?o
+  FROM ?supermarket
+  WHERE {
+    /u<peter> ?p ?o .
+    FILTER isTemporal(?p)
+  }
+  BETWEEN 2016-02-01T00:00:00-08:00, 2016-03-01T00:00:00-08:00;
+```
+
+### `FILTER` clause
+
+The `FILTER` keyword is a tool the user can leverage to improve query performance, being able to communicate
+directly with the storage/driver level to specify further the data they want to retrieve. This way, the user
+can avoid the search, retrieval and manipulation of heavy chunks of data that will not be used later, which would
+add an unnecessary overhead to the query processing.
+
+Note here the difference with the `HAVING` clause: the `HAVING` is mainly thought to work with conditions over
+aggregated data (such as involving `sum` and `count`), being processed after all the data was already returned
+from the driver level, while `FILTER` works directly at the moment of data retrieval in the driver, with instructions
+to customize and specify the data to return (thus improving performance).
+
+The `FILTER` clauses can be used as the last clauses inside `WHERE`, after the graph pattern was already specified.
+To illustrate:
+
+```
+  SELECT ?p1, ?p2
+  FROM ?supermarket
+  WHERE {
+    /u<peter> ?p1 ?o1 .
+    /item/book<Sophie's World> ?p2 ?o2 .
+    FILTER latest(?p1) .
+    FILTER latest(?p2)
+  };
+```
+
+On which the `latest` `FILTER` function will allow only the triples with the latest timestamp for the specified
+predicate bindings to be returned by the driver (a common use case for time series in BadWolf).
+
+Regarding trailing dots, the `FILTER` clauses are seen just like any other clauses inside `WHERE`. Remember that for
+these clauses the trailing dot is mandatory at the end of each clause with the exception of the last one, for which
+the dot is optional (as recommended by W3C).
+
+At the moment, BadWolf already supports the `isTemporal`, `isImmutable` and `latest` `FILTER` functions, with an example
+of their driver implementation for the volatile driver in `memory.go`. These functions can be applied to predicate bindings
+and object bindings as well (being effective when they wrap predicates in a reification scenario), working for aliases too.
+
+To add support for a new `FILTER` function in BadWolf, the instructions to follow step by step are detailed [here](./support_new_filter_function.md).
+
+### More on graph pattern enforcement
+
+A point worth clarifying is that the graph pattern specified inside the `WHERE` clause is a strong
+constraint on the data to be returned, and must be followed in its entirety. To illustrate, given the
+query below:
+
+```
+  SELECT ?s, ?p, ?o, ?o_type
+  FROM ?supermarket
+  WHERE {
+    ?s ?p ?o TYPE ?o_type
+  };
+```
+
+We have that the `TYPE` keyword is being used to refer to the object of the graph pattern. This will force that
+this object must be a node. In other words, all the triples in the `?supermarket` graph for which the object is either
+a literal or a predicate (in the case of reification) will be discarded and not shown in this query result. The
+`TYPE` keyword is, then, part of the graph pattern to be matched.
+
+In a similar way, if we had:
+
+```
+  SELECT ?s, ?p, ?o, ?o_time
+  FROM ?supermarket
+  WHERE {
+    ?s ?p ?o AT ?o_time
+  };
+```
+
+All the triples from `?supermarket` whose object is not a temporal predicate (reification) will be discarded and not shown
+in the query result (the `AT` keyword is part of the graph pattern, in the position above it forces the object `?o` to have a
+time anchor to be extracted to the binding `?o_time`).
+
+### `OPTIONAL` clause
+
+Given what is said in the section above, the graph pattern is rigid and must be followed. But, there are cases on which we want
+to specify a given graph pattern with some clauses and bindings that may or may not be resolved, a graph pattern with "optional"
+parts. For that, we can make use of the `OPTIONAL` keyword. To illustrate, we can take the example of the section above and do:
+
+```
+  SELECT ?s, ?p, ?o, ?o_type
+  FROM ?supermarket
+  WHERE {
+    ?s ?p ?o .
+    OPTIONAL { ?s ?p ?o TYPE ?o_type }
+  };
+```
+
+Here we are querying for all triples `?s ?p ?o` from `?supermarket` and marking the `?o_type` binding as optional. This way, in
+the case this binding is not resolved for a given triple, when its object `?o` is a literal for example, the triple will not be
+discarded as before, it will still appear in the query result having its `?o_type` binding marked as `<NULL>` there.
+
+### More BQL examples
+
+For other useful BQL query examples, please refer to [BadWolf Query Language practical examples](./bql_practical_examples.md).
 
 ## Inserting data into graphs
 
@@ -563,12 +756,12 @@ notation. `CONSTRUCT` supports the following:
 ```
 
 The above query is equivalent to the query above it, but it explicitly does the
-reification by using `_:v`, which express a unique blank node linking the
+reification by using `_:v`, which expresses a unique blank node linking the
 reification together. The `CONSTRUCT` clause supports creating an arbitrary
 number of blank nodes. The syntax is always the same, they all start with
 the prefix `_:` followed by a logical ID. On insertion of each new fact,
 BQL guarantees a new unique blank node will be generated by each of them.
-Example of multiple blank nodes generated at once are `_:v0`, `_:v1`, etc.
+Examples of multiple blank nodes generated at once are `_:v0`, `_:v1`, etc.
 
 
 ## Removing complex facts out of existing graphs using existing statements

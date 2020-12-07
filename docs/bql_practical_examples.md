@@ -12,18 +12,25 @@ each of the example files with a brief description.
 
 * [Expressing graph patterns and grouping](../examples/bql/example_1.bql): This
   example shows how you can express complex graph queries by properly binding
-  graph clauses together. You will also find examples on how to summary the
-  results via the `GROUP BY` clause.
+  graph clauses together, `OPTIONAL` clauses included. You will also find examples
+  on how to summary the results via the `GROUP BY` clause.
 
 * [Summarizing and sorting data queries across graphs](../examples/bql/example_2.bql):
    Sometimes you want to query data that is stored across multiple graphs.
    This example shows how you can express queries across multiple graphs, by
-   simple listing them in the `FROM` clause, and summarize the results
+   simply listing them in the `FROM` clause, and summarize the results
    accordingly. It also shows how to sort the resulting tables using the
-   `ORDER BY` clause. It is important to highlight that BQL `FROM` clause does
+   `ORDER BY` clause. It is important to highlight that the BQL `FROM` clause does
    not express table joins, but the union of the specified graphs.
 
-* [Filtering results](../examples/bql/example_3.bql):
-   The HAVING clause is useful for filtering rows out from the resulting
+* [Refining results](../examples/bql/example_3.bql):
+   The `HAVING` clause is useful for filtering rows out from the resulting
    table. This file shows some simple examples of how you can easily achieve
-   it by simply providing the filtering criteria on the where clause.
+   it by simply providing a boolean condition to the `HAVING` clause.
+
+* [Customizing data retrieval](../examples/bql/example_4.bql):
+   To customize the data retrieval directly in the storage/driver level you can
+   make use of the `FILTER` keyword, passing additional instructions to the driver
+   to help it access and return a more fine-grained portion of the data stored, improving
+   performance. This file, then, shows some simple examples of queries with `FILTER` clauses,
+   with different `FILTER` functions being applied to illustrate how they can be useful.
