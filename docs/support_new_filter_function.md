@@ -1,4 +1,4 @@
-# Add support for a new `FILTER` function in BadWolf
+# How to add support for a new `FILTER` function in BadWolf
 
 The steps to add support for a new `FILTER` function are:
 
