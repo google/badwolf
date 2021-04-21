@@ -418,48 +418,37 @@ type booleanNode struct {
 // Evaluate the expression.
 func (e *booleanNode) Evaluate(r table.Row) (bool, error) {
 	// Binary evaluation.
-	eval := func(binary bool) (bool, bool, error) {
-		var (
-			eL, eR     bool
-			errL, errR error
-		)
+	evalLeft := func() (bool, error) {
 		if !e.lS {
-			return false, false, fmt.Errorf(`boolean operations require a left operator; found "(%v, %v)" instead`, e.lE, e.rE)
+			return false, fmt.Errorf(`boolean operations require a left operator; found "(%v, %v)" instead`, e.lE, e.rE)
 		}
-		eL, errL = e.lE.Evaluate(r)
-		if errL != nil {
-			return false, false, errL
+		return e.lE.Evaluate(r)
+	}
+	evalRight := func() (bool, error) {
+		if !e.rS {
+			return false, fmt.Errorf(`boolean operations require a right operator; found "(%v, %v)" instead`, e.lE, e.rE)
 		}
-		if binary {
-			if !e.rS {
-				return false, false, fmt.Errorf(`boolean operations require a right operator; found "(%v, %v)" instead`, e.lE, e.rE)
-			}
-			eR, errR = e.rE.Evaluate(r)
-			if errR != nil {
-				return false, false, errR
-			}
-		}
-		return eL, eR, nil
+		return e.rE.Evaluate(r)
 	}
 
+	eL, err := evalLeft()
+	if err != nil {
+		return false, err
+	}
 	switch e.op {
 	case AND:
-		eL, eR, err := eval(true)
-		if err != nil {
-			return false, err
+		// Shortcut evaluation.
+		if !eL {
+			return false, nil
 		}
-		return eL && eR, nil
+		return evalRight()
 	case OR:
-		eL, eR, err := eval(true)
-		if err != nil {
-			return false, err
+		// Shortcut evaluation.
+		if eL {
+			return true, nil
 		}
-		return eL || eR, nil
+		return evalRight()
 	case NOT:
-		eL, _, err := eval(false)
-		if err != nil {
-			return false, err
-		}
 		return !eL, nil
 	default:
 		return false, fmt.Errorf("boolean evaluation requires a boolen operation; found %q instead", e.op)
