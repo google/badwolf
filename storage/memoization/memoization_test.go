@@ -159,7 +159,7 @@ func TestObjects(t *testing.T) {
 		objs := make(chan *triple.Object)
 		go func() {
 			if err := g.Objects(ctx, ts[0].Subject(), ts[0].Predicate(), storage.DefaultLookup, objs); err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 		}()
 		var ots []*triple.Object
@@ -191,7 +191,7 @@ func TestSubjects(t *testing.T) {
 		subs := make(chan *node.Node)
 		go func() {
 			if err := g.Subjects(ctx, ts[0].Predicate(), ts[0].Object(), storage.DefaultLookup, subs); err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 		}()
 		var ns []*node.Node
@@ -223,7 +223,7 @@ func TestPredicatesForSubject(t *testing.T) {
 		prds := make(chan *predicate.Predicate)
 		go func() {
 			if err := g.PredicatesForSubject(ctx, ts[0].Subject(), storage.DefaultLookup, prds); err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 		}()
 		var ps []*predicate.Predicate
@@ -254,7 +254,7 @@ func TestPredicatesForObject(t *testing.T) {
 		prds := make(chan *predicate.Predicate)
 		go func() {
 			if err := g.PredicatesForObject(ctx, ts[0].Object(), storage.DefaultLookup, prds); err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 		}()
 		var ps []*predicate.Predicate
@@ -286,7 +286,7 @@ func TestPredicatesForSubjectAndObject(t *testing.T) {
 		prds := make(chan *predicate.Predicate)
 		go func() {
 			if err := g.PredicatesForSubjectAndObject(ctx, ts[0].Subject(), ts[0].Object(), storage.DefaultLookup, prds); err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 		}()
 		var ps []*predicate.Predicate
@@ -318,7 +318,7 @@ func TestTriplesForSubject(t *testing.T) {
 		trps := make(chan *triple.Triple)
 		go func() {
 			if err := g.TriplesForSubject(ctx, ts[0].Subject(), storage.DefaultLookup, trps); err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 		}()
 		var ts []*triple.Triple
@@ -350,7 +350,7 @@ func TestTriplesForPredicate(t *testing.T) {
 		trps := make(chan *triple.Triple)
 		go func() {
 			if err := g.TriplesForPredicate(ctx, ts[0].Predicate(), storage.DefaultLookup, trps); err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 		}()
 		var ts []*triple.Triple
@@ -382,7 +382,7 @@ func TestTriplesForObject(t *testing.T) {
 		trps := make(chan *triple.Triple)
 		go func() {
 			if err := g.TriplesForObject(ctx, ts[0].Object(), storage.DefaultLookup, trps); err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 		}()
 		var ts []*triple.Triple
@@ -414,7 +414,7 @@ func TestTriplesForSubjectAndPredicate(t *testing.T) {
 		trps := make(chan *triple.Triple)
 		go func() {
 			if err := g.TriplesForSubjectAndPredicate(ctx, ts[0].Subject(), ts[0].Predicate(), storage.DefaultLookup, trps); err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 		}()
 		var ts []*triple.Triple
@@ -446,7 +446,7 @@ func TestTriplesForPredicateAndObject(t *testing.T) {
 		trps := make(chan *triple.Triple)
 		go func() {
 			if err := g.TriplesForPredicateAndObject(ctx, ts[0].Predicate(), ts[0].Object(), storage.DefaultLookup, trps); err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 		}()
 		var ts []*triple.Triple
@@ -503,7 +503,7 @@ func TestTriples(t *testing.T) {
 		trps := make(chan *triple.Triple)
 		go func() {
 			if err := g.Triples(ctx, storage.DefaultLookup, trps); err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 		}()
 		var ts []*triple.Triple
