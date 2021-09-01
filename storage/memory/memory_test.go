@@ -17,6 +17,7 @@ package memory
 import (
 	"context"
 	"reflect"
+	"sort"
 	"testing"
 	"time"
 
@@ -219,6 +220,25 @@ func getTestTriples(t *testing.T) []*triple.Triple {
 	})
 }
 
+func getTestOffsetTriples(t *testing.T) []*triple.Triple {
+	return createTriples(t, []string{
+		"/u<john>\t\"knows\"@[]\t/u<alice>",
+		"/u<john>\t\"knows\"@[]\t/u<mary>",
+		"/u<john>\t\"knows\"@[]\t/u<peter>",
+		"/u<mary>\t\"knows\"@[]\t/u<alice>",
+		"/u<mary>\t\"knows\"@[]\t/u<mary>",
+		"/u<mary>\t\"knows\"@[]\t/u<peter>",
+	})
+}
+
+func getTestOffsetPredicates(t *testing.T) []*triple.Triple {
+	return createTriples(t, []string{
+		"/u<john>\t\"knows\"@[]\t/u<mary>",
+		"/u<john>\t\"likes\"@[]\t/u<mary>",
+		"/u<john>\t\"dislikes\"@[]\t/u<mary>",
+	})
+}
+
 func getTestTemporalTriples(t *testing.T) []*triple.Triple {
 	return createTriples(t, []string{
 		"/u<john>\t\"meet\"@[2010-04-10T4:21:00.000000000Z]\t/u<mary>",
@@ -281,8 +301,46 @@ func TestObjects(t *testing.T) {
 		}
 	}
 	if cnt != 3 {
-		t.Errorf("g.Objects(%s, %s) failed to retrieve 3 objects, got %d instead", ts[0].Subject(), ts[0].Predicate(), cnt)
+		t.Errorf("g.Objects(%s, %s) failed to retrieve 3 objects, got %d instead ", ts[0].Subject(), ts[0].Predicate(), cnt)
 	}
+}
+
+func TestObjectsOffset(t *testing.T) {
+	ts, ctx := getTestOffsetTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	var objs, objs1, objs2 []string
+	objStr := make(map[string]string)
+	for _, ob := range ts {
+		objStr[ob.String()] = ob.Object().String()
+		objs = append(objs, ob.String())
+	}
+	sort.Strings(objs)
+	for _, ob := range objs {
+		objs1 = append(objs1, objStr[ob])
+	}
+
+	for i, ob := range ts {
+		os := make(chan *triple.Object, 1)
+		lo := &storage.LookupOptions{MaxElements: 1, Offset: i % 3}
+		if err := g.Objects(ctx, ob.Subject(), ob.Predicate(), lo, os); err != nil {
+			t.Errorf("g.Objects(%s, %s) failed with error %v", ob.Subject(), ob.Predicate(), err)
+		}
+		a := <-os
+		objs2 = append(objs2, a.String())
+	}
+
+	for i := range objs1 {
+		if objs1[i] != objs2[i] {
+			t.Errorf("Error expected %s and got %s", objs1[i], objs2[i])
+		}
+	}
+
 }
 
 func TestObjectsLatestAnchor(t *testing.T) {
@@ -439,6 +497,45 @@ func TestSubjects(t *testing.T) {
 	}
 }
 
+func TestSubjectsOffset(t *testing.T) {
+	ts, ctx := getTestOffsetTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+
+	var subjs, subjs1, subjs2 []string
+	subjStr := make(map[string]string)
+	for _, sub := range ts {
+		subjStr[sub.String()] = sub.Subject().String()
+		subjs = append(subjs, sub.String())
+	}
+	sort.Strings(subjs)
+	for _, sub := range subjs {
+		subjs1 = append(subjs1, subjStr[sub])
+	}
+
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	for i, sub := range ts {
+		ss := make(chan *node.Node, 1)
+		lo := &storage.LookupOptions{MaxElements: 1, Offset: (i / 3)}
+		if err := g.Subjects(ctx, sub.Predicate(), sub.Object(), lo, ss); err != nil {
+			t.Errorf("g.Subjects(%s, %s) failed with error %v", sub.Predicate(), sub.Object(), err)
+		}
+		a := <-ss
+		subjs2 = append(subjs2, a.String())
+	}
+
+	for i := range subjs1 {
+		if subjs1[i] != subjs2[i] {
+			t.Errorf("Error expected %s and got %s", subjs1[i], subjs2[i])
+		}
+	}
+
+}
+
 func TestSubjectsLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
@@ -591,6 +688,43 @@ func TestPredicatesForSubjectAndObject(t *testing.T) {
 	}
 }
 
+func TestPredicatesForSubjectAndObjectOffset(t *testing.T) {
+	ts, ctx := getTestOffsetPredicates(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+
+	var prds, prds1, prds2 []string
+	prdStr := make(map[string]string)
+	for _, prd := range ts {
+		prdStr[prd.String()] = prd.Predicate().String()
+		prds = append(prds, prd.String())
+	}
+	sort.Strings(prds)
+	for _, sub := range prds {
+		prds1 = append(prds1, prdStr[sub])
+	}
+
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	for i, trpl := range ts {
+		ps := make(chan *predicate.Predicate, 1)
+		lo := &storage.LookupOptions{MaxElements: 1, Offset: i}
+		if err := g.PredicatesForSubjectAndObject(ctx, trpl.Subject(), trpl.Object(), lo, ps); err != nil {
+			t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) failed with error %v", trpl.Subject(), trpl.Object(), err)
+		}
+		a := <-ps
+		prds2 = append(prds2, a.String())
+	}
+	for i := range prds1 {
+		if prds1[i] != prds2[i] {
+			t.Errorf("Error expected string %s and got %s", prds1[i], prds2[i])
+		}
+	}
+}
+
 func TestPredicatesForSubjectAndObjectLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
@@ -731,7 +865,44 @@ func TestPredicatesForSubject(t *testing.T) {
 		}
 	}
 	if cnt != 3 {
-		t.Errorf("g.PredicatesForSubjectAndObject(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), cnt)
+		t.Errorf("g.PredicatesForSubject(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), cnt)
+	}
+}
+
+func TestPredicatesForSubjectOffset(t *testing.T) {
+	ts, ctx := getTestOffsetPredicates(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+
+	var prds, prds1, prds2 []string
+	prdStr := make(map[string]string)
+	for _, prd := range ts {
+		prdStr[prd.String()] = prd.Predicate().String()
+		prds = append(prds, prd.String())
+	}
+	sort.Strings(prds)
+	for _, sub := range prds {
+		prds1 = append(prds1, prdStr[sub])
+	}
+
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	for i, trpl := range ts {
+		ps := make(chan *predicate.Predicate, 1)
+		lo := &storage.LookupOptions{MaxElements: 1, Offset: i}
+		if err := g.PredicatesForSubject(ctx, trpl.Subject(), lo, ps); err != nil {
+			t.Errorf("g.PredicatesForSubject(%s) failed with error %v", trpl.Subject(), err)
+		}
+		a := <-ps
+		prds2 = append(prds2, a.String())
+	}
+	for i := range prds1 {
+		if prds1[i] != prds2[i] {
+			t.Errorf("Error expected %s and got %s", prds1[i], prds2[i])
+		}
 	}
 }
 
@@ -757,7 +928,7 @@ func TestPredicatesForSubjectLatestAnchor(t *testing.T) {
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.PredicatesForSubjectAndObject(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), cnt)
+		t.Errorf("g.PredicatesForSubject(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), cnt)
 	}
 }
 
@@ -867,6 +1038,43 @@ func TestPredicatesForObject(t *testing.T) {
 	}
 	if cnt != 1 {
 		t.Errorf("g.PredicatesForObject(%s) failed to retrieve 1 predicate, got %d instead", ts[0].Object(), cnt)
+	}
+}
+
+func TestPredicatesForObjectOffset(t *testing.T) {
+	ts, ctx := getTestOffsetPredicates(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+
+	var prds, prds1, prds2 []string
+	prdStr := make(map[string]string)
+	for _, prd := range ts {
+		prdStr[prd.String()] = prd.Predicate().String()
+		prds = append(prds, prd.String())
+	}
+	sort.Strings(prds)
+	for _, sub := range prds {
+		prds1 = append(prds1, prdStr[sub])
+	}
+
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	for i, trpl := range ts {
+		ps := make(chan *predicate.Predicate, 1)
+		lo := &storage.LookupOptions{MaxElements: 1, Offset: i}
+		if err := g.PredicatesForObject(ctx, trpl.Object(), lo, ps); err != nil {
+			t.Errorf("g.PredicatesForObject(%s) failed with error %v", trpl.Object(), err)
+		}
+		a := <-ps
+		prds2 = append(prds2, a.String())
+	}
+	for i := range prds1 {
+		if prds1[i] != prds2[i] {
+			t.Errorf("Error expected %s and got %s", prds1[i], prds2[i])
+		}
 	}
 }
 
@@ -1002,6 +1210,38 @@ func TestTriplesForSubject(t *testing.T) {
 	}
 }
 
+func TestTriplesforSubjectOffset(t *testing.T) {
+	ts, ctx := getTestOffsetTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+
+	var trpls1, trpls2 []string
+	for _, trpl := range ts {
+		trpls1 = append(trpls1, trpl.String())
+	}
+	sort.Strings(trpls1)
+
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	for i, trpl := range ts {
+		trs := make(chan *triple.Triple, 1)
+		lo := &storage.LookupOptions{MaxElements: 1, Offset: (i % 3)}
+		if err := g.TriplesForSubject(ctx, trpl.Subject(), lo, trs); err != nil {
+			t.Errorf("g.PredicatesForObject(%s) failed with error %v", trpl.Subject(), err)
+		}
+		a := <-trs
+		trpls2 = append(trpls2, a.String())
+	}
+	for i := range trpls1 {
+		if trpls1[i] != trpls2[i] {
+			t.Errorf("Error expected %s and got %s", trpls1[i], trpls2[i])
+		}
+	}
+}
+
 func TestTriplesForSubjectLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
@@ -1131,6 +1371,38 @@ func TestTriplesForPredicate(t *testing.T) {
 	}
 	if cnt != 6 {
 		t.Errorf("g.triplesForPredicate(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Predicate(), cnt)
+	}
+}
+
+func TestTriplesforPredicateOffset(t *testing.T) {
+	ts, ctx := getTestOffsetTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+
+	var trpls1, trpls2 []string
+	for _, trpl := range ts {
+		trpls1 = append(trpls1, trpl.String())
+	}
+	sort.Strings(trpls1)
+
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	for i, trpl := range ts {
+		trs := make(chan *triple.Triple, 1)
+		lo := &storage.LookupOptions{MaxElements: 1, Offset: i}
+		if err := g.TriplesForPredicate(ctx, trpl.Predicate(), lo, trs); err != nil {
+			t.Errorf("g.TriplesforPredicate(%s) failed with error %v", trpl.Predicate(), err)
+		}
+		a := <-trs
+		trpls2 = append(trpls2, a.String())
+	}
+	for i := range trpls1 {
+		if trpls1[i] != trpls2[i] {
+			t.Errorf("Error expected %s and got %s", trpls1[i], trpls2[i])
+		}
 	}
 }
 
@@ -1269,6 +1541,38 @@ func TestTriplesForObject(t *testing.T) {
 	}
 	if cnt != 1 {
 		t.Errorf("g.TriplesForObject(%s) failed to retrieve 1 predicates, got %d instead", ts[0].Object(), cnt)
+	}
+}
+
+func TestTriplesforObjectOffset(t *testing.T) {
+	ts, ctx := getTestOffsetTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+
+	var trpls1, trpls2 []string
+	for _, trpl := range ts {
+		trpls1 = append(trpls1, trpl.String())
+	}
+	sort.Strings(trpls1)
+
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	for i, trpl := range ts {
+		trs := make(chan *triple.Triple, 1)
+		lo := &storage.LookupOptions{MaxElements: 1, Offset: (i / 3)}
+		if err := g.TriplesForObject(ctx, trpl.Object(), lo, trs); err != nil {
+			t.Errorf("g.TriplesforObject(%s) failed with error %v", trpl.Object(), err)
+		}
+		a := <-trs
+		trpls2 = append(trpls2, a.String())
+	}
+	for i := range trpls1 {
+		if trpls1[i] != trpls2[i] {
+			t.Errorf("Error expected %s and got %s", trpls1[i], trpls2[i])
+		}
 	}
 }
 
@@ -1447,6 +1751,38 @@ func TestTriplesForSubjectAndPredicate(t *testing.T) {
 	}
 }
 
+func TestTriplesforSubjectAndPredicateOffset(t *testing.T) {
+	ts, ctx := getTestOffsetTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+
+	var trpls1, trpls2 []string
+	for _, trpl := range ts {
+		trpls1 = append(trpls1, trpl.String())
+	}
+	sort.Strings(trpls1)
+
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	for i, trpl := range ts {
+		trs := make(chan *triple.Triple, 1)
+		lo := &storage.LookupOptions{MaxElements: 1, Offset: i % 3}
+		if err := g.TriplesForSubjectAndPredicate(ctx, trpl.Subject(), trpl.Predicate(), lo, trs); err != nil {
+			t.Errorf("g.TriplesforSubjectAndPredicate(%s %s) failed with error %v", trpl.Subject(), trpl.Predicate(), err)
+		}
+		a := <-trs
+		trpls2 = append(trpls2, a.String())
+	}
+	for i := range trpls1 {
+		if trpls1[i] != trpls2[i] {
+			t.Errorf("Error expected %s and got %s", trpls1[i], trpls2[i])
+		}
+	}
+}
+
 func TestTriplesForSubjectAndPredicateLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
@@ -1592,6 +1928,38 @@ func TestTriplesForPredicateAndObject(t *testing.T) {
 	}
 	if cnt != 1 {
 		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed to retrieve 1 predicates, got %d instead", ts[0].Predicate(), ts[0].Object(), cnt)
+	}
+}
+
+func TestTriplesforPredicateAndObjectOffset(t *testing.T) {
+	ts, ctx := getTestOffsetTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+
+	var trpls1, trpls2 []string
+	for _, trpl := range ts {
+		trpls1 = append(trpls1, trpl.String())
+	}
+	sort.Strings(trpls1)
+
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	for i, trpl := range ts {
+		trs := make(chan *triple.Triple, 1)
+		lo := &storage.LookupOptions{MaxElements: 1, Offset: i / 3}
+		if err := g.TriplesForPredicateAndObject(ctx, trpl.Predicate(), trpl.Object(), lo, trs); err != nil {
+			t.Errorf("g.TriplesforPredicateAndObject(%s %s) failed with error %v", trpl.Predicate(), trpl.Object(), err)
+		}
+		a := <-trs
+		trpls2 = append(trpls2, a.String())
+	}
+	for i := range trpls1 {
+		if trpls1[i] != trpls2[i] {
+			t.Errorf("Error expected %s and got %s", trpls1[i], trpls2[i])
+		}
 	}
 }
 
@@ -1749,7 +2117,7 @@ func TestTriples(t *testing.T) {
 	// to collect the error code eventually.
 	trpls := make(chan *triple.Triple, 100)
 	if err := g.Triples(ctx, storage.DefaultLookup, trpls); err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	cnt := 0
 	for range trpls {
@@ -1757,6 +2125,38 @@ func TestTriples(t *testing.T) {
 	}
 	if cnt != 6 {
 		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed to retrieve 1 predicates, got %d instead", ts[0].Predicate(), ts[0].Object(), cnt)
+	}
+}
+
+func TestTriplesOffset(t *testing.T) {
+	ts, ctx := getTestOffsetTriples(t), context.Background()
+	g, _ := NewStore().NewGraph(ctx, "test")
+	if err := g.AddTriples(ctx, ts); err != nil {
+		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+	}
+
+	var trpls1, trpls2 []string
+	for _, trpl := range ts {
+		trpls1 = append(trpls1, trpl.String())
+	}
+	sort.Strings(trpls1)
+
+	// To avoid blocking on the test. On a real usage of the driver you would like
+	// to call the graph operation on a separated goroutine using a sync.WaitGroup
+	// to collect the error code eventually.
+	for i := range ts {
+		trs := make(chan *triple.Triple, 1)
+		lo := &storage.LookupOptions{MaxElements: 1, Offset: i}
+		if err := g.Triples(ctx, lo, trs); err != nil {
+			t.Errorf("g.Triples failed with error %v", err)
+		}
+		a := <-trs
+		trpls2 = append(trpls2, a.String())
+	}
+	for i := range trpls1 {
+		if trpls1[i] != trpls2[i] {
+			t.Errorf("Error expected %s and got %s", trpls1[i], trpls2[i])
+		}
 	}
 }
 
