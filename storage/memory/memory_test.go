@@ -305,8 +305,8 @@ func TestObjects(t *testing.T) {
 	}
 }
 
-// Tests the offset field of LookupOptions expecting return all the objects in the same order they appear in
-// the triples slice
+// Tests the offset field of LookupOptions expecting return all the objects in
+// the same order they appear in the triples slice
 func TestObjectsOffset(t *testing.T) {
 	ts, ctx := getTestOffsetTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")

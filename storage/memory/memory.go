@@ -226,12 +226,12 @@ func (m *memory) RemoveTriples(ctx context.Context, ts []*triple.Triple) error {
 // checker provides the mechanics to check if a predicate/triple should be
 // considered on a certain operation.
 type checker struct {
-	max bool
-	m   int
-	c   int
-	o   *storage.LookupOptions
-	op  *predicate.Predicate
-	ota *time.Time
+	max            bool
+	pageSize       int
+	paddedPageSize int
+	o              *storage.LookupOptions
+	op             *predicate.Predicate
+	ota            *time.Time
 }
 
 // newChecker creates a new checker for a given LookupOptions configuration.
@@ -243,12 +243,12 @@ func newChecker(o *storage.LookupOptions, op *predicate.Predicate) *checker {
 		}
 	}
 	return &checker{
-		max: o.MaxElements > 0,
-		m:   o.MaxElements,
-		c:   o.MaxElements * o.Offset,
-		o:   o,
-		op:  op,
-		ota: ta,
+		max:            o.MaxElements > 0,
+		pageSize:       o.MaxElements,
+		paddedPageSize: o.MaxElements * o.Offset,
+		o:              o,
+		op:             op,
+		ota:            ta,
 	}
 }
 
@@ -277,15 +277,15 @@ func (c *checker) CheckGlobalTimeBounds(p *predicate.Predicate) bool {
 // CheckLimitAndUpdate checks if the internal offset value is reached, if not updates the value,
 // and check if the internal page limit is reached, if not updates the value.
 func (c *checker) CheckLimitAndUpdate() bool {
-	if c.max && c.m <= 0 {
+	if c.max && c.pageSize <= 0 {
 		return false
 	}
-	if c.c > 0 {
-		c.c--
+	if c.paddedPageSize > 0 {
+		c.paddedPageSize--
 		return false
 	}
 
-	c.m--
+	c.pageSize--
 	return true
 }
 
