@@ -269,20 +269,26 @@ func getTestTriplesFilter(t *testing.T) []*triple.Triple {
 
 func TestAddRemoveTriples(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	if err := g.RemoveTriples(ctx, ts); err != nil {
-		t.Errorf("g.RemoveTriples(_) failed failed to remove test triples with error %v", err)
+		t.Errorf("g.RemoveTriples(_) failed to remove test triples with error %v", err)
 	}
 }
 
 func TestObjects(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -301,7 +307,7 @@ func TestObjects(t *testing.T) {
 		}
 	}
 	if cnt != 3 {
-		t.Errorf("g.Objects(%s, %s) failed to retrieve 3 objects, got %d instead ", ts[0].Subject(), ts[0].Predicate(), cnt)
+		t.Errorf("g.Objects(%s, %s) got %d objects, want 3 instead.", ts[0].Subject(), ts[0].Predicate(), cnt)
 	}
 }
 
@@ -315,9 +321,12 @@ func TestObjectsOffset(t *testing.T) {
 		"/u<john>\t\"likes\"@[]\t/u<peter>",
 	}), context.Background()
 
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -359,7 +368,7 @@ func TestObjectsOffset(t *testing.T) {
 
 	for i := range objs1 {
 		if objs1[i] != objs2[i] {
-			t.Errorf("Error expected %s and got %s", objs1[i], objs2[i])
+			t.Errorf("Error got %s and expected %s", objs2[i], objs1[i])
 		}
 	}
 
@@ -367,9 +376,12 @@ func TestObjectsOffset(t *testing.T) {
 
 func TestObjectsLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -389,13 +401,16 @@ func TestObjectsLatestAnchor(t *testing.T) {
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.Objects(%s, %s) failed to retrieve 3 objects, got %d instead", ts[0].Subject(), ts[0].Predicate(), cnt)
+		t.Errorf("g.Objects(%s, %s) got %d objects, want 3 instead", ts[0].Subject(), ts[0].Predicate(), cnt)
 	}
 }
 
 func TestObjectsFilter(t *testing.T) {
 	ts, ctx := getTestTriplesFilter(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Fatalf("g.AddTriples(_) failed to add test triples with error: %v", err)
 	}
@@ -497,9 +512,12 @@ func TestObjectsFilter(t *testing.T) {
 // the triples slice
 func TestSubjects(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -517,7 +535,7 @@ func TestSubjects(t *testing.T) {
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.Objects(%s, %s) failed to retrieve 1 objects, got %d instead", ts[0].Subject(), ts[0].Predicate(), cnt)
+		t.Errorf("g.Objects(%s, %s) got %d objects, want 1 instead", ts[0].Subject(), ts[0].Predicate(), cnt)
 	}
 }
 
@@ -528,9 +546,12 @@ func TestSubjectsOffset(t *testing.T) {
 		"/u<peter>\t\"knows\"@[]\t/u<john>",
 		"/u<peter>\t\"likes\"@[]\t/u<john>",
 	}), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 
 	var subjs, subjs1, subjs2 []string
@@ -573,7 +594,7 @@ func TestSubjectsOffset(t *testing.T) {
 
 	for i := range subjs1 {
 		if subjs1[i] != subjs2[i] {
-			t.Errorf("Error expected %s and got %s", subjs1[i], subjs2[i])
+			t.Errorf("Error got %s and expected %s", subjs1[i], subjs2[i])
 		}
 	}
 
@@ -581,9 +602,12 @@ func TestSubjectsOffset(t *testing.T) {
 
 func TestSubjectsLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -602,13 +626,16 @@ func TestSubjectsLatestAnchor(t *testing.T) {
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.Objects(%s, %s) failed to retrieve 1 objects, got %d instead", ts[0].Subject(), ts[0].Predicate(), cnt)
+		t.Errorf("g.Objects(%s, %s) got %d objects, want 1 instead", ts[0].Subject(), ts[0].Predicate(), cnt)
 	}
 }
 
 func TestSubjectsFilter(t *testing.T) {
 	ts, ctx := getTestTriplesFilter(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Fatalf("g.AddTriples(_) failed to add test triples with error: %v", err)
 	}
@@ -708,9 +735,12 @@ func TestSubjectsFilter(t *testing.T) {
 
 func TestPredicatesForSubjectAndObject(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -727,7 +757,7 @@ func TestPredicatesForSubjectAndObject(t *testing.T) {
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) failed to retrieve 1 predicate, got %d instead", ts[0].Subject(), ts[0].Object(), cnt)
+		t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) got %d predicates, want 1 instead", ts[0].Subject(), ts[0].Object(), cnt)
 	}
 }
 
@@ -740,9 +770,12 @@ func TestPredicatesForSubjectAndObjectOffset(t *testing.T) {
 		"/u<alice>\t\"dislikes\"@[]\t/u<john>",
 		"/u<john>\t\"dislikes\"@[]\t/u<alice>",
 	}), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 
 	var prds, prds1, prds2 []string
@@ -792,9 +825,12 @@ func TestPredicatesForSubjectAndObjectOffset(t *testing.T) {
 
 func TestPredicatesForSubjectAndObjectLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -812,13 +848,16 @@ func TestPredicatesForSubjectAndObjectLatestAnchor(t *testing.T) {
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) failed to retrieve 1 predicate, got %d instead", ts[0].Subject(), ts[0].Object(), cnt)
+		t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) got %d predicates, want 1 instead", ts[0].Subject(), ts[0].Object(), cnt)
 	}
 }
 
 func TestPredicatesForSubjectAndObjectFilter(t *testing.T) {
 	ts, ctx := getTestTriplesFilter(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Fatalf("g.AddTriples(_) failed to add test triples with error: %v", err)
 	}
@@ -911,9 +950,12 @@ func TestPredicatesForSubjectAndObjectFilter(t *testing.T) {
 
 func TestPredicatesForSubject(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -930,7 +972,7 @@ func TestPredicatesForSubject(t *testing.T) {
 		}
 	}
 	if cnt != 3 {
-		t.Errorf("g.PredicatesForSubject(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), cnt)
+		t.Errorf("g.PredicatesForSubject(%s) got %d predicates, want 3 instead", ts[0].Subject(), cnt)
 	}
 }
 
@@ -943,9 +985,12 @@ func TestPredicatesForSubjectOffset(t *testing.T) {
 		"/u<alice>\t\"dislikes\"@[]\t/u<john>",
 		"/u<john>\t\"dislikes\"@[]\t/u<alice>",
 	}), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 
 	var prds, prds1, prds2 []string
@@ -995,9 +1040,12 @@ func TestPredicatesForSubjectOffset(t *testing.T) {
 
 func TestPredicatesForSubjectLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -1015,13 +1063,16 @@ func TestPredicatesForSubjectLatestAnchor(t *testing.T) {
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.PredicatesForSubject(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), cnt)
+		t.Errorf("g.PredicatesForSubject(%s) got %d predicates, want 3 instead", ts[0].Subject(), cnt)
 	}
 }
 
 func TestPredicatesForSubjectFilter(t *testing.T) {
 	ts, ctx := getTestTriplesFilter(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Fatalf("g.AddTriples(_) failed to add test triples with error: %v", err)
 	}
@@ -1105,9 +1156,12 @@ func TestPredicatesForSubjectFilter(t *testing.T) {
 
 func TestPredicatesForObject(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -1124,7 +1178,7 @@ func TestPredicatesForObject(t *testing.T) {
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.PredicatesForObject(%s) failed to retrieve 1 predicate, got %d instead", ts[0].Object(), cnt)
+		t.Errorf("g.PredicatesForObject(%s) got %d predicates, want 1 instead", ts[0].Object(), cnt)
 	}
 }
 
@@ -1137,9 +1191,12 @@ func TestPredicatesForObjectOffset(t *testing.T) {
 		"/u<alice>\t\"dislikes\"@[]\t/u<john>",
 		"/u<john>\t\"dislikes\"@[]\t/u<alice>",
 	}), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 
 	var prds, prds1, prds2 []string
@@ -1189,9 +1246,12 @@ func TestPredicatesForObjectOffset(t *testing.T) {
 
 func TestPredicatesForObjectLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -1209,13 +1269,16 @@ func TestPredicatesForObjectLatestAnchor(t *testing.T) {
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.PredicatesForObject(%s) failed to retrieve 1 predicate, got %d instead", ts[0].Object(), cnt)
+		t.Errorf("g.PredicatesForObject(%s) got %d predicates, want 1 instead", ts[0].Object(), cnt)
 	}
 }
 
 func TestPredicatesForObjectFilter(t *testing.T) {
 	ts, ctx := getTestTriplesFilter(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Fatalf("g.AddTriples(_) failed to add test triples with error: %v", err)
 	}
@@ -1299,9 +1362,12 @@ func TestPredicatesForObjectFilter(t *testing.T) {
 
 func TestTriplesForSubject(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -1315,7 +1381,7 @@ func TestTriplesForSubject(t *testing.T) {
 		cnt++
 	}
 	if cnt != 3 {
-		t.Errorf("g.triplesForSubject(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), cnt)
+		t.Errorf("g.triplesForSubject(%s) got %d predicates, want 3 instead", ts[0].Subject(), cnt)
 	}
 }
 
@@ -1328,9 +1394,12 @@ func TestTriplesforSubjectOffset(t *testing.T) {
 		"/u<alice>\t\"dislikes\"@[]\t/u<john>",
 		"/u<john>\t\"dislikes\"@[]\t/u<alice>",
 	}), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 
 	var trpls1, trpls2 []string
@@ -1375,9 +1444,12 @@ func TestTriplesforSubjectOffset(t *testing.T) {
 
 func TestTriplesForSubjectLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -1395,13 +1467,16 @@ func TestTriplesForSubjectLatestAnchor(t *testing.T) {
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.triplesForSubject(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), cnt)
+		t.Errorf("g.triplesForSubject(%s) got %d predicates, want 3 instead", ts[0].Subject(), cnt)
 	}
 }
 
 func TestTriplesForSubjectFilter(t *testing.T) {
 	ts, ctx := getTestTriplesFilter(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Fatalf("g.AddTriples(_) failed to add test triples with error: %v", err)
 	}
@@ -1485,9 +1560,12 @@ func TestTriplesForSubjectFilter(t *testing.T) {
 
 func TestTriplesForPredicate(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -1501,7 +1579,7 @@ func TestTriplesForPredicate(t *testing.T) {
 		cnt++
 	}
 	if cnt != 6 {
-		t.Errorf("g.triplesForPredicate(%s) failed to retrieve 3 predicates, got %d instead", ts[0].Predicate(), cnt)
+		t.Errorf("g.triplesForPredicate(%s) got %d predicates, want 3 instead", ts[0].Predicate(), cnt)
 	}
 }
 
@@ -1514,9 +1592,12 @@ func TestTriplesforPredicateOffset(t *testing.T) {
 		"/u<alice>\t\"knows\"@[]\t/u<mary>",
 		"/u<john>\t\"likes\"@[]\t/u<alice>",
 	}), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 
 	var trpls1, trpls2 []string
@@ -1561,9 +1642,12 @@ func TestTriplesforPredicateOffset(t *testing.T) {
 
 func TestTriplesForPredicateLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -1587,7 +1671,10 @@ func TestTriplesForPredicateLatestAnchor(t *testing.T) {
 
 func TestTriplesForPredicateFilter(t *testing.T) {
 	ts, ctx := getTestTriplesFilter(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Fatalf("g.AddTriples(_) failed to add test triples with error: %v", err)
 	}
@@ -1677,9 +1764,12 @@ func TestTriplesForPredicateFilter(t *testing.T) {
 
 func TestTriplesForObject(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -1693,7 +1783,7 @@ func TestTriplesForObject(t *testing.T) {
 		cnt++
 	}
 	if cnt != 1 {
-		t.Errorf("g.TriplesForObject(%s) failed to retrieve 1 predicates, got %d instead", ts[0].Object(), cnt)
+		t.Errorf("g.TriplesForObject(%s) got %d predicates, want 1 instead", ts[0].Object(), cnt)
 	}
 }
 
@@ -1706,9 +1796,12 @@ func TestTriplesforObjectOffset(t *testing.T) {
 		"/u<mary>\t\"knows\"@[]\t/u<john>",
 		"/u<john>\t\"knows\"@[]\t/u<alice>",
 	}), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 
 	var trpls1, trpls2 []string
@@ -1753,9 +1846,12 @@ func TestTriplesforObjectOffset(t *testing.T) {
 
 func TestTriplesForObjectLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -1773,13 +1869,16 @@ func TestTriplesForObjectLatestAnchor(t *testing.T) {
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.TriplesForObject(%s) failed to retrieve 1 predicates, got %d instead", ts[0].Object(), cnt)
+		t.Errorf("g.TriplesForObject(%s) got %d predicates, want 1 instead", ts[0].Object(), cnt)
 	}
 }
 
 func TestTriplesForObjectFilter(t *testing.T) {
 	ts, ctx := getTestTriplesFilter(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Fatalf("g.AddTriples(_) failed to add test triples with error: %v", err)
 	}
@@ -1871,9 +1970,12 @@ func TestTriplesForObjectWithLimit(t *testing.T) {
 		"/u<bob>\t\"kissed\"@[2015-06-01T00:00:00-09:00]\t/u<mary>",
 	})
 	ctx := context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -1900,15 +2002,18 @@ func TestTriplesForObjectWithLimit(t *testing.T) {
 		cnt++
 	}
 	if cnt != lo.MaxElements {
-		t.Errorf("g.TriplesForObject(%s) failed to retrieve 2 triples, got %d instead", ts[0].Object(), cnt)
+		t.Errorf("g.TriplesForObject(%s) got %d triples, want 2 instead", ts[0].Object(), cnt)
 	}
 }
 
 func TestTriplesForSubjectAndPredicate(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -1922,7 +2027,7 @@ func TestTriplesForSubjectAndPredicate(t *testing.T) {
 		cnt++
 	}
 	if cnt != 3 {
-		t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s) failed to retrieve 3 predicates, got %d instead", ts[0].Subject(), ts[0].Predicate(), cnt)
+		t.Errorf("g.TriplesForSubjectAndPredicate(%s, %s) got %d predicates, want 3 instead", ts[0].Subject(), ts[0].Predicate(), cnt)
 	}
 }
 
@@ -1935,9 +2040,12 @@ func TestTriplesforSubjectAndPredicateOffset(t *testing.T) {
 		"/u<alice>\t\"knows\"@[]\t/u<mary>",
 		"/u<alice>\t\"likes\"@[]\t/u<john>",
 	}), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 
 	var trpls1, trpls2 []string
@@ -1982,9 +2090,12 @@ func TestTriplesforSubjectAndPredicateOffset(t *testing.T) {
 
 func TestTriplesForSubjectAndPredicateLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -2008,7 +2119,10 @@ func TestTriplesForSubjectAndPredicateLatestAnchor(t *testing.T) {
 
 func TestTriplesForSubjectAndPredicateFilter(t *testing.T) {
 	ts, ctx := getTestTriplesFilter(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Fatalf("g.AddTriples(_) failed to add test triples with error: %v", err)
 	}
@@ -2108,9 +2222,12 @@ func TestTriplesForSubjectAndPredicateFilter(t *testing.T) {
 
 func TestTriplesForPredicateAndObject(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -2124,7 +2241,7 @@ func TestTriplesForPredicateAndObject(t *testing.T) {
 		cnt++
 	}
 	if cnt != 1 {
-		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed to retrieve 1 predicates, got %d instead", ts[0].Predicate(), ts[0].Object(), cnt)
+		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) got %d predicates, want 1 instead", ts[0].Predicate(), ts[0].Object(), cnt)
 	}
 }
 
@@ -2137,9 +2254,12 @@ func TestTriplesforPredicateAndObjectOffset(t *testing.T) {
 		"/u<peter>\t\"knows\"@[]\t/u<john>",
 		"/u<alice>\t\"likes\"@[]\t/u<john>",
 	}), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 
 	var trpls1, trpls2 []string
@@ -2184,9 +2304,12 @@ func TestTriplesforPredicateAndObjectOffset(t *testing.T) {
 
 func TestTriplesForPredicateAndObjectLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -2210,7 +2333,10 @@ func TestTriplesForPredicateAndObjectLatestAnchor(t *testing.T) {
 
 func TestTriplesForPredicateAndObjectFilter(t *testing.T) {
 	ts, ctx := getTestTriplesFilter(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Fatalf("g.AddTriples(_) failed to add test triples with error: %v", err)
 	}
@@ -2310,9 +2436,12 @@ func TestTriplesForPredicateAndObjectFilter(t *testing.T) {
 
 func TestExists(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	for _, trpl := range ts {
 		b, err := g.Exist(ctx, trpl)
@@ -2327,9 +2456,12 @@ func TestExists(t *testing.T) {
 
 func TestTriples(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -2343,7 +2475,7 @@ func TestTriples(t *testing.T) {
 		cnt++
 	}
 	if cnt != 6 {
-		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed to retrieve 1 predicates, got %d instead", ts[0].Predicate(), ts[0].Object(), cnt)
+		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) got %d predicates, want 1 instead", ts[0].Predicate(), ts[0].Object(), cnt)
 	}
 }
 
@@ -2356,9 +2488,12 @@ func TestTriplesOffset(t *testing.T) {
 		"/u<peter>\t\"knows\"@[]\t/u<john>",
 		"/u<alice>\t\"likes\"@[]\t/u<john>",
 	}), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 
 	var trpls1, trpls2 []string
@@ -2392,9 +2527,12 @@ func TestTriplesOffset(t *testing.T) {
 
 func TestTriplesLatestAnchor(t *testing.T) {
 	ts, ctx := getTestTemporalTriples(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
-		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
+		t.Errorf("g.AddTriples(_) failed to add test triples with error %v", err)
 	}
 	// To avoid blocking on the test. On a real usage of the driver you would like
 	// to call the graph operation on a separated goroutine using a sync.WaitGroup
@@ -2412,13 +2550,16 @@ func TestTriplesLatestAnchor(t *testing.T) {
 		}
 	}
 	if cnt != 1 {
-		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) failed to retrieve 1 predicates, got %d instead", ts[0].Predicate(), ts[0].Object(), cnt)
+		t.Errorf("g.TriplesForPredicateAndObject(%s, %s) got %d predicates, want 1 instead", ts[0].Predicate(), ts[0].Object(), cnt)
 	}
 }
 
 func TestTriplesFilter(t *testing.T) {
 	ts, ctx := getTestTriplesFilter(t), context.Background()
-	g, _ := NewStore().NewGraph(ctx, "test")
+	g, errGraph := NewStore().NewGraph(ctx, "test")
+	if errGraph != nil {
+		t.Errorf("g.NewStore() failed on creating a new graph with error %v", errGraph)
+	}
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Fatalf("g.AddTriples(_) failed to add test triples with error: %v", err)
 	}
