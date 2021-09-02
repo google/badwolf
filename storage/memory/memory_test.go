@@ -308,7 +308,13 @@ func TestObjects(t *testing.T) {
 // Tests the offset field of LookupOptions expecting return all the objects in
 // the same order they appear in the triples slice
 func TestObjectsOffset(t *testing.T) {
-	ts, ctx := getTestOffsetTriples(t), context.Background()
+	ts, ctx := createTriples(t, []string{
+		"/u<john>\t\"knows\"@[]\t/u<alice>",
+		"/u<john>\t\"knows\"@[]\t/u<mary>",
+		"/u<john>\t\"knows\"@[]\t/u<peter>",
+		"/u<john>\t\"likes\"@[]\t/u<peter>",
+	}), context.Background()
+
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
@@ -318,7 +324,7 @@ func TestObjectsOffset(t *testing.T) {
 	// to collect the error code eventually.
 	var objs, objs1, objs2 []string
 	objStr := make(map[string]string)
-	for _, ob := range ts {
+	for _, ob := range ts[:3] {
 		objStr[ob.String()] = ob.Object().String()
 		objs = append(objs, ob.String())
 	}
@@ -329,12 +335,26 @@ func TestObjectsOffset(t *testing.T) {
 
 	for i, ob := range ts {
 		os := make(chan *triple.Object, 1)
-		lo := &storage.LookupOptions{MaxElements: 1, Offset: i % 3}
-		if err := g.Objects(ctx, ob.Subject(), ob.Predicate(), lo, os); err != nil {
+		lo := &storage.LookupOptions{MaxElements: 1, Offset: i}
+		if err := g.Objects(ctx, ts[0].Subject(), ts[0].Predicate(), lo, os); err != nil {
 			t.Errorf("g.Objects(%s, %s) failed with error %v", ob.Subject(), ob.Predicate(), err)
 		}
 		a := <-os
-		objs2 = append(objs2, a.String())
+		if i >= 3 {
+			if a != nil {
+				t.Errorf("g.Objects return unexpected object")
+			}
+		} else {
+			if a == nil {
+				t.Errorf("g.Objects do not return expected object %s", ts[i].Object())
+			} else {
+				objs2 = append(objs2, a.String())
+			}
+		}
+	}
+
+	if len(objs1) != len(objs2) {
+		t.Errorf("different size of slices")
 	}
 
 	for i := range objs1 {
@@ -502,7 +522,12 @@ func TestSubjects(t *testing.T) {
 }
 
 func TestSubjectsOffset(t *testing.T) {
-	ts, ctx := getTestOffsetTriples(t), context.Background()
+	ts, ctx := createTriples(t, []string{
+		"/u<alice>\t\"knows\"@[]\t/u<john>",
+		"/u<mary>\t\"knows\"@[]\t/u<john>",
+		"/u<peter>\t\"knows\"@[]\t/u<john>",
+		"/u<peter>\t\"likes\"@[]\t/u<john>",
+	}), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
@@ -510,7 +535,7 @@ func TestSubjectsOffset(t *testing.T) {
 
 	var subjs, subjs1, subjs2 []string
 	subjStr := make(map[string]string)
-	for _, sub := range ts {
+	for _, sub := range ts[:3] {
 		subjStr[sub.String()] = sub.Subject().String()
 		subjs = append(subjs, sub.String())
 	}
@@ -524,12 +549,26 @@ func TestSubjectsOffset(t *testing.T) {
 	// to collect the error code eventually.
 	for i, sub := range ts {
 		ss := make(chan *node.Node, 1)
-		lo := &storage.LookupOptions{MaxElements: 1, Offset: (i / 3)}
+		lo := &storage.LookupOptions{MaxElements: 1, Offset: i}
 		if err := g.Subjects(ctx, sub.Predicate(), sub.Object(), lo, ss); err != nil {
 			t.Errorf("g.Subjects(%s, %s) failed with error %v", sub.Predicate(), sub.Object(), err)
 		}
 		a := <-ss
-		subjs2 = append(subjs2, a.String())
+		if i >= 3 {
+			if a != nil {
+				t.Errorf("g.Subjects return unexpected subject")
+			}
+		} else {
+			if a == nil {
+				t.Errorf("g.Subjects do not return expected subject %s", ts[i].Subject())
+			} else {
+				subjs2 = append(subjs2, a.String())
+			}
+		}
+	}
+
+	if len(subjs1) != len(subjs2) {
+		t.Errorf("different size of slices")
 	}
 
 	for i := range subjs1 {
@@ -695,7 +734,12 @@ func TestPredicatesForSubjectAndObject(t *testing.T) {
 // Tests the offset field of LookupOptions expecting return all the predicates in the same order they appear in
 // the triples slice
 func TestPredicatesForSubjectAndObjectOffset(t *testing.T) {
-	ts, ctx := getTestOffsetPredicates(t), context.Background()
+	ts, ctx := createTriples(t, []string{
+		"/u<alice>\t\"knows\"@[]\t/u<john>",
+		"/u<alice>\t\"likes\"@[]\t/u<john>",
+		"/u<alice>\t\"dislikes\"@[]\t/u<john>",
+		"/u<john>\t\"dislikes\"@[]\t/u<alice>",
+	}), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
@@ -703,7 +747,7 @@ func TestPredicatesForSubjectAndObjectOffset(t *testing.T) {
 
 	var prds, prds1, prds2 []string
 	prdStr := make(map[string]string)
-	for _, prd := range ts {
+	for _, prd := range ts[:3] {
 		prdStr[prd.String()] = prd.Predicate().String()
 		prds = append(prds, prd.String())
 	}
@@ -722,8 +766,23 @@ func TestPredicatesForSubjectAndObjectOffset(t *testing.T) {
 			t.Errorf("g.PredicatesForSubjectAndObject(%s, %s) failed with error %v", trpl.Subject(), trpl.Object(), err)
 		}
 		a := <-ps
-		prds2 = append(prds2, a.String())
+		if i >= 3 {
+			if a != nil {
+				t.Errorf("g.TestPredicatesForSubjectAndObjectOffset return unexpected predicate")
+			}
+		} else {
+			if a == nil {
+				t.Errorf("g.TestPredicatesForSubjectAndObjectOffset do not return expected object %s", ts[i].Predicate())
+			} else {
+				prds2 = append(prds2, a.String())
+			}
+		}
 	}
+
+	if len(prds1) != len(prds2) {
+		t.Errorf("different size of slices")
+	}
+
 	for i := range prds1 {
 		if prds1[i] != prds2[i] {
 			t.Errorf("Error expected string %s and got %s", prds1[i], prds2[i])
@@ -878,7 +937,12 @@ func TestPredicatesForSubject(t *testing.T) {
 // Tests the offset field of LookupOptions expecting return all the predicates in the same order they appear in
 // the triples slice
 func TestPredicatesForSubjectOffset(t *testing.T) {
-	ts, ctx := getTestOffsetPredicates(t), context.Background()
+	ts, ctx := createTriples(t, []string{
+		"/u<alice>\t\"knows\"@[]\t/u<john>",
+		"/u<alice>\t\"likes\"@[]\t/u<john>",
+		"/u<alice>\t\"dislikes\"@[]\t/u<john>",
+		"/u<john>\t\"dislikes\"@[]\t/u<alice>",
+	}), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
@@ -886,7 +950,7 @@ func TestPredicatesForSubjectOffset(t *testing.T) {
 
 	var prds, prds1, prds2 []string
 	prdStr := make(map[string]string)
-	for _, prd := range ts {
+	for _, prd := range ts[:3] {
 		prdStr[prd.String()] = prd.Predicate().String()
 		prds = append(prds, prd.String())
 	}
@@ -905,8 +969,23 @@ func TestPredicatesForSubjectOffset(t *testing.T) {
 			t.Errorf("g.PredicatesForSubject(%s) failed with error %v", trpl.Subject(), err)
 		}
 		a := <-ps
-		prds2 = append(prds2, a.String())
+		if i >= 3 {
+			if a != nil {
+				t.Errorf("g.PredicatesForSubject return unexpected predicate")
+			}
+		} else {
+			if a == nil {
+				t.Errorf("g.PredicatesForSubject do not return expected predicate %s", ts[i].Predicate())
+			} else {
+				prds2 = append(prds2, a.String())
+			}
+		}
 	}
+
+	if len(prds1) != len(prds2) {
+		t.Errorf("different size of slices")
+	}
+
 	for i := range prds1 {
 		if prds1[i] != prds2[i] {
 			t.Errorf("Error expected %s and got %s", prds1[i], prds2[i])
@@ -1052,7 +1131,12 @@ func TestPredicatesForObject(t *testing.T) {
 // Tests the offset field of LookupOptions expecting return all the predicates in the same order they appear in
 // the triples slice
 func TestPredicatesForObjectOffset(t *testing.T) {
-	ts, ctx := getTestOffsetPredicates(t), context.Background()
+	ts, ctx := createTriples(t, []string{
+		"/u<alice>\t\"knows\"@[]\t/u<john>",
+		"/u<alice>\t\"likes\"@[]\t/u<john>",
+		"/u<alice>\t\"dislikes\"@[]\t/u<john>",
+		"/u<john>\t\"dislikes\"@[]\t/u<alice>",
+	}), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
@@ -1060,7 +1144,7 @@ func TestPredicatesForObjectOffset(t *testing.T) {
 
 	var prds, prds1, prds2 []string
 	prdStr := make(map[string]string)
-	for _, prd := range ts {
+	for _, prd := range ts[:3] {
 		prdStr[prd.String()] = prd.Predicate().String()
 		prds = append(prds, prd.String())
 	}
@@ -1079,8 +1163,23 @@ func TestPredicatesForObjectOffset(t *testing.T) {
 			t.Errorf("g.PredicatesForObject(%s) failed with error %v", trpl.Object(), err)
 		}
 		a := <-ps
-		prds2 = append(prds2, a.String())
+		if i >= 3 {
+			if a != nil {
+				t.Errorf("g.PredicatesForObject return unexpected predicate")
+			}
+		} else {
+			if a == nil {
+				t.Errorf("g.PredicatesForObject do not return expected predicate %s", ts[i].Predicate())
+			} else {
+				prds2 = append(prds2, a.String())
+			}
+		}
 	}
+
+	if len(prds1) != len(prds2) {
+		t.Errorf("different size of slices")
+	}
+
 	for i := range prds1 {
 		if prds1[i] != prds2[i] {
 			t.Errorf("Error expected %s and got %s", prds1[i], prds2[i])
@@ -1223,14 +1322,19 @@ func TestTriplesForSubject(t *testing.T) {
 // Tests the offset field of LookupOptions expecting return all the triples in the same order they appear in
 // the triples slice
 func TestTriplesforSubjectOffset(t *testing.T) {
-	ts, ctx := getTestOffsetTriples(t), context.Background()
+	ts, ctx := createTriples(t, []string{
+		"/u<alice>\t\"knows\"@[]\t/u<john>",
+		"/u<alice>\t\"likes\"@[]\t/u<john>",
+		"/u<alice>\t\"dislikes\"@[]\t/u<john>",
+		"/u<john>\t\"dislikes\"@[]\t/u<alice>",
+	}), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
 
 	var trpls1, trpls2 []string
-	for _, trpl := range ts {
+	for _, trpl := range ts[:3] {
 		trpls1 = append(trpls1, trpl.String())
 	}
 	sort.Strings(trpls1)
@@ -1240,13 +1344,28 @@ func TestTriplesforSubjectOffset(t *testing.T) {
 	// to collect the error code eventually.
 	for i, trpl := range ts {
 		trs := make(chan *triple.Triple, 1)
-		lo := &storage.LookupOptions{MaxElements: 1, Offset: (i % 3)}
+		lo := &storage.LookupOptions{MaxElements: 1, Offset: i}
 		if err := g.TriplesForSubject(ctx, trpl.Subject(), lo, trs); err != nil {
-			t.Errorf("g.PredicatesForObject(%s) failed with error %v", trpl.Subject(), err)
+			t.Errorf("g.TriplesForSubject(%s) failed with error %v", trpl.Subject(), err)
 		}
 		a := <-trs
-		trpls2 = append(trpls2, a.String())
+		if i >= 3 {
+			if a != nil {
+				t.Errorf("g.TestTriplesforSubject return unexpected triple")
+			}
+		} else {
+			if a == nil {
+				t.Errorf("g.TestTriplesforSubject do not return expected triple %s", ts[i])
+			} else {
+				trpls2 = append(trpls2, a.String())
+			}
+		}
 	}
+
+	if len(trpls1) != len(trpls2) {
+		t.Errorf("different size of slices")
+	}
+
 	for i := range trpls1 {
 		if trpls1[i] != trpls2[i] {
 			t.Errorf("Error expected %s and got %s", trpls1[i], trpls2[i])
@@ -1389,14 +1508,19 @@ func TestTriplesForPredicate(t *testing.T) {
 // Tests the offset field of LookupOptions expecting return all the triples in the same order they appear in
 // the triples slice
 func TestTriplesforPredicateOffset(t *testing.T) {
-	ts, ctx := getTestOffsetTriples(t), context.Background()
+	ts, ctx := createTriples(t, []string{
+		"/u<alice>\t\"knows\"@[]\t/u<john>",
+		"/u<alice>\t\"knows\"@[]\t/u<peter>",
+		"/u<alice>\t\"knows\"@[]\t/u<mary>",
+		"/u<john>\t\"likes\"@[]\t/u<alice>",
+	}), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
 
 	var trpls1, trpls2 []string
-	for _, trpl := range ts {
+	for _, trpl := range ts[:3] {
 		trpls1 = append(trpls1, trpl.String())
 	}
 	sort.Strings(trpls1)
@@ -1411,8 +1535,23 @@ func TestTriplesforPredicateOffset(t *testing.T) {
 			t.Errorf("g.TriplesforPredicate(%s) failed with error %v", trpl.Predicate(), err)
 		}
 		a := <-trs
-		trpls2 = append(trpls2, a.String())
+		if i >= 3 {
+			if a != nil {
+				t.Errorf("g.TriplesforPredicate return unexpected triple")
+			}
+		} else {
+			if a == nil {
+				t.Errorf("g.TriplesforPredicate do not return expected triple %s", ts[i])
+			} else {
+				trpls2 = append(trpls2, a.String())
+			}
+		}
 	}
+
+	if len(trpls1) != len(trpls2) {
+		t.Errorf("different size of slices")
+	}
+
 	for i := range trpls1 {
 		if trpls1[i] != trpls2[i] {
 			t.Errorf("Error expected %s and got %s", trpls1[i], trpls2[i])
@@ -1561,14 +1700,19 @@ func TestTriplesForObject(t *testing.T) {
 // Tests the offset field of LookupOptions expecting return all the triples in the same order they appear in
 // the triples slice
 func TestTriplesforObjectOffset(t *testing.T) {
-	ts, ctx := getTestOffsetTriples(t), context.Background()
+	ts, ctx := createTriples(t, []string{
+		"/u<alice>\t\"knows\"@[]\t/u<john>",
+		"/u<john>\t\"knows\"@[]\t/u<john>",
+		"/u<mary>\t\"knows\"@[]\t/u<john>",
+		"/u<john>\t\"knows\"@[]\t/u<alice>",
+	}), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
 
 	var trpls1, trpls2 []string
-	for _, trpl := range ts {
+	for _, trpl := range ts[:3] {
 		trpls1 = append(trpls1, trpl.String())
 	}
 	sort.Strings(trpls1)
@@ -1578,13 +1722,28 @@ func TestTriplesforObjectOffset(t *testing.T) {
 	// to collect the error code eventually.
 	for i, trpl := range ts {
 		trs := make(chan *triple.Triple, 1)
-		lo := &storage.LookupOptions{MaxElements: 1, Offset: (i / 3)}
+		lo := &storage.LookupOptions{MaxElements: 1, Offset: i}
 		if err := g.TriplesForObject(ctx, trpl.Object(), lo, trs); err != nil {
 			t.Errorf("g.TriplesforObject(%s) failed with error %v", trpl.Object(), err)
 		}
 		a := <-trs
-		trpls2 = append(trpls2, a.String())
+		if i >= 3 {
+			if a != nil {
+				t.Errorf("g.TriplesForObject return unexpected triple")
+			}
+		} else {
+			if a == nil {
+				t.Errorf("g.TriplesForObject do not return expected triple %s", ts[i])
+			} else {
+				trpls2 = append(trpls2, a.String())
+			}
+		}
 	}
+
+	if len(trpls1) != len(trpls2) {
+		t.Errorf("different size of slices")
+	}
+
 	for i := range trpls1 {
 		if trpls1[i] != trpls2[i] {
 			t.Errorf("Error expected %s and got %s", trpls1[i], trpls2[i])
@@ -1770,14 +1929,19 @@ func TestTriplesForSubjectAndPredicate(t *testing.T) {
 // Tests the offset field of LookupOptions expecting return all the triples in the same order they appear in
 // the triples slice
 func TestTriplesforSubjectAndPredicateOffset(t *testing.T) {
-	ts, ctx := getTestOffsetTriples(t), context.Background()
+	ts, ctx := createTriples(t, []string{
+		"/u<alice>\t\"knows\"@[]\t/u<john>",
+		"/u<alice>\t\"knows\"@[]\t/u<peter>",
+		"/u<alice>\t\"knows\"@[]\t/u<mary>",
+		"/u<alice>\t\"likes\"@[]\t/u<john>",
+	}), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
 
 	var trpls1, trpls2 []string
-	for _, trpl := range ts {
+	for _, trpl := range ts[:3] {
 		trpls1 = append(trpls1, trpl.String())
 	}
 	sort.Strings(trpls1)
@@ -1787,13 +1951,28 @@ func TestTriplesforSubjectAndPredicateOffset(t *testing.T) {
 	// to collect the error code eventually.
 	for i, trpl := range ts {
 		trs := make(chan *triple.Triple, 1)
-		lo := &storage.LookupOptions{MaxElements: 1, Offset: i % 3}
+		lo := &storage.LookupOptions{MaxElements: 1, Offset: i}
 		if err := g.TriplesForSubjectAndPredicate(ctx, trpl.Subject(), trpl.Predicate(), lo, trs); err != nil {
 			t.Errorf("g.TriplesforSubjectAndPredicate(%s %s) failed with error %v", trpl.Subject(), trpl.Predicate(), err)
 		}
 		a := <-trs
-		trpls2 = append(trpls2, a.String())
+		if i >= 3 {
+			if a != nil {
+				t.Errorf("g.TriplesforSubjectAndPredicate return unexpected triple")
+			}
+		} else {
+			if a == nil {
+				t.Errorf("g.TriplesforSubjectAndPredicate do not return expected triple %s", ts[i])
+			} else {
+				trpls2 = append(trpls2, a.String())
+			}
+		}
 	}
+
+	if len(trpls1) != len(trpls2) {
+		t.Errorf("different size of slices")
+	}
+
 	for i := range trpls1 {
 		if trpls1[i] != trpls2[i] {
 			t.Errorf("Error expected %s and got %s", trpls1[i], trpls2[i])
@@ -1952,14 +2131,19 @@ func TestTriplesForPredicateAndObject(t *testing.T) {
 // Tests the offset field of LookupOptions expecting return all the triples in the same order they appear in
 // the triples slice
 func TestTriplesforPredicateAndObjectOffset(t *testing.T) {
-	ts, ctx := getTestOffsetTriples(t), context.Background()
+	ts, ctx := createTriples(t, []string{
+		"/u<alice>\t\"knows\"@[]\t/u<john>",
+		"/u<mary>\t\"knows\"@[]\t/u<john>",
+		"/u<peter>\t\"knows\"@[]\t/u<john>",
+		"/u<alice>\t\"likes\"@[]\t/u<john>",
+	}), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
 	}
 
 	var trpls1, trpls2 []string
-	for _, trpl := range ts {
+	for _, trpl := range ts[:3] {
 		trpls1 = append(trpls1, trpl.String())
 	}
 	sort.Strings(trpls1)
@@ -1969,13 +2153,28 @@ func TestTriplesforPredicateAndObjectOffset(t *testing.T) {
 	// to collect the error code eventually.
 	for i, trpl := range ts {
 		trs := make(chan *triple.Triple, 1)
-		lo := &storage.LookupOptions{MaxElements: 1, Offset: i / 3}
+		lo := &storage.LookupOptions{MaxElements: 1, Offset: i}
 		if err := g.TriplesForPredicateAndObject(ctx, trpl.Predicate(), trpl.Object(), lo, trs); err != nil {
 			t.Errorf("g.TriplesforPredicateAndObject(%s %s) failed with error %v", trpl.Predicate(), trpl.Object(), err)
 		}
 		a := <-trs
-		trpls2 = append(trpls2, a.String())
+		if i >= 3 {
+			if a != nil {
+				t.Errorf("g.TestTriplesforPredicateAndObject return unexpected triple")
+			}
+		} else {
+			if a == nil {
+				t.Errorf("g.TestTriplesforPredicateAndObject do not return expected triple %s", ts[i])
+			} else {
+				trpls2 = append(trpls2, a.String())
+			}
+		}
 	}
+
+	if len(trpls1) != len(trpls2) {
+		t.Errorf("different size of slices")
+	}
+
 	for i := range trpls1 {
 		if trpls1[i] != trpls2[i] {
 			t.Errorf("Error expected %s and got %s", trpls1[i], trpls2[i])
@@ -2151,7 +2350,12 @@ func TestTriples(t *testing.T) {
 // Tests the offset field of LookupOptions expecting return all the triples in the same order they appear in
 // the triples slice
 func TestTriplesOffset(t *testing.T) {
-	ts, ctx := getTestOffsetTriples(t), context.Background()
+	ts, ctx := createTriples(t, []string{
+		"/u<alice>\t\"knows\"@[]\t/u<john>",
+		"/u<mary>\t\"knows\"@[]\t/u<john>",
+		"/u<peter>\t\"knows\"@[]\t/u<john>",
+		"/u<alice>\t\"likes\"@[]\t/u<john>",
+	}), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
 	if err := g.AddTriples(ctx, ts); err != nil {
 		t.Errorf("g.AddTriples(_) failed failed to add test triples with error %v", err)
@@ -2175,6 +2379,10 @@ func TestTriplesOffset(t *testing.T) {
 		a := <-trs
 		trpls2 = append(trpls2, a.String())
 	}
+	if len(trpls1) != len(trpls2) {
+		t.Errorf("different size of slices")
+	}
+
 	for i := range trpls1 {
 		if trpls1[i] != trpls2[i] {
 			t.Errorf("Error expected %s and got %s", trpls1[i], trpls2[i])
