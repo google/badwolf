@@ -245,7 +245,7 @@ func newChecker(o *storage.LookupOptions, op *predicate.Predicate) *checker {
 	return &checker{
 		max: o.MaxElements > 0,
 		m:   o.MaxElements,
-		c:   o.MaxElements * (o.Offset + 1),
+		c:   o.MaxElements * o.Offset,
 		o:   o,
 		op:  op,
 		ota: ta,
@@ -274,15 +274,19 @@ func (c *checker) CheckGlobalTimeBounds(p *predicate.Predicate) bool {
 	return true
 }
 
-// CheckLimitAndUpdate checks the internal limit count if it is set and also updates
-// the internal state for the case these counts are needed.
+// CheckLimitAndUpdate checks if the internal offset value is reached, if not updates the value,
+// and check if the internal page limit is reached, if not updates the value.
 func (c *checker) CheckLimitAndUpdate() bool {
-	if c.max && c.c <= 0 {
+	if c.max && c.m <= 0 {
+		return false
+	}
+	if c.c > 0 {
+		c.c--
 		return false
 	}
 
-	c.c--
-	return c.c < c.m
+	c.m--
+	return true
 }
 
 // applyGlobalTimeBounds applies the global time bound constraints specified by the checker to
@@ -421,6 +425,21 @@ func executeFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Pr
 	}
 }
 
+// SortByString sorts the coming triples by string and maps the strings back to triples on st
+// to put it on channel.
+func SortByString(selectedTrpls, st *map[string]*triple.Triple, strObs *[]string) error {
+	if selectedTrpls == nil {
+		return fmt.Errorf("Triples cannot be nil")
+	}
+	for _, k := range *selectedTrpls {
+		(*st)[k.String()] = k
+		*strObs = append(*strObs, k.String())
+	}
+	sort.Strings(*strObs)
+
+	return nil
+}
+
 // Objects published the objects for the give object and predicate to the
 // provided channel.
 func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions, objs chan<- *triple.Object) error {
@@ -461,11 +480,9 @@ func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predica
 
 	st := make(map[string]*triple.Triple)
 	var strObs []string
-	for _, k := range selectedTrpls {
-		st[k.String()] = k
-		strObs = append(strObs, k.String())
+	if err := SortByString(&selectedTrpls, &st, &strObs); err != nil {
+		return err
 	}
-	sort.Strings(strObs)
 
 	for _, t := range strObs {
 		if t != "" && ckr.CheckLimitAndUpdate() {
@@ -514,18 +531,16 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 		}
 	}
 
-	st := make(map[string]*node.Node)
+	st := make(map[string]*triple.Triple)
 	var strSubs []string
-	for _, k := range selectedTrpls {
-		st[k.String()] = k.Subject()
-		strSubs = append(strSubs, k.String())
+	if err := SortByString(&selectedTrpls, &st, &strSubs); err != nil {
+		return err
 	}
-	sort.Strings(strSubs)
 
 	cnt := 0
 	for _, t := range strSubs {
 		if t != "" && ckr.CheckLimitAndUpdate() {
-			subjs <- st[t]
+			subjs <- st[t].Subject()
 			cnt++
 		}
 	}
@@ -571,18 +586,16 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 		}
 	}
 
-	st := make(map[string]*predicate.Predicate)
+	st := make(map[string]*triple.Triple)
 	var strPrds []string
-	for _, k := range selectedTrpls {
-		st[k.String()] = k.Predicate()
-		strPrds = append(strPrds, k.String())
+	if err := SortByString(&selectedTrpls, &st, &strPrds); err != nil {
+		return err
 	}
-	sort.Strings(strPrds)
 
 	cnt := 0
 	for _, t := range strPrds {
 		if t != "" && ckr.CheckLimitAndUpdate() {
-			prds <- st[t]
+			prds <- st[t].Predicate()
 			cnt++
 		}
 	}
@@ -626,18 +639,16 @@ func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *sto
 		}
 	}
 
-	st := make(map[string]*predicate.Predicate)
+	st := make(map[string]*triple.Triple)
 	var strPrds []string
-	for _, k := range selectedTrpls {
-		st[k.String()] = k.Predicate()
-		strPrds = append(strPrds, k.String())
+	if err := SortByString(&selectedTrpls, &st, &strPrds); err != nil {
+		return err
 	}
-	sort.Strings(strPrds)
 
 	cnt := 0
 	for _, t := range strPrds {
 		if t != "" && ckr.CheckLimitAndUpdate() {
-			prds <- st[t]
+			prds <- st[t].Predicate()
 			cnt++
 		}
 	}
@@ -681,18 +692,16 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 		}
 	}
 
-	st := make(map[string]*predicate.Predicate)
+	st := make(map[string]*triple.Triple)
 	var strPrds []string
-	for _, k := range selectedTrpls {
-		st[k.String()] = k.Predicate()
-		strPrds = append(strPrds, k.String())
+	if err := SortByString(&selectedTrpls, &st, &strPrds); err != nil {
+		return err
 	}
-	sort.Strings(strPrds)
 
 	cnt := 0
 	for _, t := range strPrds {
 		if t != "" && ckr.CheckLimitAndUpdate() {
-			prds <- st[t]
+			prds <- st[t].Predicate()
 			cnt++
 		}
 	}
@@ -738,11 +747,9 @@ func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storag
 
 	st := make(map[string]*triple.Triple)
 	var strTrpls []string
-	for _, k := range selectedTrpls {
-		st[k.String()] = k
-		strTrpls = append(strTrpls, k.String())
+	if err := SortByString(&selectedTrpls, &st, &strTrpls); err != nil {
+		return err
 	}
-	sort.Strings(strTrpls)
 
 	cnt := 0
 	for _, t := range strTrpls {
@@ -793,11 +800,9 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 
 	st := make(map[string]*triple.Triple)
 	var strTrpls []string
-	for _, k := range selectedTrpls {
-		st[k.String()] = k
-		strTrpls = append(strTrpls, k.String())
+	if err := SortByString(&selectedTrpls, &st, &strTrpls); err != nil {
+		return err
 	}
-	sort.Strings(strTrpls)
 
 	cnt := 0
 	for _, t := range strTrpls {
@@ -848,11 +853,9 @@ func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *sto
 
 	st := make(map[string]*triple.Triple)
 	var strTrpls []string
-	for _, k := range selectedTrpls {
-		st[k.String()] = k
-		strTrpls = append(strTrpls, k.String())
+	if err := SortByString(&selectedTrpls, &st, &strTrpls); err != nil {
+		return err
 	}
-	sort.Strings(strTrpls)
 
 	cnt := 0
 	for _, t := range strTrpls {
@@ -905,11 +908,9 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 
 	st := make(map[string]*triple.Triple)
 	var strTrpls []string
-	for _, k := range selectedTrpls {
-		st[k.String()] = k
-		strTrpls = append(strTrpls, k.String())
+	if err := SortByString(&selectedTrpls, &st, &strTrpls); err != nil {
+		return err
 	}
-	sort.Strings(strTrpls)
 
 	cnt := 0
 	for _, t := range strTrpls {
@@ -962,11 +963,9 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 
 	st := make(map[string]*triple.Triple)
 	var strTrpls []string
-	for _, k := range selectedTrpls {
-		st[k.String()] = k
-		strTrpls = append(strTrpls, k.String())
+	if err := SortByString(&selectedTrpls, &st, &strTrpls); err != nil {
+		return err
 	}
-	sort.Strings(strTrpls)
 
 	cnt := 0
 	for _, t := range strTrpls {
@@ -1025,11 +1024,9 @@ func (m *memory) Triples(ctx context.Context, lo *storage.LookupOptions, trpls c
 
 	st := make(map[string]*triple.Triple)
 	var strTrpls []string
-	for _, k := range selectedTrpls {
-		st[k.String()] = k
-		strTrpls = append(strTrpls, k.String())
+	if err := SortByString(&selectedTrpls, &st, &strTrpls); err != nil {
+		return err
 	}
-	sort.Strings(strTrpls)
 
 	cnt := 0
 	for _, t := range strTrpls {

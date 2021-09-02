@@ -305,6 +305,8 @@ func TestObjects(t *testing.T) {
 	}
 }
 
+// Tests the offset field of LookupOptions expecting return all the objects in the same order they appear in
+// the triples slice
 func TestObjectsOffset(t *testing.T) {
 	ts, ctx := getTestOffsetTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
@@ -471,6 +473,8 @@ func TestObjectsFilter(t *testing.T) {
 	}
 }
 
+// Tests the offset field of LookupOptions expecting return all the subjects in the same order they appear in
+// the triples slice
 func TestSubjects(t *testing.T) {
 	ts, ctx := getTestTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
@@ -688,6 +692,8 @@ func TestPredicatesForSubjectAndObject(t *testing.T) {
 	}
 }
 
+// Tests the offset field of LookupOptions expecting return all the predicates in the same order they appear in
+// the triples slice
 func TestPredicatesForSubjectAndObjectOffset(t *testing.T) {
 	ts, ctx := getTestOffsetPredicates(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
@@ -869,6 +875,8 @@ func TestPredicatesForSubject(t *testing.T) {
 	}
 }
 
+// Tests the offset field of LookupOptions expecting return all the predicates in the same order they appear in
+// the triples slice
 func TestPredicatesForSubjectOffset(t *testing.T) {
 	ts, ctx := getTestOffsetPredicates(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
@@ -1041,6 +1049,8 @@ func TestPredicatesForObject(t *testing.T) {
 	}
 }
 
+// Tests the offset field of LookupOptions expecting return all the predicates in the same order they appear in
+// the triples slice
 func TestPredicatesForObjectOffset(t *testing.T) {
 	ts, ctx := getTestOffsetPredicates(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
@@ -1210,6 +1220,8 @@ func TestTriplesForSubject(t *testing.T) {
 	}
 }
 
+// Tests the offset field of LookupOptions expecting return all the triples in the same order they appear in
+// the triples slice
 func TestTriplesforSubjectOffset(t *testing.T) {
 	ts, ctx := getTestOffsetTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
@@ -1374,6 +1386,8 @@ func TestTriplesForPredicate(t *testing.T) {
 	}
 }
 
+// Tests the offset field of LookupOptions expecting return all the triples in the same order they appear in
+// the triples slice
 func TestTriplesforPredicateOffset(t *testing.T) {
 	ts, ctx := getTestOffsetTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
@@ -1544,6 +1558,8 @@ func TestTriplesForObject(t *testing.T) {
 	}
 }
 
+// Tests the offset field of LookupOptions expecting return all the triples in the same order they appear in
+// the triples slice
 func TestTriplesforObjectOffset(t *testing.T) {
 	ts, ctx := getTestOffsetTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
@@ -1751,6 +1767,8 @@ func TestTriplesForSubjectAndPredicate(t *testing.T) {
 	}
 }
 
+// Tests the offset field of LookupOptions expecting return all the triples in the same order they appear in
+// the triples slice
 func TestTriplesforSubjectAndPredicateOffset(t *testing.T) {
 	ts, ctx := getTestOffsetTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
@@ -1931,6 +1949,8 @@ func TestTriplesForPredicateAndObject(t *testing.T) {
 	}
 }
 
+// Tests the offset field of LookupOptions expecting return all the triples in the same order they appear in
+// the triples slice
 func TestTriplesforPredicateAndObjectOffset(t *testing.T) {
 	ts, ctx := getTestOffsetTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
@@ -2128,6 +2148,8 @@ func TestTriples(t *testing.T) {
 	}
 }
 
+// Tests the offset field of LookupOptions expecting return all the triples in the same order they appear in
+// the triples slice
 func TestTriplesOffset(t *testing.T) {
 	ts, ctx := getTestOffsetTriples(t), context.Background()
 	g, _ := NewStore().NewGraph(ctx, "test")
