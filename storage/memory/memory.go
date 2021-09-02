@@ -427,12 +427,12 @@ func executeFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Pr
 
 // SortByString sorts the coming triples by string and maps the strings back to triples on st
 // to put it on channel.
-func SortByString(selectedTrpls, st *map[string]*triple.Triple, strObs *[]string) error {
+func SortByString(selectedTrpls, st map[string]*triple.Triple, strObs *[]string) error {
 	if selectedTrpls == nil {
 		return fmt.Errorf("Triples cannot be nil")
 	}
-	for _, k := range *selectedTrpls {
-		(*st)[k.String()] = k
+	for _, k := range selectedTrpls {
+		st[k.String()] = k
 		*strObs = append(*strObs, k.String())
 	}
 	sort.Strings(*strObs)
@@ -480,7 +480,7 @@ func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predica
 
 	st := make(map[string]*triple.Triple)
 	var strObs []string
-	if err := SortByString(&selectedTrpls, &st, &strObs); err != nil {
+	if err := SortByString(selectedTrpls, st, &strObs); err != nil {
 		return err
 	}
 
@@ -533,7 +533,7 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 
 	st := make(map[string]*triple.Triple)
 	var strSubs []string
-	if err := SortByString(&selectedTrpls, &st, &strSubs); err != nil {
+	if err := SortByString(selectedTrpls, st, &strSubs); err != nil {
 		return err
 	}
 
@@ -588,7 +588,7 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 
 	st := make(map[string]*triple.Triple)
 	var strPrds []string
-	if err := SortByString(&selectedTrpls, &st, &strPrds); err != nil {
+	if err := SortByString(selectedTrpls, st, &strPrds); err != nil {
 		return err
 	}
 
@@ -641,7 +641,7 @@ func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *sto
 
 	st := make(map[string]*triple.Triple)
 	var strPrds []string
-	if err := SortByString(&selectedTrpls, &st, &strPrds); err != nil {
+	if err := SortByString(selectedTrpls, st, &strPrds); err != nil {
 		return err
 	}
 
@@ -694,7 +694,7 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 
 	st := make(map[string]*triple.Triple)
 	var strPrds []string
-	if err := SortByString(&selectedTrpls, &st, &strPrds); err != nil {
+	if err := SortByString(selectedTrpls, st, &strPrds); err != nil {
 		return err
 	}
 
@@ -747,7 +747,7 @@ func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storag
 
 	st := make(map[string]*triple.Triple)
 	var strTrpls []string
-	if err := SortByString(&selectedTrpls, &st, &strTrpls); err != nil {
+	if err := SortByString(selectedTrpls, st, &strTrpls); err != nil {
 		return err
 	}
 
@@ -800,7 +800,7 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 
 	st := make(map[string]*triple.Triple)
 	var strTrpls []string
-	if err := SortByString(&selectedTrpls, &st, &strTrpls); err != nil {
+	if err := SortByString(selectedTrpls, st, &strTrpls); err != nil {
 		return err
 	}
 
@@ -853,7 +853,7 @@ func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *sto
 
 	st := make(map[string]*triple.Triple)
 	var strTrpls []string
-	if err := SortByString(&selectedTrpls, &st, &strTrpls); err != nil {
+	if err := SortByString(selectedTrpls, st, &strTrpls); err != nil {
 		return err
 	}
 
@@ -908,7 +908,7 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 
 	st := make(map[string]*triple.Triple)
 	var strTrpls []string
-	if err := SortByString(&selectedTrpls, &st, &strTrpls); err != nil {
+	if err := SortByString(selectedTrpls, st, &strTrpls); err != nil {
 		return err
 	}
 
@@ -963,7 +963,7 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 
 	st := make(map[string]*triple.Triple)
 	var strTrpls []string
-	if err := SortByString(&selectedTrpls, &st, &strTrpls); err != nil {
+	if err := SortByString(selectedTrpls, st, &strTrpls); err != nil {
 		return err
 	}
 
@@ -1024,7 +1024,7 @@ func (m *memory) Triples(ctx context.Context, lo *storage.LookupOptions, trpls c
 
 	st := make(map[string]*triple.Triple)
 	var strTrpls []string
-	if err := SortByString(&selectedTrpls, &st, &strTrpls); err != nil {
+	if err := SortByString(selectedTrpls, st, &strTrpls); err != nil {
 		return err
 	}
 
