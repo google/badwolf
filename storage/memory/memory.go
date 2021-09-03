@@ -429,7 +429,7 @@ func executeFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Pr
 // to put it on channel.
 func SortByString(selectedTrpls, st map[string]*triple.Triple, strObs *[]string) error {
 	if selectedTrpls == nil {
-		return fmt.Errorf("Triples cannot be nil")
+		return fmt.Error("Triples cannot be nil")
 	}
 	for _, k := range selectedTrpls {
 		st[k.String()] = k
