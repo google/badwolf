@@ -19,6 +19,7 @@ package memory
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -225,11 +226,12 @@ func (m *memory) RemoveTriples(ctx context.Context, ts []*triple.Triple) error {
 // checker provides the mechanics to check if a predicate/triple should be
 // considered on a certain operation.
 type checker struct {
-	max bool
-	c   int
-	o   *storage.LookupOptions
-	op  *predicate.Predicate
-	ota *time.Time
+	max            bool
+	pageSize       int
+	paddedPageSize int
+	o              *storage.LookupOptions
+	op             *predicate.Predicate
+	ota            *time.Time
 }
 
 // newChecker creates a new checker for a given LookupOptions configuration.
@@ -241,11 +243,12 @@ func newChecker(o *storage.LookupOptions, op *predicate.Predicate) *checker {
 		}
 	}
 	return &checker{
-		max: o.MaxElements > 0,
-		c:   o.MaxElements,
-		o:   o,
-		op:  op,
-		ota: ta,
+		max:            o.MaxElements > 0,
+		pageSize:       o.MaxElements,
+		paddedPageSize: o.MaxElements * o.Offset,
+		o:              o,
+		op:             op,
+		ota:            ta,
 	}
 }
 
@@ -271,14 +274,18 @@ func (c *checker) CheckGlobalTimeBounds(p *predicate.Predicate) bool {
 	return true
 }
 
-// CheckLimitAndUpdate checks the internal limit count if it is set and also updates
-// the internal state for the case these counts are needed.
+// CheckLimitAndUpdate checks if the internal offset value is reached, if not updates the value,
+// and check if the internal page limit is reached, if not updates the value.
 func (c *checker) CheckLimitAndUpdate() bool {
-	if c.max && c.c <= 0 {
+	if c.max && c.pageSize <= 0 {
+		return false
+	}
+	if c.paddedPageSize > 0 {
+		c.paddedPageSize--
 		return false
 	}
 
-	c.c--
+	c.pageSize--
 	return true
 }
 
@@ -418,6 +425,21 @@ func executeFilter(memoryTriples map[string]*triple.Triple, pQuery *predicate.Pr
 	}
 }
 
+// SortByString sorts the coming triples by string and maps the strings back to triples on st
+// to put it on channel.
+func SortByString(selectedTrpls, st map[string]*triple.Triple, strObs *[]string) error {
+	if selectedTrpls == nil {
+		return fmt.Errorf("Triples cannot be nil")
+	}
+	for _, k := range selectedTrpls {
+		st[k.String()] = k
+		*strObs = append(*strObs, k.String())
+	}
+	sort.Strings(*strObs)
+
+	return nil
+}
+
 // Objects published the objects for the give object and predicate to the
 // provided channel.
 func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *storage.LookupOptions, objs chan<- *triple.Object) error {
@@ -456,9 +478,15 @@ func (m *memory) Objects(ctx context.Context, s *node.Node, p *predicate.Predica
 		}
 	}
 
-	for _, t := range selectedTrpls {
-		if t != nil && ckr.CheckLimitAndUpdate() {
-			objs <- t.Object()
+	st := make(map[string]*triple.Triple)
+	var strObs []string
+	if err := SortByString(selectedTrpls, st, &strObs); err != nil {
+		return err
+	}
+
+	for _, t := range strObs {
+		if t != "" && ckr.CheckLimitAndUpdate() {
+			objs <- st[t].Object()
 		}
 	}
 
@@ -503,9 +531,17 @@ func (m *memory) Subjects(ctx context.Context, p *predicate.Predicate, o *triple
 		}
 	}
 
-	for _, t := range selectedTrpls {
-		if t != nil && ckr.CheckLimitAndUpdate() {
-			subjs <- t.Subject()
+	st := make(map[string]*triple.Triple)
+	var strSubs []string
+	if err := SortByString(selectedTrpls, st, &strSubs); err != nil {
+		return err
+	}
+
+	cnt := 0
+	for _, t := range strSubs {
+		if t != "" && ckr.CheckLimitAndUpdate() {
+			subjs <- st[t].Subject()
+			cnt++
 		}
 	}
 
@@ -550,9 +586,17 @@ func (m *memory) PredicatesForSubjectAndObject(ctx context.Context, s *node.Node
 		}
 	}
 
-	for _, t := range selectedTrpls {
-		if t != nil && ckr.CheckLimitAndUpdate() {
-			prds <- t.Predicate()
+	st := make(map[string]*triple.Triple)
+	var strPrds []string
+	if err := SortByString(selectedTrpls, st, &strPrds); err != nil {
+		return err
+	}
+
+	cnt := 0
+	for _, t := range strPrds {
+		if t != "" && ckr.CheckLimitAndUpdate() {
+			prds <- st[t].Predicate()
+			cnt++
 		}
 	}
 
@@ -595,9 +639,17 @@ func (m *memory) PredicatesForSubject(ctx context.Context, s *node.Node, lo *sto
 		}
 	}
 
-	for _, t := range selectedTrpls {
-		if t != nil && ckr.CheckLimitAndUpdate() {
-			prds <- t.Predicate()
+	st := make(map[string]*triple.Triple)
+	var strPrds []string
+	if err := SortByString(selectedTrpls, st, &strPrds); err != nil {
+		return err
+	}
+
+	cnt := 0
+	for _, t := range strPrds {
+		if t != "" && ckr.CheckLimitAndUpdate() {
+			prds <- st[t].Predicate()
+			cnt++
 		}
 	}
 
@@ -640,9 +692,17 @@ func (m *memory) PredicatesForObject(ctx context.Context, o *triple.Object, lo *
 		}
 	}
 
-	for _, t := range selectedTrpls {
-		if t != nil && ckr.CheckLimitAndUpdate() {
-			prds <- t.Predicate()
+	st := make(map[string]*triple.Triple)
+	var strPrds []string
+	if err := SortByString(selectedTrpls, st, &strPrds); err != nil {
+		return err
+	}
+
+	cnt := 0
+	for _, t := range strPrds {
+		if t != "" && ckr.CheckLimitAndUpdate() {
+			prds <- st[t].Predicate()
+			cnt++
 		}
 	}
 
@@ -685,9 +745,17 @@ func (m *memory) TriplesForSubject(ctx context.Context, s *node.Node, lo *storag
 		}
 	}
 
-	for _, t := range selectedTrpls {
-		if t != nil && ckr.CheckLimitAndUpdate() {
-			trpls <- t
+	st := make(map[string]*triple.Triple)
+	var strTrpls []string
+	if err := SortByString(selectedTrpls, st, &strTrpls); err != nil {
+		return err
+	}
+
+	cnt := 0
+	for _, t := range strTrpls {
+		if t != "" && ckr.CheckLimitAndUpdate() {
+			trpls <- st[t]
+			cnt++
 		}
 	}
 
@@ -730,9 +798,17 @@ func (m *memory) TriplesForPredicate(ctx context.Context, p *predicate.Predicate
 		}
 	}
 
-	for _, t := range selectedTrpls {
-		if t != nil && ckr.CheckLimitAndUpdate() {
-			trpls <- t
+	st := make(map[string]*triple.Triple)
+	var strTrpls []string
+	if err := SortByString(selectedTrpls, st, &strTrpls); err != nil {
+		return err
+	}
+
+	cnt := 0
+	for _, t := range strTrpls {
+		if t != "" && ckr.CheckLimitAndUpdate() {
+			trpls <- st[t]
+			cnt++
 		}
 	}
 
@@ -775,9 +851,17 @@ func (m *memory) TriplesForObject(ctx context.Context, o *triple.Object, lo *sto
 		}
 	}
 
-	for _, t := range selectedTrpls {
-		if t != nil && ckr.CheckLimitAndUpdate() {
-			trpls <- t
+	st := make(map[string]*triple.Triple)
+	var strTrpls []string
+	if err := SortByString(selectedTrpls, st, &strTrpls); err != nil {
+		return err
+	}
+
+	cnt := 0
+	for _, t := range strTrpls {
+		if t != "" && ckr.CheckLimitAndUpdate() {
+			trpls <- st[t]
+			cnt++
 		}
 	}
 
@@ -822,9 +906,17 @@ func (m *memory) TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node
 		}
 	}
 
-	for _, t := range selectedTrpls {
-		if t != nil && ckr.CheckLimitAndUpdate() {
-			trpls <- t
+	st := make(map[string]*triple.Triple)
+	var strTrpls []string
+	if err := SortByString(selectedTrpls, st, &strTrpls); err != nil {
+		return err
+	}
+
+	cnt := 0
+	for _, t := range strTrpls {
+		if t != "" && ckr.CheckLimitAndUpdate() {
+			trpls <- st[t]
+			cnt++
 		}
 	}
 
@@ -869,9 +961,17 @@ func (m *memory) TriplesForPredicateAndObject(ctx context.Context, p *predicate.
 		}
 	}
 
-	for _, t := range selectedTrpls {
-		if t != nil && ckr.CheckLimitAndUpdate() {
-			trpls <- t
+	st := make(map[string]*triple.Triple)
+	var strTrpls []string
+	if err := SortByString(selectedTrpls, st, &strTrpls); err != nil {
+		return err
+	}
+
+	cnt := 0
+	for _, t := range strTrpls {
+		if t != "" && ckr.CheckLimitAndUpdate() {
+			trpls <- st[t]
+			cnt++
 		}
 	}
 
@@ -922,9 +1022,17 @@ func (m *memory) Triples(ctx context.Context, lo *storage.LookupOptions, trpls c
 		}
 	}
 
-	for _, t := range selectedTrpls {
-		if t != nil && ckr.CheckLimitAndUpdate() {
-			trpls <- t
+	st := make(map[string]*triple.Triple)
+	var strTrpls []string
+	if err := SortByString(selectedTrpls, st, &strTrpls); err != nil {
+		return err
+	}
+
+	cnt := 0
+	for _, t := range strTrpls {
+		if t != "" && ckr.CheckLimitAndUpdate() {
+			trpls <- st[t]
+			cnt++
 		}
 	}
 

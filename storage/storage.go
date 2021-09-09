@@ -47,6 +47,9 @@ type LookupOptions struct {
 
 	// FilterOptions, if provided, represent the specifications for the filtering to be executed.
 	FilterOptions *filter.StorageOptions
+
+	// Offset, if provided, represents the offset of the ordered set of triples returned.
+	Offset int
 }
 
 // String returns a readable version of the LookupOptions instance.
