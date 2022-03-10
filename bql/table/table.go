@@ -323,14 +323,14 @@ func joinWithRange(t, t2 *Table) {
 	ibs := intersectBindings(t.mbs, t2.mbs)
 	ubs := unionBindings(t.mbs, t2.mbs)
 
-	var sbs []string
+	sbs := make([]string, 0, len(ibs))
 	for k := range ibs {
 		sbs = append(sbs, k)
 	}
 	sortTablesData(t, t2, sbs)
 
 	// Create the comparison for row order.
-	var scfg SortConfig
+	scfg := make(SortConfig, 0, len(sbs))
 	for _, k := range sbs {
 		scfg = append(scfg, sortConfig{Binding: k})
 	}
@@ -364,7 +364,7 @@ func joinWithRange(t, t2 *Table) {
 		j = lj
 	}
 
-	// Udate the table.
+	// Update the table.
 	t.mbs = ubs
 	t.AvailableBindings = nil
 	for k := range ubs {
@@ -434,7 +434,7 @@ func sortTablesData(t, t2 *Table, bs []string) {
 	t2.mu.Lock()
 	defer t2.mu.Unlock()
 	d, d2 := t.Data, t2.Data
-	var scfg SortConfig
+	scfg := make(SortConfig, 0, len(bs))
 	for _, k := range bs {
 		scfg = append(scfg, sortConfig{Binding: k})
 	}

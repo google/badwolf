@@ -400,8 +400,9 @@ func (c *GraphClause) BindingsMap() map[string]int {
 
 // Bindings returns the list of unique bindings listed in the graph clause.
 func (c *GraphClause) Bindings() []string {
-	var bs []string
-	for k := range c.BindingsMap() {
+	bindingsMap := c.BindingsMap()
+	bs := make([]string, 0, len(bindingsMap))
+	for k := range bindingsMap {
 		bs = append(bs, k)
 	}
 	return bs
@@ -713,8 +714,9 @@ func (s *Statement) BindingsMap() map[string]int {
 // Bindings returns the list of bindings available on the graph clauses for he
 // statement.
 func (s *Statement) Bindings() []string {
-	var bs []string
-	for k := range s.BindingsMap() {
+	bindingsMap := s.BindingsMap()
+	bs := make([]string, 0, len(bindingsMap))
+	for k := range bindingsMap {
 		bs = append(bs, k)
 	}
 	return bs

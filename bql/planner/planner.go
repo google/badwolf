@@ -288,10 +288,6 @@ func (p *queryPlan) Type() string {
 
 // newQueryPlan returns a new query plan ready to be executed.
 func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statement, chanSize int, w io.Writer) (*queryPlan, error) {
-	bs := []string{}
-	for _, b := range stm.Bindings() {
-		bs = append(bs, b)
-	}
 	t, err := table.New([]string{})
 	if err != nil {
 		return nil, err
@@ -299,7 +295,7 @@ func newQueryPlan(ctx context.Context, store storage.Store, stm *semantic.Statem
 	return &queryPlan{
 		stm:       stm,
 		store:     store,
-		bndgs:     bs,
+		bndgs:     stm.Bindings(),
 		grfsNames: stm.InputGraphNames(),
 		clauses:   stm.GraphPatternClauses(),
 		filters:   stm.FilterClauses(),
@@ -764,7 +760,7 @@ func resetFilterOptions(lo *storage.LookupOptions) {
 func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupOptions) error {
 	clauses := p.clauses
 	tracer.V(3).Trace(p.tracer, func() *tracer.Arguments {
-		var res []string
+		res := make([]string, 0, len(clauses))
 		for i, cls := range clauses {
 			res = append(res, fmt.Sprintf("Clause %d to process: %v", i, cls))
 		}
