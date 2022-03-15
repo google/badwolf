@@ -639,7 +639,7 @@ func internalNewEvaluator(ce []ConsumedElement) (Evaluator, []ConsumedElement, e
 		return tailEval, tail, nil
 	}
 
-	var tkns []string
+	tkns := make([]string, 0, len(ce))
 	for _, e := range ce {
 		tkns = append(tkns, fmt.Sprintf("%q", e.token.Type.String()))
 	}
