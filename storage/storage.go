@@ -77,9 +77,7 @@ func (l *LookupOptions) String() string {
 
 // UUID return the UUID of the lookup option.
 func (l *LookupOptions) UUID() uuid.UUID {
-	b := make([]byte, len(l.String()))
-	copy(b, l.String())
-	return uuid.NewSHA1(uuid.NIL, b)
+	return uuid.NewSHA1(uuid.NIL, []byte(l.String()))
 }
 
 // DefaultLookup provides the default lookup behavior.
