@@ -15,6 +15,7 @@
 package node
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/pborman/uuid"
@@ -183,5 +184,18 @@ func TestBlankNode(t *testing.T) {
 		if uuid.Equal(bID, uuid.NIL) {
 			t.Fatalf("NewBlankNode %s could not be decoded properly", b)
 		}
+	}
+}
+
+func TestUUID(t *testing.T) {
+	n, err := Parse("/foo<123>")
+	if err != nil {
+		t.Errorf("node.Parse: failed to parse '/foo<123>'; %v", err)
+	}
+	var buffer bytes.Buffer
+	buffer.WriteString(string(*n.t))
+	buffer.WriteString(string(*n.id))
+	if !uuid.Equal(n.UUID(), uuid.NewSHA1(uuid.NIL, buffer.Bytes())) {
+		t.Fatalf("node.UUID not equal; got %q, want: %q", n.UUID(), uuid.NewSHA1(uuid.NIL, buffer.Bytes()))
 	}
 }

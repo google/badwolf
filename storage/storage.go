@@ -54,7 +54,9 @@ type LookupOptions struct {
 
 // String returns a readable version of the LookupOptions instance.
 func (l *LookupOptions) String() string {
-	b := bytes.NewBufferString("<limit=")
+	var b bytes.Buffer
+	b.Grow(80) // We already know we will be writing at least this much from the fixed strings below.
+	b.WriteString("<limit=")
 	b.WriteString(strconv.Itoa(l.MaxElements))
 	b.WriteString(", lower_anchor=")
 	if l.LowerAnchor != nil {
@@ -75,9 +77,9 @@ func (l *LookupOptions) String() string {
 
 // UUID return the UUID of the lookup option.
 func (l *LookupOptions) UUID() uuid.UUID {
-	var buffer bytes.Buffer
-	buffer.WriteString(l.String())
-	return uuid.NewSHA1(uuid.NIL, buffer.Bytes())
+	b := make([]byte, len(l.String()))
+	copy(b, l.String())
+	return uuid.NewSHA1(uuid.NIL, b)
 }
 
 // DefaultLookup provides the default lookup behavior.

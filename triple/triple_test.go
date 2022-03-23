@@ -15,11 +15,13 @@
 package triple
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/google/badwolf/triple/literal"
 	"github.com/google/badwolf/triple/node"
 	"github.com/google/badwolf/triple/predicate"
+	"github.com/pborman/uuid"
 )
 
 func getTestData(t *testing.T) (*node.Node, *predicate.Predicate, *Object) {
@@ -178,6 +180,13 @@ func TestUUID(t *testing.T) {
 		}
 		if !t1.Equal(t2) {
 			t.Errorf("Failed to equal %s(%s) == %s(%s)", t1, t1.UUID(), t2, t2.UUID())
+		}
+		var b bytes.Buffer
+		b.Write(t1.s.UUID())
+		b.Write(t1.p.UUID())
+		b.Write(t1.o.UUID())
+		if !uuid.Equal(t1.UUID(), uuid.NewSHA1(uuid.NIL, b.Bytes())) {
+			t.Errorf("Failed to equal %s == %s", t1.UUID(), uuid.NewSHA1(uuid.NIL, b.Bytes()))
 		}
 	}
 }

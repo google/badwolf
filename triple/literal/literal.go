@@ -315,7 +315,7 @@ func (l *Literal) UUID() uuid.UUID {
 		binary.LittleEndian.PutUint64(b, bs)
 		buffer.Write(b)
 	case string:
-		buffer.Write([]byte(v))
+		buffer.WriteString(v)
 	case []byte:
 		buffer.Write(v)
 	}

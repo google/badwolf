@@ -16,7 +16,6 @@
 package triple
 
 import (
-	"bytes"
 	"fmt"
 	"regexp"
 	"strings"
@@ -255,11 +254,11 @@ func (t *Triple) Reify() ([]*Triple, *node.Node, error) {
 // implemented as the SHA1 UUID of the concatenated UUIDs of the subject,
 // predicate, and object.
 func (t *Triple) UUID() uuid.UUID {
-	var buffer bytes.Buffer
+	ul := len(t.s.UUID())
+	b := make([]byte, 3*ul)
 
-	buffer.Write([]byte(t.s.UUID()))
-	buffer.Write([]byte(t.p.UUID()))
-	buffer.Write([]byte(t.o.UUID()))
-
-	return uuid.NewSHA1(uuid.NIL, buffer.Bytes())
+	copy(b[:ul], t.s.UUID())
+	copy(b[ul:2*ul], t.p.UUID())
+	copy(b[2*ul:], t.o.UUID())
+	return uuid.NewSHA1(uuid.NIL, b)
 }

@@ -177,7 +177,7 @@ func (p *Predicate) UUID() uuid.UUID {
 // is only useful for driver implementers when they want to take advantage
 // of range reads.
 func (p *Predicate) PartialUUID() uuid.UUID {
-	var buffer bytes.Buffer
-	buffer.WriteString(string(p.id))
-	return uuid.NewSHA1(uuid.NIL, buffer.Bytes())
+	b := make([]byte, len(p.id))
+	copy(b, p.id)
+	return uuid.NewSHA1(uuid.NIL, b)
 }
