@@ -163,4 +163,7 @@ func TestPartialUUID(t *testing.T) {
 	if uuid1, uuid2 := p1.PartialUUID(), p2.PartialUUID(); !reflect.DeepEqual(uuid1, uuid2) {
 		t.Errorf("predicates %v and %v should have identical partial UUID; got %q=%q", p1, p2, uuid1.String(), uuid2.String())
 	}
+	if !uuid.Equal(p1.PartialUUID(), uuid.NewSHA1(uuid.NIL, []byte("foo"))) {
+		t.Errorf("predicates %v should have partial UUID %q; got %q", p1, uuid.NewSHA1(uuid.NIL, []byte("foo")), p1.PartialUUID().String())
+	}
 }
