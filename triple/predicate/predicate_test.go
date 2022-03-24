@@ -19,6 +19,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/pborman/uuid"
 )
 
 var (
