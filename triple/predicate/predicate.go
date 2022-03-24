@@ -159,7 +159,7 @@ func NewTemporal(id string, t time.Time) (*Predicate, error) {
 func (p *Predicate) UUID() uuid.UUID {
 	var buffer bytes.Buffer
 
-	buffer.WriteString(string(p.id))
+	buffer.Write([]byte(p.id))
 	if p.anchor == nil {
 		buffer.WriteString("immutable")
 	} else {
@@ -177,7 +177,5 @@ func (p *Predicate) UUID() uuid.UUID {
 // is only useful for driver implementers when they want to take advantage
 // of range reads.
 func (p *Predicate) PartialUUID() uuid.UUID {
-	var buffer bytes.Buffer
-	buffer.WriteString(string(p.id))
-	return uuid.NewSHA1(uuid.NIL, buffer.Bytes())
+	return uuid.NewSHA1(uuid.NIL, []byte(p.id))
 }
