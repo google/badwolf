@@ -511,6 +511,7 @@ func (p *queryPlan) specifyClauseWithTable(ctx context.Context, cls *semantic.Gr
 			}
 			r := tmpRow
 			grp.Go(func() error {
+				defer sem.Release(1)
 				var tmpCls = *cls
 				// The table manipulations are now thread safe.
 				return p.addSpecifiedData(gCtx, r, &tmpCls, lo)
@@ -564,6 +565,7 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 			r := tmp
 			cls := ocls
 			grp.Go(func() error {
+				defer sem.Release(1)
 				sbj, prd, obj := cls.S, cls.P, cls.O
 				// Attempt to rebind the subject.
 				if sbj == nil && p.tbl.HasBinding(cls.SBinding) {
