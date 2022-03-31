@@ -263,14 +263,13 @@ func (t *Triple) UUID() uuid.UUID {
 	// value needs to be placed on the heap which causes an extra allocation.
 	// See: https://staticcheck.io/docs/checks#SA6002
 	bp := bufPool.Get().(*[]byte)
-	b := *bp
-	// Even though 'b' is dirty when fetched from the pool we do not
+	// Even though 'bp' is dirty when fetched from the pool we do not
 	// clear it because the contents are always completely overwritten.
 	defer bufPool.Put(bp)
 
 	// A UUID is always 16 bytes.
-	copy(b[:16], t.s.UUID())
-	copy(b[16:32], t.p.UUID())
-	copy(b[32:], t.o.UUID())
-	return uuid.NewSHA1(uuid.NIL, b)
+	copy((*bp)[:16], t.s.UUID())
+	copy((*bp)[16:32], t.p.UUID())
+	copy((*bp)[32:], t.o.UUID())
+	return uuid.NewSHA1(uuid.NIL, (*bp))
 }
