@@ -29,7 +29,7 @@ import (
 
 // bufPool holds a pool of byte arrays used by triple's UUID() method, which needs
 // a buffer big enough to contain the UUIDs for (subject, predicate, object), so 3x16 bytes.
-var bufPool = sync.Pool{New: func() interface{} { return make([]byte, 48) }}
+var bufPool = sync.Pool{New: func() interface{} { b := make([]byte, 48); return &b }}
 
 // Object is the box that either contains a literal, a predicate or a node.
 type Object struct {
@@ -259,14 +259,17 @@ func (t *Triple) Reify() ([]*Triple, *node.Node, error) {
 // implemented as the SHA1 UUID of the concatenated UUIDs of the subject,
 // predicate, and object.
 func (t *Triple) UUID() uuid.UUID {
-	b := bufPool.Get().([]byte)
-	// Even though 'b' is dirty when fetched from the pool we do not
+	// We need to store a pointer to the value in sync.Pool otherwise the
+	// value needs to be placed on the heap which causes an extra allocation.
+	// See: https://staticcheck.io/docs/checks#SA6002
+	bp := bufPool.Get().(*[]byte)
+	// Even though 'bp' is dirty when fetched from the pool we do not
 	// clear it because the contents are always completely overwritten.
-	defer bufPool.Put(b)
+	defer bufPool.Put(bp)
 
 	// A UUID is always 16 bytes.
-	copy(b[:16], t.s.UUID())
-	copy(b[16:32], t.p.UUID())
-	copy(b[32:], t.o.UUID())
-	return uuid.NewSHA1(uuid.NIL, b)
+	copy((*bp)[:16], t.s.UUID())
+	copy((*bp)[16:32], t.p.UUID())
+	copy((*bp)[32:], t.o.UUID())
+	return uuid.NewSHA1(uuid.NIL, (*bp))
 }
