@@ -260,7 +260,7 @@ func (t *Triple) Reify() ([]*Triple, *node.Node, error) {
 // predicate, and object.
 func (t *Triple) UUID() uuid.UUID {
 	b := bufPool.Get().([]byte)
-	// Even though 'b' is dirty when fetched from the pool we do not 
+	// Even though 'b' is dirty when fetched from the pool we do not
 	// clear it because the contents are always completely overwritten.
 	defer bufPool.Put(b)
 
