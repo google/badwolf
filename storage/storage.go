@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/google/badwolf/bql/planner/filter"
@@ -28,6 +29,9 @@ import (
 	"github.com/google/badwolf/triple/predicate"
 	"github.com/pborman/uuid"
 )
+
+// bufPool keeps a pool of bytes.Buffer for usage in String().
+var bufPool = sync.Pool{New: func() interface{} { return &bytes.Buffer{} }}
 
 // LookupOptions allows to specify the behavior of the lookup operations.
 type LookupOptions struct {
@@ -54,8 +58,10 @@ type LookupOptions struct {
 
 // String returns a readable version of the LookupOptions instance.
 func (l *LookupOptions) String() string {
-	var b bytes.Buffer
-	b.Grow(80) // We already know we will be writing at least this much from the fixed strings below.
+	b := bufPool.Get().(*bytes.Buffer)
+	b.Reset()
+	defer bufPool.Put(b)
+
 	b.WriteString("<limit=")
 	b.WriteString(strconv.Itoa(l.MaxElements))
 	b.WriteString(", lower_anchor=")

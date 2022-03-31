@@ -22,6 +22,7 @@ import (
 	"os"
 	"os/user"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pborman/uuid"
@@ -31,6 +32,9 @@ const (
 	slash      = byte('/')
 	underscore = byte('_')
 )
+
+// bufPool holds a pool of bytes.Buffer for the UUID() method
+var bufPool = sync.Pool{New: func() interface{} { return &bytes.Buffer{} }}
 
 // Type describes the type of the node.
 type Type string
@@ -232,8 +236,11 @@ func NewBlankNode() *Node {
 // UUID returns a global unique identifier for the given node. It is
 // implemented as the SHA1 UUID of the node values.
 func (n *Node) UUID() uuid.UUID {
-	b := make([]byte, len(*n.t)+len(*n.id))
-	copy(b[:len(*n.t)], *n.t)
-	copy(b[len(*n.t):], *n.id)
-	return uuid.NewSHA1(uuid.NIL, b)
+	b := bufPool.Get().(*bytes.Buffer)
+	b.Reset()
+	defer bufPool.Put(b)
+
+	b.Write([]byte(*n.t))
+	b.Write([]byte(*n.id))
+	return uuid.NewSHA1(uuid.NIL, b.Bytes())
 }
