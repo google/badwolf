@@ -22,9 +22,13 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/pborman/uuid"
 )
+
+// bufPool keeps a pool of bytes.Buffer for the UUID() method.
+var bufPool = sync.Pool{New: func() interface{} { return &bytes.Buffer{} }}
 
 // Type represents the type contained in a literal.
 type Type uint8
@@ -296,7 +300,9 @@ func NewBoundedBuilder(max int) Builder {
 // UUID returns a global unique identifier for the given literal. It is
 // implemented as the SHA1 UUID of the literal value.
 func (l *Literal) UUID() uuid.UUID {
-	var buffer bytes.Buffer
+	buffer := bufPool.Get().(*bytes.Buffer)
+	buffer.Reset()
+	defer bufPool.Put(buffer)
 
 	switch v := l.v.(type) {
 	case bool:
