@@ -506,7 +506,7 @@ func (p *queryPlan) specifyClauseWithTable(ctx context.Context, cls *semantic.Gr
 			if gCtx.Err() != nil {
 				return gCtx.Err()
 			}
-			if err := sem.Acquire(ctx, 1); err != nil {
+			if err := sem.Acquire(gCtx, 1); err != nil {
 				return err
 			}
 			r := tmpRow
@@ -558,7 +558,7 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 			if gCtx.Err() != nil {
 				return gCtx.Err()
 			}
-			if err := sem.Acquire(ctx, 1); err != nil {
+			if err := sem.Acquire(gCtx, 1); err != nil {
 				return err
 			}
 			r := tmp
