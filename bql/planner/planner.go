@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -500,11 +501,10 @@ func (p *queryPlan) specifyClauseWithTable(ctx context.Context, cls *semantic.Gr
 	p.tbl.Truncate()
 	grp, gCtx := errgroup.WithContext(ctx)
 	grp.Go(func() error {
-		sem := semaphore.NewWeighted(runtime.GOMAXPROCS(0))
+		sem := semaphore.NewWeighted(int64(runtime.GOMAXPROCS(0)))
 		for _, tmpRow := range rws {
 			if gCtx.Err() != nil {
-				// Fail fast by not processing more record (in case another goroutine alredy failed, just abort)
-				break
+				return gCtx.Err()
 			}
 			if err := sem.Acquire(ctx, 1); err != nil {
 				return err
@@ -516,6 +516,7 @@ func (p *queryPlan) specifyClauseWithTable(ctx context.Context, cls *semantic.Gr
 				return p.addSpecifiedData(gCtx, r, &tmpCls, lo)
 			})
 		}
+		return nil
 	})
 	return grp.Wait()
 }
@@ -552,11 +553,10 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 	ocls := *cls
 	grp, gCtx := errgroup.WithContext(ctx)
 	grp.Go(func() error {
-		sem := semaphore.NewWeighted(runtime.GOMAXPROCS(0))
+		sem := semaphore.NewWeighted(int64(runtime.GOMAXPROCS(0)))
 		for _, tmp := range data {
 			if gCtx.Err() != nil {
-				// Fail fast by not processing more record (in case another goroutine alredy failed, just abort)
-				break
+				return gCtx.Err()
 			}
 			if err := sem.Acquire(ctx, 1); err != nil {
 				return err
@@ -664,6 +664,7 @@ func (p *queryPlan) filterOnExistence(ctx context.Context, cls *semantic.GraphCl
 				return nil
 			})
 		}
+		return nil
 	})
 	return grp.Wait()
 }
