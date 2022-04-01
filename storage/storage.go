@@ -133,7 +133,7 @@ type Graph interface {
 	RemoveTriples(ctx context.Context, ts []*triple.Triple) error
 
 	// Objects pushes to the provided channel the objects for the given object and
-	// predicate. The function does not return immediately.
+	// predicate. The function does not return immediately; it closes the channel before returning.
 	//
 	// Given a subject and a predicate, this method retrieves the objects of
 	// triples that match them. By default, if does not limit the maximum number
@@ -153,8 +153,8 @@ type Graph interface {
 	Objects(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *LookupOptions, objs chan<- *triple.Object) error
 
 	// Subject pushes to the provided channel the subjects for the give predicate
-	// and object. The function does not return immediately. The caller is
-	// expected to detach them into a go routine.
+	// and object. The function does not return immediately; it closes the channel before returning.
+	// The caller is expected to detach them into a go routine.
 	//
 	// Given a predicate and an object, this method retrieves the subjects of
 	// triples that matches them. By default, it does not limit the maximum number
@@ -174,7 +174,7 @@ type Graph interface {
 	Subjects(ctx context.Context, p *predicate.Predicate, o *triple.Object, lo *LookupOptions, subs chan<- *node.Node) error
 
 	// PredicatesForSubject pushes to the provided channel all the predicates
-	// known for the given subject. The function does not return immediately.
+	// known for the given subject. The function does not return immediately; it closes the channel before returning.
 	// The caller is expected to detach them into a go routine.
 	//
 	// If the lookup options provide a max number of elements the function will
@@ -185,8 +185,8 @@ type Graph interface {
 	PredicatesForSubject(ctx context.Context, s *node.Node, lo *LookupOptions, prds chan<- *predicate.Predicate) error
 
 	// PredicatesForObject pushes to the provided channel all the predicates known
-	// for the given object. The function does not return immediately. The caller
-	// is expected to detach them into a go routine.
+	// for the given object. The function does not return immediately; it closes the channel before returning.
+	// The caller is expected to detach them into a go routine.
 	//
 	// If the lookup options provide a max number of elements the function will
 	// return a sample of the available predicates. If time anchor bounds are
@@ -196,8 +196,8 @@ type Graph interface {
 	PredicatesForObject(ctx context.Context, o *triple.Object, lo *LookupOptions, prds chan<- *predicate.Predicate) error
 
 	// PredicatesForSubjectAndObject pushes to the provided channel all predicates
-	// available for the given subject and object. The function does not return
-	// immediately. The caller is expected to detach them into a go routine.
+	// available for the given subject and object. The function does not return immediately; it closes the channel before returning.
+	// The caller is expected to detach them into a go routine.
 	//
 	// If the lookup options provide a max number of elements the function will
 	// return a sample of the available predicates. If time anchor bounds are
@@ -207,8 +207,8 @@ type Graph interface {
 	PredicatesForSubjectAndObject(ctx context.Context, s *node.Node, o *triple.Object, lo *LookupOptions, prds chan<- *predicate.Predicate) error
 
 	// TriplesForSubject pushes to the provided channel all triples available for
-	// the given subject. The function does not return immediately. The caller
-	// is expected to detach them into a go routine.
+	// the given subject. The function does not return immediately; it closes the channel before returning.
+	// The caller is expected to detach them into a go routine.
 	//
 	// If the lookup options provide a max number of elements the function will
 	// return a sample of the available triples. If time anchor bounds are
@@ -218,8 +218,8 @@ type Graph interface {
 	TriplesForSubject(ctx context.Context, s *node.Node, lo *LookupOptions, trpls chan<- *triple.Triple) error
 
 	// TriplesForPredicate pushes to the provided channel all triples available
-	// for the given predicate.The function does not return immediatel. The
-	// caller is expected to detach them into a go routine.
+	// for the given predicate.The function does not return immediately; it closes the channel before returning.
+	// The caller is expected to detach them into a go routine.
 	//
 	// If the lookup options provide a max number of elements the function will
 	// return a sample of the available triples. If time anchor bounds are
@@ -229,8 +229,8 @@ type Graph interface {
 	TriplesForPredicate(ctx context.Context, p *predicate.Predicate, lo *LookupOptions, trpls chan<- *triple.Triple) error
 
 	// TriplesForObject pushes to the provided channel all triples available for
-	// the given object. The function does not return immediately. The caller is
-	// expected to detach them into a go routine.
+	// the given object. The function does not return immediately; it closes the channel before returning.
+	// The caller is expected to detach them into a go routine.
 	//
 	// If the lookup options provide a max number of elements the function will
 	// return a sample of the available triples. If time anchor bounds are
@@ -240,8 +240,8 @@ type Graph interface {
 	TriplesForObject(ctx context.Context, o *triple.Object, lo *LookupOptions, trpls chan<- *triple.Triple) error
 
 	// TriplesForSubjectAndPredicate pushes to the provided channel all triples
-	// available for the given subject and predicate. The function does not return
-	// immediately. The caller is expected to detach them into a go routine.
+	// available for the given subject and predicate. The function does not return immediately; it closes the channel before returning.
+	// The caller is expected to detach them into a go routine.
 	//
 	// If the lookup options provide a max number of elements the function will
 	// return a sample of the available triples. If time anchor bounds are
@@ -251,8 +251,8 @@ type Graph interface {
 	TriplesForSubjectAndPredicate(ctx context.Context, s *node.Node, p *predicate.Predicate, lo *LookupOptions, trpls chan<- *triple.Triple) error
 
 	// TriplesForPredicateAndObject pushes to the provided channel all triples
-	// available for the given predicate and object. The function does not return
-	// immediately. The caller is expected to detach them into a go routine.
+	// available for the given predicate and object. The function does not return immediately; it closes the channel before returning.
+	// The caller is expected to detach them into a go routine.
 	//
 	// If the lookup options provide a max number of elements the function will
 	// return a sample of the available triples. If time anchor bounds are
