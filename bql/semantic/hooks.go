@@ -470,7 +470,7 @@ func processPredicateBound(ce ConsumedElement) (string, string, string, *time.Ti
 	id, tl, tu := cmps[0][1], cmps[0][2], cmps[0][3]
 	pID = id
 	// Lower bound processing.
-	if strings.Index(tl, "?") != -1 {
+	if strings.Contains(tl, "?") {
 		pLowerBoundAlias = tl
 	} else {
 		stl := strings.TrimSpace(tl)
@@ -483,7 +483,7 @@ func processPredicateBound(ce ConsumedElement) (string, string, string, *time.Ti
 		}
 	}
 	// Lower bound processing.
-	if strings.Index(tu, "?") != -1 {
+	if strings.Contains(tu, "?") {
 		pUpperBoundAlias = tu
 	} else {
 		stu := strings.TrimSpace(tu)

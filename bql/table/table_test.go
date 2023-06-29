@@ -1347,21 +1347,21 @@ func TestFilter(t *testing.T) {
 		{
 			t: table(),
 			f: func(r Row) bool {
-				return strings.Index(r["?s"].String(), "1s") != -1
+				return strings.Contains(r["?s"].String(), "1s") 
 			},
 			want: 2,
 		},
 		{
 			t: table(),
 			f: func(r Row) bool {
-				return strings.Index(r["?s"].String(), "t") != -1
+				return strings.Contains(r["?s"].String(), "t") 
 			},
 			want: 3,
 		},
 		{
 			t: table(),
 			f: func(r Row) bool {
-				return strings.Index(r["?t"].String(), "t") != -1
+				return strings.Contains(r["?t"].String(), "t") 
 			},
 			want: 0,
 		},
