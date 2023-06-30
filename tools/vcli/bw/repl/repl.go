@@ -160,7 +160,7 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 	fmt.Println("Memoization enabled. Type help; to print help.")
 	fmt.Println()
 	defer func() {
-		fmt.Printf("\n\nThanks for all those BQL queries!\nSession duration: %v\n\n", time.Now().Sub(sessionStart))
+		fmt.Printf("\n\nThanks for all those BQL queries!\nSession duration: %v\n\n", time.Since(sessionStart))
 	}()
 
 	for l := range rl(done) {
@@ -321,7 +321,7 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 			args := strings.Split("bw "+strings.TrimSpace(l)[:len(l)-1], " ")
 			usage := "Wrong syntax\n\n\tload <graph_names_separated_by_commas> <file_path>\n"
 			export.Eval(ctx, usage, args, driver(), bulkSize)
-			fmt.Println("[OK] Time spent: ", time.Now().Sub(now))
+			fmt.Println("[OK] Time spent: ", time.Since(now))
 			done <- false
 			continue
 		}
@@ -330,7 +330,7 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 			args := strings.Split("bw "+strings.TrimSpace(l[:len(l)-1]), " ")
 			usage := "Wrong syntax\n\n\tload <file_path> <graph_names_separated_by_commas>\n"
 			load.Eval(ctx, usage, args, driver(), bulkSize, builderSize)
-			fmt.Println("[OK] Time spent: ", time.Now().Sub(now))
+			fmt.Println("[OK] Time spent: ", time.Since(now))
 			done <- false
 			continue
 		}
@@ -355,28 +355,28 @@ func REPL(od storage.Store, input *os.File, rl ReadLiner, chanSize, bulkSize, bu
 			} else {
 				fmt.Printf("Loaded %q and run %d BQL commands successfully\n\n", path, cmds)
 			}
-			fmt.Println("Time spent: ", time.Now().Sub(now))
+			fmt.Println("Time spent: ", time.Since(now))
 			done <- false
 			continue
 		}
 
 		now := time.Now()
 		table, err := runBQL(ctx, l, driver(), chanSize, bulkSize, traceWriter)
-		bqlDiff := time.Now().Sub(now)
+		bqlDiff := time.Since(now)
 		if err != nil {
 			fmt.Printf("[ERROR] %s\n", err)
-			fmt.Println("Time spent: ", time.Now().Sub(now))
+			fmt.Println("Time spent: ", time.Since(now))
 			fmt.Println()
 		} else {
 			if table == nil {
 				fmt.Printf("[OK] 0 rows retrieved. BQL time: %v. Display time: %v\n",
-					bqlDiff, time.Now().Sub(now)-bqlDiff)
+					bqlDiff, time.Since(now)-bqlDiff)
 			} else {
 				if len(table.Bindings()) > 0 {
 					fmt.Println(table.String())
 				}
 				fmt.Printf("[OK] %d rows retrieved. BQL time: %v. Display time: %v\n",
-					table.NumRows(), bqlDiff, time.Now().Sub(now)-bqlDiff)
+					table.NumRows(), bqlDiff, time.Since(now)-bqlDiff)
 			}
 		}
 		done <- false
