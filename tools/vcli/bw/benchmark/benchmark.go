@@ -96,13 +96,13 @@ func runBattery(ctx context.Context, st storage.Store, name string, chanSize, bu
 	fmt.Printf("Run %s benchmark sequentially... ", name)
 	ts := time.Now()
 	brs := runtime.RunBenchmarkBatterySequentially(bes)
-	ds := time.Now().Sub(ts)
+	ds := time.Since(ts)
 	fmt.Printf("(%v) done\n", ds)
 
 	fmt.Printf("Run %s benchmark concurrently... ", name)
 	tc := time.Now()
 	brc := runtime.RunBenchmarkBatteryConcurrently(bes)
-	dc := time.Now().Sub(tc)
+	dc := time.Since(tc)
 	fmt.Printf("(%v) done\n\n", dc)
 
 	format := func(br *runtime.BenchResult) string {

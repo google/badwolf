@@ -811,7 +811,7 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 		addFilterOptions(lo, cls, filterOptionsByClause)
 		unresolvable, err := p.processClause(ctx, cls, lo)
 		resetFilterOptions(lo)
-		tElapsedCurrClause := time.Now().Sub(tStartCurrClause)
+		tElapsedCurrClause := time.Since(tStartCurrClause)
 
 		tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 			return &tracer.Arguments{
@@ -826,7 +826,7 @@ func (p *queryPlan) processGraphPattern(ctx context.Context, lo *storage.LookupO
 			return nil
 		}
 	}
-	tElapsedClauses := time.Now().Sub(tStartClauses)
+	tElapsedClauses := time.Since(tStartClauses)
 	tracer.V(2).Trace(p.tracer, func() *tracer.Arguments {
 		return &tracer.Arguments{
 			Msgs: []string{fmt.Sprintf("Finished processing all clauses, total latency: %v", tElapsedClauses)},
