@@ -146,7 +146,7 @@ type AssertionBattery struct {
 	Entries []*AssertionBatteryEntry
 }
 
-//AssertionBatteryEntry contains the result of running a story.
+// AssertionBatteryEntry contains the result of running a story.
 type AssertionBatteryEntry struct {
 	Story   *Story
 	Outcome map[string]*AssertionOutcome
