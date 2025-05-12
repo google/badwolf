@@ -1,6 +1,6 @@
 module github.com/google/badwolf
 
-go 1.24.3
+go 1.24
 
 require (
 	github.com/pborman/uuid v1.2.1
