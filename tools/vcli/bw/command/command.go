@@ -58,7 +58,7 @@ func (c *Command) UsageString() string {
 
 // Usage prints the command usage.
 func (c *Command) Usage() int {
-	log.Printf(c.UsageString())
+	log.Printf("%s", c.UsageString())
 	return 0
 }
 
