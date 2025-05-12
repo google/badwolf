@@ -1,56 +1,56 @@
 on: [push, pull_request]
 name: tests
-env:
-  GO111MODULE: on
 
 jobs:
   linux:
     strategy:
       matrix:
-        go-version: [1.x, 1.12.x]
-    runs-on: ubuntu-latest
+        go-version: ['1.24.x', '1.23.x', '1.22.x', '1.21.x'] # Updated to recent stable Go versions
+    runs-on: ubuntu-latest 
 
     steps:
-    - uses: actions/setup-go@v1
-      with:
-        go-version: ${{ matrix.go-version }}
-    - uses: actions/checkout@v1
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
 
-    - name: Cache go modules
-      uses: actions/cache@preview
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
-        restore-keys: ${{ runner.os }}-go-
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Run go fmt
-      run: diff -u <(echo -n) <(gofmt -d -s .)
+      - name: Run go fmt
+        run: diff -u <(echo -n) <(gofmt -d -s .)
 
-    - name: Run go vet
-      run: go vet ./...
+      - name: Run go vet
+        run: go vet ./...
 
-    - name: Run go test
-      run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+      - name: Run go test
+        run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 
-    - name: Run the bql examples in the bw command-line tool
-      run: go build ./tools/vcli/bw && for f in ./examples/bql/*.bql; do ./bw run $f || exit 1; done
+      - name: Run the bql examples in the bw command-line tool
+        run: |
+          go build ./tools/vcli/bw
+          for f in ./examples/bql/*.bql; do
+            ./bw run "$f" || exit 1
+          done
 
-  # On Windows, just run the local tests.  Don't bother with checking gofmt, go vet
+  # On Windows, just run the local tests. Don't bother with checking gofmt, go vet
   windows:
     strategy:
       matrix:
-        go-version: [1.x, 1.12.x]
-    runs-on: windows-latest
+        # Align Go versions with the Linux job for consistency.
+        go-version: ['1.24.x', '1.23.x', '1.22.x', '1.21.x'] 
+    runs-on: windows-latest # windows-latest is already the recommended and up-to-date runner
 
     steps:
-    - uses: actions/setup-go@v1
-      with:
-        go-version: ${{ matrix.go-version }}
-    - uses: actions/checkout@v1
-    - name: Cache go modules
-      uses: actions/cache@preview
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
-        restore-keys: ${{ runner.os }}-go-
-    - run: go test ./...
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true 
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run go test
+        run: go test ./...
